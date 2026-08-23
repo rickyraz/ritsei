@@ -27,6 +27,10 @@
 > - Frontend architecture: [`./frontend.md`](./frontend.md)
 > - Frontend SPA decision:
 >   [`../decisions/0010-use-vite-solidjs-spa.md`](../decisions/0010-use-vite-solidjs-spa.md)
+> - Effect application architecture:
+>   [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
+> - Solid compiler boundary:
+>   [`../decisions/0049-keep-solid-compiler-at-rendering-boundary.md`](../decisions/0049-keep-solid-compiler-at-rendering-boundary.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)
 > - Database roles: [`../operations/database-roles.md`](../operations/database-roles.md)
@@ -472,7 +476,9 @@ The frontend is a separately deployed Vite-based SolidJS 2.0 SPA.
 Its default stack is:
 
 ```text
-Solid Router
+SolidJS 2.0 renderer and presentation runtime
++ Effect-based application model and typed transitions
++ Solid Router
 + TanStack Solid Query
 + TanStack Solid Table
 + TanStack Solid Virtual
@@ -481,11 +487,16 @@ Solid Router
 + Kobalte
 ```
 
-The router owns navigation and validated URL state. It must not own business policy or backend
-transaction behavior.
+SolidJS owns rendering and presentation-local reactivity. Its JSX/compiler transform is a
+rendering-boundary implementation detail, not the owner of application semantics. Effect owns
+explicit frontend application coordination through typed Models, Messages, transitions, Commands,
+Subscriptions, and scoped Resources where a workflow needs them. TanStack Query remains the owner
+of remote server state; presentation-only signals must not become a shadow domain model or query
+cache.
 
-TanStack Query owns remote server state. Local Solid primitives own local view state. Shared Effect
-Schema contracts validate route and API boundaries.
+The router owns navigation and validated URL state. It must not own business policy or backend
+transaction behavior. UI intent invokes a public command; only the owning backend domain can
+authorize and commit the authoritative business fact.
 
 SolidStart and SSR are not enabled by default. Their adoption requires an explicit requirement and a
 new or superseding ADR.

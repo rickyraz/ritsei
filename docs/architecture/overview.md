@@ -65,7 +65,9 @@ TypeScript strict
 
 Frontend SPA:
 Vite
-+ SolidJS 2.0
++ SolidJS 2.0 renderer and presentation runtime
++ Solid JSX/compiler lowering inside `apps/web`
++ Effect-based application model and typed transitions
 + Solid Router or an adapted TanStack Solid Router
 + TanStack Solid Query
 + TanStack Solid Table
@@ -76,7 +78,10 @@ Vite
 ```
 
 Effect handles typed failures, dependency injection, lifecycle, concurrency,
-retry, streams, and telemetry. Drizzle handles typed schema and queries.
+retry, streams, and telemetry. In the frontend, it also coordinates explicit
+application transitions and effects; SolidJS remains the renderer and owner of
+presentation-local state. The JSX/compiler transform stays below that boundary.
+Drizzle handles typed schema and queries.
 PostgreSQL remains responsible for control-plane transactions and non-ledger
 business invariants. The FinancialLedgerPort sends accepted financial movements
 to TigerBeetle; the optional Stateful Entity Runtime may own active serialization

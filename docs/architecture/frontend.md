@@ -2,9 +2,9 @@
 
 > **Status:** Canonical and active
 >
-> **Owns:** Frontend runtime shape, framework selection, routing boundaries,
-> server-state handling, data-heavy UI primitives, contract validation, and
-> presentation-layer constraints.
+> **Owns:** Frontend runtime shape, application-model and state ownership,
+> framework selection, routing boundaries, server-state handling, data-heavy UI
+> primitives, contract validation, and presentation-layer constraints.
 >
 > **Related documents**
 >
@@ -12,6 +12,8 @@
 > - SolidJS decision: [`../decisions/0009-use-solidjs-2.md`](../decisions/0009-use-solidjs-2.md)
 > - SPA architecture decision: [`../decisions/0010-use-vite-solidjs-spa.md`](../decisions/0010-use-vite-solidjs-spa.md)
 > - Contract schema decision: [`../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md`](../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md)
+> - Effect application architecture: [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
+> - Solid compiler boundary: [`../decisions/0049-keep-solid-compiler-at-rendering-boundary.md`](../decisions/0049-keep-solid-compiler-at-rendering-boundary.md)
 > - Authorization architecture: [`./authorization.md`](./authorization.md)
 > - Process Studio architecture: [`./process-studio.md`](./process-studio.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
@@ -30,6 +32,7 @@ Vite
     ├── TanStack Solid Table
     ├── TanStack Solid Virtual
     ├── TanStack Solid Form
+    ├── Effect application model
     ├── Effect Schema
     └── Kobalte and the internal UI system
 ```
@@ -39,6 +42,130 @@ SolidStart is not the default application foundation.
 It may be introduced only when server rendering, a frontend-owned BFF,
 server-session management, server functions, or unified full-stack deployment
 becomes an explicit requirement.
+
+## Application Architecture
+
+RITSEI separates the frontend application model from the renderer:
+
+```text
+SolidJS 2.0
+  -> renderer and presentation runtime
+
+Effect + Effect Schema
+  -> application model, typed transitions, effects, and contracts
+```
+
+SolidJS owns DOM projection, fine-grained presentation reactivity, and local
+ephemeral interaction state. It does not own durable business semantics,
+authorization, transaction invariants, or authoritative domain state.
+
+Effect is the frontend application runtime for explicit workflow coordination.
+Effect Schema remains the canonical runtime contract language at frontend
+boundaries. This is an Effect-first, Foldkit-inspired application architecture,
+not a Foldkit dependency or renderer/runtime selection.
+
+For workflows that need explicit coordination, use:
+
+```text
+View intent / Message
+        |
+        v
+transition(Model, Message)
+        |
+        +--> new Model
+        `--> Command, Subscription, or Resource operation
+                         |
+                         v
+                    Effect service/API
+                         |
+                         v
+                    result Message
+```
+
+- **Model** is application or workflow state, not a second source of truth for
+  backend domain state.
+- **Message** is a typed user intent, lifecycle notification, or effect result.
+- **Transition** is a deterministic state transition from a Model and Message.
+- **Command** is an Effect program/value for one external operation.
+- **Subscription** is a long-lived source of Messages.
+- **Resource** is a scoped, lifecycle-managed Effect resource.
+
+A browser Message is not a backend domain event. UI intent requests a public
+command; only the owning backend domain can authorize and commit the domain
+fact. For example:
+
+```text
+ClickedApprove
+      |
+      v
+ApprovalRequested
+      |
+      v
+ApprovePurchaseOrder
+      |
+      +--> PurchaseOrderApproved
+      `--> ApprovalFailed
+```
+
+Components must not mutate authoritative business state with local setters such
+as `setStatus("approved")`. They dispatch an intention or invoke the owning
+public command, then render the returned state or failure.
+
+### State ownership
+
+| State category | Owner | Rule |
+|---|---|---|
+| Authoritative domain state | Backend domain, PostgreSQL, or approved financial ledger | The browser may render a decoded projection but cannot mutate authority directly. |
+| Application/workflow state | Effect Model and explicit transitions | Use for multi-step coordination, pending commands, retries, reconciliation, and lifecycle state. |
+| Remote server state | TanStack Solid Query | Own cache, invalidation, refresh, and server snapshots; do not mirror query data into unrelated stores. |
+| Presentation state | Solid signals, memos, stores, and context | Keep ephemeral mechanics local: focus, hover, popovers, tabs, column layout, drag state, and virtualization. |
+| Shareable navigation state | Router plus Effect Schema | Keep URL filters and navigation inputs typed, validated, and independent of domain implementations. |
+
+Not every signal is an application Message, and not every application Message
+belongs in a global Model. Local presentation state is intentionally allowed
+and must not be forced through a Model-to-Message transition merely for
+architectural uniformity.
+
+Foldkit is an architectural reference only. RITSEI does not add Foldkit as a
+dependency or couple public application contracts to its renderer, VDOM, runtime,
+or release cadence. A complete frontend runtime replacement requires measured
+benefit, compatibility with SolidJS and Effect v4, a migration path, and a new
+ADR.
+
+## Compiler and Rendering Boundary
+
+Solid does use a JSX compiler or transform. RITSEI must not say that Solid
+needs no compiler. The precise boundary is:
+
+```text
+Effect application model
+        |
+        v
+Solid reactive projection
+        |
+        v
+Solid JSX/compiler lowering
+        |
+        v
+DOM
+```
+
+The Solid compiler lowers JSX/templates, static nodes, and dynamic bindings.
+Solid's reactive primitives and observers provide the presentation dependency
+graph. Neither the generated DOM code nor compiler optimization defines domain
+state, authorization, transaction semantics, Effect services, or public schemas.
+
+RITSEI is therefore **compiler-neutral at the application-architecture level**,
+not compiler-free at the rendering level. Compiler configuration stays inside
+`apps/web`; public contracts and Effect application transitions must not depend
+on generated output or a particular compiler pass. Supported Vite/compiler
+changes are validated as frontend build changes, including behavior,
+accessibility, bundle output, and measured performance.
+
+Solid 2.0 remains a pre-release dependency as of August 23, 2026. Its release
+risk is contained by keeping the Effect application model and backend contracts
+independent of the renderer and compiler. See [`ADR-0049`](../decisions/0049-keep-solid-compiler-at-rendering-boundary.md)
+for the decision record.
 
 ## Why an SPA Fits RITSEI
 
@@ -90,7 +217,9 @@ PostgreSQL
 
 | Concern | Decision |
 |---|---|
-| UI framework | SolidJS 2.0 |
+| Renderer / presentation runtime | SolidJS 2.0 |
+| Application runtime | Effect-based typed transitions and effects |
+| Compiler boundary | Solid JSX/compiler transform inside `apps/web` |
 | Build tool | Vite |
 | Application shape | Client-side SPA |
 | Router | Solid Router by default, or TanStack Solid Router behind an adapter |
@@ -241,6 +370,9 @@ inventory invariants
 
 TanStack Solid Query owns remote server state.
 
+An Effect application Model may coordinate a command's lifecycle, but it must
+not become a second cache or mirror of query data.
+
 Use it for:
 
 - loading;
@@ -282,7 +414,8 @@ Query keys must be:
 
 ## Local Reactive State
 
-Use Solid primitives according to ownership:
+Use Solid primitives according to ownership. These are presentation primitives,
+not substitutes for the application transition model:
 
 - signals for small local mutable state;
 - memos for derived state;
@@ -422,6 +555,7 @@ Presentation components may:
 
 Presentation components must not own:
 
+- authoritative domain status transitions or domain events;
 - accounting policy;
 - authorization policy;
 - transaction semantics;
@@ -566,4 +700,6 @@ The frontend architecture is correctly implemented when:
 - route search input is typed and validated;
 - router-specific types do not leak into domain contracts;
 - authorization remains enforced by the backend;
+- complex workflow coordination uses explicit Effect transitions where needed;
+- presentation-only state remains local to Solid primitives;
 - SolidStart and SSR are absent unless an approved requirement activates them.

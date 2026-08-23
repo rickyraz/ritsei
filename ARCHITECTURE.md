@@ -14,10 +14,10 @@ The authoritative architecture specification is:
 
 - Runtime: Deno
 - Language: TypeScript strict
-- Application model: Effect
+- Application model: Effect-based typed transitions, services, and commands
 - Database: PostgreSQL 19+
 - Query layer: Drizzle ORM + postgres.js
-- Frontend: Vite + SolidJS 2.0
+- Frontend renderer: Vite + SolidJS 2.0; JSX compiler isolated to `apps/web`
 - Contracts: Effect Schema
 - Stateful ownership: optional vendor-neutral Stateful Entity Runtime
 - Overload isolation: workload planes, reserved command capacity, and topology-private WorkloadCells
