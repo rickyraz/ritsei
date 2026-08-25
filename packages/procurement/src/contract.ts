@@ -67,7 +67,7 @@ export const PurchaseOrder = Schema.Struct({
   status: Schema.Literals(["draft", "confirmed", "cancelled"]),
   confirmedAt: Schema.NullOr(InstantString),
   total: FinancialMajorAmount,
-  lines: Schema.Array(PurchaseOrderLineSnapshot),
+  lines: Schema.Array(PurchaseOrderLineSnapshot).check(Schema.isMinLength(1)),
 }).check(Schema.makeFilter(
   (order) =>
     (order.status === "draft" && order.confirmedAt === null) ||
