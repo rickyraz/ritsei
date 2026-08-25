@@ -142,6 +142,16 @@ describe("inventory contract", () => {
       )
       assert.strictEqual(invalidTenant._tag, "SchemaError")
 
+      const invalidName = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateWarehouseInput)({
+          principal,
+          tenantId,
+          legalEntityId,
+          name: "   ",
+        }),
+      )
+      assert.strictEqual(invalidName._tag, "SchemaError")
+
       const invalidLegalEntity = yield* Effect.flip(
         Schema.decodeUnknownEffect(CreateWarehouseInput)({
           principal,
@@ -300,6 +310,11 @@ describe("inventory contract", () => {
         name: "Widget",
       })
       yield* Schema.decodeUnknownEffect(Warehouse)(warehouse)
+      assert.strictEqual(
+        (yield* Effect.flip(Schema.decodeUnknownEffect(Warehouse)({ ...warehouse, name: " " })))
+          ._tag,
+        "SchemaError",
+      )
       yield* Schema.decodeUnknownEffect(Item)(item)
       const balance = yield* inventory.receiveStock({
         principal,

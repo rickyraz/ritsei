@@ -67,7 +67,7 @@ export const Warehouse = Schema.Struct({
   tenantId: Uuid,
   legalEntityId: Uuid,
   primaryBranchId: Schema.NullOr(Uuid),
-  name: Schema.String,
+  name: NonEmptyString,
 })
 export const Item = Schema.Struct({
   id: Uuid,
@@ -154,7 +154,7 @@ export const CreateWarehouseInput = Schema.Struct({
   ...ScopedInput,
   legalEntityId: Uuid,
   primaryBranchId: Schema.optionalKey(Uuid),
-  name: Schema.String,
+  name: NonEmptyString,
 })
 export const CreateItemInput = Schema.Struct({
   ...ScopedInput,
