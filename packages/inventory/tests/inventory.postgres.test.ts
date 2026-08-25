@@ -792,6 +792,31 @@ it.effect.skipIf(databaseUrl === undefined)(
               `${a.warehouse_id}:${a.item_id}`.localeCompare(`${b.warehouse_id}:${b.item_id}`)
             ),
           )
+          const changedConfirmedLine = yield* postgresFailure(() =>
+            client`
+              update inventory.stock_transfer_lines
+              set quantity = 5
+              where tenant_id = ${tenant.id} and transfer_id = ${transfer.id}
+                and item_id = ${widget.id}
+            `
+          )
+          assert.strictEqual((changedConfirmedLine as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (changedConfirmedLine as { constraint_name?: string }).constraint_name,
+            "inventory_stock_transfer_lines_immutable",
+          )
+          const deletedConfirmedLine = yield* postgresFailure(() =>
+            client`
+              delete from inventory.stock_transfer_lines
+              where tenant_id = ${tenant.id} and transfer_id = ${transfer.id}
+                and item_id = ${cable.id}
+            `
+          )
+          assert.strictEqual((deletedConfirmedLine as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (deletedConfirmedLine as { constraint_name?: string }).constraint_name,
+            "inventory_stock_transfer_lines_immutable",
+          )
           assert.instanceOf(
             yield* Effect.flip(inventory.completeTransfer({
               principal,
