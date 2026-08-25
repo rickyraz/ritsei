@@ -96,8 +96,8 @@ export const StockReservationStatus = Schema.Literals(["active", "released", "fu
 export const StockReservation = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  warehouseId: Schema.String,
-  itemId: Schema.String,
+  warehouseId: Uuid,
+  itemId: Uuid,
   quantity: Quantity,
   idempotencyKey: Schema.NullOr(Schema.String),
   status: StockReservationStatus,
