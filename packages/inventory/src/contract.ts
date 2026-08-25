@@ -134,7 +134,7 @@ const ScopedInput = { principal: Principal, tenantId: Schema.String }
 export const CreateWarehouseInput = Schema.Struct({
   ...ScopedInput,
   legalEntityId: Uuid,
-  primaryBranchId: Schema.optionalKey(Schema.String),
+  primaryBranchId: Schema.optionalKey(Uuid),
   name: Schema.String,
 })
 export const CreateItemInput = Schema.Struct({

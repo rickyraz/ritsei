@@ -125,9 +125,9 @@ describe("inventory contract", () => {
       assert.strictEqual(error._tag, "SchemaError")
     }))
 
-  it.effect("validates warehouse legal-entity IDs as UUIDs", () =>
+  it.effect("validates warehouse UUID references at the input boundary", () =>
     Effect.gen(function* () {
-      const error = yield* Effect.flip(
+      const invalidLegalEntity = yield* Effect.flip(
         Schema.decodeUnknownEffect(CreateWarehouseInput)({
           principal,
           tenantId,
@@ -135,7 +135,18 @@ describe("inventory contract", () => {
           name: "Warehouse",
         }),
       )
-      assert.strictEqual(error._tag, "SchemaError")
+      assert.strictEqual(invalidLegalEntity._tag, "SchemaError")
+
+      const invalidBranch = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateWarehouseInput)({
+          principal,
+          tenantId,
+          legalEntityId: "00000000-0000-4000-8000-000000000010",
+          primaryBranchId: "not-a-uuid",
+          name: "Warehouse",
+        }),
+      )
+      assert.strictEqual(invalidBranch._tag, "SchemaError")
     }))
 
   it.effect("bounds positive inventory quantities to PostgreSQL bigint", () =>
