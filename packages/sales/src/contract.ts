@@ -78,7 +78,7 @@ export const CreateOrderInput = Schema.Struct({
 })
 export const ConfirmOrderInput = Schema.Struct({
   ...ScopedInput,
-  orderId: Schema.String,
+  orderId: Uuid,
   commandId: NonEmptyString,
   correlationId: NonEmptyString,
   causationId: Schema.NullOr(NonEmptyString).pipe(
@@ -86,8 +86,8 @@ export const ConfirmOrderInput = Schema.Struct({
   ),
   idempotencyKey: NonEmptyString,
 })
-export const CancelConfirmedOrderInput = Schema.Struct({ ...ScopedInput, orderId: Schema.String })
-export const GetConfirmedOrderTotalInput = Schema.Struct({ ...ScopedInput, orderId: Schema.String })
+export const CancelConfirmedOrderInput = Schema.Struct({ ...ScopedInput, orderId: Uuid })
+export const GetConfirmedOrderTotalInput = Schema.Struct({ ...ScopedInput, orderId: Uuid })
 
 export type CreateCustomerCommand = Schema.Schema.Type<typeof CreateCustomerInput>
 export type CreateQuotationCommand = Schema.Schema.Type<typeof CreateQuotationInput>

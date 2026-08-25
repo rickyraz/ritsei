@@ -10,6 +10,7 @@ import {
   MessagingService,
 } from "../../messaging/mod.ts"
 import {
+  ConfirmOrderInput,
   Customer,
   CustomerAlreadyExists,
   makeSalesTestLayer,
@@ -74,6 +75,22 @@ const withSales = <A, E>(
 }
 
 describe("sales contract", () => {
+  it.effect("validates sales order lifecycle IDs as UUIDs", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ConfirmOrderInput)({
+          principal,
+          tenantId,
+          orderId: "not-a-uuid",
+          commandId: "command-1",
+          correlationId: "correlation-1",
+          causationId: null,
+          idempotencyKey: "confirmation-1",
+        }),
+      )
+      assert.strictEqual(error._tag, "SchemaError")
+    }))
+
   it.effect("bounds order-line quantities to PostgreSQL bigint", () =>
     Effect.gen(function* () {
       const error = yield* Effect.flip(
