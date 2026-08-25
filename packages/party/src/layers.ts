@@ -7,6 +7,7 @@ import { makePartyPostgresStore } from "./postgres.ts"
 import { makePartyServiceFromStore } from "./service.ts"
 
 export const makePartyService = makePartyServiceFromStore(makePartyPostgresStore)
+export const PartyLive = Layer.effect(PartyService, makePartyService)
 
 export const makePartyTestLayer = (validUserAccountIds?: ReadonlySet<string>) =>
   Layer.effect(

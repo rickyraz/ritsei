@@ -7,6 +7,7 @@ import { makeUserAccountPostgresStore } from "./postgres.ts"
 import { makeUserAccountServiceFromStore } from "./service.ts"
 
 export const makeUserAccountService = makeUserAccountServiceFromStore(makeUserAccountPostgresStore)
+export const IdentityLive = Layer.effect(UserAccountService, makeUserAccountService)
 
 export const makeUserAccountTestLayer = () =>
   Layer.effect(

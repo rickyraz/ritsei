@@ -10,4 +10,4 @@ export {
 } from "./src/contract.ts"
 export type { UserAccountService as UserAccountServiceShape } from "./src/contract.ts"
 export { UserAccountAlreadyExists, UserAccountNotFound } from "./src/errors.ts"
-export { makeUserAccountService, makeUserAccountTestLayer } from "./src/layers.ts"
+export { IdentityLive, makeUserAccountService, makeUserAccountTestLayer } from "./src/layers.ts"

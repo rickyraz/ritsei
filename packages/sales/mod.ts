@@ -27,7 +27,7 @@ export {
   SalesOrderInvalidState,
   SalesOrderNotFound,
 } from "./src/errors.ts"
-export { makeSalesService, makeSalesTestLayer } from "./src/layers.ts"
+export { makeSalesService, makeSalesTestLayer, SalesLive } from "./src/layers.ts"
 export type {
   Customer as CustomerType,
   Quotation as QuotationType,

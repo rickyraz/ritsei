@@ -22,4 +22,4 @@ export {
 } from "./src/errors.ts"
 
 export { makeAuthService } from "./src/service.ts"
-export { makeAuthTestLayer } from "./src/layers.ts"
+export { AuthLive, makeAuthTestLayer } from "./src/layers.ts"

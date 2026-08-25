@@ -316,6 +316,27 @@ export interface ProcurementService {
 
 export const ProcurementService = Context.Service<ProcurementService>("RITSEI/ProcurementService")
 
+const withProcurementOperationNames = (service: ProcurementService): ProcurementService => ({
+  createSupplierAccount: Effect.fn("ProcurementService.createSupplierAccount")((input: unknown) =>
+    service.createSupplierAccount(input)
+  ),
+  createPurchaseOrder: Effect.fn("ProcurementService.createPurchaseOrder")((input: unknown) =>
+    service.createPurchaseOrder(input)
+  ),
+  getPurchaseOrder: Effect.fn("ProcurementService.getPurchaseOrder")((input: unknown) =>
+    service.getPurchaseOrder(input)
+  ),
+  confirmPurchaseOrder: Effect.fn("ProcurementService.confirmPurchaseOrder")((input: unknown) =>
+    service.confirmPurchaseOrder(input)
+  ),
+  cancelPurchaseOrder: Effect.fn("ProcurementService.cancelPurchaseOrder")((input: unknown) =>
+    service.cancelPurchaseOrder(input)
+  ),
+  receivePurchaseOrder: Effect.fn("ProcurementService.receivePurchaseOrder")((input: unknown) =>
+    service.receivePurchaseOrder(input)
+  ),
+})
+
 type CreateSupplierAccount = Schema.Schema.Type<typeof CreateSupplierAccountInput>
 
 const loadSupplierRelationship = (party: PartyService, input: CreateSupplierAccount) =>
@@ -471,7 +492,7 @@ export const makeProcurementService = Effect.gen(function* () {
   const clock = yield* Clock.Clock
   const now = () => new Date(clock.currentTimeMillisUnsafe())
 
-  return {
+  const service: ProcurementService = {
     createSupplierAccount: (input) =>
       Effect.gen(function* () {
         const decoded = yield* Schema.decodeUnknownEffect(CreateSupplierAccountInput)(input)
@@ -1033,7 +1054,8 @@ export const makeProcurementService = Effect.gen(function* () {
           ),
         )
       }),
-  } satisfies ProcurementService
+  }
+  return withProcurementOperationNames(service)
 })
 
 export const makeProcurementTestLayer = () =>
@@ -1051,7 +1073,7 @@ export const makeProcurementTestLayer = () =>
       const storedReceipts = new Map<string, GoodsReceipt>()
       const receivedQuantities = new Map<string, bigint>()
 
-      return {
+      const service: ProcurementService = {
         createSupplierAccount: (input) =>
           Effect.gen(function* () {
             const decoded = yield* Schema.decodeUnknownEffect(CreateSupplierAccountInput)(input)
@@ -1381,6 +1403,7 @@ export const makeProcurementTestLayer = () =>
             storedReceipts.set(receiptKey, receipt)
             return receipt
           }),
-      } satisfies ProcurementService
+      }
+      return withProcurementOperationNames(service)
     }),
   )

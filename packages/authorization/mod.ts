@@ -43,4 +43,4 @@ export {
 } from "./src/errors.ts"
 
 export { makeAuthorizationService } from "./src/service.ts"
-export { makeAuthorizationTestLayer } from "./src/layers.ts"
+export { AuthorizationLive, makeAuthorizationTestLayer } from "./src/layers.ts"

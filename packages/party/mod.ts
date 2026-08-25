@@ -38,4 +38,4 @@ export {
   PartyRepresentationUserAccountNotFound,
   PartyRoleAlreadyAssigned,
 } from "./src/errors.ts"
-export { makePartyService, makePartyTestLayer } from "./src/layers.ts"
+export { makePartyService, makePartyTestLayer, PartyLive } from "./src/layers.ts"

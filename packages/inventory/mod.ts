@@ -62,4 +62,4 @@ export {
   WarehouseBranchNotFound,
   WarehouseLegalEntityNotFound,
 } from "./src/errors.ts"
-export { makeInventoryService, makeInventoryTestLayer } from "./src/layers.ts"
+export { InventoryLive, makeInventoryService, makeInventoryTestLayer } from "./src/layers.ts"

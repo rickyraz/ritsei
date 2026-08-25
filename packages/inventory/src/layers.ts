@@ -21,3 +21,4 @@ export const makeInventoryTestLayer = () =>
   )
 
 export const makeInventoryPostgresLayer = () => Layer.effect(InventoryService, makeInventoryService)
+export const InventoryLive = makeInventoryPostgresLayer()
