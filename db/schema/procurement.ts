@@ -13,6 +13,7 @@ import {
 
 import { tenants } from "./auth.ts"
 import { createdAt, id, money, updatedAt } from "./common.ts"
+import { warehouses } from "./inventory.ts"
 import { partyRelationships } from "./party.ts"
 
 export const procurementSchema = pgSchema("procurement")
@@ -141,6 +142,11 @@ export const purchaseReceipts = procurementSchema.table("purchase_receipts", {
     columns: [table.tenantId, table.purchaseOrderId],
     foreignColumns: [purchaseOrders.tenantId, purchaseOrders.id],
     name: "purchase_receipts_tenant_purchase_order_fkey",
+  }),
+  foreignKey({
+    columns: [table.tenantId, table.warehouseId],
+    foreignColumns: [warehouses.tenantId, warehouses.id],
+    name: "purchase_receipts_tenant_warehouse_fkey",
   }),
   check(
     "purchase_receipts_idempotency_key_check",

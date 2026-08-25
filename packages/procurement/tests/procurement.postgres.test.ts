@@ -885,6 +885,19 @@ it.effect.skipIf(databaseUrl === undefined)(
             InventoryService,
             inventory,
           )
+          const invalidWarehouseReceipt = yield* postgresFailure(() =>
+            client`
+              insert into procurement.purchase_receipts
+                (tenant_id, purchase_order_id, warehouse_id, idempotency_key)
+              values
+                (${tenant.id}, ${confirmed.id}, ${uuidv7()}, 'invalid-warehouse')
+            `
+          )
+          assert.strictEqual((invalidWarehouseReceipt as { code?: string }).code, "23503")
+          assert.strictEqual(
+            (invalidWarehouseReceipt as { constraint_name?: string }).constraint_name,
+            "purchase_receipts_tenant_warehouse_fkey",
+          )
           const otherItem = yield* inventory.createItem({
             principal,
             tenantId: tenant.id,
