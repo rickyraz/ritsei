@@ -244,7 +244,7 @@ export const ConfigureRevenuePostingInput = Schema.Struct({
 
 export const OpenPeriodInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
+  legalEntityId: Uuid,
   startsOn: IsoDate,
   endsOn: IsoDate,
 }).check(Schema.makeFilter(
