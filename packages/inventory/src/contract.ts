@@ -184,7 +184,7 @@ export const CreateStockTransferInput = Schema.Struct({
 })
 export const ConfirmStockTransferInput = Schema.Struct({
   ...ScopedInput,
-  transferId: Schema.String,
+  transferId: Uuid,
 })
 export const CompleteStockTransferInput = ConfirmStockTransferInput
 
