@@ -262,3 +262,79 @@ it.effect.skipIf(databaseUrl === undefined)(
         }),
       )),
 )
+
+it.effect.skipIf(databaseUrl === undefined)(
+  "reclaims an expired lease after worker termination",
+  () =>
+    withTemporaryDatabase(databaseUrl!, (client) =>
+      TestClock.withLive(
+        Effect.gen(function* () {
+          yield* runMigrations(client)
+          const [tenant] = yield* Effect.promise(() =>
+            client<{ id: string }[]>`
+              insert into auth.tenants (slug) values (${uuidv7()}) returning id
+            `
+          )
+          const fenceScope = `test.termination:${tenant!.id}:${uuidv7()}`
+          const [job] = yield* Effect.promise(() =>
+            client<{ id: string }[]>`
+              insert into process.jobs
+                (tenant_id, fence_scope, job_type, idempotency_key, scheduled_at, payload, correlation_id)
+              values
+                (${tenant!.id}, ${fenceScope}, 'process.order_confirmation.post_commit',
+                 ${uuidv7()}, now() - interval '1 second', '{}'::jsonb, ${uuidv7()})
+              returning id
+            `
+          )
+          const workerA = yield* makeProcess(client).pipe(
+            Effect.provide(makeAuthorizationTestLayer([])),
+          )
+          const workerB = yield* makeProcess(client).pipe(
+            Effect.provide(makeAuthorizationTestLayer([])),
+          )
+          const first = yield* workerA.claimJob({
+            tenantId: tenant!.id,
+            workerId: "worker-a",
+          })
+          assert.isNotNull(first)
+          assert.strictEqual(first!.leaseGeneration, "1")
+
+          // Worker A terminates without completing the leased job.
+          yield* Effect.promise(() =>
+            client`
+              update process.jobs
+              set lease_until = now() - interval '1 second'
+              where id = ${job!.id}
+            `
+          )
+
+          const second = yield* workerB.claimJob({
+            tenantId: tenant!.id,
+            workerId: "worker-b",
+          })
+          assert.isNotNull(second)
+          assert.strictEqual(second!.fenceScope, first!.fenceScope)
+          assert.strictEqual(second!.leaseGeneration, "2")
+          assert.strictEqual(second!.leaseOwner, "worker-b")
+
+          const staleCompletion = yield* Effect.flip(workerA.completeJob({
+            tenantId: tenant!.id,
+            workerId: "worker-a",
+            jobId: first!.jobId,
+            leaseToken: first!.leaseToken!,
+            leaseGeneration: first!.leaseGeneration,
+          }))
+          assert.instanceOf(staleCompletion, ProcessJobLeaseLost)
+
+          const completed = yield* workerB.completeJob({
+            tenantId: tenant!.id,
+            workerId: "worker-b",
+            jobId: second!.jobId,
+            leaseToken: second!.leaseToken!,
+            leaseGeneration: second!.leaseGeneration,
+          })
+          assert.strictEqual(completed.status, "completed")
+          assert.strictEqual(completed.leaseGeneration, "2")
+        }),
+      )),
+)
