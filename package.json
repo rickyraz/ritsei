@@ -15,7 +15,8 @@
     "@std/streams": "jsr:^1.1.1",
     "drizzle-orm": "1.0.0-rc.5-169397b",
     "postgres": "3.4.7",
-    "tigerbeetle-node": "0.17.9"
+    "tigerbeetle-node": "0.17.9",
+    "uuid": "14.0.2"
   },
   "devDependencies": {
     "@effect/vitest": "4.0.0-rc.111",

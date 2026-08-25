@@ -12,7 +12,7 @@ import {
 } from "../../../db/schema/procurement.ts"
 import { AuthorizationService } from "../../authorization/mod.ts"
 import { InventoryService } from "../../inventory/mod.ts"
-import { Database, FinancialMajorAmount, isDatabaseConstraint } from "../../kernel/mod.ts"
+import { Database, FinancialMajorAmount, isDatabaseConstraint, uuidv7 } from "../../kernel/mod.ts"
 import { PartyService } from "../../party/mod.ts"
 import { ProcurementCapabilities } from "./capabilities.ts"
 import {
@@ -590,7 +590,7 @@ export const makeProcurementService = Effect.gen(function* () {
                   )),
               )
               receivedLines.push({
-                id: crypto.randomUUID(),
+                id: uuidv7(),
                 purchaseOrderLineId: line.purchaseOrderLineId,
                 itemId: orderLine.itemId,
                 quantity: line.quantity,

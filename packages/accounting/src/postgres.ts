@@ -27,6 +27,7 @@ import {
   FinancialVerificationSigner,
   isDatabaseConstraint,
   requireExactMajorToMinor,
+  uuidv7,
 } from "../../kernel/mod.ts"
 import { MessagingService } from "../../messaging/mod.ts"
 import { SalesService } from "../../sales/mod.ts"
@@ -1430,7 +1431,7 @@ export const makeAccountingService = Effect.gen(function* () {
                 orderId: decoded.orderId,
               })
               yield* messaging.append({
-                eventId: crypto.randomUUID(),
+                eventId: uuidv7(),
                 eventType: AccountingRevenuePostedEvent.id,
                 eventVersion: AccountingRevenuePostedEvent.version,
                 tenantId: decoded.tenantId,

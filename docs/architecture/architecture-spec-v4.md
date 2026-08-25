@@ -48,6 +48,8 @@
 >   [`../decisions/0022-update-effect-v4-to-beta-103.md`](../decisions/0022-update-effect-v4-to-beta-103.md)
 > - Deno package dependency resolution:
 >   [`../decisions/0050-use-package-json-for-deno-dependency-resolution.md`](../decisions/0050-use-package-json-for-deno-dependency-resolution.md)
+> - UUIDv7 persistent identities:
+>   [`../decisions/0051-adopt-uuidv7-for-persistent-identities.md`](../decisions/0051-adopt-uuidv7-for-persistent-identities.md)
 > - Jurisdiction localization:
 >   [`../decisions/0016-isolate-jurisdiction-localization.md`](../decisions/0016-isolate-jurisdiction-localization.md)
 > - Native Deno Effect adapter:
@@ -78,6 +80,7 @@ principles.
 | Runtime            | Deno                                                                  |
 | HTTP               | Effect v4 `HttpApi` / `HttpRouter` with native `@effect/platform-deno` |
 | Database           | PostgreSQL 19+                                                        |
+| Persistent IDs     | UUIDv7 for new entity, event, and index-visible identities            |
 | Financial execution | TigerBeetle through the FinancialLedgerPort, activation-gated        |
 | Query layer        | Drizzle ORM with `postgres.js`                                        |
 | Migrations         | Pinned Drizzle Kit graph with reviewed SQL                            |
@@ -299,6 +302,17 @@ Financial ledger authority and execution are governed by
 [`financial-ledger.md`](./financial-ledger.md) subsystem architecture. TigerBeetle is the required
 financial execution engine for the activated profile; PostgreSQL remains authoritative for
 control-plane metadata, policy, workflow state, audit links, and projections.
+
+## Identifier Contract
+
+New persistent entity, stored event, stored line, workflow, and other index-visible identities use
+UUIDv7. PostgreSQL-owned IDs use the existing `uuidv7()` default in `db/schema/common.ts`; application
+code that must create a persistent identity before insertion uses the kernel-owned `uuidv7()` helper,
+implemented through the pinned `uuid` package. Existing UUIDv4 rows remain valid and are not migrated
+solely for version conversion. UUIDv4 remains acceptable for ephemeral opaque values such as lease
+tokens and test fixtures. UUIDv7 is not a replacement for `created_at`, business numbers, or secrets.
+The complete decision and evidence are owned by
+[ADR-0051](../decisions/0051-adopt-uuidv7-for-persistent-identities.md).
 
 ## Search Contract
 

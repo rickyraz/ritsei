@@ -11,6 +11,7 @@ import {
   FinancialVerificationKeyring,
   FinancialVerificationSigner,
   requireExactMajorToMinor,
+  uuidv7,
 } from "../../kernel/mod.ts"
 import { MessagingService } from "../../messaging/mod.ts"
 import { SalesService } from "../../sales/mod.ts"
@@ -150,7 +151,7 @@ export const makeAccountingTestLayer = () =>
       const storedJournals = new Map<string, JournalEntry>()
       const controls = new Map<string, FinancialCutoverControl>()
       const verificationArtifacts = new Map<string, FinancialVerificationArtifact>()
-      const nextId = () => crypto.randomUUID()
+      const nextId = uuidv7
       const testControl = (tenantId: string, legalEntityId: string) => {
         const key = `${tenantId}:${legalEntityId}`
         const existing = controls.get(key)
@@ -655,7 +656,7 @@ export const makeAccountingTestLayer = () =>
               )
             }
             const journal: JournalEntry = {
-              id: crypto.randomUUID(),
+              id: uuidv7(),
               tenantId: decoded.tenantId,
               reference,
               status: "posted",
@@ -666,7 +667,7 @@ export const makeAccountingTestLayer = () =>
               ],
             }
             yield* messaging.append({
-              eventId: crypto.randomUUID(),
+              eventId: uuidv7(),
               eventType: AccountingRevenuePostedEvent.id,
               eventVersion: AccountingRevenuePostedEvent.version,
               tenantId: decoded.tenantId,

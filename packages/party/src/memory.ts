@@ -1,4 +1,6 @@
 import * as Effect from "effect/Effect"
+
+import { uuidv7 } from "../../kernel/mod.ts"
 import type { PartyStore } from "./store.ts"
 import type {
   Branch,
@@ -33,7 +35,7 @@ export const makePartyMemoryStore = (validUserAccountIds?: ReadonlySet<string>):
   const relationships = new Map<string, PartyRelationship>()
   const identifiers = new Set<string>()
   const representations = new Map<string, import("./contract.ts").PartyRepresentation>()
-  const id = () => crypto.randomUUID()
+  const id = uuidv7
   const create = Effect.fn("PartyStore.memory.create")((
     tenantId: string,
     kind: Party["kind"],

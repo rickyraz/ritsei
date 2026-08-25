@@ -24,6 +24,7 @@ import {
   DurableJobInput,
   isDatabaseConstraint,
   requireExactMajorToMinor,
+  uuidv7,
 } from "../../kernel/mod.ts"
 import { EventIdempotencyConflict, MessagingService } from "../../messaging/mod.ts"
 import {
@@ -927,7 +928,7 @@ export const makeProcessService = Effect.gen(function* () {
           })
 
           const event = yield* messaging.append({
-            eventId: crypto.randomUUID(),
+            eventId: uuidv7(),
             eventType: ProcessOrderConfirmationCompletedEvent.id,
             eventVersion: ProcessOrderConfirmationCompletedEvent.version,
             tenantId: decoded.tenantId,
@@ -1134,7 +1135,7 @@ export const makeProcessService = Effect.gen(function* () {
             reversalJournalId: reversalJournal.id,
           })
           const event = yield* messaging.append({
-            eventId: crypto.randomUUID(),
+            eventId: uuidv7(),
             eventType: ProcessOrderCancellationCompletedEvent.id,
             eventVersion: ProcessOrderCancellationCompletedEvent.version,
             tenantId: decoded.tenantId,
@@ -1308,7 +1309,7 @@ export const makeProcessService = Effect.gen(function* () {
             reservationIds: fulfilledReservations.map(({ id }) => id),
           })
           const event = yield* messaging.append({
-            eventId: crypto.randomUUID(),
+            eventId: uuidv7(),
             eventType: ProcessOrderFulfillmentCompletedEvent.id,
             eventVersion: ProcessOrderFulfillmentCompletedEvent.version,
             tenantId: decoded.tenantId,
@@ -1457,6 +1458,7 @@ export const makeProcessService = Effect.gen(function* () {
           .limit(1).for("update", { skipLocked: true })
         const row = rows[0]
         if (row === undefined) return null
+        // UUIDv4 is intentional: this is an opaque fencing token, not a persistent identity.
         const leaseToken = crypto.randomUUID()
         const [updated] = await tx.update(processJobs).set({
           status: "leased",

@@ -4,6 +4,7 @@ import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 
 import { AuthorizationService } from "../../authorization/mod.ts"
+import { uuidv7 } from "../../kernel/mod.ts"
 import { InventoryCapabilities } from "./capabilities.ts"
 import { MessagingService } from "../../messaging/mod.ts"
 import { InventoryStockCorrectedEvent } from "./events.ts"
@@ -64,7 +65,7 @@ export const makeInventoryMemoryLayer = () =>
       const storedReservations = new Map<string, StockReservation>()
       const reservationIdsByIdempotencyKey = new Map<string, string>()
       const correctionsByIdempotencyKey = new Map<string, StockCorrection>()
-      const nextId = () => crypto.randomUUID()
+      const nextId = uuidv7
       const authorize = (principal: unknown, tenantId: string, capability: string) =>
         authorization.authorize({ principal, tenantId, capability })
       const service: InventoryService = {
@@ -223,7 +224,7 @@ export const makeInventoryMemoryLayer = () =>
               )
             }
             const correction: StockCorrection = {
-              id: crypto.randomUUID(),
+              id: uuidv7(),
               tenantId: decoded.tenantId,
               warehouseId: decoded.warehouseId,
               itemId: decoded.itemId,
@@ -233,7 +234,7 @@ export const makeInventoryMemoryLayer = () =>
               idempotencyKey,
             }
             yield* messaging.append({
-              eventId: crypto.randomUUID(),
+              eventId: uuidv7(),
               eventType: InventoryStockCorrectedEvent.id,
               eventVersion: InventoryStockCorrectedEvent.version,
               tenantId: decoded.tenantId,

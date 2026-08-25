@@ -5,7 +5,7 @@ import * as Schema from "effect/Schema"
 
 import { AuthorizationService } from "../../authorization/mod.ts"
 import { InventoryService } from "../../inventory/mod.ts"
-import { FinancialMajorAmount } from "../../kernel/mod.ts"
+import { FinancialMajorAmount, uuidv7 } from "../../kernel/mod.ts"
 import { PartyService } from "../../party/mod.ts"
 import { ProcurementCapabilities } from "./capabilities.ts"
 import {
@@ -82,7 +82,7 @@ export const makeProcurementTestLayer = () =>
               )
             }
             const account: SupplierAccount = {
-              id: crypto.randomUUID(),
+              id: uuidv7(),
               tenantId: decoded.tenantId,
               supplierRelationshipId: decoded.supplierRelationshipId,
               partyId: relationship.partyId,
@@ -112,13 +112,13 @@ export const makeProcurementTestLayer = () =>
               )
             }
             const order: PurchaseOrder = {
-              id: crypto.randomUUID(),
+              id: uuidv7(),
               tenantId: decoded.tenantId,
               supplierAccountId: decoded.supplierAccountId,
               status: "draft",
               confirmedAt: null,
               total,
-              lines: decoded.lines.map((line) => ({ id: crypto.randomUUID(), ...line })),
+              lines: decoded.lines.map((line) => ({ id: uuidv7(), ...line })),
             }
             storedPurchaseOrders.set(order.id, order)
             return order
@@ -313,7 +313,7 @@ export const makeProcurementTestLayer = () =>
             }
             const linesById = new Map(order.lines.map((line) => [line.id, line]))
             const nextQuantities = new Map(receivedQuantities)
-            const receiptId = crypto.randomUUID()
+            const receiptId = uuidv7()
             const receivedLines: GoodsReceiptLine[] = []
             for (const line of lines) {
               const orderLine = linesById.get(line.purchaseOrderLineId)
@@ -368,7 +368,7 @@ export const makeProcurementTestLayer = () =>
               )
               nextQuantities.set(receivedKey, received + BigInt(line.quantity))
               receivedLines.push({
-                id: crypto.randomUUID(),
+                id: uuidv7(),
                 purchaseOrderLineId: line.purchaseOrderLineId,
                 itemId: orderLine.itemId,
                 quantity: line.quantity,

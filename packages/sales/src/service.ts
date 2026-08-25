@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema"
 
 import { AuthorizationService } from "../../authorization/mod.ts"
 import { Principal } from "../../auth/mod.ts"
-import { FinancialMajorAmount } from "../../kernel/mod.ts"
+import { FinancialMajorAmount, uuidv7 } from "../../kernel/mod.ts"
 import { SalesCapabilities } from "./capabilities.ts"
 import { SalesOrderConfirmedEvent, SalesOrderConfirmedEventPayload } from "./events.ts"
 import { MessagingService } from "../../messaging/mod.ts"
@@ -61,7 +61,7 @@ export const makeSalesServiceFromStore = <R>(storeEffect: Effect.Effect<SalesSto
             total: order.total,
           }).pipe(Effect.flatMap((payload) =>
             messaging.append({
-              eventId: crypto.randomUUID(),
+              eventId: uuidv7(),
               eventType: SalesOrderConfirmedEvent.id,
               eventVersion: SalesOrderConfirmedEvent.version,
               tenantId: decoded.tenantId,

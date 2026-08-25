@@ -292,6 +292,20 @@ Rules for new work:
   capability and extract an existing package only when its complexity or invariant boundary requires
   it; record any exception in the owning architecture document.
 
+### Identifier Policy
+
+- New persistent entity, stored event, stored line, workflow, and other
+  index-visible identities MUST use UUIDv7.
+- PostgreSQL-owned IDs use the `uuidv7()` default from `db/schema/common.ts`.
+  Application-created persistent IDs use the kernel-owned `uuidv7()` helper;
+  domain packages must not import the `uuid` package directly.
+- Do not use `crypto.randomUUID()` for persistent identities or stored event IDs.
+  UUIDv4 remains valid for opaque ephemeral values such as lease tokens and
+  test-only fixture randomness when ordering is not part of the identity.
+- Keep `created_at` as the audit timestamp and business numbers as separate
+  fields; UUIDv7 is neither an audit timestamp nor a human-readable number.
+- Do not rewrite existing UUIDv4 rows solely to convert their UUID version.
+
 ### Failure Ownership and Translation
 
 Keep failure types at the layer that owns and can act on them:

@@ -74,5 +74,6 @@ current system; ADRs preserve decision history.
 | [`0048`](./0048-define-effect-application-architecture-and-frontend-state-ownership.md) | Define Effect application architecture and frontend state ownership | Accepted |
 | [`0049`](./0049-keep-solid-compiler-at-rendering-boundary.md) | Keep the Solid compiler at the rendering boundary | Accepted |
 | [`0050`](./0050-use-package-json-for-deno-dependency-resolution.md) | Use package.json and npm exports for Deno dependency resolution | Accepted |
+| [`0051`](./0051-adopt-uuidv7-for-persistent-identities.md) | Adopt UUIDv7 for persistent identities | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

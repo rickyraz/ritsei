@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect"
 
-import { DatabaseFailure } from "../../kernel/mod.ts"
+import { DatabaseFailure, uuidv7 } from "../../kernel/mod.ts"
 import { EventIdempotencyConflict } from "../../messaging/mod.ts"
 import type {
   CancelConfirmedOrderCommand,
@@ -27,7 +27,7 @@ export const makeSalesMemoryStore = (): SalesStore => {
   const quotations = new Map<string, Quotation>()
   const orders = new Map<string, SalesOrder>()
   const keys = new Map<string, string>()
-  const id = () => crypto.randomUUID()
+  const id = uuidv7
   const createCustomer = Effect.fn("SalesStore.memory.createCustomer")(
     function* (input: CreateCustomerCommand) {
       const email = input.email.trim().toLowerCase()

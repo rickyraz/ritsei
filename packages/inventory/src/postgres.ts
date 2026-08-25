@@ -14,7 +14,7 @@ import {
 } from "../../../db/schema/inventory.ts"
 import { AuthorizationService } from "../../authorization/mod.ts"
 import { InventoryCapabilities } from "./capabilities.ts"
-import { Database, DatabaseFailure, isDatabaseConstraint } from "../../kernel/mod.ts"
+import { Database, DatabaseFailure, isDatabaseConstraint, uuidv7 } from "../../kernel/mod.ts"
 import { MessagingService } from "../../messaging/mod.ts"
 import { InventoryStockCorrectedEvent, StockCorrectedEventPayload } from "./events.ts"
 import {
@@ -486,7 +486,7 @@ export const makeInventoryPostgresService = Effect.gen(function* () {
                 itemId: mutation.correction.itemId,
               })
               yield* messaging.append({
-                eventId: crypto.randomUUID(),
+                eventId: uuidv7(),
                 eventType: InventoryStockCorrectedEvent.id,
                 eventVersion: InventoryStockCorrectedEvent.version,
                 tenantId: decoded.tenantId,
