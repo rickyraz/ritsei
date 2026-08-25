@@ -5,7 +5,6 @@ const broadTestTriggers = new Set([
   "package.json",
   "deno.json",
   "deno.lock",
-  "import_map.json",
   "vitest.config.ts",
   "vitest.contract.config.ts",
 ])

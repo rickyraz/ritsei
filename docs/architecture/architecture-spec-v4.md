@@ -46,6 +46,8 @@
 >   [`../decisions/0021-define-p0-scope-and-identity-model.md`](../decisions/0021-define-p0-scope-and-identity-model.md)
 > - Effect v4 beta.103 update:
 >   [`../decisions/0022-update-effect-v4-to-beta-103.md`](../decisions/0022-update-effect-v4-to-beta-103.md)
+> - Deno package dependency resolution:
+>   [`../decisions/0050-use-package-json-for-deno-dependency-resolution.md`](../decisions/0050-use-package-json-for-deno-dependency-resolution.md)
 > - Jurisdiction localization:
 >   [`../decisions/0016-isolate-jurisdiction-localization.md`](../decisions/0016-isolate-jurisdiction-localization.md)
 > - Native Deno Effect adapter:
@@ -93,10 +95,10 @@ semantics; the financial ledger engine enforces the accepted transfer-level cons
 FinancialLedgerPort.
 
 Deno remains the runtime and primary toolchain. npm ecosystem dependencies are canonical in the root
-`package.json`; Deno uses `nodeModulesDir: "auto"` so package peers resolve through the conventional
-local `node_modules` topology. The Effect packages are aligned on `4.0.0-beta.103`. The Deno adapter
-entrypoints resolve through the separate `import_map.json`, pinned to the same canonical Effect subtree
-revision. Vendored Effect source and the Drizzle subtree otherwise remain reference-only.
+`package.json`; Deno uses `preferPackageJson: true` and `nodeModulesDir: "auto"` so package exports and
+peers resolve through the conventional local `node_modules` topology. The Effect and Deno adapter
+packages are aligned on `4.0.0-rc.111`; vendored Effect source and the Drizzle subtree remain
+reference-only.
 
 ### Dependency Ownership
 

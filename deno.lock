@@ -1,13 +1,6 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@std/bytes@^1.0.6": "1.0.6",
-    "jsr:@std/fs@^1.0.24": "1.0.24",
-    "jsr:@std/internal@^1.0.14": "1.0.14",
-    "jsr:@std/media-types@^1.1.0": "1.1.0",
-    "jsr:@std/path@^1.1.5": "1.1.6",
-    "jsr:@std/path@^1.1.6": "1.1.6",
-    "jsr:@std/streams@^1.1.1": "1.1.2",
     "npm:@effect/platform-deno@4.0.0-rc.111": "4.0.0-rc.111_effect@4.0.0-rc.111",
     "npm:@effect/platform-node-shared@4.0.0-rc.111": "4.0.0-rc.111_effect@4.0.0-rc.111",
     "npm:@effect/sql-pg@4.0.0-rc.111": "4.0.0-rc.111_effect@4.0.0-rc.111",
@@ -25,36 +18,6 @@
     "npm:tigerbeetle-node@0.17.9": "0.17.9",
     "npm:vitest@*": "4.1.10_@vitest+coverage-v8@4.1.10",
     "npm:vitest@4.1.10": "4.1.10_@vitest+coverage-v8@4.1.10"
-  },
-  "jsr": {
-    "@std/bytes@1.0.6": {
-      "integrity": "f6ac6adbd8ccd99314045f5703e23af0a68d7f7e58364b47d2c7f408aeb5820a"
-    },
-    "@std/fs@1.0.24": {
-      "integrity": "f3061b45b81673a2bece689da041df32d174be064c89eb6397fb5718d3fb7877",
-      "dependencies": [
-        "jsr:@std/internal",
-        "jsr:@std/path@^1.1.5"
-      ]
-    },
-    "@std/internal@1.0.14": {
-      "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
-    },
-    "@std/media-types@1.1.0": {
-      "integrity": "c9d093f0c05c3512932b330e3cc1fe1d627b301db33a4c2c2185c02471d6eaa4"
-    },
-    "@std/path@1.1.6": {
-      "integrity": "c68485c2a4dfbb5ae3cc74fae4e8c4e5d874cf8a8ed12927917235c758b46cbe",
-      "dependencies": [
-        "jsr:@std/internal"
-      ]
-    },
-    "@std/streams@1.1.2": {
-      "integrity": "0249bf9b78a999f57032ca4d8e7ccaa57579090242640b35ddc948fbb745d3af",
-      "dependencies": [
-        "jsr:@std/bytes"
-      ]
-    }
   },
   "npm": {
     "@babel/helper-string-parser@7.29.7": {
@@ -1155,30 +1118,7 @@
       "integrity": "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ=="
     }
   },
-  "remote": {
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoChildProcessSpawner.ts": "ec55131870e4d199733bc1a9a2a32b1174a8f373e875442cf1117699e1d65fbd",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoCrypto.ts": "c07ecf5fddc0b418e887a2acc50af5e5bc896d4059dd847856add188c960cbf4",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoFileSystem.ts": "42021c4df754c34c6af544c253077e117e57ff1c5b307020405577cd45e9fe65",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoHttpPlatform.ts": "8e8086ec1e6b559e269a297a3245068793e47ab7fee93707df63715ce236177e",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoHttpServer.ts": "4a999fd2bc0828ec237bfc143c05941ca3cd8361f21661d840ad96401a8b9874",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoMultipart.ts": "b17522016143b0433ffa6c69021311049d914094fdcd17b4b65902cb2044ae4c",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoPath.ts": "9376f07b043938a0be35d0759da0cfd3092f4a08c9a18225f32022f14b423b5d",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoRuntime.ts": "ab3579206ed482f03fe85b85a9039b2967352db2cac79d38086bae4f87ae5543",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoServices.ts": "60a7904bdd5424a999466b57b1abbdd36f214cb6b868d33b14a6e5bb995c18fb",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoStdio.ts": "9909b9dff24c08a384f2bd62737b8edbada7659bc7a9e65f7e1cc8548e826d25",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/DenoTerminal.ts": "7d05dad9d2acdddf6ecd5a3aacac75a7042890a6ba4d304c6a7717096a278365",
-    "https://raw.githubusercontent.com/Effect-TS/effect/d1133e8f2bad96b059310a2b8f74cdd4db0a3381/packages/platform-deno/src/internal/error.ts": "a8c8f3de8a48c13e51189d73c6c284b0da15206c0da030e131c850bf94ab3643"
-  },
   "workspace": {
-    "dependencies": [
-      "jsr:@std/fs@^1.0.24",
-      "jsr:@std/media-types@^1.1.0",
-      "jsr:@std/path@^1.1.6",
-      "jsr:@std/streams@^1.1.1",
-      "npm:@effect/platform-deno@4.0.0-rc.111",
-      "npm:@effect/platform-node-shared@4.0.0-rc.111",
-      "npm:effect@4.0.0-rc.111"
-    ],
     "packageJson": {
       "dependencies": [
         "npm:@effect/platform-deno@4.0.0-rc.111",

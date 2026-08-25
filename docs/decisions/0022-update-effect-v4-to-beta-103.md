@@ -1,9 +1,9 @@
 # ADR-0022: Update Effect v4 and the Deno adapter to beta.103
 
-- Status: Accepted
+- Status: Superseded
 - Date: 2026-08-04
 - Supersedes: ADR-0017
-- Superseded by: None
+- Superseded by: ADR-0050
 
 > **Related documents**
 >
