@@ -75,7 +75,7 @@ export const Warehouse = Schema.Struct({
   tenantId: Uuid,
   legalEntityId: Uuid,
   primaryBranchId: Schema.NullOr(Uuid),
-  name: NonEmptyString,
+  name: TrimmedNonEmptyString,
 })
 export const Item = Schema.Struct({
   id: Uuid,

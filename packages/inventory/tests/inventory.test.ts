@@ -354,6 +354,12 @@ describe("inventory contract", () => {
           ._tag,
         "SchemaError",
       )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(Warehouse)({ ...warehouse, name: " Main " }),
+        ))._tag,
+        "SchemaError",
+      )
       yield* Schema.decodeUnknownEffect(Item)(item)
       assert.strictEqual(
         (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, sku: " " })))._tag,
