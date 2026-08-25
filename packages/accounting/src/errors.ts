@@ -5,26 +5,30 @@ const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
   (value) => /\S/.test(value) && value === value.trim(),
   { expected: "a trimmed nonblank string" },
 ))
+const UpperTrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim() && value === value.toUpperCase(),
+  { expected: "a trimmed uppercase nonblank string" },
+))
 
 export class AccountingConfigurationAlreadyExists
   extends Schema.TaggedError<AccountingConfigurationAlreadyExists>()(
     "AccountingConfigurationAlreadyExists",
     {
-      tenantId: Schema.String,
-      legalEntityId: Schema.String,
+      tenantId: Uuid,
+      legalEntityId: Uuid,
     },
   ) {}
 export class FinancialEngineActivated
   extends Schema.TaggedError<FinancialEngineActivated>()("FinancialEngineActivated", {
-    tenantId: Schema.String,
-    legalEntityId: Schema.String,
+    tenantId: Uuid,
+    legalEntityId: Uuid,
   }) {}
 export class FinancialEngineCutoverBlocked
   extends Schema.TaggedError<FinancialEngineCutoverBlocked>()(
     "FinancialEngineCutoverBlocked",
     {
-      tenantId: Schema.String,
-      legalEntityId: Schema.String,
+      tenantId: Uuid,
+      legalEntityId: Uuid,
       reason: Schema.Literals([
         "activation_gates_pending",
         "not_prepared",
@@ -55,17 +59,17 @@ export class AccountingLegalEntityNotFound
   extends Schema.TaggedError<AccountingLegalEntityNotFound>()(
     "AccountingLegalEntityNotFound",
     {
-      tenantId: Schema.String,
-      legalEntityId: Schema.String,
+      tenantId: Uuid,
+      legalEntityId: Uuid,
     },
   ) {}
 export class AccountAlreadyExists
   extends Schema.TaggedError<AccountAlreadyExists>()("AccountAlreadyExists", {
-    tenantId: Schema.String,
-    code: Schema.String,
+    tenantId: Uuid,
+    code: UpperTrimmedNonEmptyString,
   }) {}
 export class AccountNotFound extends Schema.TaggedError<AccountNotFound>()("AccountNotFound", {
-  tenantId: Schema.String,
+  tenantId: Uuid,
 }) {}
 export class JournalReferenceAlreadyExists
   extends Schema.TaggedError<JournalReferenceAlreadyExists>()(
@@ -92,46 +96,46 @@ export class UnbalancedJournal
 export class RevenuePostingProfileAlreadyExists
   extends Schema.TaggedError<RevenuePostingProfileAlreadyExists>()(
     "RevenuePostingProfileAlreadyExists",
-    { tenantId: Schema.String, legalEntityId: Schema.String },
+    { tenantId: Uuid, legalEntityId: Uuid },
   ) {}
 export class InvalidRevenuePostingProfile
   extends Schema.TaggedError<InvalidRevenuePostingProfile>()("InvalidRevenuePostingProfile", {
-    tenantId: Schema.String,
-    legalEntityId: Schema.String,
+    tenantId: Uuid,
+    legalEntityId: Uuid,
   }) {}
 export class AccountingPeriodOverlap
   extends Schema.TaggedError<AccountingPeriodOverlap>()("AccountingPeriodOverlap", {
-    tenantId: Schema.String,
-    legalEntityId: Schema.String,
+    tenantId: Uuid,
+    legalEntityId: Uuid,
   }) {}
 export class AccountingPeriodNotFound
   extends Schema.TaggedError<AccountingPeriodNotFound>()("AccountingPeriodNotFound", {
-    tenantId: Schema.String,
-    legalEntityId: Schema.String,
-    periodId: Schema.String,
+    tenantId: Uuid,
+    legalEntityId: Uuid,
+    periodId: Uuid,
   }) {}
 export class AccountingPeriodNotOpen
   extends Schema.TaggedError<AccountingPeriodNotOpen>()("AccountingPeriodNotOpen", {
-    tenantId: Schema.String,
-    legalEntityId: Schema.String,
+    tenantId: Uuid,
+    legalEntityId: Uuid,
   }) {}
 export class FinancialOperationsPending
   extends Schema.TaggedError<FinancialOperationsPending>()("FinancialOperationsPending", {
-    tenantId: Schema.String,
-    legalEntityId: Schema.String,
-    periodId: Schema.String,
+    tenantId: Uuid,
+    legalEntityId: Uuid,
+    periodId: Uuid,
   }) {}
 export class RevenuePostingProfileNotFound
   extends Schema.TaggedError<RevenuePostingProfileNotFound>()(
     "RevenuePostingProfileNotFound",
     {
-      tenantId: Schema.String,
-      legalEntityId: Schema.String,
+      tenantId: Uuid,
+      legalEntityId: Uuid,
     },
   ) {}
 export class RevenueJournalNotFound
   extends Schema.TaggedError<RevenueJournalNotFound>()("RevenueJournalNotFound", {
-    tenantId: Schema.String,
-    legalEntityId: Schema.String,
+    tenantId: Uuid,
+    legalEntityId: Uuid,
     orderId: Uuid,
   }) {}
