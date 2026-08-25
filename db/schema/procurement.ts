@@ -188,6 +188,8 @@ export const purchaseReceiptLines = procurementSchema.table("purchase_receipt_li
   check("purchase_receipt_lines_quantity_check", sql`${table.quantity} > 0`),
   check(
     "purchase_receipt_lines_unit_of_measure_check",
-    sql`${table.unitOfMeasure} <> '' and ${table.unitOfMeasure} = upper(trim(${table.unitOfMeasure}))`,
+    sql`${table.unitOfMeasure} <> '' and
+      ${table.unitOfMeasure} = upper(trim(${table.unitOfMeasure})) and
+      ${table.unitOfMeasure} ~ '^[A-Z][A-Z0-9_-]*$'`,
   ),
 ])

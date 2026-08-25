@@ -899,6 +899,19 @@ it.effect.skipIf(databaseUrl === undefined)(
             (mismatchedReceiptItem as { constraint_name?: string }).constraint_name,
             "purchase_receipt_lines_tenant_order_line_item_fkey",
           )
+          const invalidReceiptUnit = yield* postgresFailure(() =>
+            client`
+              update procurement.purchase_receipt_lines
+              set unit_of_measure = 'A B'
+              where tenant_id = ${tenant.id} and receipt_id = ${first.id}
+                and purchase_order_line_id = ${lineId}
+            `
+          )
+          assert.strictEqual((invalidReceiptUnit as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidReceiptUnit as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_lines_unit_of_measure_check",
+          )
           const replay = yield* Effect.provideService(
             procurement.receivePurchaseOrder(receiptInput),
             InventoryService,
