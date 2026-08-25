@@ -124,16 +124,17 @@ export const StockTransfer = Schema.Struct({
   lines: Schema.Array(StockTransferLine),
 }).check(Schema.makeFilter(
   (transfer) =>
-    (transfer.status === "draft" &&
+    transfer.sourceWarehouseId !== transfer.destinationWarehouseId &&
+    ((transfer.status === "draft" &&
       transfer.confirmedAt === null &&
       transfer.completedAt === null) ||
-    (transfer.status === "confirmed" &&
-      transfer.confirmedAt !== null &&
-      transfer.completedAt === null) ||
-    (transfer.status === "completed" &&
-      transfer.confirmedAt !== null &&
-      transfer.completedAt !== null),
-  { expected: "stock transfer status and dates are consistent" },
+      (transfer.status === "confirmed" &&
+        transfer.confirmedAt !== null &&
+        transfer.completedAt === null) ||
+      (transfer.status === "completed" &&
+        transfer.confirmedAt !== null &&
+        transfer.completedAt !== null)),
+  { expected: "stock transfer identity, status, and dates are consistent" },
 ))
 
 export type Warehouse = Schema.Schema.Type<typeof Warehouse>
