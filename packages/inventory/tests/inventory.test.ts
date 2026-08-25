@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
 import { DatabaseFailure, uuidv7 } from "../../kernel/mod.ts"
@@ -15,6 +16,7 @@ import {
   InventoryUnitOfMeasureMismatch,
   InventoryWarehouseLegalEntityMismatch,
   makeInventoryTestLayer,
+  StockCorrection,
   StockCorrectionIdempotencyConflict,
   StockReservationIdempotencyConflict,
   StockReservationInvalidState,
@@ -250,6 +252,7 @@ describe("inventory contract", () => {
         ...correctionMetadata,
         idempotencyKey: " correction-1 ",
       })
+      yield* Schema.decodeUnknownEffect(StockCorrection)(correction)
       const repeated = yield* inventory.adjustStock({
         principal,
         tenantId,

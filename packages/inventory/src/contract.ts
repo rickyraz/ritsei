@@ -29,6 +29,7 @@ import type {
   WarehouseLegalEntityNotFound,
 } from "./errors.ts"
 
+const Uuid = Schema.String.check(Schema.isUUID())
 const Quantity = Schema.String.check(Schema.isPattern(/^[1-9]\d*$/))
 const SignedQuantity = Schema.String.check(Schema.isPattern(/^-?[1-9]\d*$/))
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
@@ -61,10 +62,10 @@ export const StockBalance = Schema.Struct({
   unitOfMeasure: UnitOfMeasure,
 })
 export const StockCorrection = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  warehouseId: Schema.String,
-  itemId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  warehouseId: Uuid,
+  itemId: Uuid,
   adjustment: SignedQuantity,
   unitOfMeasure: UnitOfMeasure,
   reason: NonEmptyString,

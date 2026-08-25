@@ -260,10 +260,10 @@ describe("catalog compatibility", () => {
         idempotencyKey: "correction-1",
       })
       yield* Schema.decodeUnknownEffect(InventoryAdjustStockAction.outputSchema)({
-        id: "correction-1",
-        tenantId: "tenant-1",
-        warehouseId: "warehouse-1",
-        itemId: "item-1",
+        id: "00000000-0000-4000-8000-000000000021",
+        tenantId: "00000000-0000-4000-8000-000000000001",
+        warehouseId: "00000000-0000-4000-8000-000000000002",
+        itemId: "00000000-0000-4000-8000-000000000003",
         adjustment: "-2",
         unitOfMeasure: "EA",
         reason: "cycle count",
