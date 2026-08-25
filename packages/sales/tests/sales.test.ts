@@ -370,16 +370,15 @@ describe("sales contract", () => {
         ...confirmationMetadata,
         idempotencyKey: "confirm-a",
       })
-      assert.instanceOf(
-        yield* Effect.flip(sales.confirmOrder({
-          principal,
-          tenantId,
-          orderId: order.id,
-          ...confirmationMetadata,
-          idempotencyKey: "confirm-b",
-        })),
-        SalesOrderConfirmationIdempotencyConflict,
-      )
+      const conflict = yield* Effect.flip(sales.confirmOrder({
+        principal,
+        tenantId,
+        orderId: order.id,
+        ...confirmationMetadata,
+        idempotencyKey: " confirm-b ",
+      }))
+      assert.instanceOf(conflict, SalesOrderConfirmationIdempotencyConflict)
+      assert.strictEqual(conflict.idempotencyKey, "confirm-b")
     })))
 
   it.effect("denies sales capability in an ungranted tenant", () =>

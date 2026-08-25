@@ -1,5 +1,10 @@
 import * as Schema from "effect/Schema"
 
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
+
 export class CustomerAlreadyExists
   extends Schema.TaggedError<CustomerAlreadyExists>()("CustomerAlreadyExists", {
     tenantId: Schema.String,
@@ -28,5 +33,5 @@ export class SalesOrderInvalidState
 export class SalesOrderConfirmationIdempotencyConflict
   extends Schema.TaggedError<SalesOrderConfirmationIdempotencyConflict>()(
     "SalesOrderConfirmationIdempotencyConflict",
-    { tenantId: Schema.String, orderId: Schema.String, idempotencyKey: Schema.String },
+    { tenantId: Schema.String, orderId: Schema.String, idempotencyKey: TrimmedNonEmptyString },
   ) {}
