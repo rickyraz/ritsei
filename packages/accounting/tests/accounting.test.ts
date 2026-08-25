@@ -938,6 +938,17 @@ describe("accounting contract", () => {
 
   it.effect("posts revenue in an open period", () =>
     withAccounting(Effect.gen(function* () {
+      const invalidTenant = yield* Effect.flip(
+        Schema.decodeUnknownEffect(PostRevenueForOrderInput)({
+          principal,
+          tenantId: "not-a-uuid",
+          legalEntityId: "legal-entity-a",
+          orderId: revenueOrderIds.open,
+          amount: "125.00",
+          ...revenueMetadata,
+        }),
+      )
+      assert.strictEqual(invalidTenant._tag, "SchemaError")
       const { accounting } = yield* prepareRevenuePosting
       const journal = yield* accounting.postRevenueForOrder({
         principal,
