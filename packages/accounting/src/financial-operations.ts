@@ -178,7 +178,7 @@ export const FinancialOperation = Schema.Struct({
   tenantId: Uuid,
   legalEntityId: Uuid,
   periodId: Uuid,
-  operationId: NonEmptyString,
+  operationId: TrimmedNonEmptyString,
   operationType: Schema.Literals(["journal_post", "journal_reverse", "revenue_post"]),
   engine: Schema.Literals(["postgresql", "tigerbeetle"]),
   engineVerified: Schema.Boolean,
@@ -2153,7 +2153,8 @@ export const makeFinancialOperationService = Effect.gen(function* () {
 
   const submit = (input: unknown, jobType: string) =>
     Effect.gen(function* () {
-      const decoded = yield* Schema.decodeUnknownEffect(FinancialOperationCommandInput)(input)
+      const parsed = yield* Schema.decodeUnknownEffect(FinancialOperationCommandInput)(input)
+      const decoded = { ...parsed, operationId: parsed.operationId.trim() }
       const fenceOption = yield* Effect.serviceOption(FencingContextService)
       const executionFence = Option.isSome(fenceOption) ? fenceOption.value : null
       const operation = yield* loadOperationOrFail(decoded.tenantId, decoded.operationId)
@@ -2605,8 +2606,12 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       const selectedAuthority = Option.isSome(ledgerOption)
         ? ledgerOption.value.authority
         : undefined
-      const decoded = yield* Schema.decodeUnknownEffect(CreateFinancialJournalIntentInput)(input)
-      const normalizedCorrelationId = decoded.correlationId.trim()
+      const parsed = yield* Schema.decodeUnknownEffect(CreateFinancialJournalIntentInput)(input)
+      const decoded = {
+        ...parsed,
+        operationId: parsed.operationId.trim(),
+        correlationId: parsed.correlationId.trim(),
+      }
       const operationType = operationTypeOverride ?? decoded.operationType
       if (operationType !== "journal_reverse") {
         yield* validateLines(decoded.lines)
@@ -2926,7 +2931,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
               tenantId: decoded.tenantId,
               operationId: decoded.operationId,
             },
-            correlationId: normalizedCorrelationId,
+            correlationId: decoded.correlationId,
           })
           return inserted!
         }),

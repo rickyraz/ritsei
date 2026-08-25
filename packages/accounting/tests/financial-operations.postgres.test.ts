@@ -749,6 +749,10 @@ it.effect.skipIf(databaseUrl === undefined)(
             operationId: `concurrent-${uuidv7()}`,
             reference: `concurrent-${uuidv7()}`,
           }
+          const paddedInput = {
+            ...input,
+            operationId: ` ${input.operationId} `,
+          }
           const concurrentIntents = yield* Effect.all([
             service.createJournalIntent(concurrentInput),
             service.createJournalIntent(concurrentInput),
@@ -760,13 +764,16 @@ it.effect.skipIf(databaseUrl === undefined)(
           })
           assert.strictEqual(concurrentPosted.status, "reconciled")
 
-          const intent = yield* service.createJournalIntent(input)
+          const intent = yield* service.createJournalIntent(paddedInput)
           assert.strictEqual(intent.status, "intent")
+          assert.strictEqual(intent.operationId, input.operationId)
 
           const [queued] = yield* Effect.promise(() =>
             client<{ job_type: string; idempotency_key: string; correlation_id: string }[]>`
               select job_type, idempotency_key, correlation_id from process.jobs
-              where tenant_id = ${tenant!.id} and idempotency_key = ${input.operationId}
+              where tenant_id = ${
+              tenant!.id
+            } and idempotency_key = ${paddedInput.operationId.trim()}
             `
           )
           assert.strictEqual(queued!.job_type, "accounting.financial_operation.submit")
@@ -775,7 +782,7 @@ it.effect.skipIf(databaseUrl === undefined)(
 
           const posted = yield* service.submitFinancialOperation({
             tenantId: tenant!.id,
-            operationId: input.operationId,
+            operationId: paddedInput.operationId,
           })
           assert.strictEqual(posted.status, "reconciled")
           const projectedTransfers = yield* Effect.promise(() =>
