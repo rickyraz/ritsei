@@ -104,7 +104,7 @@ export const StockReservation = Schema.Struct({
   warehouseId: Uuid,
   itemId: Uuid,
   quantity: Quantity,
-  idempotencyKey: Schema.NullOr(Schema.String),
+  idempotencyKey: Schema.NullOr(NonEmptyString),
   status: StockReservationStatus,
 })
 export const StockTransferStatus = Schema.Literals(["draft", "confirmed", "completed"])

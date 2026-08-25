@@ -326,6 +326,15 @@ describe("inventory contract", () => {
         idempotencyKey: "reservation-1",
       })
       yield* Schema.decodeUnknownEffect(StockReservation)(reservation)
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockReservation)({
+            ...reservation,
+            idempotencyKey: "   ",
+          }),
+        ))._tag,
+        "SchemaError",
+      )
 
       assert.strictEqual(item.unitOfMeasure, "EA")
       assert.strictEqual(balance.onHand, "10")
