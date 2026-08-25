@@ -118,8 +118,8 @@ describe("inventory contract", () => {
         Schema.decodeUnknownEffect(AdjustStockInput)({
           principal,
           tenantId,
-          warehouseId: "warehouse",
-          itemId: "item",
+          warehouseId: "00000000-0000-4000-8000-000000000002",
+          itemId: "00000000-0000-4000-8000-000000000003",
           adjustment: "9223372036854775808",
           unitOfMeasure: "EA",
           reason: "overflow",
@@ -174,6 +174,21 @@ describe("inventory contract", () => {
         }),
       )
       assert.strictEqual(invalidReserveWarehouse._tag, "SchemaError")
+
+      const invalidAdjustmentWarehouse = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AdjustStockInput)({
+          principal,
+          tenantId,
+          warehouseId: "not-a-uuid",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          adjustment: "1",
+          unitOfMeasure: "EA",
+          reason: "Correction",
+          ...correctionMetadata,
+          idempotencyKey: "invalid-adjustment",
+        }),
+      )
+      assert.strictEqual(invalidAdjustmentWarehouse._tag, "SchemaError")
 
       const invalidTransferWarehouse = yield* Effect.flip(
         Schema.decodeUnknownEffect(CreateStockTransferInput)({
@@ -577,8 +592,8 @@ describe("inventory contract", () => {
           yield* Effect.flip(inventory.adjustStock({
             principal,
             tenantId,
-            warehouseId: "warehouse",
-            itemId: "item",
+            warehouseId: "00000000-0000-4000-8000-000000000002",
+            itemId: "00000000-0000-4000-8000-000000000003",
             adjustment: "1",
             unitOfMeasure: "EA",
             reason: "Correction",

@@ -249,8 +249,8 @@ describe("catalog compatibility", () => {
       yield* Schema.decodeUnknownEffect(InventoryAdjustStockAction.inputSchema)({
         principal,
         tenantId: "tenant-1",
-        warehouseId: "warehouse-1",
-        itemId: "item-1",
+        warehouseId: "00000000-0000-4000-8000-000000000002",
+        itemId: "00000000-0000-4000-8000-000000000003",
         adjustment: "-2",
         unitOfMeasure: "EA",
         reason: "cycle count",

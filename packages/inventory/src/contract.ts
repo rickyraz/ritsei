@@ -153,8 +153,8 @@ export const ReceiveStockInput = Schema.Struct({
 })
 export const AdjustStockInput = Schema.Struct({
   ...ScopedInput,
-  warehouseId: Schema.String,
-  itemId: Schema.String,
+  warehouseId: Uuid,
+  itemId: Uuid,
   adjustment: SignedQuantity,
   unitOfMeasure: UnitOfMeasureInput,
   reason: NonEmptyString,
