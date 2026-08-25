@@ -76,7 +76,7 @@ export const Item = Schema.Struct({
 })
 export const StockBalance = Schema.Struct({
   tenantId: Uuid,
-  warehouseId: Schema.String,
+  warehouseId: Uuid,
   itemId: Schema.String,
   onHand: NonNegativeQuantity,
   reserved: NonNegativeQuantity,
