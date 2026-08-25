@@ -112,6 +112,10 @@ const targets: readonly DomainTarget[] = [
 ]
 
 const catalogTest = "packages/catalog/tests/catalog.test.ts"
+const executableTestFiles = [
+  catalogTest,
+  ...targets.flatMap((target) => target.contractTests),
+].filter((path, index, files) => files.indexOf(path) === index)
 
 const isCatalogEntry = (value: unknown): value is CatalogEntry =>
   typeof value === "object" && value !== null &&
@@ -139,6 +143,17 @@ const contains = async (path: string, marker: string) => {
     return false
   }
 }
+
+const executableContractTests = await new Deno.Command("deno", {
+  args: ["task", "test", ...executableTestFiles],
+  stdout: "null",
+  stderr: "piped",
+}).output().then((result) => {
+  if (result.code !== 0) {
+    console.error(new TextDecoder().decode(result.stderr))
+  }
+  return result.code === 0
+})
 
 const results = []
 for (const target of targets) {
@@ -187,7 +202,7 @@ for (const target of targets) {
     target.publicationTest.marker,
   )
   const level3 = publicAction && publicEvent && actionContract && eventContract && tests &&
-    catalogCompatibility && publicationProof
+    executableContractTests && catalogCompatibility && publicationProof
   results.push({
     target,
     level3,
@@ -196,14 +211,15 @@ for (const target of targets) {
     actionContract,
     eventContract,
     tests,
+    executableContractTests,
     catalogCompatibility,
     publicationProof,
   })
   console.log(
     `${level3 ? "PASS" : "OPEN"} ${target.domain} ` +
       `action=${publicAction} event=${publicEvent} action_contract=${actionContract} ` +
-      `event_contract=${eventContract} tests=${tests} catalog=${catalogCompatibility} ` +
-      `publication=${publicationProof}`,
+      `event_contract=${eventContract} tests=${tests} executable=${executableContractTests} ` +
+      `catalog=${catalogCompatibility} publication=${publicationProof}`,
   )
 }
 
