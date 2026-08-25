@@ -19,7 +19,7 @@ import {
   InventoryService,
   makeInventoryService,
 } from "../../inventory/mod.ts"
-import { Database, makePostgresDatabase, runMigrations } from "../../kernel/mod.ts"
+import { Database, makePostgresDatabase, runMigrations, uuidv7 } from "../../kernel/mod.ts"
 import { EventEnvelope, makeMessagingService, MessagingService } from "../../messaging/mod.ts"
 import { makePartyService, PartyCapabilities } from "../../party/mod.ts"
 import {
@@ -83,10 +83,10 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
-        const aggregateId = crypto.randomUUID()
+        const aggregateId = uuidv7()
         const nonRunningWorkflow = yield* postgresFailure(() =>
           client`
             insert into process.workflow_runs
@@ -104,7 +104,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                lease_token, payload, correlation_id)
             values
               (${tenant!.id}, 'process.order_confirmation.post_commit', 'invalid-initial-job',
-               'leased', now() + interval '1 minute', 'initial-worker', ${crypto.randomUUID()},
+               'leased', now() + interval '1 minute', 'initial-worker', ${uuidv7()},
                '{}'::jsonb, 'initial-correlation')
           `
         )
@@ -272,10 +272,10 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
-        const aggregateId = crypto.randomUUID()
+        const aggregateId = uuidv7()
         const [workflow] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
             insert into process.workflow_runs
@@ -316,7 +316,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             returning id
           `
         )
-        const leaseToken = crypto.randomUUID()
+        const leaseToken = uuidv7()
         yield* Effect.promise(() =>
           client`
             update process.jobs
@@ -383,7 +383,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const database = makePostgresDatabase(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const authorizationLayer = makeAuthorizationTestLayer(
@@ -767,7 +767,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               { item_id: cable.id, on_hand: "10", reserved: "1" },
             ].toSorted((a, b) => a.item_id.localeCompare(b.item_id)),
           )
-          const crossLinkedJobResult = { ...result, jobId: crypto.randomUUID() }
+          const crossLinkedJobResult = { ...result, jobId: uuidv7() }
           yield* Effect.promise(() =>
             client`
               update process.workflow_runs
@@ -791,7 +791,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               where id = ${result.jobId}
             `
           )
-          const mismatchedActorPrincipalId = crypto.randomUUID()
+          const mismatchedActorPrincipalId = uuidv7()
           yield* Effect.promise(() =>
             client`
               update messaging.event_outbox
@@ -830,7 +830,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             workflowRunId: result.workflowRunId,
             orderId: input.orderId,
             reservationIds: result.reservations.map(({ id }) => id),
-            journalId: crypto.randomUUID(),
+            journalId: uuidv7(),
           }
           yield* Effect.promise(() =>
             client`
@@ -843,7 +843,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             yield* Effect.flip(process.confirmOrder(input)),
             WorkflowResultCorrupt,
           )
-          const crossLinkedEventResult = { ...result, eventId: crypto.randomUUID() }
+          const crossLinkedEventResult = { ...result, eventId: uuidv7() }
           yield* Effect.promise(() =>
             client`
               update process.workflow_runs
@@ -871,7 +871,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             journal: {
               ...result.journal,
               status: "reversed" as const,
-              reversesEntryId: crypto.randomUUID(),
+              reversesEntryId: uuidv7(),
             },
           }
           yield* Effect.promise(() =>
@@ -990,7 +990,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           assert.instanceOf(yield* Effect.flip(process.confirmOrder(input)), WorkflowResultCorrupt)
           const detachedOrderResult = {
             ...result,
-            order: { ...result.order, id: crypto.randomUUID() },
+            order: { ...result.order, id: uuidv7() },
           }
           yield* Effect.promise(() =>
             client`
@@ -1000,7 +1000,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             `
           )
           assert.instanceOf(yield* Effect.flip(process.confirmOrder(input)), WorkflowResultCorrupt)
-          const crossLinkedResult = { ...result, workflowRunId: crypto.randomUUID() }
+          const crossLinkedResult = { ...result, workflowRunId: uuidv7() }
           yield* Effect.promise(() =>
             client`
               update process.workflow_runs
@@ -1057,7 +1057,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const database = makePostgresDatabase(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const authorizationLayer = makeAuthorizationTestLayer(
@@ -1171,7 +1171,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             tenantId: tenant!.id,
             orderId: order.id,
             warehouseId: warehouse.id,
-            legalEntityId: crypto.randomUUID(),
+            legalEntityId: uuidv7(),
             commandId: "command-legal-entity-mismatch-1",
             correlationId: "correlation-legal-entity-mismatch-1",
             idempotencyKey: "legal-entity-mismatch-1",
@@ -1200,7 +1200,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const database = makePostgresDatabase(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const authorizationLayer = makeAuthorizationTestLayer(

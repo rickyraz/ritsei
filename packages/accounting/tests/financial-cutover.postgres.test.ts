@@ -22,6 +22,7 @@ import {
   generateEd25519FinancialVerificationSigner,
   makePostgresDatabase,
   runMigrations,
+  uuidv7,
 } from "../../kernel/mod.ts"
 import { makeMessagingService, MessagingService } from "../../messaging/mod.ts"
 import { makeProcessJobEnqueuer } from "../../process/mod.ts"
@@ -42,7 +43,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           const database = makePostgresDatabase(client)
           const [tenant] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
           )
           const [organization] = yield* Effect.promise(() =>
@@ -74,8 +75,8 @@ it.effect.skipIf(databaseUrl === undefined)(
           `
           )
           const principal = {
-            userAccountId: crypto.randomUUID(),
-            sessionId: crypto.randomUUID(),
+            userAccountId: uuidv7(),
+            sessionId: uuidv7(),
           }
           const generatedSigner = yield* generateEd25519FinancialVerificationSigner("test-key")
           const signer = yield* Effect.provide(
@@ -350,8 +351,8 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            operationId: `cutover-operation-${crypto.randomUUID()}`,
-            reference: `cutover-reference-${crypto.randomUUID()}`,
+            operationId: `cutover-operation-${uuidv7()}`,
+            reference: `cutover-reference-${uuidv7()}`,
             currency: "USD",
             mappingVersion: 1,
             lines: [
@@ -366,7 +367,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 credit: "12.50",
               },
             ],
-            correlationId: `cutover-correlation-${crypto.randomUUID()}`,
+            correlationId: `cutover-correlation-${uuidv7()}`,
           }
           const operation = yield* operationService.createJournalIntent(operationInput)
           const accepted = yield* operationService.submitFinancialOperation({
@@ -385,7 +386,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
-              recoveryWatermark: `missing-projection-${crypto.randomUUID()}`,
+              recoveryWatermark: `missing-projection-${uuidv7()}`,
               sourceWatermark: "postgres:missing-projection",
               targetWatermark: "tigerbeetle:missing-projection",
               sourceSnapshotRef: "postgres:missing-projection-snapshot",
@@ -414,7 +415,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            recoveryWatermark: `cutover-recovery-${crypto.randomUUID()}`,
+            recoveryWatermark: `cutover-recovery-${uuidv7()}`,
             sourceWatermark: "postgres:test:1",
             targetWatermark: "tigerbeetle:test:1",
             sourceSnapshotRef: "postgres:test-snapshot",
@@ -427,7 +428,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
-              recoveryWatermark: `hash-mismatch-${crypto.randomUUID()}`,
+              recoveryWatermark: `hash-mismatch-${uuidv7()}`,
               sourceWatermark: "postgres:test:1",
               targetWatermark: "tigerbeetle:test:1",
               sourceSnapshotRef: "postgres:test-snapshot",
@@ -442,14 +443,14 @@ it.effect.skipIf(databaseUrl === undefined)(
           assert.strictEqual(hashMismatchCheckpoint.reason, "hash_mismatch")
           const pendingIntent = yield* operationService.createJournalIntent({
             ...operationInput,
-            operationId: `cutover-pending-intent-${crypto.randomUUID()}`,
-            reference: `cutover-pending-intent-${crypto.randomUUID()}`,
+            operationId: `cutover-pending-intent-${uuidv7()}`,
+            reference: `cutover-pending-intent-${uuidv7()}`,
           })
           const pendingCheckpoint = yield* operationService.reconcileFinancialCheckpoint({
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            recoveryWatermark: `pending-intent-${crypto.randomUUID()}`,
+            recoveryWatermark: `pending-intent-${uuidv7()}`,
             sourceWatermark: "postgres:pending-intent",
             targetWatermark: "tigerbeetle:pending-intent",
             sourceSnapshotRef: "postgres:pending-intent-snapshot",
@@ -478,7 +479,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
-              recoveryWatermark: `mapping-artifact-${crypto.randomUUID()}`,
+              recoveryWatermark: `mapping-artifact-${uuidv7()}`,
               sourceWatermark: "postgres:mapping-artifact",
               targetWatermark: "tigerbeetle:mapping-artifact",
               sourceSnapshotRef: "postgres:mapping-artifact-snapshot",
@@ -518,8 +519,8 @@ it.effect.skipIf(databaseUrl === undefined)(
           )
           const failedInput = {
             ...operationInput,
-            operationId: `cutover-draft-${crypto.randomUUID()}`,
-            reference: `cutover-draft-${crypto.randomUUID()}`,
+            operationId: `cutover-draft-${uuidv7()}`,
+            reference: `cutover-draft-${uuidv7()}`,
           }
           yield* failingService.createJournalIntent(failedInput)
           const receiptFailure = yield* Effect.flip(failingService.submitFinancialOperation({
@@ -553,7 +554,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            recoveryWatermark: `draft-journal-${crypto.randomUUID()}`,
+            recoveryWatermark: `draft-journal-${uuidv7()}`,
             sourceWatermark: "postgres:draft-journal",
             targetWatermark: "tigerbeetle:draft-journal",
             sourceSnapshotRef: "postgres:draft-journal-snapshot",
@@ -581,7 +582,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 principal,
                 tenantId: tenant!.id,
                 legalEntityId: legalEntity!.id,
-                recoveryWatermark: `quarantined-transfer-${crypto.randomUUID()}`,
+                recoveryWatermark: `quarantined-transfer-${uuidv7()}`,
                 sourceWatermark: "postgres:quarantined-transfer",
                 targetWatermark: "tigerbeetle:quarantined-transfer",
                 sourceSnapshotRef: "postgres:quarantined-transfer-snapshot",
@@ -622,7 +623,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
-              recoveryWatermark: `balance-mismatch-${crypto.randomUUID()}`,
+              recoveryWatermark: `balance-mismatch-${uuidv7()}`,
               sourceWatermark: "postgres:balance-mismatch",
               targetWatermark: "tigerbeetle:balance-mismatch",
               sourceSnapshotRef: "postgres:balance-mismatch-snapshot",
@@ -636,7 +637,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
-              recoveryWatermark: `provenance-mismatch-${crypto.randomUUID()}`,
+              recoveryWatermark: `provenance-mismatch-${uuidv7()}`,
               sourceWatermark: "postgres:wrong",
               targetWatermark: "tigerbeetle:test:1",
               sourceSnapshotRef: "postgres:test-snapshot",
@@ -658,7 +659,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
-              recoveryWatermark: `currency-drift-${crypto.randomUUID()}`,
+              recoveryWatermark: `currency-drift-${uuidv7()}`,
               sourceWatermark: "postgres:test:1",
               targetWatermark: "tigerbeetle:test:1",
               sourceSnapshotRef: "postgres:test-snapshot",
@@ -677,8 +678,8 @@ it.effect.skipIf(databaseUrl === undefined)(
           )
           const mixedMappingOperation = yield* operationService.createJournalIntent({
             ...operationInput,
-            operationId: `cutover-mapping-v2-${crypto.randomUUID()}`,
-            reference: `cutover-mapping-v2-${crypto.randomUUID()}`,
+            operationId: `cutover-mapping-v2-${uuidv7()}`,
+            reference: `cutover-mapping-v2-${uuidv7()}`,
             mappingVersion: 2,
           })
           const mixedMappingAccepted = yield* operationService.submitFinancialOperation({
@@ -691,7 +692,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
-              recoveryWatermark: `mixed-mapping-${crypto.randomUUID()}`,
+              recoveryWatermark: `mixed-mapping-${uuidv7()}`,
               sourceWatermark: "postgres:mixed-mapping",
               targetWatermark: "tigerbeetle:mixed-mapping",
               sourceSnapshotRef: "postgres:mixed-mapping-snapshot",
@@ -800,7 +801,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: otherEntity!.id,
-            recoveryWatermark: `manual-recovery-checkpoint-${crypto.randomUUID()}`,
+            recoveryWatermark: `manual-recovery-checkpoint-${uuidv7()}`,
             sourceWatermark: "postgres:manual-recovery-checkpoint",
             targetWatermark: "tigerbeetle:manual-recovery-checkpoint",
             sourceSnapshotRef: "postgres:manual-recovery-checkpoint-snapshot",

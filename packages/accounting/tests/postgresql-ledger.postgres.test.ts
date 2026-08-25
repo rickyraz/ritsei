@@ -2,7 +2,7 @@ import { assert, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 
 import { makePostgresqlFinancialLedger } from "../mod.ts"
-import { Database, makePostgresDatabase, runMigrations } from "../../kernel/mod.ts"
+import { Database, makePostgresDatabase, runMigrations, uuidv7 } from "../../kernel/mod.ts"
 import { withTemporaryDatabase } from "../../../tests/support/postgres-database.ts"
 import {
   assertFinancialLedgerConformance,
@@ -21,7 +21,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const database = makePostgresDatabase(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-          insert into auth.tenants (slug) values (${`pg-ledger-${crypto.randomUUID()}`}) returning id
+          insert into auth.tenants (slug) values (${`pg-ledger-${uuidv7()}`}) returning id
         `
         )
         const [party] = yield* Effect.promise(() =>
@@ -71,7 +71,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             (${tenant!.id}, ${journal!.id}, ${revenue!.id}, '0', ${LARGE_FINANCIAL_MAJOR})
         `
         )
-        const operationId = `pg-operation-${crypto.randomUUID()}`
+        const operationId = `pg-operation-${uuidv7()}`
         const [operation] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
           insert into accounting.financial_operations (
@@ -189,7 +189,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         )
         assert.deepStrictEqual(
           yield* ledger.getBalance({
-            tenantId: crypto.randomUUID(),
+            tenantId: uuidv7(),
             legalEntityId: legalEntity!.id,
             accountId: cash!.id,
             currency: "USD",

@@ -7,7 +7,7 @@ import type { Sql } from "postgres"
 import { AuthorizationService, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
 import { AccountingService, makeAccountingService } from "../../accounting/mod.ts"
 import { InventoryService, makeInventoryService } from "../../inventory/mod.ts"
-import { Database, makePostgresDatabase, runMigrations } from "../../kernel/mod.ts"
+import { Database, makePostgresDatabase, runMigrations, uuidv7 } from "../../kernel/mod.ts"
 import { makeMessagingService, MessagingService } from "../../messaging/mod.ts"
 import {
   makeProcessService,
@@ -69,7 +69,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           yield* runMigrations(client)
           const [tenant] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
           )
           const authorizationLayer = makeAuthorizationTestLayer([])
@@ -81,7 +81,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             values
               (${tenant!.id}, 'process.order_confirmation.post_commit', 'lease-test-1',
                now() - interval '1 second',
-               ${JSON.stringify({ eventId: crypto.randomUUID() })}::jsonb, 'lease-correlation-1')
+               ${JSON.stringify({ eventId: uuidv7() })}::jsonb, 'lease-correlation-1')
             returning id
           `
           )
@@ -202,8 +202,8 @@ it.effect.skipIf(databaseUrl === undefined)(
             yield* Effect.flip(process.renewJob({
               tenantId: tenant!.id,
               workerId: "worker-c",
-              jobId: crypto.randomUUID(),
-              leaseToken: crypto.randomUUID(),
+              jobId: uuidv7(),
+              leaseToken: uuidv7(),
             })),
             ProcessJobNotFound,
           )

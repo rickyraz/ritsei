@@ -1,6 +1,10 @@
 import { assert, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
-import { makeTigerBeetleFinancialLedger, type TigerBeetleFinancialLedgerConfig } from "../mod.ts"
+import {
+  makeTigerBeetleFinancialLedger,
+  type TigerBeetleFinancialLedgerConfig,
+  uuidv7,
+} from "../mod.ts"
 import {
   assertFinancialLedgerConformance,
   LARGE_FINANCIAL_MINOR,
@@ -26,7 +30,7 @@ it.effect.skipIf(!enabled)(
     Effect.scoped(
       Effect.gen(function* () {
         const ledger = yield* makeTigerBeetleFinancialLedger(config)
-        const suffix = crypto.randomUUID()
+        const suffix = uuidv7()
         yield* assertFinancialLedgerConformance(
           ledger,
           {

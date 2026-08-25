@@ -20,7 +20,7 @@ import {
   makeInventoryService,
   StockReservationInvalidState,
 } from "../../inventory/mod.ts"
-import { Database, makePostgresDatabase, runMigrations } from "../../kernel/mod.ts"
+import { Database, makePostgresDatabase, runMigrations, uuidv7 } from "../../kernel/mod.ts"
 import { EventEnvelope, makeMessagingService, MessagingService } from "../../messaging/mod.ts"
 import { makePartyService, PartyCapabilities } from "../../party/mod.ts"
 import {
@@ -224,7 +224,7 @@ const prepare = (client: Sql, label: string) =>
     yield* runMigrations(client)
     const [tenant] = yield* Effect.promise(() =>
       client<{ id: string }[]>`
-        insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+        insert into auth.tenants (slug) values (${uuidv7()}) returning id
       `
     )
     const tenantId = tenant!.id
@@ -317,7 +317,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           workflowRunId: confirmation.workflowRunId,
           orderId: order.id,
           reservationIds: confirmation.reservations.map(({ id }) => id),
-          journalId: crypto.randomUUID(),
+          journalId: uuidv7(),
         }
         yield* Effect.promise(() =>
           client`
@@ -344,7 +344,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             where id = ${confirmation.eventId}
           `
         )
-        const corruptConfirmationJobResult = { ...confirmation, jobId: crypto.randomUUID() }
+        const corruptConfirmationJobResult = { ...confirmation, jobId: uuidv7() }
         yield* Effect.promise(() =>
           client`
             update process.workflow_runs
@@ -365,7 +365,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         )
         const detachedConfirmationJournalResult = {
           ...confirmation,
-          journal: { ...confirmation.journal, tenantId: crypto.randomUUID() },
+          journal: { ...confirmation.journal, tenantId: uuidv7() },
         }
         yield* Effect.promise(() =>
           client`
@@ -681,7 +681,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         )
         const detachedOrderResult = {
           ...result,
-          order: { ...result.order, id: crypto.randomUUID() },
+          order: { ...result.order, id: uuidv7() },
         }
         yield* Effect.promise(() =>
           client`
@@ -697,7 +697,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const detachedReservationResult = {
           ...result,
           releasedReservations: result.releasedReservations.map((reservation, index) =>
-            index === 0 ? { ...reservation, tenantId: crypto.randomUUID() } : reservation
+            index === 0 ? { ...reservation, tenantId: uuidv7() } : reservation
           ),
         }
         yield* Effect.promise(() =>
@@ -714,7 +714,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const mismatchedReservationResult = {
           ...result,
           releasedReservations: result.releasedReservations.map((reservation, index) =>
-            index === 0 ? { ...reservation, id: crypto.randomUUID() } : reservation
+            index === 0 ? { ...reservation, id: uuidv7() } : reservation
           ),
         }
         yield* Effect.promise(() =>
@@ -780,7 +780,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           reversalJournal: {
             ...result.reversalJournal,
             lines: result.reversalJournal.lines.map((line, index) =>
-              index === 0 ? { ...line, accountId: crypto.randomUUID() } : line
+              index === 0 ? { ...line, accountId: uuidv7() } : line
             ),
           },
         }
@@ -795,7 +795,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           yield* Effect.flip(process.cancelOrder(input)),
           WorkflowResultCorrupt,
         )
-        const crossLinkedCancellationJobResult = { ...result, jobId: crypto.randomUUID() }
+        const crossLinkedCancellationJobResult = { ...result, jobId: uuidv7() }
         yield* Effect.promise(() =>
           client`
             update process.workflow_runs
@@ -812,7 +812,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           confirmationWorkflowRunId: confirmation.workflowRunId,
           orderId: order.id,
           reservationIds: result.releasedReservations.map(({ id }) => id),
-          reversalJournalId: crypto.randomUUID(),
+          reversalJournalId: uuidv7(),
         }
         yield* Effect.promise(() =>
           client`
@@ -825,7 +825,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           yield* Effect.flip(process.cancelOrder(input)),
           WorkflowResultCorrupt,
         )
-        const crossLinkedCancellationEventResult = { ...result, eventId: crypto.randomUUID() }
+        const crossLinkedCancellationEventResult = { ...result, eventId: uuidv7() }
         yield* Effect.promise(() =>
           client`
             update process.workflow_runs
@@ -839,7 +839,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         )
         const detachedJournalResult = {
           ...result,
-          reversalJournal: { ...result.reversalJournal, tenantId: crypto.randomUUID() },
+          reversalJournal: { ...result.reversalJournal, tenantId: uuidv7() },
         }
         yield* Effect.promise(() =>
           client`
@@ -856,7 +856,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           ...result,
           reversalJournal: {
             ...result.reversalJournal,
-            reversesEntryId: crypto.randomUUID(),
+            reversesEntryId: uuidv7(),
           },
         }
         yield* Effect.promise(() =>
@@ -873,7 +873,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* Effect.promise(() =>
           client`
             update process.workflow_runs
-            set result = jsonb_set(result, '{workflowRunId}', to_jsonb(${crypto.randomUUID()}::text))
+            set result = jsonb_set(result, '{workflowRunId}', to_jsonb(${uuidv7()}::text))
             where id = ${result.workflowRunId}
           `
         )
@@ -1264,7 +1264,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           ...result,
           order: {
             ...result.order,
-            customerId: crypto.randomUUID(),
+            customerId: uuidv7(),
           },
         }
         yield* Effect.promise(() =>
@@ -1310,7 +1310,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           yield* Effect.flip(process.fulfillOrder(input)),
           WorkflowResultCorrupt,
         )
-        const crossLinkedFulfillmentJobResult = { ...result, jobId: crypto.randomUUID() }
+        const crossLinkedFulfillmentJobResult = { ...result, jobId: uuidv7() }
         yield* Effect.promise(() =>
           client`
             update process.workflow_runs
@@ -1325,7 +1325,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const mismatchedFulfillmentEventPayload = {
           workflowRunId: result.workflowRunId,
           confirmationWorkflowRunId: confirmation.workflowRunId,
-          orderId: crypto.randomUUID(),
+          orderId: uuidv7(),
           reservationIds: result.fulfilledReservations.map(({ id }) => id),
         }
         yield* Effect.promise(() =>
@@ -1339,7 +1339,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           yield* Effect.flip(process.fulfillOrder(input)),
           WorkflowResultCorrupt,
         )
-        const crossLinkedFulfillmentEventResult = { ...result, eventId: crypto.randomUUID() }
+        const crossLinkedFulfillmentEventResult = { ...result, eventId: uuidv7() }
         yield* Effect.promise(() =>
           client`
             update process.workflow_runs
@@ -1354,7 +1354,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const detachedFulfilledReservationResult = {
           ...result,
           fulfilledReservations: result.fulfilledReservations.map((reservation, index) =>
-            index === 0 ? { ...reservation, tenantId: crypto.randomUUID() } : reservation
+            index === 0 ? { ...reservation, tenantId: uuidv7() } : reservation
           ),
         }
         yield* Effect.promise(() =>
@@ -1371,7 +1371,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const mismatchedFulfilledReservationResult = {
           ...result,
           fulfilledReservations: result.fulfilledReservations.map((reservation, index) =>
-            index === 0 ? { ...reservation, id: crypto.randomUUID() } : reservation
+            index === 0 ? { ...reservation, id: uuidv7() } : reservation
           ),
         }
         yield* Effect.promise(() =>
@@ -1605,8 +1605,8 @@ it.effect.skipIf(databaseUrl === undefined)(
             client<{ id: string }[]>`
               insert into auth.tenants (slug)
               values
-                (${crypto.randomUUID()}), (${crypto.randomUUID()}),
-                (${crypto.randomUUID()}), (${crypto.randomUUID()})
+                (${uuidv7()}), (${uuidv7()}),
+                (${uuidv7()}), (${uuidv7()})
               returning id
             `
           )

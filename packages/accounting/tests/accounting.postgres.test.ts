@@ -13,7 +13,13 @@ import {
   makeAccountingService,
 } from "../mod.ts"
 import { AuthorizationService, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
-import { Database, DatabaseFailure, makePostgresDatabase, runMigrations } from "../../kernel/mod.ts"
+import {
+  Database,
+  DatabaseFailure,
+  makePostgresDatabase,
+  runMigrations,
+  uuidv7,
+} from "../../kernel/mod.ts"
 import { makeMessagingService, MessagingService } from "../../messaging/mod.ts"
 import { SalesService } from "../../sales/mod.ts"
 import { withTemporaryDatabase } from "../../../tests/support/postgres-database.ts"
@@ -38,7 +44,7 @@ it.effect.skipIf(databaseUrl === undefined)(
 
           const [tenant] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
-              insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+              insert into auth.tenants (slug) values (${uuidv7()}) returning id
             `
           )
           const [organization] = yield* Effect.promise(() =>
@@ -180,7 +186,7 @@ it.effect.skipIf(databaseUrl === undefined)(
 
           const [otherTenant] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
-              insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+              insert into auth.tenants (slug) values (${uuidv7()}) returning id
             `
           )
           const crossTenant = yield* postgresFailure(() =>
@@ -211,7 +217,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           const database = makePostgresDatabase(client)
           const [tenant] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
-              insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+              insert into auth.tenants (slug) values (${uuidv7()}) returning id
             `
           )
           const [organization] = yield* Effect.promise(() =>
@@ -228,7 +234,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           )
           const [otherTenant] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
-              insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+              insert into auth.tenants (slug) values (${uuidv7()}) returning id
             `
           )
           const [otherOrganization] = yield* Effect.promise(() =>
@@ -352,7 +358,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
-              orderId: crypto.randomUUID(),
+              orderId: uuidv7(),
               amount: "10.00",
               commandId: "revenue-command-atomic",
               correlationId: "revenue-correlation-atomic",
@@ -417,7 +423,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             )
             assert.strictEqual(concurrentReversal.id, reversal.id)
             assert.strictEqual(reversal.status, "reversed")
-            const corruptReversalOrderId = crypto.randomUUID()
+            const corruptReversalOrderId = uuidv7()
             const [corruptReversal] = yield* Effect.promise(() =>
               client<{ id: string }[]>`
                 insert into accounting.journal_entries (tenant_id, reference)
@@ -453,7 +459,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               })),
               JournalIdempotencyConflict,
             )
-            const mismatchedReversalOrderId = crypto.randomUUID()
+            const mismatchedReversalOrderId = uuidv7()
             const [mismatchedSource] = yield* Effect.promise(() =>
               client<{ id: string }[]>`
                 insert into accounting.journal_entries (tenant_id, reference)
@@ -513,7 +519,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               })),
               JournalIdempotencyConflict,
             )
-            const draftReversalOrderId = crypto.randomUUID()
+            const draftReversalOrderId = uuidv7()
             yield* Effect.promise(() =>
               client`
                 insert into accounting.journal_entries (tenant_id, reference)
@@ -531,7 +537,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               })),
               JournalIdempotencyConflict,
             )
-            const corruptRevenueOrderId = crypto.randomUUID()
+            const corruptRevenueOrderId = uuidv7()
             const [corruptRevenue] = yield* Effect.promise(() =>
               client<{ id: string }[]>`
                 insert into accounting.journal_entries (tenant_id, reference)
@@ -564,7 +570,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               })),
               JournalIdempotencyConflict,
             )
-            const draftOrderId = crypto.randomUUID()
+            const draftOrderId = uuidv7()
             yield* Effect.promise(() =>
               client`
                 insert into accounting.journal_entries (tenant_id, reference)
@@ -658,7 +664,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             assert.strictEqual(replayedWithTamperedAmount.lines[1]?.credit, "10.00")
             const tamperedJournal = yield* accounting.postRevenueForOrder({
               ...input,
-              orderId: crypto.randomUUID(),
+              orderId: uuidv7(),
               amount: "99.99",
               commandId: "tampered-revenue-command",
               correlationId: "tampered-revenue-correlation",
@@ -689,7 +695,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             assert.instanceOf(
               yield* Effect.flip(failingAccounting.postRevenueForOrder({
                 ...input,
-                orderId: crypto.randomUUID(),
+                orderId: uuidv7(),
                 commandId: "revenue-command-rollback",
                 correlationId: "revenue-correlation-rollback",
               })),
@@ -731,7 +737,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           const database = makePostgresDatabase(client)
           const [tenant] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
-              insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+              insert into auth.tenants (slug) values (${uuidv7()}) returning id
             `
           )
           const [organization] = yield* Effect.promise(() =>
@@ -814,7 +820,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 principal,
                 tenantId: tenant!.id,
                 legalEntityId: legalEntity!.id,
-                orderId: crypto.randomUUID(),
+                orderId: uuidv7(),
                 amount: "10.00",
                 commandId: "concurrent-command",
                 correlationId: "concurrent-correlation",
@@ -833,7 +839,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 principal,
                 tenantId: tenant!.id,
                 legalEntityId: legalEntity!.id,
-                orderId: crypto.randomUUID(),
+                orderId: uuidv7(),
                 amount: "10.00",
                 commandId: "after-close-command",
                 correlationId: "after-close-correlation",
@@ -857,7 +863,7 @@ it.effect.skipIf(databaseUrl === undefined)(
 
           const [tenant] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
-              insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+              insert into auth.tenants (slug) values (${uuidv7()}) returning id
             `
           )
           const [organization] = yield* Effect.promise(() =>

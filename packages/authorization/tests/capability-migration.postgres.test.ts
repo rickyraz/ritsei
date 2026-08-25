@@ -3,7 +3,13 @@ import * as Effect from "effect/Effect"
 
 import { makeAuthService } from "../../auth/mod.ts"
 import { makeUserAccountService, UserAccountService } from "../../identity/mod.ts"
-import { Database, makePostgresDatabase, runMigrations, WebCryptoLive } from "../../kernel/mod.ts"
+import {
+  Database,
+  makePostgresDatabase,
+  runMigrations,
+  uuidv7,
+  WebCryptoLive,
+} from "../../kernel/mod.ts"
 import { withTemporaryDatabase } from "../../../tests/support/postgres-database.ts"
 
 const databaseUrl = Deno.env.get("DATABASE_URL")
@@ -46,7 +52,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provide(WebCryptoLive),
           Effect.provideService(UserAccountService, userAccounts),
         )
-        const tenant = yield* auth.createTenant({ slug: `capability-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `capability-${uuidv7()}` })
         const legacyCapabilities = [
           "auth.capability.grant",
           "user_account.write",

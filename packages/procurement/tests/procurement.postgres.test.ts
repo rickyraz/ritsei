@@ -15,6 +15,7 @@ import {
   DatabaseFailure,
   makePostgresDatabase,
   runMigrations,
+  uuidv7,
   WebCryptoLive,
 } from "../../kernel/mod.ts"
 import { makeMessagingService, MessagingService } from "../../messaging/mod.ts"
@@ -70,9 +71,9 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provide(WebCryptoLive),
           Effect.provideService(UserAccountService, userAccountService),
         )
-        const tenant = yield* auth.createTenant({ slug: `procurement-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `procurement-${uuidv7()}` })
         const otherTenant = yield* auth.createTenant({
-          slug: `procurement-other-${crypto.randomUUID()}`,
+          slug: `procurement-other-${uuidv7()}`,
         })
         const authorizationLayer = makeAuthorizationTestLayer(
           [tenant.id, otherTenant.id].flatMap((tenantId) =>
@@ -174,8 +175,8 @@ it.effect.skipIf(databaseUrl === undefined)(
             supplierRelationshipId: otherRelationship.id,
           })
           const lines = [
-            { itemId: crypto.randomUUID(), quantity: "3", unitPrice: "12.34" },
-            { itemId: crypto.randomUUID(), quantity: "2", unitPrice: "0.01" },
+            { itemId: uuidv7(), quantity: "3", unitPrice: "12.34" },
+            { itemId: uuidv7(), quantity: "2", unitPrice: "0.01" },
           ]
           const order = yield* procurement.createPurchaseOrder({
             principal,
@@ -289,7 +290,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant.id,
             supplierAccountId: account.id,
-            lines: [{ itemId: crypto.randomUUID(), quantity: "1", unitPrice: "2.00" }],
+            lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "2.00" }],
           })
           assert.instanceOf(
             yield* Effect.flip(procurement.confirmPurchaseOrder({
@@ -303,7 +304,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant.id,
             supplierAccountId: account.id,
-            lines: [{ itemId: crypto.randomUUID(), quantity: "1", unitPrice: "3.00" }],
+            lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "3.00" }],
           })
           const concurrentInput = {
             principal,
@@ -341,7 +342,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant.id,
               supplierAccountId: otherAccount.id,
-              lines: [{ itemId: crypto.randomUUID(), quantity: "1", unitPrice: "1.00" }],
+              lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "1.00" }],
             })),
             SupplierAccountNotFound,
           )
@@ -350,7 +351,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant.id,
             supplierAccountId: account.id,
-            lines: [{ itemId: crypto.randomUUID(), quantity: "1", unitPrice: "4.00" }],
+            lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "4.00" }],
           })
           for (
             const mutation of [
@@ -463,7 +464,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 client`
                   insert into procurement.purchase_order_lines
                     (tenant_id, purchase_order_id, item_id, quantity, unit_price)
-                  values (${tenant.id}, ${order.id}, ${crypto.randomUUID()}, 1, 1.00)
+                  values (${tenant.id}, ${order.id}, ${uuidv7()}, 1, 1.00)
                 `,
               () =>
                 client`
@@ -573,7 +574,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 client`
                   insert into procurement.purchase_order_lines
                     (tenant_id, purchase_order_id, item_id, quantity, unit_price)
-                  values (${tenant.id}, ${order.id}, ${crypto.randomUUID()}, 1, 1.00)
+                  values (${tenant.id}, ${order.id}, ${uuidv7()}, 1, 1.00)
                 `,
               () =>
                 client`
@@ -594,7 +595,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant.id,
             supplierAccountId: account.id,
-            lines: [{ itemId: crypto.randomUUID(), quantity: "1", unitPrice: "5.00" }],
+            lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "5.00" }],
           })
           for (
             const [quantity, unitPrice, constraint] of [
@@ -606,7 +607,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               client`
                 insert into procurement.purchase_order_lines
                   (tenant_id, purchase_order_id, item_id, quantity, unit_price)
-                values (${tenant.id}, ${constraintOrder.id}, ${crypto.randomUUID()}, ${quantity}, ${unitPrice})
+                values (${tenant.id}, ${constraintOrder.id}, ${uuidv7()}, ${quantity}, ${unitPrice})
               `
             )
             assert.strictEqual((failure as { code?: string }).code, "23514")
@@ -627,7 +628,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             client`
               insert into procurement.purchase_order_lines
                 (tenant_id, purchase_order_id, item_id, quantity, unit_price)
-              values (${tenant.id}, ${inconsistentOrder!.id}, ${crypto.randomUUID()}, 1, 10.00)
+              values (${tenant.id}, ${inconsistentOrder!.id}, ${uuidv7()}, 1, 10.00)
             `
           )
           const inconsistentTotal = yield* postgresFailure(() =>
@@ -678,7 +679,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               tenantId: tenant.id,
               supplierAccountId: account.id,
               lines: [{
-                itemId: crypto.randomUUID(),
+                itemId: uuidv7(),
                 quantity: "1",
                 unitPrice: "1.00",
               }],
@@ -712,7 +713,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provide(WebCryptoLive),
           Effect.provideService(UserAccountService, userAccountService),
         )
-        const tenant = yield* auth.createTenant({ slug: `receipt-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `receipt-${uuidv7()}` })
         const authorizationLayer = makeAuthorizationTestLayer(
           [
             PartyCapabilities.partyCreate,
@@ -906,7 +907,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant.id,
             supplierAccountId: supplierAccount.id,
-            lines: [{ itemId: crypto.randomUUID(), quantity: "1", unitPrice: "1.00" }],
+            lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "1.00" }],
           })
           const missingItemConfirmed = yield* procurement.confirmPurchaseOrder({
             principal,

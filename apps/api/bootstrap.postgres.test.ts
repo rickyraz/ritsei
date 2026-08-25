@@ -14,6 +14,7 @@ import {
   Database,
   makePostgresDatabase,
   runMigrations,
+  uuidv7,
   WebCryptoLive,
 } from "../../packages/kernel/mod.ts"
 import { withTemporaryDatabase } from "../../tests/support/postgres-database.ts"
@@ -31,7 +32,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const databaseLayer = Layer.succeed(Database, database)
         const userAccountService = yield* Effect.provide(makeUserAccountService, databaseLayer)
         const userAccountRecord = yield* userAccountService.create({
-          email: `bootstrap-${crypto.randomUUID()}@example.test`,
+          email: `bootstrap-${uuidv7()}@example.test`,
         })
         const principal = { userAccountId: userAccountRecord.id, sessionId: "bootstrap-session" }
         const authorization = yield* Effect.provide(makeAuthorizationService, databaseLayer)
@@ -66,7 +67,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         )
         const input = {
           principal,
-          slug: `bootstrap-${crypto.randomUUID()}`,
+          slug: `bootstrap-${uuidv7()}`,
           timezone: "UTC",
           organizationName: "Bootstrap Organization",
           branchName: "Main Branch",

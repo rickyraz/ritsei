@@ -10,7 +10,13 @@ import {
   TenantMembershipUserAccountNotFound,
 } from "../mod.ts"
 import { makeUserAccountService, UserAccountService } from "../../identity/mod.ts"
-import { Database, makePostgresDatabase, runMigrations, WebCryptoLive } from "../../kernel/mod.ts"
+import {
+  Database,
+  makePostgresDatabase,
+  runMigrations,
+  uuidv7,
+  WebCryptoLive,
+} from "../../kernel/mod.ts"
 import { withTemporaryDatabase } from "../../../tests/support/postgres-database.ts"
 
 const databaseUrl = Deno.env.get("DATABASE_URL")
@@ -31,7 +37,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provide(WebCryptoLive),
           Effect.provideService(UserAccountService, userAccounts),
         )
-        const tenant = yield* auth.createTenant({ slug: `membership-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `membership-${uuidv7()}` })
         const authorization = yield* makeAuthorizationService.pipe(
           Effect.provideService(Database, database),
         )
@@ -105,7 +111,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provide(WebCryptoLive),
           Effect.provideService(UserAccountService, userAccounts),
         )
-        const tenant = yield* auth.createTenant({ slug: `missing-member-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `missing-member-${uuidv7()}` })
         const authorization = yield* makeAuthorizationService.pipe(
           Effect.provideService(Database, database),
         )

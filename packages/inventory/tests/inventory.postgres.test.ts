@@ -28,6 +28,7 @@ import {
   DatabaseFailure,
   makePostgresDatabase,
   runMigrations,
+  uuidv7,
   WebCryptoLive,
 } from "../../kernel/mod.ts"
 import { makeMessagingService, MessagingService } from "../../messaging/mod.ts"
@@ -107,9 +108,9 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provide(WebCryptoLive),
           Effect.provideService(UserAccountService, userAccountService),
         )
-        const tenant = yield* auth.createTenant({ slug: `adjust-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `adjust-${uuidv7()}` })
         const otherTenant = yield* auth.createTenant({
-          slug: `adjust-other-${crypto.randomUUID()}`,
+          slug: `adjust-other-${uuidv7()}`,
         })
         const messaging = yield* makeMessagingService.pipe(
           Effect.provideService(Database, database),
@@ -598,9 +599,9 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provide(WebCryptoLive),
           Effect.provideService(UserAccountService, userAccountService),
         )
-        const tenant = yield* auth.createTenant({ slug: `transfer-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `transfer-${uuidv7()}` })
         const otherTenant = yield* auth.createTenant({
-          slug: `transfer-other-${crypto.randomUUID()}`,
+          slug: `transfer-other-${uuidv7()}`,
         })
         const authorizationLayer = makeAuthorizationTestLayer(
           [tenant.id, otherTenant.id].flatMap((tenantId) =>
@@ -869,7 +870,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provide(WebCryptoLive),
           Effect.provideService(UserAccountService, userAccountService),
         )
-        const tenant = yield* auth.createTenant({ slug: `transfer-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `transfer-${uuidv7()}` })
         const authorizationLayer = makeAuthorizationTestLayer(
           capabilities.map((capability) => ({
             userAccountId: principal.userAccountId,
@@ -984,7 +985,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provide(WebCryptoLive),
           Effect.provideService(UserAccountService, userAccountService),
         )
-        const tenant = yield* auth.createTenant({ slug: `warehouse-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `warehouse-${uuidv7()}` })
         const authorizationLayer = makeAuthorizationTestLayer(
           capabilities.map((capability) => ({
             userAccountId: principal.userAccountId,

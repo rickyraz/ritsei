@@ -25,6 +25,7 @@ import {
   DurableJobEnqueuer,
   makePostgresDatabase,
   runMigrations,
+  uuidv7,
 } from "../../kernel/mod.ts"
 import { makeMessagingService, MessagingService } from "../../messaging/mod.ts"
 import { SalesService } from "../../sales/mod.ts"
@@ -63,7 +64,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           const database = makePostgresDatabase(client)
           const [tenant] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
-              insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+              insert into auth.tenants (slug) values (${uuidv7()}) returning id
             `
           )
           const [organization] = yield* Effect.promise(() =>
@@ -176,8 +177,8 @@ it.effect.skipIf(databaseUrl === undefined)(
             `
           )
           const principal = {
-            userAccountId: crypto.randomUUID(),
-            sessionId: crypto.randomUUID(),
+            userAccountId: uuidv7(),
+            sessionId: uuidv7(),
           }
           const authorization = makeAuthorizationTestLayer([{
             userAccountId: principal.userAccountId,
@@ -229,9 +230,9 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            orderId: crypto.randomUUID(),
-            commandId: `revenue-mismatch-${crypto.randomUUID()}`,
-            correlationId: `revenue-mismatch-correlation-${crypto.randomUUID()}`,
+            orderId: uuidv7(),
+            commandId: `revenue-mismatch-${uuidv7()}`,
+            correlationId: `revenue-mismatch-correlation-${uuidv7()}`,
             currency: "USD",
             mappingVersion: 1,
             amount: "6.50",
@@ -242,9 +243,9 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            orderId: crypto.randomUUID(),
-            commandId: `revenue-${crypto.randomUUID()}`,
-            correlationId: `revenue-correlation-${crypto.randomUUID()}`,
+            orderId: uuidv7(),
+            commandId: `revenue-${uuidv7()}`,
+            correlationId: `revenue-correlation-${uuidv7()}`,
             currency: "USD",
             mappingVersion: 1,
           })
@@ -481,20 +482,20 @@ it.effect.skipIf(databaseUrl === undefined)(
           )(corruptReconciledEvent!.payload)
           assert.strictEqual(corruptPayload.mappingVersion, 2)
 
-          const submissionIdentityOperationId = `submission-identity-${crypto.randomUUID()}`
+          const submissionIdentityOperationId = `submission-identity-${uuidv7()}`
           const submissionIdentityIntent = yield* service.createJournalIntent({
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
             operationId: submissionIdentityOperationId,
-            reference: `submission-identity-${crypto.randomUUID()}`,
+            reference: `submission-identity-${uuidv7()}`,
             currency: "USD",
             mappingVersion: 1,
             lines: [
               { accountId: debitAccount!.id, debit: "12.50", credit: "0" },
               { accountId: creditAccount!.id, debit: "0", credit: "12.50" },
             ],
-            correlationId: `submission-identity-correlation-${crypto.randomUUID()}`,
+            correlationId: `submission-identity-correlation-${uuidv7()}`,
           })
           const submissionIdentityLedger = {
             ...ledger,
@@ -503,7 +504,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 Effect.map((outcome) =>
                   outcome._tag === "accepted" &&
                     outcome.operationId === submissionIdentityOperationId
-                    ? { ...outcome, operationId: `foreign-${crypto.randomUUID()}` }
+                    ? { ...outcome, operationId: `foreign-${uuidv7()}` }
                     : outcome
                 ),
               ),
@@ -544,40 +545,40 @@ it.effect.skipIf(databaseUrl === undefined)(
           )
           assert.strictEqual(submissionIdentityEvents!.events, 0)
 
-          const corruptMappingVersionOperationId = `mapping-version-${crypto.randomUUID()}`
+          const corruptMappingVersionOperationId = `mapping-version-${uuidv7()}`
           const mappingMismatchIntent = yield* service.createJournalIntent({
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
             operationId: corruptMappingVersionOperationId,
-            reference: `mapping-version-${crypto.randomUUID()}`,
+            reference: `mapping-version-${uuidv7()}`,
             currency: "USD",
             mappingVersion: 1,
             lines: [
               { accountId: debitAccount!.id, debit: "12.50", credit: "0" },
               { accountId: creditAccount!.id, debit: "0", credit: "12.50" },
             ],
-            correlationId: `mapping-version-correlation-${crypto.randomUUID()}`,
+            correlationId: `mapping-version-correlation-${uuidv7()}`,
           })
           const mappingMismatchPosted = yield* service.submitFinancialOperation({
             tenantId: tenant!.id,
             operationId: mappingMismatchIntent.operationId,
           })
           assert.strictEqual(mappingMismatchPosted.status, "reconciled")
-          const rebuildIdentityOperationId = `rebuild-identity-${crypto.randomUUID()}`
+          const rebuildIdentityOperationId = `rebuild-identity-${uuidv7()}`
           const rebuildIdentityIntent = yield* service.createJournalIntent({
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
             operationId: rebuildIdentityOperationId,
-            reference: `rebuild-identity-${crypto.randomUUID()}`,
+            reference: `rebuild-identity-${uuidv7()}`,
             currency: "USD",
             mappingVersion: 1,
             lines: [
               { accountId: debitAccount!.id, debit: "12.50", credit: "0" },
               { accountId: creditAccount!.id, debit: "0", credit: "12.50" },
             ],
-            correlationId: `rebuild-identity-correlation-${crypto.randomUUID()}`,
+            correlationId: `rebuild-identity-correlation-${uuidv7()}`,
           })
           const rebuildIdentityPosted = yield* service.submitFinancialOperation({
             tenantId: tenant!.id,
@@ -594,7 +595,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                     return { ...outcome, mappingVersion: outcome.mappingVersion + 1 }
                   }
                   if (outcome.operationId === rebuildIdentityOperationId) {
-                    return { ...outcome, operationId: `foreign-${crypto.randomUUID()}` }
+                    return { ...outcome, operationId: `foreign-${uuidv7()}` }
                   }
                   return outcome
                 }),
@@ -659,8 +660,8 @@ it.effect.skipIf(databaseUrl === undefined)(
           assert.strictEqual(rebuildIdentityEvents!.events, 1)
 
           const revenuePrincipal = {
-            userAccountId: crypto.randomUUID(),
-            sessionId: crypto.randomUUID(),
+            userAccountId: uuidv7(),
+            sessionId: uuidv7(),
           }
           const revenueOnlyService = yield* Effect.provide(
             makeFinancialOperationService,
@@ -681,9 +682,9 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal: revenuePrincipal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            orderId: crypto.randomUUID(),
-            commandId: `revenue-only-${crypto.randomUUID()}`,
-            correlationId: `revenue-only-correlation-${crypto.randomUUID()}`,
+            orderId: uuidv7(),
+            commandId: `revenue-only-${uuidv7()}`,
+            correlationId: `revenue-only-correlation-${uuidv7()}`,
             currency: "USD",
             mappingVersion: 1,
           })
@@ -710,20 +711,20 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            operationId: `operation-${crypto.randomUUID()}`,
-            reference: `financial-${crypto.randomUUID()}`,
+            operationId: `operation-${uuidv7()}`,
+            reference: `financial-${uuidv7()}`,
             currency: "USD",
             mappingVersion: 1,
             lines: [
               { accountId: debitAccount!.id, debit: "12.50", credit: "0" },
               { accountId: creditAccount!.id, debit: "0", credit: "12.50" },
             ],
-            correlationId: `correlation-${crypto.randomUUID()}`,
+            correlationId: `correlation-${uuidv7()}`,
           }
           const concurrentInput = {
             ...input,
-            operationId: `concurrent-${crypto.randomUUID()}`,
-            reference: `concurrent-${crypto.randomUUID()}`,
+            operationId: `concurrent-${uuidv7()}`,
+            reference: `concurrent-${uuidv7()}`,
           }
           const concurrentIntents = yield* Effect.all([
             service.createJournalIntent(concurrentInput),
@@ -780,7 +781,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           const immutableReconciledEventId = yield* postgresFailure(() =>
             client`
               update accounting.financial_operations
-              set reconciled_event_id = ${crypto.randomUUID()}
+              set reconciled_event_id = ${uuidv7()}
               where tenant_id = ${tenant!.id} and id = ${posted.id}
             `
           )
@@ -798,7 +799,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           const [duplicateJournal] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
               insert into accounting.journal_entries (tenant_id, reference, status)
-              values (${tenant!.id}, ${`duplicate-event-${crypto.randomUUID()}`}, 'draft')
+              values (${tenant!.id}, ${`duplicate-event-${uuidv7()}`}, 'draft')
               returning id
             `
           )
@@ -814,7 +815,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               )
               select tenant_id, legal_entity_id, period_id, '   ', operation_type,
                 ${duplicateJournal!.id}, source_journal_id,
-                ${`blank-operation-reference-${crypto.randomUUID()}`}, currency, mapping_version,
+                ${`blank-operation-reference-${uuidv7()}`}, currency, mapping_version,
                 engine, engine_verified, request_fingerprint, actor_principal_id,
                 actor_session_id, status, attempts, scheduled_at, submitted_at,
                 engine_accepted_at, rejection_reason, recovery_reason, observed_engine,
@@ -839,7 +840,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               client`
                 with duplicate_journal as (
                   insert into accounting.journal_entries (tenant_id, reference, status)
-                  values (${tenant!.id}, ${`blank-metadata-${crypto.randomUUID()}`}, 'draft')
+                  values (${tenant!.id}, ${`blank-metadata-${uuidv7()}`}, 'draft')
                   returning id
                 )
                 insert into accounting.financial_operations (
@@ -852,7 +853,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 )
                 select f.tenant_id, f.legal_entity_id, f.period_id, ${input.operationId},
                   f.operation_type, duplicate_journal.id, f.source_journal_id,
-                  ${`blank-metadata-reference-${crypto.randomUUID()}`}, f.currency,
+                  ${`blank-metadata-reference-${uuidv7()}`}, f.currency,
                   f.mapping_version, f.engine, f.engine_verified, f.request_fingerprint,
                   f.actor_principal_id, f.actor_session_id, ${input.status}, f.attempts,
                   f.scheduled_at, f.submitted_at, ${input.engineAcceptedAt},
@@ -866,7 +867,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           for (
             const invalid of [
               {
-                operationId: `blank-engine-accepted-${crypto.randomUUID()}`,
+                operationId: `blank-engine-accepted-${uuidv7()}`,
                 status: "accepted",
                 engineAcceptedAt: "   ",
                 rejectionReason: null,
@@ -875,7 +876,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 constraint: "financial_operations_engine_accepted_at_check",
               },
               {
-                operationId: `blank-rejection-reason-${crypto.randomUUID()}`,
+                operationId: `blank-rejection-reason-${uuidv7()}`,
                 status: "rejected",
                 engineAcceptedAt: null,
                 rejectionReason: "   ",
@@ -884,7 +885,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 constraint: "financial_operations_rejection_reason_check",
               },
               {
-                operationId: `blank-recovery-reason-${crypto.randomUUID()}`,
+                operationId: `blank-recovery-reason-${uuidv7()}`,
                 status: "manual_recovery",
                 engineAcceptedAt: null,
                 rejectionReason: null,
@@ -893,7 +894,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 constraint: "financial_operations_recovery_reason_check",
               },
               {
-                operationId: `blank-last-error-${crypto.randomUUID()}`,
+                operationId: `blank-last-error-${uuidv7()}`,
                 status: "intent",
                 engineAcceptedAt: null,
                 rejectionReason: null,
@@ -919,9 +920,9 @@ it.effect.skipIf(databaseUrl === undefined)(
                 engine_accepted_at, rejection_reason, recovery_reason, observed_engine,
                 last_error, reconciled_at, reconciled_event_id
               )
-              select tenant_id, legal_entity_id, period_id, ${`duplicate-${crypto.randomUUID()}`},
+              select tenant_id, legal_entity_id, period_id, ${`duplicate-${uuidv7()}`},
                 operation_type, ${duplicateJournal!.id}, source_journal_id,
-                ${`duplicate-reference-${crypto.randomUUID()}`}, currency, mapping_version,
+                ${`duplicate-reference-${uuidv7()}`}, currency, mapping_version,
                 engine, engine_verified, request_fingerprint, actor_principal_id,
                 actor_session_id, status, attempts, scheduled_at, submitted_at,
                 engine_accepted_at, rejection_reason, recovery_reason, observed_engine,
@@ -946,7 +947,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             "financial_operation_transfers_immutable_fields_check",
           )
 
-          const corruptOperationId = `corrupt-${crypto.randomUUID()}`
+          const corruptOperationId = `corrupt-${uuidv7()}`
           const corruptService = yield* Effect.provide(
             makeFinancialOperationService,
             Layer.mergeAll(
@@ -961,7 +962,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           yield* corruptService.createJournalIntent({
             ...input,
             operationId: corruptOperationId,
-            reference: `corrupt-${crypto.randomUUID()}`,
+            reference: `corrupt-${uuidv7()}`,
           })
           const corruptResult = yield* corruptService.submitFinancialOperation({
             tenantId: tenant!.id,
@@ -996,7 +997,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           const failedInput = {
             ...input,
             operationId: "postgres-receipt-failure",
-            reference: `receipt-failure-${crypto.randomUUID()}`,
+            reference: `receipt-failure-${uuidv7()}`,
           }
           yield* failingService.createJournalIntent(failedInput)
           const receiptFailure = yield* Effect.flip(failingService.submitFinancialOperation({
@@ -1052,7 +1053,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           const lostInput = {
             ...input,
             operationId: "lost-operation",
-            reference: `lost-${crypto.randomUUID()}`,
+            reference: `lost-${uuidv7()}`,
           }
           yield* lostService.createJournalIntent(lostInput)
           const unknown = yield* lostService.submitFinancialOperation({
@@ -1083,7 +1084,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            recoveryWatermark: `checkpoint-${crypto.randomUUID()}`,
+            recoveryWatermark: `checkpoint-${uuidv7()}`,
             sourceWatermark: "postgres:test-watermark",
             targetWatermark: "tigerbeetle:test-watermark",
             sourceSnapshotRef: "postgres:test-snapshot",
@@ -1144,7 +1145,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
-              recoveryWatermark: `checkpoint-mismatch-${crypto.randomUUID()}`,
+              recoveryWatermark: `checkpoint-mismatch-${uuidv7()}`,
               sourceWatermark: "postgres:mismatch-watermark",
               targetWatermark: "tigerbeetle:mismatch-watermark",
               sourceSnapshotRef: "postgres:mismatch-snapshot",
@@ -1173,7 +1174,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                 evidence_artifact_id, mismatch_count, orphan_count, checked_by, checked_at
               )
               select tenant_id, legal_entity_id, engine, 'verified',
-                ${`invalid-verified-count-${crypto.randomUUID()}`},
+                ${`invalid-verified-count-${uuidv7()}`},
                 source_watermark, target_watermark, source_snapshot_ref, target_snapshot_ref,
                 operation_set_hash, account_balance_hash, transfer_set_hash, projection_hash,
                 evidence_artifact_id, 1, orphan_count, checked_by, checked_at
@@ -1217,8 +1218,8 @@ it.effect.skipIf(databaseUrl === undefined)(
           for (const [point, failpoint] of failureCases) {
             const matrixInput = {
               ...input,
-              operationId: `matrix-${point}-${crypto.randomUUID()}`,
-              reference: `matrix-${point}-${crypto.randomUUID()}`,
+              operationId: `matrix-${point}-${uuidv7()}`,
+              reference: `matrix-${point}-${uuidv7()}`,
             }
             const matrixService = yield* makeMatrixService(undefined, undefined, failpoint)
             if (
@@ -1252,13 +1253,13 @@ it.effect.skipIf(databaseUrl === undefined)(
             ["L_tigerbeetle_unavailable", "unavailableFor"],
           ] as const
           for (const [point, option] of providerCases) {
-            const operationId = `matrix-${point}-${crypto.randomUUID()}`
+            const operationId = `matrix-${point}-${uuidv7()}`
             const providerLedger = makeFinancialLedgerTestLayer({ [option]: operationId })
             const providerService = yield* makeMatrixService(undefined, providerLedger)
             const providerInput = {
               ...input,
               operationId,
-              reference: `matrix-${point}-${crypto.randomUUID()}`,
+              reference: `matrix-${point}-${uuidv7()}`,
             }
             yield* providerService.createJournalIntent(providerInput)
             const unknownProviderOutcome = yield* providerService.submitFinancialOperation({
@@ -1276,7 +1277,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             )
           }
 
-          const postgresUnavailableOperation = `matrix-M-${crypto.randomUUID()}`
+          const postgresUnavailableOperation = `matrix-M-${uuidv7()}`
           const postgresUnavailableService = yield* makeMatrixService(
             Layer.succeed(
               Database,
@@ -1286,7 +1287,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           yield* postgresUnavailableService.createJournalIntent({
             ...input,
             operationId: postgresUnavailableOperation,
-            reference: `matrix-M-${crypto.randomUUID()}`,
+            reference: `matrix-M-${uuidv7()}`,
           })
           const postgresFailureResult = yield* Effect.flip(
             postgresUnavailableService.submitFinancialOperation({
@@ -1323,11 +1324,11 @@ it.effect.skipIf(databaseUrl === undefined)(
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
             sourceJournalId: posted.journalId,
-            operationId: `reversal-${crypto.randomUUID()}`,
-            reference: `reversal-${crypto.randomUUID()}`,
+            operationId: `reversal-${uuidv7()}`,
+            reference: `reversal-${uuidv7()}`,
             currency: "USD",
             mappingVersion: 1,
-            correlationId: `reversal-correlation-${crypto.randomUUID()}`,
+            correlationId: `reversal-correlation-${uuidv7()}`,
           })
           assert.strictEqual(reversalIntent.operationType, "journal_reverse")
           const reversed = yield* service.submitFinancialOperation({
@@ -1350,11 +1351,11 @@ it.effect.skipIf(databaseUrl === undefined)(
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
             sourceJournalId: posted.journalId,
-            operationId: `duplicate-reversal-${crypto.randomUUID()}`,
-            reference: `duplicate-reversal-${crypto.randomUUID()}`,
+            operationId: `duplicate-reversal-${uuidv7()}`,
+            reference: `duplicate-reversal-${uuidv7()}`,
             currency: "USD",
             mappingVersion: 1,
-            correlationId: `duplicate-reversal-correlation-${crypto.randomUUID()}`,
+            correlationId: `duplicate-reversal-correlation-${uuidv7()}`,
           }))
           assert.instanceOf(duplicateReversal, FinancialReversalAlreadyExists)
         }),

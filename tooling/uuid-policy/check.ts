@@ -1,11 +1,9 @@
-const roots = ["apps", "packages"]
+const roots = ["apps", "packages", "tests"]
 const allowedEphemeralUses = new Map([
   ["packages/process/src/postgres.ts", "leaseToken"],
 ])
 
-const isSourceFile = (path: string) =>
-  /\.(?:c|m)?tsx?$/.test(path) &&
-  !/(?:\.test|\.spec)\.[^.]+$/.test(path)
+const isSourceFile = (path: string) => /\.(?:c|m)?tsx?$/.test(path)
 
 async function* sourceFiles(path: string): AsyncGenerator<string> {
   for await (const entry of Deno.readDir(path)) {

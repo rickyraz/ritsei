@@ -4,7 +4,13 @@ import * as Effect from "effect/Effect"
 import * as Result from "effect/Result"
 
 import { EventIdempotencyConflict, makeMessagingService } from "../mod.ts"
-import { Database, DatabaseFailure, makePostgresDatabase, runMigrations } from "../../kernel/mod.ts"
+import {
+  Database,
+  DatabaseFailure,
+  makePostgresDatabase,
+  runMigrations,
+  uuidv7,
+} from "../../kernel/mod.ts"
 import { withTemporaryDatabase } from "../../../tests/support/postgres-database.ts"
 
 const databaseUrl = Deno.env.get("DATABASE_URL")
@@ -12,16 +18,16 @@ const postgresFailure = (effect: () => Promise<unknown>) =>
   Effect.tryPromise({ try: effect, catch: (cause) => cause }).pipe(Effect.flip)
 
 const event = (tenantId: string, overrides: Record<string, unknown> = {}) => ({
-  eventId: crypto.randomUUID(),
+  eventId: uuidv7(),
   eventType: "sales.order.confirmed",
   eventVersion: 1,
   tenantId,
   aggregateType: "sales.order",
-  aggregateId: crypto.randomUUID(),
-  commandId: crypto.randomUUID(),
-  correlationId: crypto.randomUUID(),
+  aggregateId: uuidv7(),
+  commandId: uuidv7(),
+  correlationId: uuidv7(),
   causationId: null,
-  idempotencyKey: crypto.randomUUID(),
+  idempotencyKey: uuidv7(),
   actorPrincipalId: "user-1",
   occurredAt: "2026-08-12T12:00:00.000Z",
   payload: { state: "confirmed" },
@@ -36,10 +42,10 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
-        const eventId = crypto.randomUUID()
+        const eventId = uuidv7()
         yield* Effect.promise(() =>
           client`
             insert into messaging.event_outbox
@@ -48,7 +54,7 @@ it.effect.skipIf(databaseUrl === undefined)(
                payload)
             values
               (${tenant!.id}, ${eventId}, 'sales.order.confirmed', 1, 'sales.order',
-               ${crypto.randomUUID()}, 'command', 'correlation', 'causation', 'idempotency',
+               ${uuidv7()}, 'command', 'correlation', 'causation', 'idempotency',
                'actor', '{}'::jsonb)
           `
         )
@@ -178,7 +184,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const database = makePostgresDatabase(client)
@@ -202,8 +208,8 @@ it.effect.skipIf(databaseUrl === undefined)(
           "event_outbox_immutable_identity_check",
         )
 
-        const changedId = crypto.randomUUID()
-        const changedKey = crypto.randomUUID()
+        const changedId = uuidv7()
+        const changedKey = uuidv7()
         const failure = yield* postgresFailure(() =>
           client`
             update messaging.event_outbox
@@ -240,7 +246,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const database = makePostgresDatabase(client)
@@ -297,7 +303,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const database = makePostgresDatabase(client)
@@ -331,7 +337,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(
@@ -360,7 +366,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(
@@ -394,13 +400,13 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(
           Effect.provideService(Database, makePostgresDatabase(client)),
         )
-        const idempotencyKey = crypto.randomUUID()
+        const idempotencyKey = uuidv7()
         const envelopes = yield* Effect.all([
           messaging.append(event(tenant!.id, { eventVersion: 1, idempotencyKey })),
           messaging.append(event(tenant!.id, { eventVersion: 2, idempotencyKey })),
@@ -429,13 +435,13 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(
           Effect.provideService(Database, makePostgresDatabase(client)),
         )
-        const idempotencyKey = crypto.randomUUID()
+        const idempotencyKey = uuidv7()
         const envelopes = yield* Effect.all([
           messaging.append(event(tenant!.id, { idempotencyKey })),
           messaging.append(event(tenant!.id, {
@@ -474,16 +480,16 @@ it.effect.skipIf(databaseUrl === undefined)(
         const tenants = yield* Effect.promise(() =>
           client<{ id: string }[]>`
             insert into auth.tenants (slug)
-            values (${crypto.randomUUID()}), (${crypto.randomUUID()})
+            values (${uuidv7()}), (${uuidv7()})
             returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(
           Effect.provideService(Database, makePostgresDatabase(client)),
         )
-        const eventId = crypto.randomUUID()
-        const aggregateId = crypto.randomUUID()
-        const idempotencyKey = crypto.randomUUID()
+        const eventId = uuidv7()
+        const aggregateId = uuidv7()
+        const idempotencyKey = uuidv7()
         const shared = { eventId, aggregateId, idempotencyKey }
 
         const envelopes = yield* Effect.all([
@@ -513,7 +519,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const tenants = yield* Effect.promise(() =>
           client<{ id: string }[]>`
             insert into auth.tenants (slug)
-            values (${crypto.randomUUID()}), (${crypto.randomUUID()})
+            values (${uuidv7()}), (${uuidv7()})
             returning id
           `
         )
@@ -521,7 +527,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const messaging = yield* makeMessagingService.pipe(
           Effect.provideService(Database, database),
         )
-        const eventId = crypto.randomUUID()
+        const eventId = uuidv7()
         const shared = event(tenants[0]!.id, {
           eventId,
           idempotencyKey: "shared-consumer-tenant-key",
@@ -545,7 +551,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         assert.deepStrictEqual(otherEvent?.payload, { state: "other" })
         const missingEvent = yield* messaging.getEvent({
           tenantId: tenants[0]!.id,
-          eventId: crypto.randomUUID(),
+          eventId: uuidv7(),
         })
         assert.isUndefined(missingEvent)
         const consumerId = "accounting.shared-tenant-consumer"
@@ -611,7 +617,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const tenants = yield* Effect.promise(() =>
           client<{ id: string }[]>`
             insert into auth.tenants (slug)
-            values (${crypto.randomUUID()}), (${crypto.randomUUID()})
+            values (${uuidv7()}), (${uuidv7()})
             returning id
           `
         )
@@ -659,13 +665,13 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(
           Effect.provideService(Database, makePostgresDatabase(client)),
         )
-        const idempotencyKey = crypto.randomUUID()
+        const idempotencyKey = uuidv7()
         const first = event(tenant!.id, { idempotencyKey, payload: { source: "first" } })
         const second = event(tenant!.id, { idempotencyKey, payload: { source: "second" } })
 
@@ -698,13 +704,13 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(
           Effect.provideService(Database, makePostgresDatabase(client)),
         )
-        const eventId = crypto.randomUUID()
+        const eventId = uuidv7()
         const first = event(tenant!.id, { eventId })
         const second = event(tenant!.id, {
           eventId,
@@ -740,7 +746,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(
@@ -817,7 +823,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(
@@ -859,7 +865,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(
@@ -868,7 +874,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const input = {
           tenantId: tenant!.id,
           consumerId: "accounting.missing-source",
-          eventId: crypto.randomUUID(),
+          eventId: uuidv7(),
         }
         let executions = 0
         const failure = yield* Effect.flip(
@@ -897,7 +903,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const database = makePostgresDatabase(client)
@@ -951,7 +957,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const database = makePostgresDatabase(client)
@@ -1009,7 +1015,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const messaging = yield* makeMessagingService.pipe(

@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
-import { DatabaseFailure } from "../../kernel/mod.ts"
+import { DatabaseFailure, uuidv7 } from "../../kernel/mod.ts"
 import {
   type EventEnvelope,
   makeMessagingTestLayer,
@@ -203,7 +203,7 @@ describe("inventory contract", () => {
         itemId: item.id,
         quantity: "2",
         legalEntityId,
-        referenceId: crypto.randomUUID(),
+        referenceId: uuidv7(),
       })
       assert.strictEqual(balance.onHand, "2")
     })))

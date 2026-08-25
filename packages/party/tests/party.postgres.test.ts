@@ -4,7 +4,13 @@ import * as Effect from "effect/Effect"
 import { makeAuthService } from "../../auth/mod.ts"
 import { makeUserAccountService, UserAccountService } from "../../identity/mod.ts"
 import { AuthorizationService, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
-import { Database, makePostgresDatabase, runMigrations, WebCryptoLive } from "../../kernel/mod.ts"
+import {
+  Database,
+  makePostgresDatabase,
+  runMigrations,
+  uuidv7,
+  WebCryptoLive,
+} from "../../kernel/mod.ts"
 import { withTemporaryDatabase } from "../../../tests/support/postgres-database.ts"
 import {
   BranchAlreadyExists,
@@ -38,7 +44,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provideService(UserAccountService, userAccountService),
         )
         const principal = { userAccountId: "party-integration", sessionId: "session" }
-        const tenant = yield* auth.createTenant({ slug: `party-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `party-${uuidv7()}` })
         yield* Effect.gen(function* () {
           const authorization = yield* AuthorizationService
           const party = yield* makePartyService.pipe(
@@ -107,11 +113,11 @@ it.effect.skipIf(databaseUrl === undefined)(
         )
         const principal = { userAccountId: "scope-integration", sessionId: "session" }
         const tenant = yield* auth.createTenant({
-          slug: `scope-${crypto.randomUUID()}`,
+          slug: `scope-${uuidv7()}`,
           timezone: "UTC",
         })
         const otherTenant = yield* auth.createTenant({
-          slug: `scope-other-${crypto.randomUUID()}`,
+          slug: `scope-other-${uuidv7()}`,
           timezone: "UTC",
         })
         const authorizationLayer = makeAuthorizationTestLayer([
@@ -326,9 +332,9 @@ it.effect.skipIf(databaseUrl === undefined)(
           Effect.provideService(UserAccountService, userAccountService),
         )
         const principal = { userAccountId: "representation-admin", sessionId: "session" }
-        const tenant = yield* auth.createTenant({ slug: `representation-${crypto.randomUUID()}` })
+        const tenant = yield* auth.createTenant({ slug: `representation-${uuidv7()}` })
         const userAccount = yield* userAccountService.create({
-          email: `representation-${crypto.randomUUID()}@example.test`,
+          email: `representation-${uuidv7()}@example.test`,
         })
         const authorizationLayer = makeAuthorizationTestLayer([
           {

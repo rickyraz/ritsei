@@ -12,7 +12,13 @@ import {
   SalesOrderConfirmedEvent,
   SalesOrderNotFound,
 } from "../mod.ts"
-import { Database, DatabaseFailure, makePostgresDatabase, runMigrations } from "../../kernel/mod.ts"
+import {
+  Database,
+  DatabaseFailure,
+  makePostgresDatabase,
+  runMigrations,
+  uuidv7,
+} from "../../kernel/mod.ts"
 import { makeMessagingService, MessagingService } from "../../messaging/mod.ts"
 import { withTemporaryDatabase } from "../../../tests/support/postgres-database.ts"
 import { LARGE_FINANCIAL_MAJOR } from "../../../tests/support/financial-ledger-conformance.ts"
@@ -38,12 +44,12 @@ it.effect.skipIf(databaseUrl === undefined)(
         const database = makePostgresDatabase(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const [otherTenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const authorizationLayer = makeAuthorizationTestLayer(
@@ -78,7 +84,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             tenantId: tenant!.id,
             customerId: customer.id,
             lines: [{
-              itemId: crypto.randomUUID(),
+              itemId: uuidv7(),
               quantity: "1",
               unitPrice: LARGE_FINANCIAL_MAJOR,
             }],
@@ -88,7 +94,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             tenantId: tenant!.id,
             customerId: customer.id,
             lines: [{
-              itemId: crypto.randomUUID(),
+              itemId: uuidv7(),
               quantity: "1000000000000000000",
               unitPrice: "1.00",
             }],
@@ -105,7 +111,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: otherTenant!.id,
             customerId: otherCustomer.id,
-            lines: [{ itemId: crypto.randomUUID(), quantity: "1", unitPrice: "100.00" }],
+            lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "100.00" }],
           })
           const sameKeyDifferentTenant = "same-key-different-tenant"
           const input = {
@@ -219,7 +225,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             customerId: customer.id,
-            lines: [{ itemId: crypto.randomUUID(), quantity: "1", unitPrice: "25.00" }],
+            lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "25.00" }],
           })
           assert.instanceOf(
             yield* Effect.flip(sales.confirmOrder({
@@ -320,13 +326,13 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const [customer] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
             insert into sales.customers (tenant_id, name, email)
-            values (${tenant!.id}, 'Metadata Customer', ${crypto.randomUUID()} || '@example.test')
+            values (${tenant!.id}, 'Metadata Customer', ${uuidv7()} || '@example.test')
             returning id
           `
         )
@@ -364,7 +370,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         const [tenantA, tenantB] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
             insert into auth.tenants (slug)
-            values (${crypto.randomUUID()}), (${crypto.randomUUID()})
+            values (${uuidv7()}), (${uuidv7()})
             returning id
           `
         )
@@ -402,7 +408,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenantB!.id,
               customerId: customer.id,
-              lines: [{ itemId: crypto.randomUUID(), quantity: "1", unitPrice: "10.00" }],
+              lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "10.00" }],
             })),
             CustomerNotFound,
           )
@@ -418,13 +424,13 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const [tenant] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
-            insert into auth.tenants (slug) values (${crypto.randomUUID()}) returning id
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
           `
         )
         const [customer] = yield* Effect.promise(() =>
           client<{ id: string }[]>`
             insert into sales.customers (tenant_id, name, email)
-            values (${tenant!.id}, 'Snapshot Customer', ${crypto.randomUUID()} || '@example.test')
+            values (${tenant!.id}, 'Snapshot Customer', ${uuidv7()} || '@example.test')
             returning id
           `
         )
@@ -451,7 +457,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* Effect.promise(() =>
           client`
             insert into sales.order_lines (tenant_id, order_id, item_id, quantity, unit_price)
-            values (${tenant!.id}, ${order!.id}, ${crypto.randomUUID()}, 1, 10.00)
+            values (${tenant!.id}, ${order!.id}, ${uuidv7()}, 1, 10.00)
           `
         )
         const invalidTransition = yield* postgresFailure(() =>
@@ -480,7 +486,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             () =>
               client`insert into sales.order_lines
             (tenant_id, order_id, item_id, quantity, unit_price)
-            values (${tenant!.id}, ${order!.id}, ${crypto.randomUUID()}, 1, 10.00)`,
+            values (${tenant!.id}, ${order!.id}, ${uuidv7()}, 1, 10.00)`,
             () => client`delete from sales.order_lines where order_id = ${order!.id}`,
             () => client`update sales.orders set total = 11.00 where id = ${order!.id}`,
           ]
@@ -499,7 +505,7 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* Effect.promise(() =>
           client`
             insert into sales.order_lines (tenant_id, order_id, item_id, quantity, unit_price)
-            values (${tenant!.id}, ${badOrder!.id}, ${crypto.randomUUID()}, 1, 10.00)
+            values (${tenant!.id}, ${badOrder!.id}, ${uuidv7()}, 1, 10.00)
           `
         )
         const inconsistent = yield* postgresFailure(() =>
