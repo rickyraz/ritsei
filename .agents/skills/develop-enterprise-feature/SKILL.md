@@ -208,11 +208,9 @@ Use existing tasks; do not invent equivalent commands. Validate progressively:
 Common commands:
 
 ```sh
-deno task skills:check
+deno task check:affected
 deno task boundary:test
 deno task boundary:lint
-deno task test:contract
-deno task test
 deno task check
 ```
 

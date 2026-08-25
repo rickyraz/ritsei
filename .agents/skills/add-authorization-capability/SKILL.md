@@ -60,8 +60,7 @@ Run authorization, affected domain/API, contract, and boundary tests.
 # Deterministic Tools
 
 ```sh
-deno task test -- packages/authorization/tests/authorization.test.ts
-deno task test:contract
+deno task check:affected
 deno task boundary:lint
 deno task check
 ```

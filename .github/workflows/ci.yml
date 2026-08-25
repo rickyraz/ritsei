@@ -50,6 +50,3 @@ jobs:
 
       - name: Tests
         run: deno task test
-
-      - name: Public contract tests
-        run: deno task test:contract

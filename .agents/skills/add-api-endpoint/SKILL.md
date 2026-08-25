@@ -58,7 +58,7 @@ Verify generated OpenAPI, typed handler compatibility, security middleware, and 
 # Deterministic Tools
 
 ```sh
-deno task test -- apps/api/mod.test.ts tests/architecture/http.test.ts
+deno task test apps/api/mod.test.ts tests/architecture/http.test.ts
 deno task boundary:test
 deno task boundary:lint
 deno task check

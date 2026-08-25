@@ -72,7 +72,7 @@ Run focused contract tests first, then repository policy checks.
 deno task skills:check
 deno task boundary:test
 deno task boundary:lint
-deno task test:contract
+deno task check:affected
 deno task check
 ```
 

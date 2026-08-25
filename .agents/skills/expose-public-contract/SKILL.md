@@ -54,7 +54,7 @@ Add or update public contract tests through `mod.ts`. If another package consume
 # Deterministic Tools
 
 ```sh
-deno task test:contract
+deno task check:affected
 deno task boundary:test
 deno task boundary:lint
 deno task check

@@ -537,8 +537,8 @@ All TypeScript tests MUST use `@effect/vitest`:
   through finalizers. Never rely on test-process exit for cleanup.
 - Keep `@effect/vitest` on the exact same v4 release as `effect`, and declare
   both it and `vitest` in the root `package.json`.
-- Run TypeScript tests through `deno task test` or the narrower documented Deno
-  tasks. Do not introduce a second test command path.
+- Run worktree-local tests through `deno task check:affected`; reserve `deno task
+  test` for the full suite and CI. Do not introduce a second test command path.
 - Test discovery MUST be allowlisted to `apps/**`, `packages/**`, and `tests/**`.
   Exclude `vendor/**` and `node_modules/**` from tests, coverage, watch mode,
   formatting, linting, type checking, and boundary scans. Vendored subtrees are
@@ -553,10 +553,9 @@ Add a boundary rule or repository scan when needed to prevent regression to
 deno fmt --check apps packages tooling tests db deno.json sgconfig.yml vitest.config.ts
 deno lint apps packages tooling tests vitest.config.ts
 deno task check
-deno task skills:check
+deno task check:affected
 deno task boundary:test
 deno task boundary:lint
-deno task test:contract
 ```
 
 There is no build command yet because the application executables and frontend

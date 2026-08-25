@@ -65,7 +65,7 @@ Run the package-entrypoint and cycle checker, then contract and transaction test
 ```sh
 deno task boundary:lint
 deno task boundary:test
-deno task test:contract
+deno task check:affected
 deno task check
 ```
 

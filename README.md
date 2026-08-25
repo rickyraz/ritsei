@@ -84,14 +84,15 @@ Run the primary validation workflow:
 
 ```sh
 deno task check
-deno task skills:check
 DATABASE_URL=postgres://... deno task db:check
 deno task migrate
-deno task test
+deno task check:affected
 deno task boundary:test
 deno task boundary:lint
-deno task test:contract
 ```
+
+`deno task check:affected` runs only checks and tests affected by the current
+worktree diff. Use `deno task test` for the full suite in CI or before release.
 
 `deno task db:generate`, `deno task db:check`, and `deno task migrate` use the
 pinned Drizzle migration workflow and require `DATABASE_URL`, either directly
