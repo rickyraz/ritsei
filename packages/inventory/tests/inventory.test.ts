@@ -19,6 +19,7 @@ import {
   InventoryWarehouseLegalEntityMismatch,
   Item,
   makeInventoryTestLayer,
+  ReceiveStockInput,
   StockBalance,
   StockCorrection,
   StockCorrectionIdempotencyConflict,
@@ -147,6 +148,17 @@ describe("inventory contract", () => {
         }),
       )
       assert.strictEqual(invalidBranch._tag, "SchemaError")
+
+      const invalidReceiveWarehouse = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ReceiveStockInput)({
+          principal,
+          tenantId,
+          warehouseId: "not-a-uuid",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          quantity: "1",
+        }),
+      )
+      assert.strictEqual(invalidReceiveWarehouse._tag, "SchemaError")
     }))
 
   it.effect("bounds positive inventory quantities to PostgreSQL bigint", () =>

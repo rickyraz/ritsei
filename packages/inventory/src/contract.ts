@@ -145,8 +145,8 @@ export const CreateItemInput = Schema.Struct({
 })
 export const ReceiveStockInput = Schema.Struct({
   ...ScopedInput,
-  warehouseId: Schema.String,
-  itemId: Schema.String,
+  warehouseId: Uuid,
+  itemId: Uuid,
   quantity: Quantity,
   legalEntityId: Schema.optionalKey(Schema.String.check(Schema.isUUID())),
   referenceId: Schema.optionalKey(Schema.String.check(Schema.isUUID())),
