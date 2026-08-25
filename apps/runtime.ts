@@ -49,7 +49,7 @@ export const serviceLayers = (
 ) => {
   const DatabaseLive = PostgresDatabaseLive(client)
   const PlatformCore = DatabaseLive
-  const PlatformLive = Layer.merge(PlatformCore, WebCryptoLive)
+  const PlatformLive = Layer.mergeAll(PlatformCore, WebCryptoLive)
   const financialLedger = makeFinancialLedgerLayer(DatabaseLive, configuration)
 
   const IdentityLive = Layer.effect(UserAccountService, makeUserAccountService).pipe(
@@ -64,7 +64,7 @@ export const serviceLayers = (
     Layer.provide(DatabaseLive),
   )
 
-  const BusinessRequirements = Layer.merge(PlatformCore, AuthorizationLive)
+  const BusinessRequirements = Layer.mergeAll(PlatformCore, AuthorizationLive)
 
   const PartyLive = Layer.effect(PartyService, makePartyService).pipe(
     Layer.provide(BusinessRequirements),

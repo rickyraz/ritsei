@@ -192,7 +192,7 @@ export const UserAccountHandlers = HttpApiBuilder.group(
   RitseiApi,
   "UserAccounts",
   (handlers) =>
-    Effect.fn("Http.UserAccounts.handlers")(function* (handlers) {
+    Effect.gen(function* () {
       const authorization = yield* AuthorizationService
       const userAccounts = yield* UserAccountService
       return handlers
@@ -266,14 +266,14 @@ export const UserAccountHandlers = HttpApiBuilder.group(
             }))
           }),
         )
-    })(handlers),
+    }),
 )
 
 export const PartyHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Parties",
   (handlers) =>
-    Effect.fn("Http.Parties.handlers")(function* (handlers) {
+    Effect.gen(function* () {
       const party = yield* PartyService
       return handlers
         .handle(
@@ -321,14 +321,14 @@ export const PartyHandlers = HttpApiBuilder.group(
             }))
           }),
         )
-    })(handlers),
+    }),
 )
 
 export const AuthorizationHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Authorization",
   (handlers) =>
-    Effect.fn("Http.Authorization.handlers")(function* (handlers) {
+    Effect.gen(function* () {
       const authorization = yield* AuthorizationService
       const authorize = (
         principal: typeof CurrentPrincipal.Service,
@@ -436,14 +436,14 @@ export const AuthorizationHandlers = HttpApiBuilder.group(
             }))
           }),
         )
-    })(handlers),
+    }),
 )
 
 export const SalesHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Sales",
   (handlers) =>
-    Effect.fn("Http.Sales.handlers")(function* (handlers) {
+    Effect.gen(function* () {
       const sales = yield* SalesService
       return handlers
         .handle(
@@ -473,14 +473,14 @@ export const SalesHandlers = HttpApiBuilder.group(
             )
           }),
         )
-    })(handlers),
+    }),
 )
 
 export const InventoryHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Inventory",
   (handlers) =>
-    Effect.fn("Http.Inventory.handlers")(function* (handlers) {
+    Effect.gen(function* () {
       const inventory = yield* InventoryService
       return handlers
         .handle(
@@ -558,14 +558,14 @@ export const InventoryHandlers = HttpApiBuilder.group(
             )
           }),
         )
-    })(handlers),
+    }),
 )
 
 export const ProcessHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Process",
   (handlers) =>
-    Effect.fn("Http.Process.handlers")(function* (handlers) {
+    Effect.gen(function* () {
       const process = yield* ProcessService
       return handlers
         .handle(
@@ -617,14 +617,14 @@ export const ProcessHandlers = HttpApiBuilder.group(
             )
           }),
         )
-    })(handlers),
+    }),
 )
 
 export const AccountingHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Accounting",
   (handlers) =>
-    Effect.fn("Http.Accounting.handlers")(function* (handlers) {
+    Effect.gen(function* () {
       const accounting = yield* AccountingService
       const financialOperations = yield* FinancialOperationService
       return handlers
@@ -794,7 +794,7 @@ export const AccountingHandlers = HttpApiBuilder.group(
             },
           ),
         )
-    })(handlers),
+    }),
 )
 export const ApiHandlers = Layer.mergeAll(
   HealthHandlers,
