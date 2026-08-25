@@ -28,8 +28,8 @@ const InstantString = EventEnvelope.fields.occurredAt
 export const Customer = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  name: Schema.String,
-  email: Schema.String,
+  name: NonEmptyString,
+  email: NonEmptyString,
 })
 export const Quotation = Schema.Struct({
   id: Uuid,
@@ -67,8 +67,8 @@ export type SalesOrder = Schema.Schema.Type<typeof SalesOrder>
 const ScopedInput = { principal: Principal, tenantId: Uuid }
 export const CreateCustomerInput = Schema.Struct({
   ...ScopedInput,
-  name: Schema.String,
-  email: Schema.String,
+  name: NonEmptyString,
+  email: NonEmptyString,
 })
 export const CreateQuotationInput = Schema.Struct({
   ...ScopedInput,

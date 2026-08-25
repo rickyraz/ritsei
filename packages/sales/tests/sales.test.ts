@@ -11,6 +11,7 @@ import {
 } from "../../messaging/mod.ts"
 import {
   ConfirmOrderInput,
+  CreateCustomerInput,
   CreateOrderInput,
   CreateQuotationInput,
   Customer,
@@ -127,6 +128,17 @@ describe("sales contract", () => {
         }),
       )
       assert.strictEqual(invalidConfirmationMetadata._tag, "SchemaError")
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(CreateCustomerInput)({
+            principal,
+            tenantId,
+            name: "   ",
+            email: "customer@example.test",
+          }),
+        ))._tag,
+        "SchemaError",
+      )
     }))
 
   it.effect("validates sales creation relationship IDs as UUIDs", () =>
