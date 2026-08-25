@@ -106,7 +106,7 @@ export const StockReservation = Schema.Struct({
 })
 export const StockTransferStatus = Schema.Literals(["draft", "confirmed", "completed"])
 export const StockTransferLine = Schema.Struct({
-  itemId: Schema.String,
+  itemId: Uuid,
   quantity: Quantity,
 })
 export const StockTransfer = Schema.Struct({

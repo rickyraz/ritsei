@@ -167,7 +167,10 @@ it.effect("preserves typed failure boundaries around the bootstrap result", () =
         tenantId: result.tenant.id,
         sourceWarehouseId: result.warehouse.id,
         destinationWarehouseId: otherWarehouse.id,
-        lines: [{ itemId: "missing", quantity: "1" }],
+        lines: [{
+          itemId: "00000000-0000-4000-8000-000000000099",
+          quantity: "1",
+        }],
       })),
       StockTransferDifferentLegalEntity,
     )

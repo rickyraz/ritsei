@@ -1043,7 +1043,10 @@ it.effect.skipIf(databaseUrl === undefined)(
             tenantId: tenant.id,
             sourceWarehouseId: source.id,
             destinationWarehouseId: destination.id,
-            lines: [{ itemId: "item-not-needed", quantity: "1" }],
+            lines: [{
+              itemId: "00000000-0000-4000-8000-000000000099",
+              quantity: "1",
+            }],
           }))
           assert.instanceOf(error, StockTransferDifferentLegalEntity)
         }).pipe(Effect.provide(authorizationLayer))

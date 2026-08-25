@@ -827,7 +827,10 @@ describe("inventory contract", () => {
         tenantId,
         sourceWarehouseId: source.id,
         destinationWarehouseId: destination.id,
-        lines: [{ itemId: "item-1", quantity: "1" }],
+        lines: [{
+          itemId: "00000000-0000-4000-8000-000000000099",
+          quantity: "1",
+        }],
       }))
 
       assert.instanceOf(error, StockTransferDifferentLegalEntity)
