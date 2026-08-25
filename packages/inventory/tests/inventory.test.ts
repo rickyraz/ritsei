@@ -367,6 +367,10 @@ describe("inventory contract", () => {
         (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, name: " " })))._tag,
         "SchemaError",
       )
+      assert.strictEqual(
+        (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, name: " Widget " })))._tag,
+        "SchemaError",
+      )
       const balance = yield* inventory.receiveStock({
         principal,
         tenantId,
