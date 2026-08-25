@@ -12,6 +12,7 @@ import {
 } from "../../messaging/mod.ts"
 import {
   AdjustStockInput,
+  CreateWarehouseInput,
   InventoryCapabilities,
   InventoryService,
   InventoryUnitOfMeasureMismatch,
@@ -124,6 +125,19 @@ describe("inventory contract", () => {
       assert.strictEqual(error._tag, "SchemaError")
     }))
 
+  it.effect("validates warehouse legal-entity IDs as UUIDs", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateWarehouseInput)({
+          principal,
+          tenantId,
+          legalEntityId: "not-a-uuid",
+          name: "Warehouse",
+        }),
+      )
+      assert.strictEqual(error._tag, "SchemaError")
+    }))
+
   it.effect("bounds positive inventory quantities to PostgreSQL bigint", () =>
     Effect.gen(function* () {
       const error = yield* Effect.flip(
@@ -193,7 +207,7 @@ describe("inventory contract", () => {
           principal,
           tenantId,
           warehouseId: warehouse.id,
-          legalEntityId: "legal-entity-b",
+          legalEntityId: "00000000-0000-4000-8000-000000000011",
           itemId: item.id,
           quantity: "1",
         })),
@@ -816,13 +830,13 @@ describe("inventory contract", () => {
       const source = yield* inventory.createWarehouse({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-a",
+        legalEntityId: "00000000-0000-4000-8000-000000000011",
         name: "Source",
       })
       const destination = yield* inventory.createWarehouse({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-b",
+        legalEntityId: "00000000-0000-4000-8000-000000000012",
         name: "Destination",
       })
 

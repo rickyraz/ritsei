@@ -158,7 +158,7 @@ it.effect("preserves typed failure boundaries around the bootstrap result", () =
     const otherWarehouse = yield* inventory.createWarehouse({
       principal,
       tenantId: result.tenant.id,
-      legalEntityId: "other-legal-entity",
+      legalEntityId: "00000000-0000-4000-8000-000000000012",
       name: "Other Entity Warehouse",
     })
     assert.instanceOf(

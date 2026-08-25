@@ -133,7 +133,7 @@ export type StockTransfer = Schema.Schema.Type<typeof StockTransfer>
 const ScopedInput = { principal: Principal, tenantId: Schema.String }
 export const CreateWarehouseInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
+  legalEntityId: Uuid,
   primaryBranchId: Schema.optionalKey(Schema.String),
   name: Schema.String,
 })
