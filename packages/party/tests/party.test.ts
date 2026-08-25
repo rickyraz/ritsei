@@ -5,6 +5,7 @@ import * as Schema from "effect/Schema"
 
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
 import {
+  AssignPartyRoleInput,
   Branch,
   BranchAlreadyExists,
   CreateBranchInput,
@@ -143,6 +144,15 @@ describe("party contract", () => {
         kind: "organization",
         name: " ACME Indonesia ",
       })
+      const invalidRole = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AssignPartyRoleInput)({
+          principal,
+          tenantId,
+          partyId: "not-a-uuid",
+          role: "customer",
+        }),
+      )
+      assert.strictEqual(invalidRole._tag, "SchemaError")
       yield* service.assignRole({ principal, tenantId, partyId: party.id, role: "customer" })
       const identifier = yield* service.attachIdentifier({
         principal,
