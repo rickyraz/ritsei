@@ -1,5 +1,3 @@
-export { ProcurementCapabilities } from "./src/capabilities.ts"
-
 export {
   CancelPurchaseOrderInput,
   ConfirmPurchaseOrderInput,
@@ -15,7 +13,7 @@ export {
   PurchaseReceiptLineInput,
   ReceivePurchaseOrderInput,
   SupplierAccount,
-} from "./src/contract.ts"
+} from "./service.ts"
 export type {
   GoodsReceipt as GoodsReceiptType,
   GoodsReceiptLine as GoodsReceiptLineType,
@@ -24,22 +22,7 @@ export type {
   PurchaseOrderLine as PurchaseOrderLineType,
   PurchaseOrderLineSnapshot as PurchaseOrderLineSnapshotType,
   PurchaseReceiptLineInput as PurchaseReceiptLineInputType,
+  ReceivePurchaseOrder,
   ReceivePurchaseOrder as ReceivePurchaseOrderType,
   SupplierAccount as SupplierAccountType,
-} from "./src/contract.ts"
-export {
-  PurchaseOrderConfirmationIdempotencyConflict,
-  PurchaseOrderHasReceipts,
-  PurchaseOrderInvalidState,
-  PurchaseOrderNotFound,
-  PurchaseReceiptIdempotencyConflict,
-  PurchaseReceiptInventoryReferenceNotFound,
-  PurchaseReceiptLineDuplicate,
-  PurchaseReceiptLineNotFound,
-  PurchaseReceiptQuantityExceeded,
-  PurchaseReceiptWarehouseLegalEntityMismatch,
-  SupplierAccountAlreadyExists,
-  SupplierAccountNotFound,
-  SupplierRelationshipNotEligible,
-} from "./src/errors.ts"
-export { makeProcurementService, makeProcurementTestLayer, ProcurementLive } from "./src/layers.ts"
+} from "./service.ts"
