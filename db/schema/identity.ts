@@ -18,6 +18,10 @@ export const userAccounts = identitySchema.table(
   },
   (table) => [
     unique("user_accounts_email_key").on(table.email),
+    check(
+      "user_accounts_email_normalization_check",
+      sql`${table.email} = lower(btrim(${table.email})) and ${table.email} ~ '[^[:space:]]'`,
+    ),
     check("user_accounts_status_check", sql`${table.status} in ('active', 'disabled')`),
     check(
       "user_accounts_status_disabled_at_check",
