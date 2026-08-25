@@ -177,6 +177,7 @@ type TestAdapterOptions = Readonly<{
   readonly loseResponseFor?: string
   readonly failBeforeSubmissionFor?: string
   readonly unavailableFor?: string
+  readonly unavailableOnceFor?: string
   readonly corruptTransferIdsFor?: string
 }>
 
@@ -287,6 +288,7 @@ export const makeFinancialLedgerTestLayer = (options: TestAdapterOptions = {}) =
       >()
       const lost = new Set<string>()
       const failedBefore = new Set<string>()
+      const unavailableOnce = new Set<string>()
       return {
         authority: "tigerbeetle" as const,
         createExecutionAccount: (input) =>
@@ -325,14 +327,18 @@ export const makeFinancialLedgerTestLayer = (options: TestAdapterOptions = {}) =
         postJournal: (input) =>
           Effect.gen(function* () {
             const decoded = yield* Schema.decodeUnknownEffect(PostFinancialJournalInput)(input)
-            if (options.unavailableFor === decoded.operationId) {
+            const failureKey = operationKey(decoded)
+            if (
+              options.unavailableFor === decoded.operationId ||
+              options.unavailableOnceFor === decoded.operationId && !unavailableOnce.has(failureKey)
+            ) {
+              unavailableOnce.add(failureKey)
               return {
                 _tag: "unknown" as const,
                 operationId: decoded.operationId,
                 reason: "unavailable" as const,
               }
             }
-            const failureKey = operationKey(decoded)
             if (
               options.failBeforeSubmissionFor === decoded.operationId &&
               !failedBefore.has(failureKey)

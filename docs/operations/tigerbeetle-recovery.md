@@ -257,6 +257,26 @@ The following must be exposed by the deployment metrics/logging layer before app
 Logs must contain operation IDs, stable reason tags, and correlation IDs, but not credentials or
 unnecessary financial payloads.
 
+### Required operational gate evidence
+
+Each staging rehearsal must produce one immutable evidence record containing the gate ID, cohort,
+operator, deployment versions, PostgreSQL and TigerBeetle endpoints, operation IDs, transfer IDs,
+lease generations, recovery watermark, timestamps, and the final reconciliation result. The record
+must prove the behavior, not only that a command returned zero.
+
+| Gate | Rehearsal | Pass condition |
+| --- | --- | --- |
+| Process kill after acceptance | Kill worker A after provider acceptance and before receipt; start worker B | One accepted transfer set, one receipt, same deterministic IDs, no duplicate projection |
+| Lease expiry | Let worker A's lease expire; let worker B reclaim the job | Worker A completion is rejected; worker B's higher generation completes |
+| Provider outage | Stop or isolate the provider during submission, then restore it | PostgreSQL remains `submitted`/`unknown`; retry uses the same IDs; no fallback posting |
+| Independent restore | Restore PostgreSQL and TigerBeetle backups into isolated endpoints | Posting remains fenced until watermark, balances, transfers, and projections match exactly |
+| Global reconciliation | Compare provider transfer inventory, balances, and PostgreSQL mappings | No unexplained orphan, duplicate, mapping, amount, or projection mismatch |
+| Operator alerts | Exercise outage, lag, unknown outcome, and manual recovery paths | Alerts fire with operation ID, reason tag, scope, severity, and recovery owner |
+
+The repository tests prove deterministic adapter and database behavior. They do not upgrade a local
+single-replica or test-adapter result into staging-real evidence. The release gate remains `NO-GO`
+until the operational records above are collected from the supported deployment topology.
+
 ## 8. Executed readiness rehearsal — August 18, 2026
 
 The machine-readable gate record is

@@ -211,4 +211,24 @@ describe("financial ledger contract", () => {
       }),
       { unavailableFor: "unavailable-operation" },
     ))
+
+  it.effect("recovers from a transient provider outage with the same transfer identity", () =>
+    withLedger(
+      Effect.gen(function* () {
+        const ledger = yield* FinancialLedgerPort
+        yield* ledger.createExecutionAccount(account("cash"))
+        yield* ledger.createExecutionAccount(account("revenue"))
+        const first = yield* ledger.postJournal(journal("outage-recovery"))
+        const recovered = yield* ledger.postJournal(journal("outage-recovery"))
+        const replay = yield* ledger.postJournal(journal("outage-recovery"))
+        assert.deepStrictEqual(first, {
+          _tag: "unknown",
+          operationId: "outage-recovery",
+          reason: "unavailable",
+        })
+        assert.strictEqual(recovered._tag, "accepted")
+        assert.deepStrictEqual(replay, recovered)
+      }),
+      { unavailableOnceFor: "outage-recovery" },
+    ))
 })
