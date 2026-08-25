@@ -28,7 +28,7 @@ requirements, trust boundaries, and test substitutions match the real call graph
 Read the complete operation, every caller, the public service contract, tagged failures, layers,
 tests, and relevant boundary code. Find the nearest existing implementation first. Before writing
 Effect code, consult the installed `effect-v4-conventions` skill and the vendored Effect v4 source
-under [`../../../vendor/effect-smol`](../../../vendor/effect-smol).
+under [`../../../vendor/effect`](../../../vendor/effect).
 
 # Architecture Rules
 
@@ -168,7 +168,7 @@ layers rather than rewriting the workflow.
 
 # References
 
-- [Effect v4 vendored source](../../../vendor/effect-smol/packages/effect/src/Effect.ts)
+- [Effect v4 vendored source](../../../vendor/effect/packages/effect/src/Effect.ts)
 - [Architecture enforcement and static call graph](../../../docs/architecture/architecture-enforcement.md)
 - [Failure ownership rules](../../../AGENTS.md#failure-ownership-and-translation)
 - [Design Thinking source gist](https://gist.github.com/r17x/90eb2f7be93932b5693753aedb09c01a)

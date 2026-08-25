@@ -139,7 +139,7 @@ Rules:
 ## Effect v4 Reference
 
 All TypeScript implementations that use Effect v4 MUST consult the vendored
-canonical source at `./vendor/effect-smol` before writing or changing Effect
+canonical source at `./vendor/effect` before writing or changing Effect
 code. The legacy directory name is retained so the existing
 subtree history remains pullable. Use it as the primary local reference for v4
 APIs, module layout, examples, and migration behavior. Do not rely on Effect v3
@@ -149,7 +149,7 @@ The subtree is maintained from the `effect` remote at
 `https://github.com/Effect-TS/effect/tree/main`:
 
 ```sh
-git subtree pull --prefix=vendor/effect-smol effect main --squash
+git subtree pull --prefix=vendor/effect effect main --squash
 ```
 
 ## Drizzle v1 Reference and Effect Integration
