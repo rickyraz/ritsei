@@ -31,17 +31,16 @@ export type RitseiRuntimeConfiguration = Readonly<
   )
 >
 
-export class RuntimeConfigurationFailure
-  extends Schema.TaggedErrorClass<RuntimeConfigurationFailure>()(
-    "RuntimeConfigurationFailure",
-    {
-      reason: Schema.Literals([
-        "invalid_configuration",
-        "missing_tigerbeetle_configuration",
-        "invalid_tigerbeetle_configuration",
-      ]),
-    },
-  ) {}
+export class RuntimeConfigurationFailure extends Schema.TaggedError<RuntimeConfigurationFailure>()(
+  "RuntimeConfigurationFailure",
+  {
+    reason: Schema.Literals([
+      "invalid_configuration",
+      "missing_tigerbeetle_configuration",
+      "invalid_tigerbeetle_configuration",
+    ]),
+  },
+) {}
 
 export interface RuntimeEnvironment {
   readonly get: (name: string) => string | undefined

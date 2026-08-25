@@ -293,7 +293,7 @@ export const ReverseRevenueForOrderInput = Schema.Struct({
 })
 
 export class AccountingConfigurationAlreadyExists
-  extends Schema.TaggedErrorClass<AccountingConfigurationAlreadyExists>()(
+  extends Schema.TaggedError<AccountingConfigurationAlreadyExists>()(
     "AccountingConfigurationAlreadyExists",
     {
       tenantId: Schema.String,
@@ -301,12 +301,12 @@ export class AccountingConfigurationAlreadyExists
     },
   ) {}
 export class FinancialEngineActivated
-  extends Schema.TaggedErrorClass<FinancialEngineActivated>()("FinancialEngineActivated", {
+  extends Schema.TaggedError<FinancialEngineActivated>()("FinancialEngineActivated", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
   }) {}
 export class FinancialEngineCutoverBlocked
-  extends Schema.TaggedErrorClass<FinancialEngineCutoverBlocked>()(
+  extends Schema.TaggedError<FinancialEngineCutoverBlocked>()(
     "FinancialEngineCutoverBlocked",
     {
       tenantId: Schema.String,
@@ -323,12 +323,12 @@ export class FinancialEngineCutoverBlocked
   ) {}
 
 export class FinancialVerificationArtifactNotFound
-  extends Schema.TaggedErrorClass<FinancialVerificationArtifactNotFound>()(
+  extends Schema.TaggedError<FinancialVerificationArtifactNotFound>()(
     "FinancialVerificationArtifactNotFound",
     { tenantId: Uuid, artifactId: Uuid },
   ) {}
 export class FinancialVerificationArtifactInvalid
-  extends Schema.TaggedErrorClass<FinancialVerificationArtifactInvalid>()(
+  extends Schema.TaggedError<FinancialVerificationArtifactInvalid>()(
     "FinancialVerificationArtifactInvalid",
     {
       tenantId: Uuid,
@@ -353,7 +353,7 @@ const decodeFinancialVerificationSignature = (
   )
 
 export class AccountingLegalEntityNotFound
-  extends Schema.TaggedErrorClass<AccountingLegalEntityNotFound>()(
+  extends Schema.TaggedError<AccountingLegalEntityNotFound>()(
     "AccountingLegalEntityNotFound",
     {
       tenantId: Schema.String,
@@ -361,15 +361,15 @@ export class AccountingLegalEntityNotFound
     },
   ) {}
 export class AccountAlreadyExists
-  extends Schema.TaggedErrorClass<AccountAlreadyExists>()("AccountAlreadyExists", {
+  extends Schema.TaggedError<AccountAlreadyExists>()("AccountAlreadyExists", {
     tenantId: Schema.String,
     code: Schema.String,
   }) {}
-export class AccountNotFound extends Schema.TaggedErrorClass<AccountNotFound>()("AccountNotFound", {
+export class AccountNotFound extends Schema.TaggedError<AccountNotFound>()("AccountNotFound", {
   tenantId: Schema.String,
 }) {}
 export class JournalReferenceAlreadyExists
-  extends Schema.TaggedErrorClass<JournalReferenceAlreadyExists>()(
+  extends Schema.TaggedError<JournalReferenceAlreadyExists>()(
     "JournalReferenceAlreadyExists",
     {
       tenantId: Schema.String,
@@ -377,53 +377,53 @@ export class JournalReferenceAlreadyExists
     },
   ) {}
 export class JournalIdempotencyConflict
-  extends Schema.TaggedErrorClass<JournalIdempotencyConflict>()("JournalIdempotencyConflict", {
+  extends Schema.TaggedError<JournalIdempotencyConflict>()("JournalIdempotencyConflict", {
     tenantId: Schema.String,
     reference: Schema.String,
   }) {}
 export class InvalidJournalLine
-  extends Schema.TaggedErrorClass<InvalidJournalLine>()("InvalidJournalLine", {
+  extends Schema.TaggedError<InvalidJournalLine>()("InvalidJournalLine", {
     index: Schema.Int,
   }) {}
 export class UnbalancedJournal
-  extends Schema.TaggedErrorClass<UnbalancedJournal>()("UnbalancedJournal", {
+  extends Schema.TaggedError<UnbalancedJournal>()("UnbalancedJournal", {
     debit: Schema.String,
     credit: Schema.String,
   }) {}
 export class RevenuePostingProfileAlreadyExists
-  extends Schema.TaggedErrorClass<RevenuePostingProfileAlreadyExists>()(
+  extends Schema.TaggedError<RevenuePostingProfileAlreadyExists>()(
     "RevenuePostingProfileAlreadyExists",
     { tenantId: Schema.String, legalEntityId: Schema.String },
   ) {}
 export class InvalidRevenuePostingProfile
-  extends Schema.TaggedErrorClass<InvalidRevenuePostingProfile>()("InvalidRevenuePostingProfile", {
+  extends Schema.TaggedError<InvalidRevenuePostingProfile>()("InvalidRevenuePostingProfile", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
   }) {}
 export class AccountingPeriodOverlap
-  extends Schema.TaggedErrorClass<AccountingPeriodOverlap>()("AccountingPeriodOverlap", {
+  extends Schema.TaggedError<AccountingPeriodOverlap>()("AccountingPeriodOverlap", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
   }) {}
 export class AccountingPeriodNotFound
-  extends Schema.TaggedErrorClass<AccountingPeriodNotFound>()("AccountingPeriodNotFound", {
+  extends Schema.TaggedError<AccountingPeriodNotFound>()("AccountingPeriodNotFound", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
     periodId: Schema.String,
   }) {}
 export class AccountingPeriodNotOpen
-  extends Schema.TaggedErrorClass<AccountingPeriodNotOpen>()("AccountingPeriodNotOpen", {
+  extends Schema.TaggedError<AccountingPeriodNotOpen>()("AccountingPeriodNotOpen", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
   }) {}
 export class FinancialOperationsPending
-  extends Schema.TaggedErrorClass<FinancialOperationsPending>()("FinancialOperationsPending", {
+  extends Schema.TaggedError<FinancialOperationsPending>()("FinancialOperationsPending", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
     periodId: Schema.String,
   }) {}
 export class RevenuePostingProfileNotFound
-  extends Schema.TaggedErrorClass<RevenuePostingProfileNotFound>()(
+  extends Schema.TaggedError<RevenuePostingProfileNotFound>()(
     "RevenuePostingProfileNotFound",
     {
       tenantId: Schema.String,
@@ -431,7 +431,7 @@ export class RevenuePostingProfileNotFound
     },
   ) {}
 export class RevenueJournalNotFound
-  extends Schema.TaggedErrorClass<RevenueJournalNotFound>()("RevenueJournalNotFound", {
+  extends Schema.TaggedError<RevenueJournalNotFound>()("RevenueJournalNotFound", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
     orderId: Uuid,

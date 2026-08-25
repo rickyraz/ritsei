@@ -157,23 +157,23 @@ export const ConfirmStockTransferInput = Schema.Struct({
 export const CompleteStockTransferInput = ConfirmStockTransferInput
 
 export class InventoryReferenceNotFound
-  extends Schema.TaggedErrorClass<InventoryReferenceNotFound>()("InventoryReferenceNotFound", {
+  extends Schema.TaggedError<InventoryReferenceNotFound>()("InventoryReferenceNotFound", {
     tenantId: Schema.String,
     warehouseId: Schema.String,
     itemId: Schema.String,
   }) {}
 export class WarehouseAlreadyExists
-  extends Schema.TaggedErrorClass<WarehouseAlreadyExists>()("WarehouseAlreadyExists", {
+  extends Schema.TaggedError<WarehouseAlreadyExists>()("WarehouseAlreadyExists", {
     tenantId: Schema.String,
     name: Schema.String,
   }) {}
 export class WarehouseLegalEntityNotFound
-  extends Schema.TaggedErrorClass<WarehouseLegalEntityNotFound>()("WarehouseLegalEntityNotFound", {
+  extends Schema.TaggedError<WarehouseLegalEntityNotFound>()("WarehouseLegalEntityNotFound", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
   }) {}
 export class InventoryWarehouseLegalEntityMismatch
-  extends Schema.TaggedErrorClass<InventoryWarehouseLegalEntityMismatch>()(
+  extends Schema.TaggedError<InventoryWarehouseLegalEntityMismatch>()(
     "InventoryWarehouseLegalEntityMismatch",
     {
       tenantId: Schema.String,
@@ -182,25 +182,24 @@ export class InventoryWarehouseLegalEntityMismatch
     },
   ) {}
 export class WarehouseBranchNotFound
-  extends Schema.TaggedErrorClass<WarehouseBranchNotFound>()("WarehouseBranchNotFound", {
+  extends Schema.TaggedError<WarehouseBranchNotFound>()("WarehouseBranchNotFound", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
     branchId: Schema.String,
   }) {}
 export class ItemAlreadyExists
-  extends Schema.TaggedErrorClass<ItemAlreadyExists>()("ItemAlreadyExists", {
+  extends Schema.TaggedError<ItemAlreadyExists>()("ItemAlreadyExists", {
     tenantId: Schema.String,
     sku: Schema.String,
   }) {}
-export class StockUnavailable
-  extends Schema.TaggedErrorClass<StockUnavailable>()("StockUnavailable", {
-    tenantId: Schema.String,
-    warehouseId: Schema.String,
-    itemId: Schema.String,
-    requested: Schema.String,
-  }) {}
+export class StockUnavailable extends Schema.TaggedError<StockUnavailable>()("StockUnavailable", {
+  tenantId: Schema.String,
+  warehouseId: Schema.String,
+  itemId: Schema.String,
+  requested: Schema.String,
+}) {}
 export class InventoryUnitOfMeasureMismatch
-  extends Schema.TaggedErrorClass<InventoryUnitOfMeasureMismatch>()(
+  extends Schema.TaggedError<InventoryUnitOfMeasureMismatch>()(
     "InventoryUnitOfMeasureMismatch",
     {
       tenantId: Schema.String,
@@ -210,7 +209,7 @@ export class InventoryUnitOfMeasureMismatch
     },
   ) {}
 export class StockCorrectionIdempotencyConflict
-  extends Schema.TaggedErrorClass<StockCorrectionIdempotencyConflict>()(
+  extends Schema.TaggedError<StockCorrectionIdempotencyConflict>()(
     "StockCorrectionIdempotencyConflict",
     {
       tenantId: Schema.String,
@@ -218,7 +217,7 @@ export class StockCorrectionIdempotencyConflict
     },
   ) {}
 export class StockReservationIdempotencyConflict
-  extends Schema.TaggedErrorClass<StockReservationIdempotencyConflict>()(
+  extends Schema.TaggedError<StockReservationIdempotencyConflict>()(
     "StockReservationIdempotencyConflict",
     {
       tenantId: Schema.String,
@@ -226,7 +225,7 @@ export class StockReservationIdempotencyConflict
     },
   ) {}
 export class StockReservationLegalEntityMismatch
-  extends Schema.TaggedErrorClass<StockReservationLegalEntityMismatch>()(
+  extends Schema.TaggedError<StockReservationLegalEntityMismatch>()(
     "StockReservationLegalEntityMismatch",
     {
       tenantId: Schema.String,
@@ -235,12 +234,12 @@ export class StockReservationLegalEntityMismatch
     },
   ) {}
 export class StockReservationNotFound
-  extends Schema.TaggedErrorClass<StockReservationNotFound>()("StockReservationNotFound", {
+  extends Schema.TaggedError<StockReservationNotFound>()("StockReservationNotFound", {
     tenantId: Schema.String,
     reservationId: Schema.String,
   }) {}
 export class StockReservationInvalidState
-  extends Schema.TaggedErrorClass<StockReservationInvalidState>()(
+  extends Schema.TaggedError<StockReservationInvalidState>()(
     "StockReservationInvalidState",
     {
       tenantId: Schema.String,
@@ -250,24 +249,24 @@ export class StockReservationInvalidState
     },
   ) {}
 export class StockTransferNotFound
-  extends Schema.TaggedErrorClass<StockTransferNotFound>()("StockTransferNotFound", {
+  extends Schema.TaggedError<StockTransferNotFound>()("StockTransferNotFound", {
     tenantId: Schema.String,
     transferId: Schema.String,
   }) {}
 export class StockTransferInvalidState
-  extends Schema.TaggedErrorClass<StockTransferInvalidState>()("StockTransferInvalidState", {
+  extends Schema.TaggedError<StockTransferInvalidState>()("StockTransferInvalidState", {
     tenantId: Schema.String,
     transferId: Schema.String,
     operation: Schema.Literals(["confirm", "complete"]),
     status: StockTransferStatus,
   }) {}
 export class StockTransferSameWarehouse
-  extends Schema.TaggedErrorClass<StockTransferSameWarehouse>()("StockTransferSameWarehouse", {
+  extends Schema.TaggedError<StockTransferSameWarehouse>()("StockTransferSameWarehouse", {
     tenantId: Schema.String,
     warehouseId: Schema.String,
   }) {}
 export class StockTransferDifferentLegalEntity
-  extends Schema.TaggedErrorClass<StockTransferDifferentLegalEntity>()(
+  extends Schema.TaggedError<StockTransferDifferentLegalEntity>()(
     "StockTransferDifferentLegalEntity",
     {
       tenantId: Schema.String,
@@ -276,17 +275,17 @@ export class StockTransferDifferentLegalEntity
     },
   ) {}
 export class StockTransferDuplicateItem
-  extends Schema.TaggedErrorClass<StockTransferDuplicateItem>()("StockTransferDuplicateItem", {
+  extends Schema.TaggedError<StockTransferDuplicateItem>()("StockTransferDuplicateItem", {
     tenantId: Schema.String,
     itemId: Schema.String,
   }) {}
 export class StockTransferWarehouseNotFound
-  extends Schema.TaggedErrorClass<StockTransferWarehouseNotFound>()(
+  extends Schema.TaggedError<StockTransferWarehouseNotFound>()(
     "StockTransferWarehouseNotFound",
     { tenantId: Schema.String, warehouseId: Schema.String },
   ) {}
 export class StockTransferItemNotFound
-  extends Schema.TaggedErrorClass<StockTransferItemNotFound>()("StockTransferItemNotFound", {
+  extends Schema.TaggedError<StockTransferItemNotFound>()("StockTransferItemNotFound", {
     tenantId: Schema.String,
     itemId: Schema.String,
   }) {}

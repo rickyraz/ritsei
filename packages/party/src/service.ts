@@ -158,20 +158,20 @@ export const SetPartyRepresentationActiveInput = Schema.Struct({
   active: Schema.Boolean,
 })
 
-export class PartyNotFound extends Schema.TaggedErrorClass<PartyNotFound>()("PartyNotFound", {
+export class PartyNotFound extends Schema.TaggedError<PartyNotFound>()("PartyNotFound", {
   tenantId: Schema.String,
   partyId: Schema.String,
 }) {}
 
 export class PartyRoleAlreadyAssigned
-  extends Schema.TaggedErrorClass<PartyRoleAlreadyAssigned>()("PartyRoleAlreadyAssigned", {
+  extends Schema.TaggedError<PartyRoleAlreadyAssigned>()("PartyRoleAlreadyAssigned", {
     tenantId: Schema.String,
     partyId: Schema.String,
     role: PartyRole,
   }) {}
 
 export class PartyRelationshipAlreadyExists
-  extends Schema.TaggedErrorClass<PartyRelationshipAlreadyExists>()(
+  extends Schema.TaggedError<PartyRelationshipAlreadyExists>()(
     "PartyRelationshipAlreadyExists",
     {
       tenantId: Schema.String,
@@ -182,7 +182,7 @@ export class PartyRelationshipAlreadyExists
   ) {}
 
 export class PartyRelationshipRoleNotAssigned
-  extends Schema.TaggedErrorClass<PartyRelationshipRoleNotAssigned>()(
+  extends Schema.TaggedError<PartyRelationshipRoleNotAssigned>()(
     "PartyRelationshipRoleNotAssigned",
     {
       tenantId: Schema.String,
@@ -191,7 +191,7 @@ export class PartyRelationshipRoleNotAssigned
     },
   ) {}
 
-export class PartyRelationshipNotFound extends Schema.TaggedErrorClass<PartyRelationshipNotFound>()(
+export class PartyRelationshipNotFound extends Schema.TaggedError<PartyRelationshipNotFound>()(
   "PartyRelationshipNotFound",
   {
     tenantId: Schema.String,
@@ -200,7 +200,7 @@ export class PartyRelationshipNotFound extends Schema.TaggedErrorClass<PartyRela
 ) {}
 
 export class ExternalIdentifierAlreadyAssigned
-  extends Schema.TaggedErrorClass<ExternalIdentifierAlreadyAssigned>()(
+  extends Schema.TaggedError<ExternalIdentifierAlreadyAssigned>()(
     "ExternalIdentifierAlreadyAssigned",
     {
       tenantId: Schema.String,
@@ -213,32 +213,32 @@ export class ExternalIdentifierAlreadyAssigned
   ) {}
 
 export class OrganizationRequired
-  extends Schema.TaggedErrorClass<OrganizationRequired>()("OrganizationRequired", {
+  extends Schema.TaggedError<OrganizationRequired>()("OrganizationRequired", {
     tenantId: Schema.String,
     partyId: Schema.String,
   }) {}
 
 export class LegalEntityAlreadyExists
-  extends Schema.TaggedErrorClass<LegalEntityAlreadyExists>()("LegalEntityAlreadyExists", {
+  extends Schema.TaggedError<LegalEntityAlreadyExists>()("LegalEntityAlreadyExists", {
     tenantId: Schema.String,
     organizationId: Schema.String,
   }) {}
 
 export class LegalEntityNotFound
-  extends Schema.TaggedErrorClass<LegalEntityNotFound>()("LegalEntityNotFound", {
+  extends Schema.TaggedError<LegalEntityNotFound>()("LegalEntityNotFound", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
   }) {}
 
 export class BranchAlreadyExists
-  extends Schema.TaggedErrorClass<BranchAlreadyExists>()("BranchAlreadyExists", {
+  extends Schema.TaggedError<BranchAlreadyExists>()("BranchAlreadyExists", {
     tenantId: Schema.String,
     legalEntityId: Schema.String,
     name: Schema.String,
   }) {}
 
 export class PartyRepresentationUserAccountNotFound
-  extends Schema.TaggedErrorClass<PartyRepresentationUserAccountNotFound>()(
+  extends Schema.TaggedError<PartyRepresentationUserAccountNotFound>()(
     "PartyRepresentationUserAccountNotFound",
     {
       tenantId: Schema.String,
@@ -247,7 +247,7 @@ export class PartyRepresentationUserAccountNotFound
   ) {}
 
 export class PartyRepresentationAlreadyExists
-  extends Schema.TaggedErrorClass<PartyRepresentationAlreadyExists>()(
+  extends Schema.TaggedError<PartyRepresentationAlreadyExists>()(
     "PartyRepresentationAlreadyExists",
     {
       tenantId: Schema.String,
@@ -257,14 +257,13 @@ export class PartyRepresentationAlreadyExists
     },
   ) {}
 
-export class PartyRepresentationNotFound
-  extends Schema.TaggedErrorClass<PartyRepresentationNotFound>()(
-    "PartyRepresentationNotFound",
-    {
-      tenantId: Schema.String,
-      representationId: Schema.String,
-    },
-  ) {}
+export class PartyRepresentationNotFound extends Schema.TaggedError<PartyRepresentationNotFound>()(
+  "PartyRepresentationNotFound",
+  {
+    tenantId: Schema.String,
+    representationId: Schema.String,
+  },
+) {}
 
 type CommonFailure = AuthorizationDenied | DatabaseFailure | Schema.SchemaError
 

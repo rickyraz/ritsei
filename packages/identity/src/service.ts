@@ -38,12 +38,12 @@ export type UserAccountAuthenticationState = Schema.Schema.Type<
 >
 
 export class UserAccountAlreadyExists
-  extends Schema.TaggedErrorClass<UserAccountAlreadyExists>()("UserAccountAlreadyExists", {
+  extends Schema.TaggedError<UserAccountAlreadyExists>()("UserAccountAlreadyExists", {
     email: Schema.String,
   }) {}
 
 export class UserAccountNotFound
-  extends Schema.TaggedErrorClass<UserAccountNotFound>()("UserAccountNotFound", {
+  extends Schema.TaggedError<UserAccountNotFound>()("UserAccountNotFound", {
     id: Schema.String,
   }) {}
 

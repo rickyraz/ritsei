@@ -55,20 +55,20 @@ export class CurrentPrincipal extends Context.Service<CurrentPrincipal, Principa
   "RITSEI/Http/CurrentPrincipal",
 ) {}
 
-export class ApiUnauthorized extends Schema.TaggedErrorClass<ApiUnauthorized>()("ApiUnauthorized", {
+export class ApiUnauthorized extends Schema.TaggedError<ApiUnauthorized>()("ApiUnauthorized", {
   code: Schema.Literal("unauthorized"),
 }, { httpApiStatus: 401 }) {}
-export class ApiForbidden extends Schema.TaggedErrorClass<ApiForbidden>()("ApiForbidden", {
+export class ApiForbidden extends Schema.TaggedError<ApiForbidden>()("ApiForbidden", {
   code: Schema.Literal("forbidden"),
 }, { httpApiStatus: 403 }) {}
-export class ApiNotFound extends Schema.TaggedErrorClass<ApiNotFound>()("ApiNotFound", {
+export class ApiNotFound extends Schema.TaggedError<ApiNotFound>()("ApiNotFound", {
   code: Schema.String,
 }, { httpApiStatus: 404 }) {}
-export class ApiConflict extends Schema.TaggedErrorClass<ApiConflict>()("ApiConflict", {
+export class ApiConflict extends Schema.TaggedError<ApiConflict>()("ApiConflict", {
   code: Schema.String,
 }, { httpApiStatus: 409 }) {}
 export class ApiServiceUnavailable
-  extends Schema.TaggedErrorClass<ApiServiceUnavailable>()("ApiServiceUnavailable", {
+  extends Schema.TaggedError<ApiServiceUnavailable>()("ApiServiceUnavailable", {
     code: Schema.Literal("service_unavailable"),
   }, { httpApiStatus: 503 }) {}
 

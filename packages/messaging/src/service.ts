@@ -80,7 +80,7 @@ export type ConsumeOnceResult<A> =
   | { readonly duplicate: true; readonly receipt: ConsumerReceipt }
 
 export class EventIdempotencyConflict
-  extends Schema.TaggedErrorClass<EventIdempotencyConflict>()("EventIdempotencyConflict", {
+  extends Schema.TaggedError<EventIdempotencyConflict>()("EventIdempotencyConflict", {
     tenantId: Uuid,
     eventId: Uuid,
     eventType: NonEmptyString,

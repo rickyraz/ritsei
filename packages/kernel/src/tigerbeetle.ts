@@ -143,7 +143,7 @@ export interface TigerBeetleFinancialLedgerConfig {
 }
 
 export class TigerBeetleConfigurationFailure
-  extends Schema.TaggedErrorClass<TigerBeetleConfigurationFailure>()(
+  extends Schema.TaggedError<TigerBeetleConfigurationFailure>()(
     "TigerBeetleConfigurationFailure",
     {
       reason: Schema.Literals(["invalid_configuration", "client_initialization_failed"]),

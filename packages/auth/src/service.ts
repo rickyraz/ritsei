@@ -44,22 +44,22 @@ export type Session = Schema.Schema.Type<typeof Session>
 export type Principal = Schema.Schema.Type<typeof Principal>
 
 export class TenantAlreadyExists
-  extends Schema.TaggedErrorClass<TenantAlreadyExists>()("TenantAlreadyExists", {
+  extends Schema.TaggedError<TenantAlreadyExists>()("TenantAlreadyExists", {
     slug: Schema.String,
   }) {}
 
 export class SessionUserAccountNotFound
-  extends Schema.TaggedErrorClass<SessionUserAccountNotFound>()("SessionUserAccountNotFound", {
+  extends Schema.TaggedError<SessionUserAccountNotFound>()("SessionUserAccountNotFound", {
     userAccountId: Schema.String,
   }) {}
 
 export class SessionUserAccountDisabled
-  extends Schema.TaggedErrorClass<SessionUserAccountDisabled>()("SessionUserAccountDisabled", {
+  extends Schema.TaggedError<SessionUserAccountDisabled>()("SessionUserAccountDisabled", {
     userAccountId: Schema.String,
   }) {}
 
 export class InvalidSessionToken
-  extends Schema.TaggedErrorClass<InvalidSessionToken>()("InvalidSessionToken", {}) {}
+  extends Schema.TaggedError<InvalidSessionToken>()("InvalidSessionToken", {}) {}
 
 export interface IssuedSession {
   readonly token: string

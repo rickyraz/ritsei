@@ -138,7 +138,7 @@ export type FinancialOperationFailpointName = Schema.Schema.Type<
 >
 
 export class FinancialOperationInjectedFailure
-  extends Schema.TaggedErrorClass<FinancialOperationInjectedFailure>()(
+  extends Schema.TaggedError<FinancialOperationInjectedFailure>()(
     "FinancialOperationInjectedFailure",
     { point: FinancialOperationFailpointName },
   ) {}
@@ -339,49 +339,47 @@ export type FinancialReconciliationCheckpoint = Schema.Schema.Type<
 >
 
 export class FinancialOperationNotFound
-  extends Schema.TaggedErrorClass<FinancialOperationNotFound>()("FinancialOperationNotFound", {
+  extends Schema.TaggedError<FinancialOperationNotFound>()("FinancialOperationNotFound", {
     tenantId: Uuid,
     operationId: NonEmptyString,
   }) {}
 
 export class FinancialOperationConflict
-  extends Schema.TaggedErrorClass<FinancialOperationConflict>()("FinancialOperationConflict", {
+  extends Schema.TaggedError<FinancialOperationConflict>()("FinancialOperationConflict", {
     tenantId: Uuid,
     operationId: NonEmptyString,
   }) {}
 
 export class FinancialLedgerNotConfigured
-  extends Schema.TaggedErrorClass<FinancialLedgerNotConfigured>()(
+  extends Schema.TaggedError<FinancialLedgerNotConfigured>()(
     "FinancialLedgerNotConfigured",
     {},
   ) {}
 
-export class FinancialLedgerNotActivated
-  extends Schema.TaggedErrorClass<FinancialLedgerNotActivated>()(
-    "FinancialLedgerNotActivated",
-    { tenantId: Uuid, legalEntityId: Uuid },
-  ) {}
+export class FinancialLedgerNotActivated extends Schema.TaggedError<FinancialLedgerNotActivated>()(
+  "FinancialLedgerNotActivated",
+  { tenantId: Uuid, legalEntityId: Uuid },
+) {}
 
-export class FinancialSalesNotConfigured
-  extends Schema.TaggedErrorClass<FinancialSalesNotConfigured>()(
-    "FinancialSalesNotConfigured",
-    {},
-  ) {}
+export class FinancialSalesNotConfigured extends Schema.TaggedError<FinancialSalesNotConfigured>()(
+  "FinancialSalesNotConfigured",
+  {},
+) {}
 
 export class FinancialRevenueAmountMismatch
-  extends Schema.TaggedErrorClass<FinancialRevenueAmountMismatch>()(
+  extends Schema.TaggedError<FinancialRevenueAmountMismatch>()(
     "FinancialRevenueAmountMismatch",
     { tenantId: Uuid, orderId: Uuid },
   ) {}
 
 export class FinancialOperationReconciliationConflict
-  extends Schema.TaggedErrorClass<FinancialOperationReconciliationConflict>()(
+  extends Schema.TaggedError<FinancialOperationReconciliationConflict>()(
     "FinancialOperationReconciliationConflict",
     { operationId: NonEmptyString },
   ) {}
 
 export class FinancialProjectionRebuildBlocked
-  extends Schema.TaggedErrorClass<FinancialProjectionRebuildBlocked>()(
+  extends Schema.TaggedError<FinancialProjectionRebuildBlocked>()(
     "FinancialProjectionRebuildBlocked",
     {
       tenantId: Uuid,
@@ -392,42 +390,42 @@ export class FinancialProjectionRebuildBlocked
   ) {}
 
 export class FinancialReversalSourceRequired
-  extends Schema.TaggedErrorClass<FinancialReversalSourceRequired>()(
+  extends Schema.TaggedError<FinancialReversalSourceRequired>()(
     "FinancialReversalSourceRequired",
     {},
   ) {}
 
 export class FinancialReversalSourceNotFound
-  extends Schema.TaggedErrorClass<FinancialReversalSourceNotFound>()(
+  extends Schema.TaggedError<FinancialReversalSourceNotFound>()(
     "FinancialReversalSourceNotFound",
     { tenantId: Uuid, sourceJournalId: Uuid },
   ) {}
 
 export class FinancialReversalSourceNotPosted
-  extends Schema.TaggedErrorClass<FinancialReversalSourceNotPosted>()(
+  extends Schema.TaggedError<FinancialReversalSourceNotPosted>()(
     "FinancialReversalSourceNotPosted",
     { tenantId: Uuid, sourceJournalId: Uuid },
   ) {}
 
 export class FinancialReversalSourceNotReady
-  extends Schema.TaggedErrorClass<FinancialReversalSourceNotReady>()(
+  extends Schema.TaggedError<FinancialReversalSourceNotReady>()(
     "FinancialReversalSourceNotReady",
     { tenantId: Uuid, sourceJournalId: Uuid },
   ) {}
 
 export class FinancialReversalAlreadyExists
-  extends Schema.TaggedErrorClass<FinancialReversalAlreadyExists>()(
+  extends Schema.TaggedError<FinancialReversalAlreadyExists>()(
     "FinancialReversalAlreadyExists",
     { tenantId: Uuid, sourceJournalId: Uuid },
   ) {}
 
-export class FinancialCurrencyMismatch extends Schema.TaggedErrorClass<FinancialCurrencyMismatch>()(
+export class FinancialCurrencyMismatch extends Schema.TaggedError<FinancialCurrencyMismatch>()(
   "FinancialCurrencyMismatch",
   { tenantId: Uuid, legalEntityId: Uuid },
 ) {}
 
 export class FinancialReconciliationCheckpointEvidenceInvalid
-  extends Schema.TaggedErrorClass<FinancialReconciliationCheckpointEvidenceInvalid>()(
+  extends Schema.TaggedError<FinancialReconciliationCheckpointEvidenceInvalid>()(
     "FinancialReconciliationCheckpointEvidenceInvalid",
     {
       tenantId: Uuid,
@@ -444,7 +442,7 @@ export class FinancialReconciliationCheckpointEvidenceInvalid
   ) {}
 
 export class FinancialReconciliationCheckpointConflict
-  extends Schema.TaggedErrorClass<FinancialReconciliationCheckpointConflict>()(
+  extends Schema.TaggedError<FinancialReconciliationCheckpointConflict>()(
     "FinancialReconciliationCheckpointConflict",
     {
       tenantId: Uuid,

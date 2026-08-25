@@ -14,19 +14,19 @@ const randomBytes = (size: number) => {
 }
 
 export class FinancialVerificationSigningFailure
-  extends Schema.TaggedErrorClass<FinancialVerificationSigningFailure>()(
+  extends Schema.TaggedError<FinancialVerificationSigningFailure>()(
     "FinancialVerificationSigningFailure",
     { keyId: Schema.String },
   ) {}
 
 export class FinancialVerificationVerificationFailure
-  extends Schema.TaggedErrorClass<FinancialVerificationVerificationFailure>()(
+  extends Schema.TaggedError<FinancialVerificationVerificationFailure>()(
     "FinancialVerificationVerificationFailure",
     { keyId: Schema.String },
   ) {}
 
 export class FinancialVerificationKeyGenerationFailure
-  extends Schema.TaggedErrorClass<FinancialVerificationKeyGenerationFailure>()(
+  extends Schema.TaggedError<FinancialVerificationKeyGenerationFailure>()(
     "FinancialVerificationKeyGenerationFailure",
     { keyId: Schema.String },
   ) {}
@@ -47,7 +47,7 @@ export interface FinancialVerificationSignerService extends FinancialVerificatio
 }
 
 export class FinancialVerificationKeyNotFound
-  extends Schema.TaggedErrorClass<FinancialVerificationKeyNotFound>()(
+  extends Schema.TaggedError<FinancialVerificationKeyNotFound>()(
     "FinancialVerificationKeyNotFound",
     { keyId: Schema.String },
   ) {}

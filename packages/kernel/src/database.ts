@@ -38,7 +38,7 @@ class TransactionEffectFailure extends Error {
   }
 }
 
-export class DatabaseFailure extends Schema.TaggedErrorClass<DatabaseFailure>()("DatabaseFailure", {
+export class DatabaseFailure extends Schema.TaggedError<DatabaseFailure>()("DatabaseFailure", {
   operation: Schema.String,
   cause: Schema.Unknown,
 }) {}
@@ -62,7 +62,7 @@ export const isDatabaseConstraint = (
 }
 
 export class UnsupportedPostgresVersion
-  extends Schema.TaggedErrorClass<UnsupportedPostgresVersion>()("UnsupportedPostgresVersion", {
+  extends Schema.TaggedError<UnsupportedPostgresVersion>()("UnsupportedPostgresVersion", {
     serverVersionNum: Schema.String,
   }) {
   override get message() {

@@ -103,35 +103,34 @@ export const GetConfirmedOrderTotalInput = Schema.Struct({
 })
 
 export class CustomerAlreadyExists
-  extends Schema.TaggedErrorClass<CustomerAlreadyExists>()("CustomerAlreadyExists", {
+  extends Schema.TaggedError<CustomerAlreadyExists>()("CustomerAlreadyExists", {
     tenantId: Schema.String,
     email: Schema.String,
   }) {}
 
-export class CustomerNotFound
-  extends Schema.TaggedErrorClass<CustomerNotFound>()("CustomerNotFound", {
-    tenantId: Schema.String,
-    customerId: Schema.String,
-  }) {}
+export class CustomerNotFound extends Schema.TaggedError<CustomerNotFound>()("CustomerNotFound", {
+  tenantId: Schema.String,
+  customerId: Schema.String,
+}) {}
 
 export class QuotationNotFound
-  extends Schema.TaggedErrorClass<QuotationNotFound>()("QuotationNotFound", {
+  extends Schema.TaggedError<QuotationNotFound>()("QuotationNotFound", {
     tenantId: Schema.String,
     quotationId: Schema.String,
   }) {}
 export class SalesOrderNotFound
-  extends Schema.TaggedErrorClass<SalesOrderNotFound>()("SalesOrderNotFound", {
+  extends Schema.TaggedError<SalesOrderNotFound>()("SalesOrderNotFound", {
     tenantId: Schema.String,
     orderId: Schema.String,
   }) {}
 export class SalesOrderInvalidState
-  extends Schema.TaggedErrorClass<SalesOrderInvalidState>()("SalesOrderInvalidState", {
+  extends Schema.TaggedError<SalesOrderInvalidState>()("SalesOrderInvalidState", {
     tenantId: Schema.String,
     orderId: Schema.String,
     status: Schema.Literals(["draft", "confirmed", "cancelled"]),
   }) {}
 export class SalesOrderConfirmationIdempotencyConflict
-  extends Schema.TaggedErrorClass<SalesOrderConfirmationIdempotencyConflict>()(
+  extends Schema.TaggedError<SalesOrderConfirmationIdempotencyConflict>()(
     "SalesOrderConfirmationIdempotencyConflict",
     {
       tenantId: Schema.String,

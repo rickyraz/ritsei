@@ -152,7 +152,7 @@ export type GoodsReceiptLine = Schema.Schema.Type<typeof GoodsReceiptLine>
 export type GoodsReceipt = Schema.Schema.Type<typeof GoodsReceipt>
 
 export class SupplierAccountAlreadyExists
-  extends Schema.TaggedErrorClass<SupplierAccountAlreadyExists>()(
+  extends Schema.TaggedError<SupplierAccountAlreadyExists>()(
     "SupplierAccountAlreadyExists",
     {
       tenantId: Uuid,
@@ -161,7 +161,7 @@ export class SupplierAccountAlreadyExists
   ) {}
 
 export class SupplierRelationshipNotEligible
-  extends Schema.TaggedErrorClass<SupplierRelationshipNotEligible>()(
+  extends Schema.TaggedError<SupplierRelationshipNotEligible>()(
     "SupplierRelationshipNotEligible",
     {
       tenantId: Uuid,
@@ -169,7 +169,7 @@ export class SupplierRelationshipNotEligible
     },
   ) {}
 
-export class SupplierAccountNotFound extends Schema.TaggedErrorClass<SupplierAccountNotFound>()(
+export class SupplierAccountNotFound extends Schema.TaggedError<SupplierAccountNotFound>()(
   "SupplierAccountNotFound",
   {
     tenantId: Uuid,
@@ -177,7 +177,7 @@ export class SupplierAccountNotFound extends Schema.TaggedErrorClass<SupplierAcc
   },
 ) {}
 
-export class PurchaseOrderNotFound extends Schema.TaggedErrorClass<PurchaseOrderNotFound>()(
+export class PurchaseOrderNotFound extends Schema.TaggedError<PurchaseOrderNotFound>()(
   "PurchaseOrderNotFound",
   {
     tenantId: Uuid,
@@ -186,7 +186,7 @@ export class PurchaseOrderNotFound extends Schema.TaggedErrorClass<PurchaseOrder
 ) {}
 
 export class PurchaseOrderConfirmationIdempotencyConflict
-  extends Schema.TaggedErrorClass<PurchaseOrderConfirmationIdempotencyConflict>()(
+  extends Schema.TaggedError<PurchaseOrderConfirmationIdempotencyConflict>()(
     "PurchaseOrderConfirmationIdempotencyConflict",
     {
       tenantId: Uuid,
@@ -196,20 +196,20 @@ export class PurchaseOrderConfirmationIdempotencyConflict
   ) {}
 
 export class PurchaseOrderInvalidState
-  extends Schema.TaggedErrorClass<PurchaseOrderInvalidState>()("PurchaseOrderInvalidState", {
+  extends Schema.TaggedError<PurchaseOrderInvalidState>()("PurchaseOrderInvalidState", {
     tenantId: Uuid,
     purchaseOrderId: Uuid,
     status: Schema.Literals(["draft", "confirmed", "cancelled"]),
   }) {}
 
 export class PurchaseOrderHasReceipts
-  extends Schema.TaggedErrorClass<PurchaseOrderHasReceipts>()("PurchaseOrderHasReceipts", {
+  extends Schema.TaggedError<PurchaseOrderHasReceipts>()("PurchaseOrderHasReceipts", {
     tenantId: Uuid,
     purchaseOrderId: Uuid,
   }) {}
 
 export class PurchaseReceiptIdempotencyConflict
-  extends Schema.TaggedErrorClass<PurchaseReceiptIdempotencyConflict>()(
+  extends Schema.TaggedError<PurchaseReceiptIdempotencyConflict>()(
     "PurchaseReceiptIdempotencyConflict",
     {
       tenantId: Uuid,
@@ -219,21 +219,21 @@ export class PurchaseReceiptIdempotencyConflict
   ) {}
 
 export class PurchaseReceiptLineDuplicate
-  extends Schema.TaggedErrorClass<PurchaseReceiptLineDuplicate>()("PurchaseReceiptLineDuplicate", {
+  extends Schema.TaggedError<PurchaseReceiptLineDuplicate>()("PurchaseReceiptLineDuplicate", {
     tenantId: Uuid,
     purchaseOrderId: Uuid,
     purchaseOrderLineId: Uuid,
   }) {}
 
 export class PurchaseReceiptLineNotFound
-  extends Schema.TaggedErrorClass<PurchaseReceiptLineNotFound>()("PurchaseReceiptLineNotFound", {
+  extends Schema.TaggedError<PurchaseReceiptLineNotFound>()("PurchaseReceiptLineNotFound", {
     tenantId: Uuid,
     purchaseOrderId: Uuid,
     purchaseOrderLineId: Uuid,
   }) {}
 
 export class PurchaseReceiptQuantityExceeded
-  extends Schema.TaggedErrorClass<PurchaseReceiptQuantityExceeded>()(
+  extends Schema.TaggedError<PurchaseReceiptQuantityExceeded>()(
     "PurchaseReceiptQuantityExceeded",
     {
       tenantId: Uuid,
@@ -246,7 +246,7 @@ export class PurchaseReceiptQuantityExceeded
   ) {}
 
 export class PurchaseReceiptInventoryReferenceNotFound
-  extends Schema.TaggedErrorClass<PurchaseReceiptInventoryReferenceNotFound>()(
+  extends Schema.TaggedError<PurchaseReceiptInventoryReferenceNotFound>()(
     "PurchaseReceiptInventoryReferenceNotFound",
     {
       tenantId: Uuid,
@@ -256,7 +256,7 @@ export class PurchaseReceiptInventoryReferenceNotFound
   ) {}
 
 export class PurchaseReceiptWarehouseLegalEntityMismatch
-  extends Schema.TaggedErrorClass<PurchaseReceiptWarehouseLegalEntityMismatch>()(
+  extends Schema.TaggedError<PurchaseReceiptWarehouseLegalEntityMismatch>()(
     "PurchaseReceiptWarehouseLegalEntityMismatch",
     {
       tenantId: Uuid,

@@ -273,32 +273,32 @@ export type OrderCancellationResult = Schema.Schema.Type<typeof OrderCancellatio
 export type OrderFulfillmentResult = Schema.Schema.Type<typeof OrderFulfillmentResult>
 
 export class OrderConfirmationNotFound
-  extends Schema.TaggedErrorClass<OrderConfirmationNotFound>()("OrderConfirmationNotFound", {
+  extends Schema.TaggedError<OrderConfirmationNotFound>()("OrderConfirmationNotFound", {
     tenantId: Uuid,
     orderId: Uuid,
   }) {}
 export class OrderConfirmationCorrupt
-  extends Schema.TaggedErrorClass<OrderConfirmationCorrupt>()("OrderConfirmationCorrupt", {
+  extends Schema.TaggedError<OrderConfirmationCorrupt>()("OrderConfirmationCorrupt", {
     tenantId: Uuid,
     orderId: Uuid,
   }) {}
 export class WorkflowRunNotFound
-  extends Schema.TaggedErrorClass<WorkflowRunNotFound>()("WorkflowRunNotFound", {
+  extends Schema.TaggedError<WorkflowRunNotFound>()("WorkflowRunNotFound", {
     tenantId: Uuid,
     idempotencyKey: NonEmptyString,
   }) {}
 export class WorkflowIdempotencyConflict
-  extends Schema.TaggedErrorClass<WorkflowIdempotencyConflict>()("WorkflowIdempotencyConflict", {
+  extends Schema.TaggedError<WorkflowIdempotencyConflict>()("WorkflowIdempotencyConflict", {
     tenantId: Uuid,
     idempotencyKey: NonEmptyString,
   }) {}
 export class WorkflowAlreadyInProgress
-  extends Schema.TaggedErrorClass<WorkflowAlreadyInProgress>()("WorkflowAlreadyInProgress", {
+  extends Schema.TaggedError<WorkflowAlreadyInProgress>()("WorkflowAlreadyInProgress", {
     tenantId: Uuid,
     idempotencyKey: NonEmptyString,
   }) {}
 export class WorkflowManualRecoveryRequired
-  extends Schema.TaggedErrorClass<WorkflowManualRecoveryRequired>()(
+  extends Schema.TaggedError<WorkflowManualRecoveryRequired>()(
     "WorkflowManualRecoveryRequired",
     {
       tenantId: Uuid,
@@ -307,32 +307,32 @@ export class WorkflowManualRecoveryRequired
     },
   ) {}
 export class WorkflowResultCorrupt
-  extends Schema.TaggedErrorClass<WorkflowResultCorrupt>()("WorkflowResultCorrupt", {
+  extends Schema.TaggedError<WorkflowResultCorrupt>()("WorkflowResultCorrupt", {
     tenantId: Uuid,
     idempotencyKey: NonEmptyString,
   }) {}
 export class WorkflowOutcomeUnknown
-  extends Schema.TaggedErrorClass<WorkflowOutcomeUnknown>()("WorkflowOutcomeUnknown", {
+  extends Schema.TaggedError<WorkflowOutcomeUnknown>()("WorkflowOutcomeUnknown", {
     tenantId: Uuid,
     idempotencyKey: NonEmptyString,
   }) {}
 export class WorkflowAlreadyCompleted
-  extends Schema.TaggedErrorClass<WorkflowAlreadyCompleted>()("WorkflowAlreadyCompleted", {
+  extends Schema.TaggedError<WorkflowAlreadyCompleted>()("WorkflowAlreadyCompleted", {
     tenantId: Uuid,
     idempotencyKey: NonEmptyString,
   }) {}
 export class ProcessJobLeaseLost
-  extends Schema.TaggedErrorClass<ProcessJobLeaseLost>()("ProcessJobLeaseLost", {
+  extends Schema.TaggedError<ProcessJobLeaseLost>()("ProcessJobLeaseLost", {
     tenantId: Uuid,
     jobId: Uuid,
   }) {}
 export class ProcessJobNotFound
-  extends Schema.TaggedErrorClass<ProcessJobNotFound>()("ProcessJobNotFound", {
+  extends Schema.TaggedError<ProcessJobNotFound>()("ProcessJobNotFound", {
     tenantId: Uuid,
     jobId: Uuid,
   }) {}
 export class ProcessJobCorrupt
-  extends Schema.TaggedErrorClass<ProcessJobCorrupt>()("ProcessJobCorrupt", {
+  extends Schema.TaggedError<ProcessJobCorrupt>()("ProcessJobCorrupt", {
     tenantId: Uuid,
     jobId: Uuid,
   }) {}

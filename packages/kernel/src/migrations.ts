@@ -13,11 +13,10 @@ import {
   validatePostgresVersion,
 } from "./database.ts"
 
-export class MigrationFailure
-  extends Schema.TaggedErrorClass<MigrationFailure>()("MigrationFailure", {
-    filename: Schema.String,
-    cause: Schema.Unknown,
-  }) {}
+export class MigrationFailure extends Schema.TaggedError<MigrationFailure>()("MigrationFailure", {
+  filename: Schema.String,
+  cause: Schema.Unknown,
+}) {}
 
 type AppliedMigration = {
   readonly hash: string

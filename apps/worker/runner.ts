@@ -34,7 +34,7 @@ export const WorkerFailpointName = Schema.Literals([
 ])
 export type WorkerFailpointName = Schema.Schema.Type<typeof WorkerFailpointName>
 
-export class WorkerInjectedFailure extends Schema.TaggedErrorClass<WorkerInjectedFailure>()(
+export class WorkerInjectedFailure extends Schema.TaggedError<WorkerInjectedFailure>()(
   "WorkerInjectedFailure",
   { point: WorkerFailpointName },
 ) {}
