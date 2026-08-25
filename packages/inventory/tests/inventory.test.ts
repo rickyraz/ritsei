@@ -132,6 +132,16 @@ describe("inventory contract", () => {
 
   it.effect("validates warehouse UUID references at the input boundary", () =>
     Effect.gen(function* () {
+      const invalidTenant = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateWarehouseInput)({
+          principal,
+          tenantId: "not-a-uuid",
+          legalEntityId,
+          name: "Warehouse",
+        }),
+      )
+      assert.strictEqual(invalidTenant._tag, "SchemaError")
+
       const invalidLegalEntity = yield* Effect.flip(
         Schema.decodeUnknownEffect(CreateWarehouseInput)({
           principal,

@@ -149,7 +149,7 @@ export type StockTransferStatus = Schema.Schema.Type<typeof StockTransferStatus>
 export type StockTransferLine = Schema.Schema.Type<typeof StockTransferLine>
 export type StockTransfer = Schema.Schema.Type<typeof StockTransfer>
 
-const ScopedInput = { principal: Principal, tenantId: Schema.String }
+const ScopedInput = { principal: Principal, tenantId: Uuid }
 export const CreateWarehouseInput = Schema.Struct({
   ...ScopedInput,
   legalEntityId: Uuid,
