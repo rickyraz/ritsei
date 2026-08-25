@@ -154,15 +154,22 @@ git subtree pull --prefix=vendor/effect effect main --squash
 
 ## Drizzle v1 Reference and Effect Integration
 
-The Drizzle v1 reference is vendored at `./vendor/drizzle-orm`, pinned to
-`v1.0.0-rc.4`. Use it as the local source reference for Drizzle v1 APIs and
-integration behavior.
+The runtime `drizzle-orm` dependency is pinned to `1.0.0-rc.5-169397b` in the
+root `package.json` and `deno.lock`. Keep that runtime pin; do not downgrade it
+to match the vendored reference. The vendored Drizzle v1 source remains a
+`v1.0.0-rc.4` reference subtree until it is deliberately refreshed from the
+upstream source.
 
 The subtree is maintained from the `drizzle-orm` remote:
 
 ```sh
 git subtree pull --prefix=vendor/drizzle-orm drizzle-orm v1.0.0-rc.4 --squash
 ```
+
+The migration generator remains pinned independently to Drizzle Kit
+`1.0.0-rc.4`; runtime ORM and migration-generator versions must not be
+conflated. Revalidate the migration graph, typecheck, and integration tests
+before changing either pin.
 
 Integration rules:
 
@@ -258,6 +265,32 @@ same PostgreSQL transaction.
   PostgreSQL and the TigerBeetle adapter behind kernel/infrastructure boundaries;
   do not import engine-specific account, transfer, or balance types into domain
   modules.
+
+### Default Effect Feature Shape
+
+New business capabilities and HTTP endpoints must follow this default path:
+
+```text
+contract.ts -> errors.ts -> service.ts -> store.ts -> postgres.ts/memory.ts -> layers.ts -> handler
+```
+
+Rules for new work:
+
+- `contract.ts` owns public Effect Schema DTOs, service keys, and operation contracts.
+- `errors.ts` owns public tagged business failures.
+- `service.ts` owns named `Effect.fn("Domain.operation")` workflows and orchestration.
+- `store.ts` owns private semantic persistence ports; `postgres.ts` owns Drizzle implementation;
+  `memory.ts` exists when a deterministic test implementation can preserve the same invariants.
+- `layers.ts` owns named production/test composition; `mod.ts` exports only the public contract,
+  errors, operations, and layers.
+- `apps/api/api.ts` defines transport schemas and routes; `apps/api/handlers.ts` stays thin and
+  calls public services only.
+- Preserve tenant scope, authorization, tagged failures, transactions, idempotency, events, and
+  financial/workflow authority. Add database constraints and invariant tests for every new mutable
+  fact.
+- Do not perform a repository-wide refactor before adding a feature. Apply the shape to the new
+  capability and extract an existing package only when its complexity or invariant boundary requires
+  it; record any exception in the owning architecture document.
 
 ### Failure Ownership and Translation
 
