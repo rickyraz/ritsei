@@ -256,6 +256,29 @@ it.effect.skipIf(databaseUrl === undefined)(
             (invalidReservationTransition as { constraint_name?: string }).constraint_name,
             "inventory_reservation_state_transition_check",
           )
+          const changedReservationQuantity = yield* postgresFailure(() =>
+            client`
+              update inventory.reservations
+              set quantity = 2
+              where tenant_id = ${tenant.id} and id = ${duplicateReservations[0].id}
+            `
+          )
+          assert.strictEqual((changedReservationQuantity as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (changedReservationQuantity as { constraint_name?: string }).constraint_name,
+            "inventory_reservation_identity_immutable",
+          )
+          const deletedReservation = yield* postgresFailure(() =>
+            client`
+              delete from inventory.reservations
+              where tenant_id = ${tenant.id} and id = ${duplicateReservations[0].id}
+            `
+          )
+          assert.strictEqual((deletedReservation as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (deletedReservation as { constraint_name?: string }).constraint_name,
+            "inventory_reservation_identity_immutable",
+          )
           const invalidTransferInsert = yield* postgresFailure(() =>
             client`
               insert into inventory.stock_transfers
