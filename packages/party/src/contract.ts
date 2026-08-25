@@ -115,9 +115,9 @@ export const AssignPartyRoleInput = Schema.Struct({
 
 export const CreatePartyRelationshipInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  partyId: Schema.String,
-  legalEntityId: Schema.String,
+  tenantId: Uuid,
+  partyId: Uuid,
+  legalEntityId: Uuid,
   kind: PartyRelationshipKind,
 })
 

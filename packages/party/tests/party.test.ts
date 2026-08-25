@@ -11,6 +11,7 @@ import {
   CreateBranchInput,
   CreateLegalEntityInput,
   CreatePartyInput,
+  CreatePartyRelationshipInput,
   CreatePartyRepresentationInput,
   ExternalIdentifier,
   ExternalIdentifierAlreadyAssigned,
@@ -234,6 +235,16 @@ describe("party contract", () => {
         ))._tag,
         "SchemaError",
       )
+      const invalidRelationship = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreatePartyRelationshipInput)({
+          principal,
+          tenantId,
+          partyId: "not-a-uuid",
+          legalEntityId: legalEntity.id,
+          kind: "customer",
+        }),
+      )
+      assert.strictEqual(invalidRelationship._tag, "SchemaError")
       const relationship = yield* service.createRelationship({
         principal,
         tenantId,
