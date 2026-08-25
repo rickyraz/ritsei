@@ -172,6 +172,16 @@ describe("party contract", () => {
         }),
       )
       assert.strictEqual(invalidBranchName._tag, "SchemaError")
+      const invalidBranchTimezone = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateBranchInput)({
+          principal,
+          tenantId,
+          legalEntityId: legalEntity.id,
+          name: "Jakarta",
+          timezone: "   ",
+        }),
+      )
+      assert.strictEqual(invalidBranchTimezone._tag, "SchemaError")
       const branch = yield* service.createBranch({
         principal,
         tenantId,

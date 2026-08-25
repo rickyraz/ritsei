@@ -63,7 +63,7 @@ export const Branch = Schema.Struct({
   tenantId: Uuid,
   legalEntityId: Uuid,
   name: NonBlankString,
-  timezone: Schema.NullOr(Schema.String),
+  timezone: Schema.NullOr(NonBlankString),
   localTaxRegistration: Schema.NullOr(Schema.String),
   dedicatedJournalCode: Schema.NullOr(Schema.String),
 })
@@ -149,7 +149,7 @@ export const CreateBranchInput = Schema.Struct({
   tenantId: Schema.String,
   legalEntityId: Schema.String,
   name: NonBlankString,
-  timezone: Schema.optionalKey(NonEmptyString),
+  timezone: Schema.optionalKey(NonBlankString),
   localTaxRegistration: Schema.optionalKey(NonBlankString),
   dedicatedJournalCode: Schema.optionalKey(NonBlankString),
 })
