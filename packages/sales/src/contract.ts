@@ -4,7 +4,7 @@ import * as Schema from "effect/Schema"
 
 import { Principal } from "../../auth/mod.ts"
 import { FinancialMajorAmount } from "../../kernel/mod.ts"
-import { EventIdempotencyConflict } from "../../messaging/mod.ts"
+import { EventEnvelope, EventIdempotencyConflict } from "../../messaging/mod.ts"
 import {
   CustomerAlreadyExists,
   CustomerNotFound,
@@ -18,6 +18,7 @@ const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
 const Uuid = Schema.String.check(Schema.isUUID())
 const Money = FinancialMajorAmount
 const Quantity = Schema.String.check(Schema.isPattern(/^[1-9]\d*$/))
+const InstantString = EventEnvelope.fields.occurredAt
 
 export const Customer = Schema.Struct({
   id: Schema.String,
@@ -43,7 +44,7 @@ export const SalesOrder = Schema.Struct({
   customerId: Uuid,
   quotationId: Schema.NullOr(Uuid),
   status: Schema.Literals(["draft", "confirmed", "cancelled"]),
-  confirmedAt: Schema.NullOr(Schema.String),
+  confirmedAt: Schema.NullOr(InstantString),
   total: Money,
   lines: Schema.Array(SalesOrderLine),
 })
