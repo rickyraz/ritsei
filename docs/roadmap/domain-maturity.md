@@ -52,7 +52,7 @@ contract and database tests
 | `messaging`     | event envelope, transactional outbox, completed consumer receipts |                                                                                       `FOUNDATION` | add PgQue adapter only after its activation gates; never own domain event meaning                                                                                                      |
 | `auth`          | authentication principals and sessions                            |                                                                                       `FOUNDATION` | preserve separation from authorization and expose only public identity contracts                                                                                                       |
 | `authorization` | scoped capability decisions                                       |                                                                                       `FOUNDATION` | add capabilities only with protected business actions and denial tests                                                                                                                 |
-| `identity`      | identity domain                                                   |                                                                                          `PARTIAL` | clarify identity lifecycle and external identity boundaries                                                                                                                            |
+| `identity`      | identity domain                                                   | `PARTIAL`; `identity.user_account.create` v1 is a bounded Level 3 slice | clarify global account lifecycle and tenant-context authorization boundaries                                                                                                           |
 | `party`         | party and party relationships                                     | `PARTIAL`; `party.create` v1 is a bounded Level 3 slice | mature customer/supplier/employee roles and relationship contracts                                                                                                                     |
 | `inventory`     | items, warehouses, balances, movements, reservations, transfers   |                                          `PARTIAL`; `inventory.stock.adjust` v1 is a Level 3 slice | Keep broader actions private until they have catalog metadata and owner-published events; traceability and valuation remain out of scope                                               |
 | `accounting`    | accounts, periods, revenue posting, and reversal                  | `PARTIAL`; `accounting.revenue.post` and `accounting.revenue.posted` v1 are bounded Level 3 slices | Keep generic journals, AP/AR, payment, tax, and settlement out of scope; migrate the bounded slice only after the financial-ledger activation gates pass |
@@ -210,8 +210,7 @@ when it owns an invariant that cannot remain in an existing domain.
 
 ## Current Level 3 Evidence
 
-The bounded internal catalog currently has three Level 3 action slices and an additional Accounting
-event contributor:
+The bounded internal catalog currently has six eligible Level 3 action/event slices:
 
 ```text
 inventory.stock.adjust v1
@@ -237,6 +236,11 @@ party.create v1
   -> PUBLIC action + party.created v1
   -> tenant-scoped authorization and owner event publication
   -> catalog compatibility and PostgreSQL persistence proof
+
+identity.user_account.create v1
+  -> PUBLIC action + identity.user_account.created v1
+  -> global account storage with tenant-context authorization
+  -> dependency-safe publisher composition and PostgreSQL persistence proof
 ```
 
 This satisfies the bounded Level 3 action-provider gate for Sales, Inventory, and Accounting for
