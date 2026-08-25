@@ -27,6 +27,7 @@ type DomainTarget = {
   readonly contractTests: readonly string[]
   readonly publicationTest: { readonly path: string; readonly marker: string }
   readonly catalogMarker: string
+  readonly catalogEventMarker: string
 }
 
 const targets: readonly DomainTarget[] = [
@@ -41,6 +42,7 @@ const targets: readonly DomainTarget[] = [
       marker: "UserAccountCreatedEvent",
     },
     catalogMarker: "IdentityTypedActionCatalog",
+    catalogEventMarker: "IdentityTypedEventCatalog",
   },
   {
     domain: "party",
@@ -53,6 +55,7 @@ const targets: readonly DomainTarget[] = [
       marker: "PartyCreatedEvent",
     },
     catalogMarker: "PartyTypedActionCatalog",
+    catalogEventMarker: "PartyTypedEventCatalog",
   },
   {
     domain: "inventory",
@@ -65,6 +68,7 @@ const targets: readonly DomainTarget[] = [
       marker: "InventoryStockCorrectedEvent",
     },
     catalogMarker: "InventoryTypedActionCatalog",
+    catalogEventMarker: "InventoryTypedEventCatalog",
   },
   {
     domain: "accounting",
@@ -77,6 +81,7 @@ const targets: readonly DomainTarget[] = [
       marker: "AccountingRevenuePostedEvent",
     },
     catalogMarker: "AccountingTypedActionCatalog",
+    catalogEventMarker: "AccountingTypedEventCatalog",
   },
   {
     domain: "sales",
@@ -89,6 +94,7 @@ const targets: readonly DomainTarget[] = [
       marker: "SalesOrderConfirmedEvent",
     },
     catalogMarker: "SalesTypedActionCatalog",
+    catalogEventMarker: "SalesTypedEventCatalog",
   },
   {
     domain: "procurement",
@@ -101,6 +107,7 @@ const targets: readonly DomainTarget[] = [
       marker: "ProcurementPurchaseOrderConfirmedEvent",
     },
     catalogMarker: "ProcurementTypedActionCatalog",
+    catalogEventMarker: "ProcurementTypedEventCatalog",
   },
 ]
 
@@ -173,7 +180,8 @@ for (const target of targets) {
     ) &&
     publicEventEntry.deliveryExpectation === "at_least_once"
   const tests = (await Promise.all(target.contractTests.map(exists))).every(Boolean)
-  const catalogCompatibility = await contains(catalogTest, target.catalogMarker)
+  const catalogCompatibility = await contains(catalogTest, target.catalogMarker) &&
+    await contains(catalogTest, target.catalogEventMarker)
   const publicationProof = await contains(
     target.publicationTest.path,
     target.publicationTest.marker,
