@@ -136,6 +136,15 @@ root. Kernel/infrastructure may implement the provider adapter but must not impo
 semantics. If a neutral package is needed later, it may contain only the provider-neutral port
 shape; it must not become a generic ledger domain or import TigerBeetle types.
 
+### Transitional PostgreSQL adapter exposure
+
+During the PostgreSQL-to-TigerBeetle transition, `packages/accounting/mod.ts` re-exports the
+provider factory `makePostgresqlFinancialLedger` and its layer so the application composition root
+and PostgreSQL ledger integration tests can construct the transitional adapter. This is an
+infrastructure wiring exception, not a domain contract: callers must depend on `FinancialLedgerPort`,
+not PostgreSQL, Drizzle, or TigerBeetle types. The factory should move behind the application/kernel
+composition boundary when that boundary is separated without changing the port or authority rules.
+
 ## Financial Operation Protocol
 
 An activated operation crosses the two stores in a bounded, durable protocol:

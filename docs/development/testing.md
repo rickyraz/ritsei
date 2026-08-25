@@ -263,6 +263,12 @@ Test layers must not silently weaken:
 - concurrency behavior;
 - tagged failures.
 
+The durable `packages/process` service is an intentional exception to the usual in-memory test
+layer pattern. Its job leases, fencing, replay, recovery, and workflow state are PostgreSQL-backed
+semantics; a fake memory layer would provide misleading coverage unless it proves those same
+invariants. Process tests therefore use the PostgreSQL-backed implementation until a deterministic
+production-equivalent test adapter is designed and validated.
+
 ## Required CI Stages
 
 ```text

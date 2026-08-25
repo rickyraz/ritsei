@@ -312,11 +312,25 @@ The bounded Supplier Account, Purchase Order, and Goods Receipt lifecycle remain
 Procurement is not Level 3 because it publishes no stable action/event catalog, process-visible
 failure contract, correlation metadata, event, or compensation metadata.
 
+## Runtime Composition Status
+
+`ProcurementLive` is a public package layer, but it is intentionally not installed in the current
+`apps/runtime.ts` `ApplicationLive` composition. The current executable has no Procurement API,
+worker, or Process Studio route that consumes it; Procurement tests compose its production-shaped and
+deterministic layers directly. When a supported application route is added, wire `ProcurementLive`
+at the composition root rather than introducing loopback HTTP or importing its persistence internals.
+
 ## Implementation Map
 
 | Concern | Owner path |
 | --- | --- |
-| Public service, DTOs, errors, and test layer | `packages/procurement/src/service.ts` |
+| Public schemas and service contract | `packages/procurement/src/contract.ts` |
+| Public tagged errors | `packages/procurement/src/errors.ts` |
+| Service compatibility surface | `packages/procurement/src/service.ts` |
+| Semantic persistence port | `packages/procurement/src/store.ts` |
+| PostgreSQL implementation | `packages/procurement/src/postgres.ts` |
+| Deterministic test implementation | `packages/procurement/src/memory.ts` |
+| Named production/test layers | `packages/procurement/src/layers.ts` |
 | Public package exports | `packages/procurement/mod.ts` |
 | Capability constants | `packages/procurement/src/capabilities.ts` |
 | Closed authorization catalog | `packages/authorization/src/capabilities.ts` |

@@ -53,10 +53,13 @@ following distinction:
 - ORM hooks, subscribers, and generated callbacks must not become hidden cross-domain authority;
 - generated API, form, audit, or event metadata must preserve the owning capability and scope.
 
-Static rules can reject private imports, persistence re-exports, and forbidden package edges. Owner
-contract tests must prove protected transitions, authorization, idempotency, correction, and
-consequence ownership. A future generator must add its own rule tests before generated artifacts are
-accepted as a supported public path.
+Static rules can reject private imports, persistence re-exports, and forbidden package edges. The
+transitional Accounting PostgreSQL ledger factory is the only current adapter-export exception; its
+scope and removal path are documented in [`financial-ledger.md`](./financial-ledger.md). No other
+provider, store, table, or repository implementation may be re-exported. Owner contract tests must
+prove protected transitions, authorization, idempotency, correction, and consequence ownership. A
+future generator must add its own rule tests before generated artifacts are accepted as a supported
+public path.
 
 ## Allowed Dependency Direction
 
