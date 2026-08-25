@@ -72,8 +72,8 @@ export const Warehouse = Schema.Struct({
 export const Item = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  sku: Schema.String,
-  name: Schema.String,
+  sku: NonEmptyString,
+  name: NonEmptyString,
   unitOfMeasure: UnitOfMeasure,
 })
 export const StockBalance = Schema.Struct({
@@ -158,8 +158,8 @@ export const CreateWarehouseInput = Schema.Struct({
 })
 export const CreateItemInput = Schema.Struct({
   ...ScopedInput,
-  sku: Schema.String,
-  name: Schema.String,
+  sku: NonEmptyString,
+  name: NonEmptyString,
   unitOfMeasure: DefaultUnitOfMeasure,
 })
 export const ReceiveStockInput = Schema.Struct({

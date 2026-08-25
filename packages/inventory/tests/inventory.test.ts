@@ -13,6 +13,7 @@ import {
 import {
   AdjustStockInput,
   ConfirmStockTransferInput,
+  CreateItemInput,
   CreateStockTransferInput,
   CreateWarehouseInput,
   InventoryCapabilities,
@@ -141,6 +142,16 @@ describe("inventory contract", () => {
         }),
       )
       assert.strictEqual(invalidTenant._tag, "SchemaError")
+
+      const invalidItemName = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateItemInput)({
+          principal,
+          tenantId,
+          sku: "SKU-1",
+          name: "   ",
+        }),
+      )
+      assert.strictEqual(invalidItemName._tag, "SchemaError")
 
       const invalidName = yield* Effect.flip(
         Schema.decodeUnknownEffect(CreateWarehouseInput)({
@@ -316,6 +327,14 @@ describe("inventory contract", () => {
         "SchemaError",
       )
       yield* Schema.decodeUnknownEffect(Item)(item)
+      assert.strictEqual(
+        (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, sku: " " })))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, name: " " })))._tag,
+        "SchemaError",
+      )
       const balance = yield* inventory.receiveStock({
         principal,
         tenantId,
