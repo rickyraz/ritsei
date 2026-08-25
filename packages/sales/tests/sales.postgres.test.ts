@@ -111,6 +111,20 @@ it.effect.skipIf(databaseUrl === undefined)(
               unitPrice: LARGE_FINANCIAL_MAJOR,
             }],
           })
+          const invalidDraftTotal = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update sales.orders
+                set total = 0
+                where tenant_id = ${tenant!.id} and id = ${order.id}
+              `
+            })
+          )
+          assert.strictEqual((invalidDraftTotal as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidDraftTotal as { constraint_name?: string }).constraint_name,
+            "sales_draft_order_total_consistent",
+          )
           const aggregateOverflow = yield* Effect.flip(sales.createOrder({
             principal,
             tenantId: tenant!.id,
@@ -554,11 +568,16 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* Effect.promise(() =>
           client`
             insert into sales.order_lines (tenant_id, order_id, item_id, quantity, unit_price)
-            values (${tenant!.id}, ${badOrder!.id}, ${uuidv7()}, 1, 10.00)
+            values (${tenant!.id}, ${badOrder!.id}, ${uuidv7()}, 1, 11.00)
           `
         )
         const inconsistent = yield* postgresFailure(() =>
           client.begin(async (transaction) => {
+            await transaction`
+              update sales.order_lines
+              set unit_price = 10.00
+              where tenant_id = ${tenant!.id} and order_id = ${badOrder!.id}
+            `
             await transaction`
               update sales.orders
               set status = 'confirmed', confirmation_idempotency_key = 'bad-total-confirmation',
