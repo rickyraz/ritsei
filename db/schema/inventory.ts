@@ -80,7 +80,9 @@ export const items = inventorySchema.table("items", {
   }).onDelete("cascade"),
   check(
     "items_unit_of_measure_check",
-    sql`${table.unitOfMeasure} <> '' and ${table.unitOfMeasure} = upper(trim(${table.unitOfMeasure}))`,
+    sql`${table.unitOfMeasure} <> '' and
+      ${table.unitOfMeasure} = upper(trim(${table.unitOfMeasure})) and
+      ${table.unitOfMeasure} ~ '^[A-Z][A-Z0-9_-]*$'`,
   ),
 ])
 

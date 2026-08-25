@@ -184,6 +184,18 @@ it.effect.skipIf(databaseUrl === undefined)(
             unitOfMeasure: "box",
           })
           assert.notStrictEqual(otherItem.id, item.id)
+          const invalidItemUnitOfMeasure = yield* postgresFailure(() =>
+            client`
+              update inventory.items
+              set unit_of_measure = 'A B'
+              where tenant_id = ${tenant.id} and id = ${item.id}
+            `
+          )
+          assert.strictEqual((invalidItemUnitOfMeasure as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidItemUnitOfMeasure as { constraint_name?: string }).constraint_name,
+            "items_unit_of_measure_check",
+          )
           yield* inventory.receiveStock({
             principal,
             tenantId: tenant.id,
