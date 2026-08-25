@@ -200,7 +200,10 @@ export const CreateStockTransferInput = Schema.Struct({
   ...ScopedInput,
   sourceWarehouseId: Uuid,
   destinationWarehouseId: Uuid,
-  lines: Schema.Array(StockTransferLine).check(Schema.isMinLength(1)),
+  lines: Schema.Array(StockTransferLine).check(Schema.isMinLength(1)).check(Schema.makeFilter(
+    (lines) => new Set(lines.map((line) => line.itemId)).size === lines.length,
+    { expected: "stock transfer items must be unique" },
+  )),
 })
 export const ConfirmStockTransferInput = Schema.Struct({
   ...ScopedInput,
