@@ -280,9 +280,10 @@ export const makeInventoryMemoryLayer = () =>
                 )
               }
             }
-            const idempotencyKey = decoded.idempotencyKey === undefined
+            const normalizedIdempotencyKey = decoded.idempotencyKey?.trim()
+            const idempotencyKey = normalizedIdempotencyKey === undefined
               ? undefined
-              : `${decoded.tenantId}:${decoded.idempotencyKey}`
+              : `${decoded.tenantId}:${normalizedIdempotencyKey}`
             const existing = idempotencyKey === undefined
               ? undefined
               : storedReservations.get(reservationIdsByIdempotencyKey.get(idempotencyKey) ?? "")
@@ -295,7 +296,7 @@ export const makeInventoryMemoryLayer = () =>
                 return yield* Effect.fail(
                   new StockReservationIdempotencyConflict({
                     tenantId: decoded.tenantId,
-                    idempotencyKey: decoded.idempotencyKey!,
+                    idempotencyKey: normalizedIdempotencyKey!,
                   }),
                 )
               }
@@ -321,7 +322,7 @@ export const makeInventoryMemoryLayer = () =>
               warehouseId: decoded.warehouseId,
               itemId: decoded.itemId,
               quantity: decoded.quantity,
-              idempotencyKey: decoded.idempotencyKey ?? null,
+              idempotencyKey: normalizedIdempotencyKey ?? null,
               status: "active",
             }
             storedReservations.set(reservation.id, reservation)

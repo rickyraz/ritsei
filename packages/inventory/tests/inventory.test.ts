@@ -401,7 +401,7 @@ describe("inventory contract", () => {
         warehouseId: warehouse.id,
         itemId: item.id,
         quantity: "4",
-        idempotencyKey: "reservation-1",
+        idempotencyKey: " reservation-1 ",
       })
       const repeated = yield* inventory.reserveStock({
         principal,

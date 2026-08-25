@@ -573,6 +573,7 @@ export const makeInventoryPostgresService = Effect.gen(function* () {
           tenantId: decoded.tenantId,
           capability: InventoryCapabilities.stockReserve,
         })
+        const normalizedIdempotencyKey = decoded.idempotencyKey?.trim()
         const reservation = yield* database.transaction(
           async (tx) => {
             if (decoded.legalEntityId !== undefined) {
@@ -587,7 +588,7 @@ export const makeInventoryPostgresService = Effect.gen(function* () {
                 return { _tag: "legal-entity-mismatch" as const }
               }
             }
-            if (decoded.idempotencyKey !== undefined) {
+            if (normalizedIdempotencyKey !== undefined) {
               const existingRows = await tx.select({
                 id: reservations.id,
                 tenantId: reservations.tenantId,
@@ -601,7 +602,7 @@ export const makeInventoryPostgresService = Effect.gen(function* () {
                 .where(
                   and(
                     eq(reservations.tenantId, decoded.tenantId),
-                    eq(reservations.idempotencyKey, decoded.idempotencyKey),
+                    eq(reservations.idempotencyKey, normalizedIdempotencyKey),
                   ),
                 )
                 .for("update")
@@ -639,7 +640,7 @@ export const makeInventoryPostgresService = Effect.gen(function* () {
               warehouseId: decoded.warehouseId,
               itemId: decoded.itemId,
               quantity: decoded.quantity,
-              idempotencyKey: decoded.idempotencyKey ?? null,
+              idempotencyKey: normalizedIdempotencyKey ?? null,
             }).returning({
               id: reservations.id,
               tenantId: reservations.tenantId,
@@ -665,13 +666,13 @@ export const makeInventoryPostgresService = Effect.gen(function* () {
           Effect.catch((error) => {
             if (
               !isDatabaseConstraint(error, "reservations_tenant_idempotency_key") ||
-              decoded.idempotencyKey === undefined
+              normalizedIdempotencyKey === undefined
             ) return Effect.fail(error)
             return database.query(
               (db) =>
                 db.select(reservationSelection).from(reservations).where(and(
                   eq(reservations.tenantId, decoded.tenantId),
-                  eq(reservations.idempotencyKey, decoded.idempotencyKey!),
+                  eq(reservations.idempotencyKey, normalizedIdempotencyKey),
                 )),
               "inventory.stock.reserve.idempotency",
             ).pipe(
@@ -700,7 +701,7 @@ export const makeInventoryPostgresService = Effect.gen(function* () {
           return yield* Effect.fail(
             new StockReservationIdempotencyConflict({
               tenantId: decoded.tenantId,
-              idempotencyKey: decoded.idempotencyKey!,
+              idempotencyKey: normalizedIdempotencyKey!,
             }),
           )
         }
