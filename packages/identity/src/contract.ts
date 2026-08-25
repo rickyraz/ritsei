@@ -24,7 +24,7 @@ export const CreateUserAccountForTenantInput = Schema.Struct({
 })
 
 export const UpdateUserAccountInput = Schema.Struct({
-  id: Schema.String,
+  id: Uuid,
   email: Schema.String.check(Schema.isPattern(/\S/)),
 })
 

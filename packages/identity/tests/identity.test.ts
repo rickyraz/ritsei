@@ -9,6 +9,7 @@ import {
   IdentityEventPublisher,
   makeUserAccountService,
   makeUserAccountTestLayer,
+  UpdateUserAccountInput,
   UserAccount,
   UserAccountAlreadyExists,
   UserAccountAuthenticationState,
@@ -131,6 +132,13 @@ describe("user account contract", () => {
     withUserAccount(
       Effect.gen(function* () {
         const service = yield* UserAccountService
+        const invalidId = yield* Effect.flip(
+          Schema.decodeUnknownEffect(UpdateUserAccountInput)({
+            id: "not-a-uuid",
+            email: "invalid@example.com",
+          }),
+        )
+        assert.strictEqual(invalidId._tag, "SchemaError")
         const first = yield* service.create({ email: "first@example.com" })
         const second = yield* service.create({ email: "second@example.com" })
 
@@ -139,7 +147,10 @@ describe("user account contract", () => {
           UserAccountAlreadyExists,
         )
         assert.instanceOf(
-          yield* Effect.flip(service.update({ id: "missing", email: "missing@example.com" })),
+          yield* Effect.flip(service.update({
+            id: "00000000-0000-4000-8000-000000000099",
+            email: "missing@example.com",
+          })),
           UserAccountNotFound,
         )
         assert.instanceOf(yield* Effect.flip(service.remove("missing")), UserAccountNotFound)
@@ -168,7 +179,10 @@ describe("user account contract", () => {
           DatabaseFailure,
         )
         assert.instanceOf(
-          yield* Effect.flip(service.update({ id: "missing", email: "failure@example.com" })),
+          yield* Effect.flip(service.update({
+            id: "00000000-0000-4000-8000-000000000099",
+            email: "failure@example.com",
+          })),
           DatabaseFailure,
         )
       }),
