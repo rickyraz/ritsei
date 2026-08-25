@@ -191,6 +191,21 @@ describe("party contract", () => {
         value: "1234567890123",
       })
       yield* Schema.decodeUnknownEffect(ExternalIdentifier)(identifier)
+      for (
+        const invalid of [
+          { provider: " gs1 " },
+          { scheme: "gln" },
+          { scope: " global " },
+          { value: " 1234567890123 " },
+        ]
+      ) {
+        assert.strictEqual(
+          (yield* Effect.flip(
+            Schema.decodeUnknownEffect(ExternalIdentifier)({ ...identifier, ...invalid }),
+          ))._tag,
+          "SchemaError",
+        )
+      }
       assert.strictEqual(
         (yield* Effect.flip(
           Schema.decodeUnknownEffect(ExternalIdentifier)({ ...identifier, value: " " }),

@@ -22,6 +22,14 @@ import type {
 } from "./errors.ts"
 
 const NonBlankString = Schema.String.check(Schema.isPattern(/\S/))
+const TrimmedNonBlankString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
+const UpperTrimmedNonBlankString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim() && value === value.toUpperCase(),
+  { expected: "a trimmed uppercase nonblank string" },
+))
 const Uuid = Schema.String.check(Schema.isUUID())
 
 export const PartyKind = Schema.Literals(["person", "organization"])
@@ -44,11 +52,11 @@ export const ExternalIdentifier = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
   partyId: Uuid,
-  provider: NonBlankString,
-  scheme: NonBlankString,
-  scope: NonBlankString,
+  provider: UpperTrimmedNonBlankString,
+  scheme: UpperTrimmedNonBlankString,
+  scope: TrimmedNonBlankString,
   legalEntityId: Schema.NullOr(Uuid),
-  value: NonBlankString,
+  value: TrimmedNonBlankString,
 })
 
 export const LegalEntity = Schema.Struct({
