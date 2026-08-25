@@ -78,6 +78,10 @@ describe("party contract", () => {
         name: " ACME Indonesia ",
       })
 
+      assert.match(
+        party.id,
+        /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      )
       assert.strictEqual(party.name, "ACME Indonesia")
       assert.strictEqual(published.length, 1)
       assert.strictEqual(published[0].eventType, PartyCreatedEvent.id)

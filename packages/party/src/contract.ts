@@ -23,6 +23,7 @@ import type {
 
 const NonEmptyString = Schema.String.check(Schema.isNonEmpty())
 const NonBlankString = Schema.String.check(Schema.isPattern(/\S/))
+const Uuid = Schema.String.check(Schema.isUUID())
 
 export const PartyKind = Schema.Literals(["person", "organization"])
 export const PartyRole = Schema.Literals(["customer", "supplier", "employee", "partner"])
@@ -34,7 +35,7 @@ export const PartyRelationshipKind = Schema.Literals([
 ])
 
 export const Party = Schema.Struct({
-  id: Schema.String,
+  id: Uuid,
   tenantId: Schema.String,
   kind: PartyKind,
   name: Schema.String,
