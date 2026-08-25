@@ -15,6 +15,7 @@ import {
   CreatePartyRepresentationInput,
   ExternalIdentifier,
   ExternalIdentifierAlreadyAssigned,
+  GetPartyRelationshipInput,
   LegalEntity,
   LegalEntityAlreadyExists,
   LegalEntityNotFound,
@@ -508,6 +509,14 @@ describe("party contract", () => {
         kind: "supplier",
       })
 
+      const invalidRelationshipRead = yield* Effect.flip(
+        Schema.decodeUnknownEffect(GetPartyRelationshipInput)({
+          principal,
+          tenantId,
+          relationshipId: "not-a-uuid",
+        }),
+      )
+      assert.strictEqual(invalidRelationshipRead._tag, "SchemaError")
       assert.deepStrictEqual(
         yield* service.getRelationship({ principal, tenantId, relationshipId: relationship.id }),
         relationship,
@@ -516,7 +525,7 @@ describe("party contract", () => {
         yield* Effect.flip(service.getRelationship({
           principal,
           tenantId,
-          relationshipId: "missing",
+          relationshipId: "00000000-0000-4000-8000-000000000013",
         })),
         PartyRelationshipNotFound,
       )
@@ -538,7 +547,7 @@ describe("party contract", () => {
           yield* Effect.flip(service.getRelationship({
             principal,
             tenantId,
-            relationshipId: "missing",
+            relationshipId: "00000000-0000-4000-8000-000000000014",
           })),
           AuthorizationDenied,
         )

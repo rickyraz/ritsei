@@ -123,8 +123,8 @@ export const CreatePartyRelationshipInput = Schema.Struct({
 
 export const GetPartyRelationshipInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  relationshipId: Schema.String,
+  tenantId: Uuid,
+  relationshipId: Uuid,
 })
 
 export const AttachExternalIdentifierInput = Schema.Struct({
