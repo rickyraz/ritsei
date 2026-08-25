@@ -30,7 +30,7 @@ export const UpdateUserAccountInput = Schema.Struct({
 
 export const UserAccount = Schema.Struct({
   id: Uuid,
-  email: Schema.String,
+  email: NonEmptyString,
   status: UserAccountStatus,
 })
 

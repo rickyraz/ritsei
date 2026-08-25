@@ -9,6 +9,7 @@ import {
   IdentityEventPublisher,
   makeUserAccountService,
   makeUserAccountTestLayer,
+  UserAccount,
   UserAccountAlreadyExists,
   UserAccountAuthenticationState,
   UserAccountCreatedEvent,
@@ -60,6 +61,7 @@ describe("user account contract", () => {
         email: "  USER@Example.COM ",
       })
 
+      yield* Schema.decodeUnknownEffect(UserAccount)(created)
       assert.strictEqual(created.email, "user@example.com")
       assert.strictEqual(published.length, 1)
       assert.strictEqual(published[0].eventType, UserAccountCreatedEvent.id)
