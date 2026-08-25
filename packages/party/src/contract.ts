@@ -140,8 +140,8 @@ export const AttachExternalIdentifierInput = Schema.Struct({
 
 export const CreateLegalEntityInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  organizationId: Schema.String,
+  tenantId: Uuid,
+  organizationId: Uuid,
 })
 
 export const CreateBranchInput = Schema.Struct({

@@ -8,6 +8,7 @@ import {
   Branch,
   BranchAlreadyExists,
   CreateBranchInput,
+  CreateLegalEntityInput,
   CreatePartyInput,
   ExternalIdentifier,
   ExternalIdentifierAlreadyAssigned,
@@ -157,6 +158,14 @@ describe("party contract", () => {
         ))._tag,
         "SchemaError",
       )
+      const invalidLegalEntity = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateLegalEntityInput)({
+          principal,
+          tenantId,
+          organizationId: "not-a-uuid",
+        }),
+      )
+      assert.strictEqual(invalidLegalEntity._tag, "SchemaError")
       const legalEntity = yield* service.createLegalEntity({
         principal,
         tenantId,
