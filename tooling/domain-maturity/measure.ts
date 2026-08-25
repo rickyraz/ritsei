@@ -1,7 +1,16 @@
 type CatalogEntry = {
   readonly kind: string
+  readonly id: string
   readonly owningDomain: string
   readonly stability: string
+  readonly requiredCapability?: string
+  readonly preconditions?: readonly string[]
+  readonly errorSchemas?: readonly unknown[]
+  readonly transactionSemantics?: string
+  readonly compensation?: unknown
+  readonly correlationFields?: readonly string[]
+  readonly filterableFields?: readonly string[]
+  readonly deliveryExpectation?: string
 }
 
 type DomainTarget = {
@@ -94,6 +103,7 @@ const catalogTest = "packages/catalog/tests/catalog.test.ts"
 const isCatalogEntry = (value: unknown): value is CatalogEntry =>
   typeof value === "object" && value !== null &&
   typeof (value as { kind?: unknown }).kind === "string" &&
+  typeof (value as { id?: unknown }).id === "string" &&
   typeof (value as { owningDomain?: unknown }).owningDomain === "string" &&
   typeof (value as { stability?: unknown }).stability === "string"
 
@@ -122,34 +132,55 @@ for (const target of targets) {
   const moduleExports = await import(target.module) as Record<string, unknown>
   const actions = entries(moduleExports[target.actionsExport])
   const events = entries(moduleExports[target.eventsExport])
-  const publicAction = actions.some((entry) =>
+  const publicActionEntry = actions.find((entry) =>
     entry.kind === "DomainAction" && entry.owningDomain === target.domain &&
     entry.stability === "PUBLIC"
   )
-  const publicEvent = events.some((entry) =>
+  const publicEventEntry = events.find((entry) =>
     entry.kind === "DomainEvent" && entry.owningDomain === target.domain &&
     entry.stability === "PUBLIC"
   )
+  const publicAction = publicActionEntry !== undefined
+  const publicEvent = publicEventEntry !== undefined
+  const actionContract = publicActionEntry !== undefined &&
+    publicActionEntry.requiredCapability === publicActionEntry.id &&
+    publicActionEntry.preconditions?.includes("authorized") === true &&
+    (publicActionEntry.errorSchemas?.length ?? 0) > 0 &&
+    publicActionEntry.transactionSemantics === "local_atomic" &&
+    publicActionEntry.compensation !== undefined
+  const eventContract = publicEventEntry !== undefined &&
+    (publicEventEntry.correlationFields?.length ?? 0) > 0 &&
+    new Set(publicEventEntry.correlationFields).size ===
+      publicEventEntry.correlationFields!.length &&
+    (publicEventEntry.filterableFields?.length ?? 0) > 0 &&
+    publicEventEntry.correlationFields!.every((field) =>
+      publicEventEntry.filterableFields!.includes(field)
+    ) &&
+    publicEventEntry.deliveryExpectation === "at_least_once"
   const tests = (await Promise.all(target.contractTests.map(exists))).every(Boolean)
   const catalogCompatibility = await contains(catalogTest, target.catalogMarker)
   const publicationProof = await contains(
     target.publicationTest.path,
     target.publicationTest.marker,
   )
-  const level3 = publicAction && publicEvent && tests && catalogCompatibility && publicationProof
+  const level3 = publicAction && publicEvent && actionContract && eventContract && tests &&
+    catalogCompatibility && publicationProof
   results.push({
     target,
     level3,
     publicAction,
     publicEvent,
+    actionContract,
+    eventContract,
     tests,
     catalogCompatibility,
     publicationProof,
   })
   console.log(
     `${level3 ? "PASS" : "OPEN"} ${target.domain} ` +
-      `action=${publicAction} event=${publicEvent} tests=${tests} ` +
-      `catalog=${catalogCompatibility} publication=${publicationProof}`,
+      `action=${publicAction} event=${publicEvent} action_contract=${actionContract} ` +
+      `event_contract=${eventContract} tests=${tests} catalog=${catalogCompatibility} ` +
+      `publication=${publicationProof}`,
   )
 }
 
