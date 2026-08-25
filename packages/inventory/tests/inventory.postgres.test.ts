@@ -938,6 +938,20 @@ it.effect.skipIf(databaseUrl === undefined)(
             })),
             StockTransferNotFound,
           )
+          const incompleteTransfer = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update inventory.stock_transfers
+                set status = 'completed', completed_at = now()
+                where tenant_id = ${tenant.id} and id = ${transfer.id}
+              `
+            })
+          )
+          assert.strictEqual((incompleteTransfer as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (incompleteTransfer as { constraint_name?: string }).constraint_name,
+            "inventory_completed_transfer_receipts_check",
+          )
 
           yield* inventory.completeTransfer({
             principal,
