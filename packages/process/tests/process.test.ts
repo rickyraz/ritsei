@@ -47,6 +47,8 @@ it.effect("defines versioned post-commit event and leased job contracts", () =>
     const job = yield* Schema.decodeUnknownEffect(ProcessJob)({
       jobId: "018f3f77-0c5a-7cc0-8b62-6a163d214126",
       tenantId: "018f3f77-0c5a-7cc0-8b62-6a163d214124",
+      fenceScope: "process.order.confirmation:tenant-1:workflow-1",
+      leaseGeneration: "0",
       jobType: "process.order_confirmation.post_commit",
       idempotencyKey: "confirmation-1",
       priority: 100,

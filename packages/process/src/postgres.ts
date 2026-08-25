@@ -1,10 +1,10 @@
-import { and, asc, desc, eq, gt, lte, or } from "drizzle-orm"
+import { and, asc, desc, eq, gt, lte, or, sql } from "drizzle-orm"
 import * as Clock from "effect/Clock"
 import * as Effect from "effect/Effect"
 import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
 
-import { processJobs, workflowRuns } from "../../../db/schema/process.ts"
+import { jobFenceScopes, processJobs, workflowRuns } from "../../../db/schema/process.ts"
 import { AuthorizationDenied, AuthorizationService } from "../../authorization/mod.ts"
 import {
   AccountingCapabilities,
@@ -170,6 +170,9 @@ const withProcessOperationNames = (service: ProcessService): ProcessService => (
   failJob: Effect.fn("ProcessService.failJob")((input: unknown) => service.failJob(input)),
 })
 
+const defaultFenceScope = (tenantId: string, jobType: string, idempotencyKey: string) =>
+  `job:${tenantId}:${jobType}:${idempotencyKey}`
+
 export const makeProcessJobEnqueuer = Effect.gen(function* () {
   const database = yield* Database
   return {
@@ -178,11 +181,17 @@ export const makeProcessJobEnqueuer = Effect.gen(function* () {
         const decoded = yield* Schema.decodeUnknownEffect(DurableJobInput)(input)
         const payload = yield* Schema.decodeUnknownEffect(Schema.Json)(decoded.payload)
         const jobType = yield* Schema.decodeUnknownEffect(ProcessJobType)(decoded.jobType)
+        const fenceScope = decoded.fenceScope ?? defaultFenceScope(
+          decoded.tenantId,
+          jobType,
+          decoded.idempotencyKey,
+        )
         const existingRows = yield* database.query(
           (db) =>
             db.select({
               id: processJobs.id,
               tenantId: processJobs.tenantId,
+              fenceScope: processJobs.fenceScope,
               jobType: processJobs.jobType,
               idempotencyKey: processJobs.idempotencyKey,
               priority: processJobs.priority,
@@ -197,10 +206,19 @@ export const makeProcessJobEnqueuer = Effect.gen(function* () {
         )
         const existing = existingRows[0]
         if (existing !== undefined) {
+          if (decoded.fenceScope !== null && existing.fenceScope !== fenceScope) {
+            return yield* Effect.fail(
+              new DatabaseFailure({
+                operation: "process.job.enqueue.fence_scope",
+                cause: "idempotent job fence scope cannot change",
+              }),
+            )
+          }
           const existingPayload = yield* Schema.decodeUnknownEffect(Schema.Json)(existing.payload)
           return {
             jobId: existing.id,
             tenantId: existing.tenantId,
+            fenceScope: existing.fenceScope,
             jobType: existing.jobType,
             idempotencyKey: existing.idempotencyKey,
             priority: existing.priority,
@@ -212,6 +230,7 @@ export const makeProcessJobEnqueuer = Effect.gen(function* () {
           (db) =>
             db.insert(processJobs).values({
               tenantId: decoded.tenantId,
+              fenceScope,
               jobType,
               idempotencyKey: decoded.idempotencyKey,
               priority: decoded.priority,
@@ -220,6 +239,7 @@ export const makeProcessJobEnqueuer = Effect.gen(function* () {
             }).returning({
               id: processJobs.id,
               tenantId: processJobs.tenantId,
+              fenceScope: processJobs.fenceScope,
               jobType: processJobs.jobType,
               idempotencyKey: processJobs.idempotencyKey,
               priority: processJobs.priority,
@@ -232,6 +252,7 @@ export const makeProcessJobEnqueuer = Effect.gen(function* () {
         return {
           jobId: row!.id,
           tenantId: row!.tenantId,
+          fenceScope: row!.fenceScope,
           jobType: row!.jobType,
           idempotencyKey: row!.idempotencyKey,
           priority: row!.priority,
@@ -245,6 +266,8 @@ export const makeProcessJobEnqueuer = Effect.gen(function* () {
 const processJobSelection = {
   id: processJobs.id,
   tenantId: processJobs.tenantId,
+  fenceScope: processJobs.fenceScope,
+  leaseGeneration: processJobs.leaseGeneration,
   jobType: processJobs.jobType,
   idempotencyKey: processJobs.idempotencyKey,
   priority: processJobs.priority,
@@ -261,6 +284,8 @@ const processJobSelection = {
 const toProcessJob = (row: {
   readonly id: string
   readonly tenantId: string
+  readonly fenceScope: string
+  readonly leaseGeneration: string
   readonly jobType: string
   readonly idempotencyKey: string
   readonly priority: number
@@ -275,6 +300,8 @@ const toProcessJob = (row: {
 }) => ({
   jobId: row.id,
   tenantId: row.tenantId,
+  fenceScope: row.fenceScope,
+  leaseGeneration: row.leaseGeneration,
   jobType: row.jobType as ProcessJob["jobType"],
   idempotencyKey: row.idempotencyKey,
   priority: row.priority,
@@ -955,6 +982,7 @@ export const makeProcessService = Effect.gen(function* () {
             (db) =>
               db.insert(processJobs).values({
                 tenantId: decoded.tenantId,
+                fenceScope: `process.order.confirmation:${decoded.tenantId}:${run[0]!.id}`,
                 jobType: ProcessPostCommitJobTypes.confirmation,
                 idempotencyKey: decoded.idempotencyKey,
                 priority: ProcessLifecycleJobPriority,
@@ -1161,6 +1189,7 @@ export const makeProcessService = Effect.gen(function* () {
             (db) =>
               db.insert(processJobs).values({
                 tenantId: decoded.tenantId,
+                fenceScope: `process.order.cancellation:${decoded.tenantId}:${run!.id}`,
                 jobType: ProcessPostCommitJobTypes.cancellation,
                 idempotencyKey: decoded.idempotencyKey,
                 priority: ProcessLifecycleJobPriority,
@@ -1335,6 +1364,7 @@ export const makeProcessService = Effect.gen(function* () {
             (db) =>
               db.insert(processJobs).values({
                 tenantId: decoded.tenantId,
+                fenceScope: `process.order.fulfillment:${decoded.tenantId}:${run!.id}`,
                 jobType: ProcessPostCommitJobTypes.fulfillment,
                 idempotencyKey: decoded.idempotencyKey,
                 priority: ProcessLifecycleJobPriority,
@@ -1458,13 +1488,26 @@ export const makeProcessService = Effect.gen(function* () {
           .limit(1).for("update", { skipLocked: true })
         const row = rows[0]
         if (row === undefined) return null
-        // UUIDv4 is intentional: this is an opaque fencing token, not a persistent identity.
+        await tx.insert(jobFenceScopes).values({
+          tenantId: row.tenantId,
+          fenceScope: row.fenceScope,
+        }).onConflictDoNothing()
+        const [generation] = await tx.update(jobFenceScopes).set({
+          generation: sql`${jobFenceScopes.generation} + 1`,
+          updatedAt: nowDate,
+        }).where(and(
+          eq(jobFenceScopes.tenantId, row.tenantId),
+          eq(jobFenceScopes.fenceScope, row.fenceScope),
+        )).returning({ generation: jobFenceScopes.generation })
+        if (generation === undefined) return null
+        // UUIDv4 is intentional: this is an opaque lease capability, not a fencing generation.
         const leaseToken = crypto.randomUUID()
         const [updated] = await tx.update(processJobs).set({
           status: "leased",
           leaseUntil: new Date(nowDate.getTime() + leaseDurationMs),
           leaseOwner: decoded.workerId,
           leaseToken,
+          leaseGeneration: generation.generation,
           attempts: row.attempts + 1,
           updatedAt: nowDate,
         }).where(eq(processJobs.id, row.id)).returning(processJobSelection)
@@ -1485,6 +1528,7 @@ export const makeProcessService = Effect.gen(function* () {
           leaseUntil: processJobs.leaseUntil,
           leaseOwner: processJobs.leaseOwner,
           leaseToken: processJobs.leaseToken,
+          leaseGeneration: processJobs.leaseGeneration,
         }).from(processJobs).where(and(
           eq(processJobs.id, decoded.jobId),
           eq(processJobs.tenantId, decoded.tenantId),
@@ -1494,7 +1538,8 @@ export const makeProcessService = Effect.gen(function* () {
         if (
           current.status !== "leased" || current.leaseUntil === null ||
           current.leaseUntil <= nowDate || current.leaseOwner !== decoded.workerId ||
-          current.leaseToken !== decoded.leaseToken
+          current.leaseToken !== decoded.leaseToken ||
+          current.leaseGeneration !== decoded.leaseGeneration
         ) return { _tag: "lease-lost" as const }
         const [updated] = await tx.update(processJobs).set({
           leaseUntil: new Date(nowDate.getTime() + leaseDurationMs),
@@ -1506,6 +1551,7 @@ export const makeProcessService = Effect.gen(function* () {
           gt(processJobs.leaseUntil, nowDate),
           eq(processJobs.leaseOwner, decoded.workerId),
           eq(processJobs.leaseToken, decoded.leaseToken),
+          eq(processJobs.leaseGeneration, decoded.leaseGeneration),
         )).returning(processJobSelection)
         return updated === undefined
           ? { _tag: "lease-lost" as const }
@@ -1534,6 +1580,7 @@ export const makeProcessService = Effect.gen(function* () {
           leaseUntil: processJobs.leaseUntil,
           leaseOwner: processJobs.leaseOwner,
           leaseToken: processJobs.leaseToken,
+          leaseGeneration: processJobs.leaseGeneration,
         }).from(processJobs).where(and(
           eq(processJobs.id, decoded.jobId),
           eq(processJobs.tenantId, decoded.tenantId),
@@ -1543,7 +1590,8 @@ export const makeProcessService = Effect.gen(function* () {
         if (
           current.status !== "leased" || current.leaseUntil === null ||
           current.leaseUntil <= completedAt || current.leaseOwner !== decoded.workerId ||
-          current.leaseToken !== decoded.leaseToken
+          current.leaseToken !== decoded.leaseToken ||
+          current.leaseGeneration !== decoded.leaseGeneration
         ) return { _tag: "lease-lost" as const }
         const [completed] = await tx.update(processJobs).set({
           status: "completed",
@@ -1559,6 +1607,7 @@ export const makeProcessService = Effect.gen(function* () {
           gt(processJobs.leaseUntil, completedAt),
           eq(processJobs.leaseOwner, decoded.workerId),
           eq(processJobs.leaseToken, decoded.leaseToken),
+          eq(processJobs.leaseGeneration, decoded.leaseGeneration),
         )).returning(processJobSelection)
         return completed === undefined
           ? { _tag: "lease-lost" as const }
@@ -1587,6 +1636,7 @@ export const makeProcessService = Effect.gen(function* () {
           leaseUntil: processJobs.leaseUntil,
           leaseOwner: processJobs.leaseOwner,
           leaseToken: processJobs.leaseToken,
+          leaseGeneration: processJobs.leaseGeneration,
           attempts: processJobs.attempts,
         }).from(processJobs).where(and(
           eq(processJobs.id, decoded.jobId),
@@ -1597,7 +1647,8 @@ export const makeProcessService = Effect.gen(function* () {
         if (
           current.status !== "leased" || current.leaseUntil === null ||
           current.leaseUntil <= nowDate || current.leaseOwner !== decoded.workerId ||
-          current.leaseToken !== decoded.leaseToken
+          current.leaseToken !== decoded.leaseToken ||
+          current.leaseGeneration !== decoded.leaseGeneration
         ) return { _tag: "lease-lost" as const }
         const exhausted = current.attempts >= ProcessJobMaxAttempts
         const retry = !exhausted && decoded.retryAt !== null
@@ -1617,6 +1668,7 @@ export const makeProcessService = Effect.gen(function* () {
           gt(processJobs.leaseUntil, nowDate),
           eq(processJobs.leaseOwner, decoded.workerId),
           eq(processJobs.leaseToken, decoded.leaseToken),
+          eq(processJobs.leaseGeneration, decoded.leaseGeneration),
         )).returning(processJobSelection)
         return failed === undefined
           ? { _tag: "lease-lost" as const }

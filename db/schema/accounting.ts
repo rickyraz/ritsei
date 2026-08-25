@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm"
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -452,6 +453,9 @@ export const financialOperations = accountingSchema.table("financial_operations"
   requestFingerprint: text("request_fingerprint").notNull(),
   actorPrincipalId: text("actor_principal_id").notNull(),
   actorSessionId: text("actor_session_id").notNull(),
+  acceptedFenceGeneration: bigint("accepted_fence_generation", { mode: "string" })
+    .notNull()
+    .default("0"),
   status: financialOperationStatus("status").notNull().default("intent"),
   attempts: integer("attempts").notNull().default(0),
   scheduledAt: timestamp("scheduled_at", { withTimezone: true }).defaultNow().notNull(),
@@ -511,6 +515,10 @@ export const financialOperations = accountingSchema.table("financial_operations"
   check("financial_operations_currency_check", sql`${table.currency} ~ '^[A-Z]{3}$'`),
   check("financial_operations_mapping_version_check", sql`${table.mappingVersion} > 0`),
   check("financial_operations_attempts_check", sql`${table.attempts} >= 0`),
+  check(
+    "financial_operations_accepted_fence_generation_check",
+    sql`${table.acceptedFenceGeneration} >= 0`,
+  ),
   check("financial_operations_operation_id_check", sql`${table.operationId} ~ '[^[:space:]]'`),
   check("financial_operations_reference_check", sql`${table.reference} ~ '[^[:space:]]'`),
   check(

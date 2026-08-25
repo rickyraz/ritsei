@@ -591,7 +591,8 @@ it.effect.skipIf(databaseUrl === undefined)(
         const [storedJob] = yield* Effect.promise(() =>
           client<Record<string, unknown>[]>`
             select
-              id as "jobId", tenant_id as "tenantId", job_type as "jobType",
+              id as "jobId", tenant_id as "tenantId", fence_scope as "fenceScope",
+              lease_generation as "leaseGeneration", job_type as "jobType",
               idempotency_key as "idempotencyKey", priority, status,
               to_json(scheduled_at) as "scheduledAt", to_json(lease_until) as "leaseUntil",
               attempts, payload, correlation_id as "correlationId"
@@ -604,6 +605,8 @@ it.effect.skipIf(databaseUrl === undefined)(
           {
             jobId: decodedJob.jobId,
             tenantId: decodedJob.tenantId,
+            fenceScope: decodedJob.fenceScope,
+            leaseGeneration: decodedJob.leaseGeneration,
             jobType: decodedJob.jobType,
             idempotencyKey: decodedJob.idempotencyKey,
             priority: decodedJob.priority,
@@ -615,6 +618,8 @@ it.effect.skipIf(databaseUrl === undefined)(
           {
             jobId: result.jobId,
             tenantId: input.tenantId,
+            fenceScope: decodedJob.fenceScope,
+            leaseGeneration: "0",
             jobType: ProcessPostCommitJobTypes.cancellation,
             idempotencyKey: input.idempotencyKey,
             priority: ProcessLifecycleJobPriority,
@@ -1140,7 +1145,8 @@ it.effect.skipIf(databaseUrl === undefined)(
         const [storedJob] = yield* Effect.promise(() =>
           client<Record<string, unknown>[]>`
             select
-              id as "jobId", tenant_id as "tenantId", job_type as "jobType",
+              id as "jobId", tenant_id as "tenantId", fence_scope as "fenceScope",
+              lease_generation as "leaseGeneration", job_type as "jobType",
               idempotency_key as "idempotencyKey", priority, status,
               to_json(scheduled_at) as "scheduledAt", to_json(lease_until) as "leaseUntil",
               attempts, payload, correlation_id as "correlationId"
@@ -1153,6 +1159,8 @@ it.effect.skipIf(databaseUrl === undefined)(
           {
             jobId: decodedJob.jobId,
             tenantId: decodedJob.tenantId,
+            fenceScope: decodedJob.fenceScope,
+            leaseGeneration: decodedJob.leaseGeneration,
             jobType: decodedJob.jobType,
             idempotencyKey: decodedJob.idempotencyKey,
             priority: decodedJob.priority,
@@ -1164,6 +1172,8 @@ it.effect.skipIf(databaseUrl === undefined)(
           {
             jobId: result.jobId,
             tenantId: input.tenantId,
+            fenceScope: decodedJob.fenceScope,
+            leaseGeneration: "0",
             jobType: ProcessPostCommitJobTypes.fulfillment,
             idempotencyKey: input.idempotencyKey,
             priority: ProcessLifecycleJobPriority,

@@ -304,9 +304,9 @@ Rules for new work:
   lease capability tokens; use explicit fixed fixtures when a test must cover
   UUIDv4 behavior.
 - Do not confuse a random lease capability with fencing. True stale-writer
-  fencing requires a per-job monotonic `BIGINT` generation enforced at the
-  side-effect mutation boundary; it must never decrease or reset while the job
-  row exists.
+  fencing requires a per-fence-scope monotonic `BIGINT` generation enforced at
+  the side-effect mutation boundary; it must never decrease or reset while the
+  scope exists. A job row stores its current acquisition's generation.
 - Keep fencing generation and idempotency identity separate: generation proves
   freshness; operation/command/idempotency keys control replay and duplicates.
 - Keep `created_at` as the audit timestamp and business numbers as separate

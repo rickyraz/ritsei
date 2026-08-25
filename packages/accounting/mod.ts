@@ -21,6 +21,7 @@ export {
   FinancialOperationConflict,
   FinancialOperationFailpointName,
   FinancialOperationFailpointService,
+  FinancialOperationFenceRejected,
   FinancialOperationInjectedFailure,
   FinancialOperationJobPayload,
   FinancialOperationJournalLine,

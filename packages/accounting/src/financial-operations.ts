@@ -26,6 +26,8 @@ import {
   Database,
   DatabaseFailure,
   DurableJobEnqueuer,
+  FencingContext,
+  FencingContextService,
   FINANCIAL_LEDGER_MAX_MINOR,
   FinancialMajorAmount,
   isDatabaseConstraint,
@@ -66,6 +68,7 @@ const NonNegativeInt = Schema.Int.check(
 )
 const InstantString = EventEnvelope.fields.occurredAt
 const Money = FinancialMajorAmount
+type ExecutionFence = Schema.Schema.Type<typeof FencingContext>
 const operationTypeMatchesSourceJournal = (operation: {
   readonly operationType: string
   readonly sourceJournalId: string | null
@@ -344,6 +347,16 @@ export class FinancialOperationNotFound
     operationId: NonEmptyString,
   }) {}
 
+export class FinancialOperationFenceRejected
+  extends Schema.TaggedError<FinancialOperationFenceRejected>()(
+    "FinancialOperationFenceRejected",
+    {
+      tenantId: Uuid,
+      operationId: NonEmptyString,
+      reason: Schema.Literals(["scope_mismatch", "stale_generation"]),
+    },
+  ) {}
+
 export class FinancialOperationConflict
   extends Schema.TaggedError<FinancialOperationConflict>()("FinancialOperationConflict", {
     tenantId: Uuid,
@@ -535,6 +548,7 @@ export interface FinancialOperationService {
     | FinancialLedgerNotConfigured
     | FinancialLedgerNotActivated
     | FinancialOperationNotFound
+    | FinancialOperationFenceRejected
     | FinancialOperationReconciliationConflict
     | DatabaseFailure
     | Schema.SchemaError
@@ -549,6 +563,7 @@ export interface FinancialOperationService {
     | FinancialLedgerNotConfigured
     | FinancialLedgerNotActivated
     | FinancialOperationNotFound
+    | FinancialOperationFenceRejected
     | FinancialOperationReconciliationConflict
     | DatabaseFailure
     | Schema.SchemaError
@@ -602,6 +617,7 @@ const operationSelection = {
   requestFingerprint: financialOperations.requestFingerprint,
   actorPrincipalId: financialOperations.actorPrincipalId,
   actorSessionId: financialOperations.actorSessionId,
+  acceptedFenceGeneration: financialOperations.acceptedFenceGeneration,
   status: financialOperations.status,
   attempts: financialOperations.attempts,
   scheduledAt: financialOperations.scheduledAt,
@@ -918,12 +934,72 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       return row
     })
 
-  const finalizeAccepted = (operationId: string, tenantId: string) =>
+  const financialOperationFenceScope = (tenantId: string, operationId: string) =>
+    `accounting.financial_operation:${tenantId}:${operationId}`
+
+  const acceptExecutionFence = (
+    current: { readonly id: string; readonly acceptedFenceGeneration: string },
+    tenantId: string,
+    operationId: string,
+    executionFence: ExecutionFence | null,
+  ) =>
+    Effect.gen(function* () {
+      if (executionFence === null) return
+      if (executionFence.scope !== financialOperationFenceScope(tenantId, operationId)) {
+        return yield* Effect.fail(
+          new FinancialOperationFenceRejected({
+            tenantId,
+            operationId,
+            reason: "scope_mismatch",
+          }),
+        )
+      }
+      const incomingGeneration = BigInt(executionFence.generation)
+      const acceptedGeneration = BigInt(current.acceptedFenceGeneration)
+      if (incomingGeneration < acceptedGeneration) {
+        return yield* Effect.fail(
+          new FinancialOperationFenceRejected({
+            tenantId,
+            operationId,
+            reason: "stale_generation",
+          }),
+        )
+      }
+      if (incomingGeneration === acceptedGeneration) return
+      const [updated] = yield* database.query(
+        (db) =>
+          db.update(financialOperations).set({
+            acceptedFenceGeneration: executionFence.generation,
+            updatedAt: currentTime(),
+          }).where(and(
+            eq(financialOperations.tenantId, tenantId),
+            eq(financialOperations.id, current.id),
+            eq(financialOperations.acceptedFenceGeneration, current.acceptedFenceGeneration),
+          )).returning({ id: financialOperations.id }),
+        "accounting.financial_operation.fence",
+      )
+      if (updated === undefined) {
+        return yield* Effect.fail(
+          new FinancialOperationFenceRejected({
+            tenantId,
+            operationId,
+            reason: "stale_generation",
+          }),
+        )
+      }
+    })
+
+  const finalizeAccepted = (
+    operationId: string,
+    tenantId: string,
+    executionFence: ExecutionFence | null = null,
+  ) =>
     database.withTransaction(
       Effect.gen(function* () {
         const now = currentTime()
         yield* hit("before_projection_commit")
         const current = yield* loadOperationOrFail(tenantId, operationId, true)
+        yield* acceptExecutionFence(current, tenantId, operationId, executionFence)
         if (current.status !== "accepted") return current
         const [updated] = yield* database.query(
           (db) =>
@@ -1000,6 +1076,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
     tenantId: string,
     outcome: FinancialExecutionOutcome,
     observedEngine: "postgresql" | "tigerbeetle" | null = null,
+    executionFence: ExecutionFence | null = null,
   ) =>
     Effect.gen(function* () {
       const now = currentTime()
@@ -1007,6 +1084,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       const receipt = yield* database.withTransaction(
         Effect.gen(function* () {
           const current = yield* loadOperationOrFail(tenantId, operationId, true)
+          yield* acceptExecutionFence(current, tenantId, operationId, executionFence)
           if (outcome.operationId !== current.operationId) {
             const [updated] = yield* database.query(
               (db) =>
@@ -1182,6 +1260,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
           if (status === "unknown") {
             yield* jobs.enqueue({
               tenantId,
+              fenceScope: `accounting.financial_operation:${tenantId}:${operationId}`,
               jobType: reconcileJobType,
               idempotencyKey: `${operationId}:reconcile`,
               priority: 90,
@@ -1195,7 +1274,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       )
       yield* hit("after_receipt_commit")
       if (outcome._tag === "accepted" && receipt.status === "accepted") {
-        return yield* finalizeAccepted(operationId, tenantId)
+        return yield* finalizeAccepted(operationId, tenantId, executionFence)
       }
       return receipt
     })
@@ -2071,6 +2150,8 @@ export const makeFinancialOperationService = Effect.gen(function* () {
   const submit = (input: unknown, jobType: string) =>
     Effect.gen(function* () {
       const decoded = yield* Schema.decodeUnknownEffect(FinancialOperationCommandInput)(input)
+      const fenceOption = yield* Effect.serviceOption(FencingContextService)
+      const executionFence = Option.isSome(fenceOption) ? fenceOption.value : null
       const operation = yield* loadOperationOrFail(decoded.tenantId, decoded.operationId)
       const reconcileRequested = jobType === reconcileJobType
       if (
@@ -2094,11 +2175,17 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       if (Result.isFailure(authorizationResult)) {
         if (authorizationResult.failure instanceof AuthorizationDenied) {
           return toOperation(
-            yield* writeReceipt(decoded.operationId, decoded.tenantId, {
-              _tag: "manual_recovery",
-              operationId: decoded.operationId,
-              reason: "reconciliation_required",
-            }),
+            yield* writeReceipt(
+              decoded.operationId,
+              decoded.tenantId,
+              {
+                _tag: "manual_recovery",
+                operationId: decoded.operationId,
+                reason: "reconciliation_required",
+              },
+              null,
+              executionFence,
+            ),
           )
         }
         return yield* Effect.fail(authorizationResult.failure)
@@ -2107,6 +2194,12 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       const state = yield* database.withTransaction(
         Effect.gen(function* () {
           const current = yield* loadOperationOrFail(decoded.tenantId, decoded.operationId, true)
+          yield* acceptExecutionFence(
+            current,
+            decoded.tenantId,
+            decoded.operationId,
+            executionFence,
+          )
           if (
             current.status === "reconciled" || current.status === "rejected" ||
             current.status === "manual_recovery"
@@ -2249,11 +2342,17 @@ export const makeFinancialOperationService = Effect.gen(function* () {
 
       if (state.routingChanged) {
         return toOperation(
-          yield* writeReceipt(decoded.operationId, decoded.tenantId, {
-            _tag: "manual_recovery",
-            operationId: decoded.operationId,
-            reason: "engine_routing_changed",
-          }, "observedEngine" in state ? state.observedEngine : null),
+          yield* writeReceipt(
+            decoded.operationId,
+            decoded.tenantId,
+            {
+              _tag: "manual_recovery",
+              operationId: decoded.operationId,
+              reason: "engine_routing_changed",
+            },
+            "observedEngine" in state ? state.observedEngine : null,
+            executionFence,
+          ),
         )
       }
       if (state.blocked) {
@@ -2268,10 +2367,23 @@ export const makeFinancialOperationService = Effect.gen(function* () {
               and(
                 eq(financialOperations.tenantId, decoded.tenantId),
                 eq(financialOperations.id, state.operation.id),
+                executionFence === null ? undefined : eq(
+                  financialOperations.acceptedFenceGeneration,
+                  executionFence.generation,
+                ),
               ),
             ).returning(operationSelection),
           "accounting.financial_operation.submit.blocked",
         )
+        if (deferred === undefined && executionFence !== null) {
+          return yield* Effect.fail(
+            new FinancialOperationFenceRejected({
+              tenantId: decoded.tenantId,
+              operationId: decoded.operationId,
+              reason: "stale_generation",
+            }),
+          )
+        }
         return toOperation(deferred!)
       }
       if (state.lines.length === 0) return toOperation(state.operation)
@@ -2290,11 +2402,17 @@ export const makeFinancialOperationService = Effect.gen(function* () {
         const accountType = accountTypes.get(accountId)
         if (accountType === undefined) {
           return toOperation(
-            yield* writeReceipt(decoded.operationId, decoded.tenantId, {
-              _tag: "manual_recovery",
-              operationId: decoded.operationId,
-              reason: "mapping_mismatch",
-            }, ledger.authority),
+            yield* writeReceipt(
+              decoded.operationId,
+              decoded.tenantId,
+              {
+                _tag: "manual_recovery",
+                operationId: decoded.operationId,
+                reason: "mapping_mismatch",
+              },
+              ledger.authority,
+              executionFence,
+            ),
           )
         }
         const accountOutcome = yield* ledger.createExecutionAccount({
@@ -2329,6 +2447,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
               decoded.tenantId,
               operationOutcome,
               ledger.authority,
+              executionFence,
             ),
           )
         }
@@ -2352,6 +2471,12 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       const transferIdentitiesPersisted = yield* database.withTransaction(
         Effect.gen(function* () {
           const current = yield* loadOperationOrFail(decoded.tenantId, decoded.operationId, true)
+          yield* acceptExecutionFence(
+            current,
+            decoded.tenantId,
+            decoded.operationId,
+            executionFence,
+          )
           const rows = yield* database.query(
             (db) =>
               db.select({
@@ -2392,14 +2517,46 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       )
       if (!transferIdentitiesPersisted) {
         return toOperation(
-          yield* writeReceipt(decoded.operationId, decoded.tenantId, {
-            _tag: "manual_recovery",
-            operationId: decoded.operationId,
-            reason: "mapping_mismatch",
-          }, ledger.authority),
+          yield* writeReceipt(
+            decoded.operationId,
+            decoded.tenantId,
+            {
+              _tag: "manual_recovery",
+              operationId: decoded.operationId,
+              reason: "mapping_mismatch",
+            },
+            ledger.authority,
+            executionFence,
+          ),
         )
       }
+      yield* database.withTransaction(
+        Effect.gen(function* () {
+          const current = yield* loadOperationOrFail(decoded.tenantId, decoded.operationId, true)
+          yield* acceptExecutionFence(
+            current,
+            decoded.tenantId,
+            decoded.operationId,
+            executionFence,
+          )
+        }),
+        "accounting.financial_operation.fence_before_provider",
+      )
       yield* hit("before_provider_submission")
+      // The provider call cannot share the PostgreSQL transaction. Recheck the fence at the
+      // narrowest possible boundary; deterministic provider identities handle a race after it.
+      yield* database.withTransaction(
+        Effect.gen(function* () {
+          const current = yield* loadOperationOrFail(decoded.tenantId, decoded.operationId, true)
+          yield* acceptExecutionFence(
+            current,
+            decoded.tenantId,
+            decoded.operationId,
+            executionFence,
+          )
+        }),
+        "accounting.financial_operation.fence_at_provider_boundary",
+      )
       let outcome = yield* (state.reconcile
         ? ledger.reconcileJournal(journalInput)
         : ledger.postJournal(journalInput))
@@ -2428,6 +2585,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
           decoded.tenantId,
           outcome,
           ledger.authority,
+          executionFence,
         ),
       )
     })
@@ -2755,6 +2913,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
           )
           yield* jobs.enqueue({
             tenantId: decoded.tenantId,
+            fenceScope: `accounting.financial_operation:${decoded.tenantId}:${decoded.operationId}`,
             jobType: submitJobType,
             idempotencyKey: decoded.operationId,
             priority: 100,

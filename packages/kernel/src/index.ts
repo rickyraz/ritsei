@@ -8,6 +8,8 @@ export {
   UnsupportedPostgresVersion,
   validatePostgresVersion,
 } from "./database.ts"
+export { FencingContext, FencingContextService, LeaseGeneration } from "./fencing.ts"
+export type { FencingContextService as FencingContextServiceType } from "./fencing.ts"
 export {
   FinancialVerificationKeyGenerationFailure,
   FinancialVerificationKeyNotFound,

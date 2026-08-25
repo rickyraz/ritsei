@@ -180,6 +180,13 @@ Rules:
 - Unknown or mismatched outcomes are fenced and may enter manual recovery.
 - An activated profile has no silent PostgreSQL fallback.
 
+The Accounting owner rechecks the execution fence immediately before the provider call and again
+when committing the receipt. The provider call is deliberately outside the PostgreSQL transaction;
+a generation check cannot cancel a request already issued to TigerBeetle. Therefore the provider
+identity remains deterministic and idempotent, and a newer generation can reject only the stale
+control-plane receipt, not undo an already accepted provider fact. Reconciliation/manual recovery
+handles that unknown-outcome boundary.
+
 A job table or approved checkpointed workflow owns durable submission and recovery. An Effect fiber,
 request lifetime, or in-memory retry loop is never the durability mechanism.
 

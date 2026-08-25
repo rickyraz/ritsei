@@ -8,6 +8,7 @@ import {
   FinancialOperationJobPayload,
   FinancialOperationService,
 } from "../../packages/accounting/mod.ts"
+import { FencingContextService } from "../../packages/kernel/mod.ts"
 import { ProcessFinancialJobTypes, ProcessService } from "../../packages/process/mod.ts"
 
 const Uuid = Schema.String.check(Schema.isUUID())
@@ -59,6 +60,7 @@ type FinancialOperationFailure = Effect.Error<
 
 const isPermanentFinancialOperationFailure = (error: FinancialOperationFailure): boolean => {
   switch (error._tag) {
+    case "FinancialOperationFenceRejected":
     case "FinancialOperationNotFound":
     case "SchemaError":
       return true
@@ -104,7 +106,26 @@ export const runFinancialOperationOnce = (input: unknown) =>
     const operation = job.jobType === ProcessFinancialJobTypes.reconcile
       ? accounting.reconcileFinancialOperation(payload)
       : accounting.submitFinancialOperation(payload)
-    const result = yield* Effect.result(operation)
+    const fencedOperation = operation.pipe(Effect.provideService(FencingContextService, {
+      scope: job.fenceScope,
+      generation: job.leaseGeneration,
+    }))
+    const heartbeat = Effect.forever(
+      Effect.sleep("1 minute").pipe(
+        Effect.andThen(process.renewJob({
+          tenantId: decoded.tenantId,
+          workerId: decoded.workerId,
+          jobId: job.jobId,
+          leaseToken: job.leaseToken,
+          leaseGeneration: job.leaseGeneration,
+        })),
+        Effect.asVoid,
+      ),
+    )
+    const result = yield* Effect.raceAllFirst([
+      Effect.result(fencedOperation),
+      heartbeat,
+    ])
 
     if (Result.isSuccess(result)) {
       const value = result.success
@@ -116,6 +137,7 @@ export const runFinancialOperationOnce = (input: unknown) =>
           workerId: decoded.workerId,
           jobId: job.jobId,
           leaseToken: job.leaseToken,
+          leaseGeneration: job.leaseGeneration,
           error: "financial_operation_unknown",
           retryAt: value.scheduledAt,
         })
@@ -135,6 +157,7 @@ export const runFinancialOperationOnce = (input: unknown) =>
           workerId: decoded.workerId,
           jobId: job.jobId,
           leaseToken: job.leaseToken,
+          leaseGeneration: job.leaseGeneration,
         })
         return {
           status: value.status === "unknown" ? "retrying" as const : "completed" as const,
@@ -148,6 +171,7 @@ export const runFinancialOperationOnce = (input: unknown) =>
         workerId: decoded.workerId,
         jobId: job.jobId,
         leaseToken: job.leaseToken,
+        leaseGeneration: job.leaseGeneration,
         error: `financial_operation_${value.status}`,
         retryAt: value.scheduledAt,
       })
@@ -166,6 +190,7 @@ export const runFinancialOperationOnce = (input: unknown) =>
       workerId: decoded.workerId,
       jobId: job.jobId,
       leaseToken: job.leaseToken,
+      leaseGeneration: job.leaseGeneration,
       error: `financial_operation_${error._tag}`,
       retryAt: permanent ? null : retryAfter(5_000),
     })

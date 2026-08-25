@@ -78,5 +78,6 @@ current system; ADRs preserve decision history.
 | [`0052`](./0052-separate-lease-capability-and-fencing-generation.md) | Separate lease capability from fencing generation | Accepted |
 | [`0053`](./0053-clarify-per-job-lease-generation-invariants.md) | Clarify per-job lease-generation invariants | Accepted |
 | [`0054`](./0054-keep-fencing-and-idempotency-identities-orthogonal.md) | Keep fencing and idempotency identities orthogonal | Accepted |
+| [`0055`](./0055-use-explicit-fence-scopes-for-shared-job-streams.md) | Use explicit fence scopes for shared job streams | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

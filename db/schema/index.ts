@@ -70,6 +70,7 @@ export {
   salesSchema,
 } from "./sales.ts"
 export {
+  jobFenceScopes,
   processJobs,
   processJobStatus,
   processSchema,

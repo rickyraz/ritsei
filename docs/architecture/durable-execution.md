@@ -20,6 +20,8 @@
 >   [`../decisions/0053-clarify-per-job-lease-generation-invariants.md`](../decisions/0053-clarify-per-job-lease-generation-invariants.md)
 > - Fencing and idempotency identities:
 >   [`../decisions/0054-keep-fencing-and-idempotency-identities-orthogonal.md`](../decisions/0054-keep-fencing-and-idempotency-identities-orthogonal.md)
+> - Explicit fence scopes for shared job streams:
+>   [`../decisions/0055-use-explicit-fence-scopes-for-shared-job-streams.md`](../decisions/0055-use-explicit-fence-scopes-for-shared-job-streams.md)
 
 ## Decision
 
@@ -67,9 +69,9 @@ upgrade, and adapter gate defined by
 A job's random lease token is an opaque capability checked by equality. It is not a formal fencing
 proof. A side effect that can outlive a lease must use a monotonic lease generation at the actual
 mutation boundary; the fenced resource stores its own highest accepted generation and rejects lower
-values. The generation is monotonic for one durable job row, never resets while that identity exists,
-and is not globally ordered across different jobs. Checking the token only when completing the job
-is insufficient. Generation proves freshness, not logical operation identity; idempotency keys
+values. The generation is monotonic for one fence scope, never resets while that scope exists, and is not
+globally ordered across different scopes. A job row records the generation allocated for its current
+acquisition. Checking the token only when completing the job is insufficient. Generation proves freshness, not logical operation identity; idempotency keys
 must independently control replay and duplicate suppression. The capability-versus-fencing decision
 is owned by [ADR-0052](../decisions/0052-separate-lease-capability-and-fencing-generation.md), its
 invariants by [ADR-0053](../decisions/0053-clarify-per-job-lease-generation-invariants.md), and the

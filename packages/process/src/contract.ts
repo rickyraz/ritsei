@@ -12,7 +12,7 @@ import {
   RevenueJournalNotFound,
   RevenuePostingProfileNotFound,
 } from "../../accounting/mod.ts"
-import { DatabaseFailure } from "../../kernel/mod.ts"
+import { DatabaseFailure, LeaseGeneration } from "../../kernel/mod.ts"
 import { EventEnvelope, EventIdempotencyConflict } from "../../messaging/mod.ts"
 import {
   StockReservation,
@@ -158,6 +158,8 @@ export const ProcessJobStatus = Schema.Literals([
 export const ProcessJob = Schema.Struct({
   jobId: Uuid,
   tenantId: Uuid,
+  fenceScope: NonEmptyString,
+  leaseGeneration: LeaseGeneration,
   jobType: ProcessJobType,
   idempotencyKey: NonEmptyString,
   priority: PostgresInt,
@@ -193,6 +195,7 @@ export const ProcessJobRenewInput = Schema.Struct({
   workerId: NonEmptyString,
   jobId: Uuid,
   leaseToken: Uuid,
+  leaseGeneration: LeaseGeneration,
 })
 export const ProcessJobCompleteInput = ProcessJobRenewInput
 export const ProcessJobFailInput = Schema.Struct({
@@ -200,6 +203,7 @@ export const ProcessJobFailInput = Schema.Struct({
   workerId: NonEmptyString,
   jobId: Uuid,
   leaseToken: Uuid,
+  leaseGeneration: LeaseGeneration,
   error: NonEmptyString,
   retryAt: Schema.NullOr(InstantString).pipe(
     Schema.withDecodingDefaultKey(Effect.succeed(null)),

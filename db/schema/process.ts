@@ -1,10 +1,12 @@
 import { sql } from "drizzle-orm"
 import {
+  bigint,
   check,
   foreignKey,
   integer,
   jsonb,
   pgSchema,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -12,7 +14,7 @@ import {
 } from "drizzle-orm/pg-core"
 
 import { tenants } from "./auth.ts"
-import { createdAt, id, updatedAt } from "./common.ts"
+import { createdAt, id, updatedAt, uuidv7 } from "./common.ts"
 
 export const processSchema = pgSchema("process")
 export const workflowRunStatus = processSchema.enum(
@@ -23,6 +25,23 @@ export const processJobStatus = processSchema.enum(
   "process_job_status",
   ["pending", "leased", "completed", "failed", "manual_recovery"],
 )
+
+export const jobFenceScopes = processSchema.table("job_fence_scopes", {
+  tenantId: uuid("tenant_id").notNull(),
+  fenceScope: text("fence_scope").notNull(),
+  generation: bigint("generation", { mode: "string" }).notNull().default("0"),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => [
+  primaryKey({ columns: [table.tenantId, table.fenceScope] }),
+  foreignKey({
+    columns: [table.tenantId],
+    foreignColumns: [tenants.id],
+    name: "job_fence_scopes_tenant_id_fkey",
+  }).onDelete("cascade"),
+  check("job_fence_scopes_scope_check", sql`${table.fenceScope} ~ '[^[:space:]]'`),
+  check("job_fence_scopes_generation_check", sql`${table.generation} >= 0`),
+])
 
 export const workflowRuns = processSchema.table("workflow_runs", {
   id: id(),
@@ -67,6 +86,8 @@ export const workflowRuns = processSchema.table("workflow_runs", {
 export const processJobs = processSchema.table("jobs", {
   id: id(),
   tenantId: uuid("tenant_id").notNull(),
+  fenceScope: text("fence_scope").notNull().default(sql`'job:' || uuidv7()`),
+  leaseGeneration: bigint("lease_generation", { mode: "string" }).notNull().default("0"),
   jobType: text("job_type").notNull(),
   idempotencyKey: text("idempotency_key").notNull(),
   priority: integer("priority").notNull().default(0),
@@ -106,6 +127,8 @@ export const processJobs = processSchema.table("jobs", {
     sql`${table.correlationId} ~ '[^[:space:]]'`,
   ),
   check("process_jobs_attempts_check", sql`${table.attempts} >= 0`),
+  check("process_jobs_fence_scope_check", sql`${table.fenceScope} ~ '[^[:space:]]'`),
+  check("process_jobs_lease_generation_check", sql`${table.leaseGeneration} >= 0`),
   check(
     "process_jobs_lease_state_check",
     sql`(${table.status} = 'leased' and ${table.leaseUntil} is not null and

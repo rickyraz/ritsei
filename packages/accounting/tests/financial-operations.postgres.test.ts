@@ -1,5 +1,7 @@
 import { assert, it } from "@effect/vitest"
+import * as Deferred from "effect/Deferred"
 import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 
@@ -8,6 +10,8 @@ import {
   AccountingFinancialOperationReconciledEvent,
   FinancialLedgerPort,
   type FinancialOperationFailpointNameType,
+  FinancialOperationFailpointService,
+  FinancialOperationFenceRejected,
   FinancialOperationInjectedFailure,
   FinancialOperationsPending,
   FinancialReconciliationCheckpointConflict,
@@ -23,6 +27,7 @@ import {
   DatabaseFailure,
   type DatabaseService,
   DurableJobEnqueuer,
+  FencingContextService,
   makePostgresDatabase,
   runMigrations,
   uuidv7,
@@ -250,6 +255,24 @@ it.effect.skipIf(databaseUrl === undefined)(
             mappingVersion: 1,
           })
           assert.strictEqual(revenue.status, "intent")
+          yield* Effect.promise(() =>
+            client`
+              update accounting.financial_operations
+              set accepted_fence_generation = 2
+              where tenant_id = ${tenant!.id} and operation_id = ${revenue.operationId}
+            `
+          )
+          const staleFence = yield* Effect.flip(
+            service.submitFinancialOperation({
+              tenantId: tenant!.id,
+              operationId: revenue.operationId,
+            }).pipe(Effect.provideService(FencingContextService, {
+              scope: `accounting.financial_operation:${tenant!.id}:${revenue.operationId}`,
+              generation: "1",
+            })),
+          )
+          assert.instanceOf(staleFence, FinancialOperationFenceRejected)
+
           const postedRevenue = yield* service.submitFinancialOperation({
             tenantId: tenant!.id,
             operationId: revenue.operationId,
@@ -1358,6 +1381,77 @@ it.effect.skipIf(databaseUrl === undefined)(
             correlationId: `duplicate-reversal-correlation-${uuidv7()}`,
           }))
           assert.instanceOf(duplicateReversal, FinancialReversalAlreadyExists)
+
+          const blockedRevenue = yield* service.createRevenueIntent({
+            principal,
+            tenantId: tenant!.id,
+            legalEntityId: legalEntity!.id,
+            orderId: uuidv7(),
+            commandId: `blocked-revenue-${uuidv7()}`,
+            correlationId: `blocked-revenue-correlation-${uuidv7()}`,
+            currency: "USD",
+            mappingVersion: 1,
+          })
+          const providerEntered = yield* Deferred.make<void>()
+          const providerRelease = yield* Deferred.make<void>()
+          let providerCalls = 0
+          const blockingLedger = {
+            ...ledger,
+            postJournal: (input: unknown) => {
+              providerCalls += 1
+              return ledger.postJournal(input)
+            },
+          }
+          const blockedService = yield* Effect.provide(
+            makeFinancialOperationService,
+            Layer.mergeAll(
+              Layer.succeed(Database, database),
+              authorization,
+              Layer.succeed(MessagingService, messaging),
+              Layer.succeed(DurableJobEnqueuer, jobs),
+              Layer.succeed(SalesService, sales),
+              Layer.succeed(FinancialLedgerPort, blockingLedger),
+              Layer.succeed(FinancialOperationFailpointService, {
+                hit: (point) =>
+                  point === "before_provider_submission"
+                    ? Deferred.succeed(providerEntered, undefined).pipe(
+                      Effect.andThen(Deferred.await(providerRelease)),
+                    )
+                    : Effect.void,
+              }),
+            ),
+          )
+          const blockedFiber = yield* blockedService.submitFinancialOperation({
+            tenantId: tenant!.id,
+            operationId: blockedRevenue.operationId,
+          }).pipe(
+            Effect.provideService(FencingContextService, {
+              scope: `accounting.financial_operation:${tenant!.id}:${blockedRevenue.operationId}`,
+              generation: "1",
+            }),
+            Effect.forkChild,
+          )
+          yield* Deferred.await(providerEntered)
+          yield* Effect.promise(() =>
+            client`
+              update accounting.financial_operations
+              set accepted_fence_generation = 2
+              where tenant_id = ${tenant!.id} and operation_id = ${blockedRevenue.operationId}
+            `
+          )
+          yield* Deferred.succeed(providerRelease, undefined)
+          const blockedError = yield* Effect.flip(Fiber.join(blockedFiber))
+          assert.instanceOf(blockedError, FinancialOperationFenceRejected)
+          assert.strictEqual(providerCalls, 0)
+          const unblockedRevenue = yield* blockedService.submitFinancialOperation({
+            tenantId: tenant!.id,
+            operationId: blockedRevenue.operationId,
+          }).pipe(Effect.provideService(FencingContextService, {
+            scope: `accounting.financial_operation:${tenant!.id}:${blockedRevenue.operationId}`,
+            generation: "2",
+          }))
+          assert.strictEqual(unblockedRevenue.status, "reconciled")
+          assert.strictEqual(providerCalls, 1)
         }),
     ),
 )

@@ -1,8 +1,11 @@
 import { assert, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
 import * as Layer from "effect/Layer"
+import * as TestClock from "effect/testing/TestClock"
 
 import { FinancialOperationService } from "../../packages/accounting/mod.ts"
+import { FencingContextService } from "../../packages/kernel/mod.ts"
 import {
   ProcessFinancialJobTypes,
   ProcessJobLeaseLost,
@@ -50,6 +53,8 @@ it.effect("claims a financial job and completes it through the Accounting contra
   const job = {
     jobId,
     tenantId,
+    fenceScope: `accounting.financial_operation:${tenantId}:${operationId}`,
+    leaseGeneration: "1",
     jobType: ProcessFinancialJobTypes.submit,
     idempotencyKey: operationId,
     priority: 100,
@@ -79,30 +84,37 @@ it.effect("claims a financial job and completes it through the Accounting contra
   } as unknown as ProcessService
   const accounting = {
     submitFinancialOperation: () =>
-      Effect.succeed({
-        id: "00000000-0000-4000-8000-000000000004",
-        tenantId,
-        legalEntityId: "00000000-0000-4000-8000-000000000005",
-        periodId: "00000000-0000-4000-8000-000000000006",
-        operationId,
-        operationType: "journal_post" as const,
-        engine: "tigerbeetle" as const,
-        engineVerified: true,
-        journalId: "00000000-0000-4000-8000-000000000007",
-        sourceJournalId: null,
-        reference: "worker-reference",
-        currency: "USD",
-        mappingVersion: 1,
-        status: "reconciled" as const,
-        attempts: 1,
-        scheduledAt: new Date().toISOString(),
-        submittedAt: new Date().toISOString(),
-        engineAcceptedAt: "1",
-        rejectionReason: null,
-        recoveryReason: null,
-        observedEngine: null,
-        lastError: null,
-        reconciledAt: new Date().toISOString(),
+      Effect.gen(function* () {
+        const fence = yield* FencingContextService
+        assert.deepStrictEqual(fence, {
+          scope: `accounting.financial_operation:${tenantId}:${operationId}`,
+          generation: "1",
+        })
+        return {
+          id: "00000000-0000-4000-8000-000000000004",
+          tenantId,
+          legalEntityId: "00000000-0000-4000-8000-000000000005",
+          periodId: "00000000-0000-4000-8000-000000000006",
+          operationId,
+          operationType: "journal_post" as const,
+          engine: "tigerbeetle" as const,
+          engineVerified: true,
+          journalId: "00000000-0000-4000-8000-000000000007",
+          sourceJournalId: null,
+          reference: "worker-reference",
+          currency: "USD",
+          mappingVersion: 1,
+          status: "reconciled" as const,
+          attempts: 1,
+          scheduledAt: new Date().toISOString(),
+          submittedAt: new Date().toISOString(),
+          engineAcceptedAt: "1",
+          rejectionReason: null,
+          recoveryReason: null,
+          observedEngine: null,
+          lastError: null,
+          reconciledAt: new Date().toISOString(),
+        }
       }),
     reconcileFinancialOperation: () => Effect.die("not used"),
     createJournalIntent: () => Effect.die("not used"),
@@ -130,6 +142,8 @@ it.effect("releases an unknown reconciliation for a bounded retry", () => {
   const job = {
     jobId: "00000000-0000-4000-8000-000000000010",
     tenantId,
+    fenceScope: `accounting.financial_operation:${tenantId}:${operationId}`,
+    leaseGeneration: "2",
     jobType: ProcessFinancialJobTypes.reconcile,
     idempotencyKey: `${operationId}:reconcile`,
     priority: 90,
@@ -206,6 +220,8 @@ it.effect("leaves a claimed lease untouched when the worker is terminated before
   const job = {
     jobId: "00000000-0000-4000-8000-000000000020",
     tenantId,
+    fenceScope: `accounting.financial_operation:${tenantId}:${operationId}`,
+    leaseGeneration: "3",
     jobType: ProcessFinancialJobTypes.submit,
     idempotencyKey: operationId,
     priority: 100,
@@ -251,11 +267,66 @@ it.effect("leaves a claimed lease untouched when the worker is terminated before
   )
 })
 
+it.effect("renews a long-running financial lease with its generation", () =>
+  Effect.gen(function* () {
+    let renewals = 0
+    const job = {
+      jobId: "00000000-0000-4000-8000-000000000030",
+      tenantId,
+      fenceScope: `accounting.financial_operation:${tenantId}:${operationId}`,
+      leaseGeneration: "5",
+      jobType: ProcessFinancialJobTypes.submit,
+      idempotencyKey: operationId,
+      priority: 100,
+      status: "leased" as const,
+      scheduledAt: new Date().toISOString(),
+      leaseUntil: new Date(Date.now() + 60_000).toISOString(),
+      leaseOwner: "worker-1",
+      leaseToken,
+      attempts: 1,
+      payload: { tenantId, operationId },
+      correlationId: operationId,
+    }
+    const process = {
+      claimJob: () => Effect.succeed(job),
+      renewJob: (input: { leaseGeneration: string }) => {
+        assert.strictEqual(input.leaseGeneration, "5")
+        renewals += 1
+        return Effect.succeed(job)
+      },
+      completeJob: () => Effect.succeed({ ...job, status: "completed" as const }),
+      failJob: () => Effect.die("must not fail a successful operation"),
+    } as unknown as ProcessService
+    const accounting = {
+      submitFinancialOperation: () =>
+        Effect.sleep("2 minutes").pipe(Effect.as(workerOperation("reconciled"))),
+      reconcileFinancialOperation: () => Effect.die("not used"),
+      createJournalIntent: () => Effect.die("not used"),
+      createRevenueIntent: () => Effect.die("not used"),
+      createReversalIntent: () => Effect.die("not used"),
+    } as unknown as FinancialOperationService
+    const fiber = yield* runFinancialOperationOnce({ tenantId, workerId: "worker-1" }).pipe(
+      Effect.provide(Layer.mergeAll(
+        Layer.succeed(ProcessService, process),
+        Layer.succeed(FinancialOperationService, accounting),
+      )),
+      Effect.forkChild,
+    )
+    yield* Effect.yieldNow
+    yield* TestClock.adjust("1 minute")
+    assert.isAtLeast(renewals, 1)
+    yield* TestClock.adjust("1 minute")
+    const result = yield* Fiber.join(fiber)
+    assert.strictEqual(result.status, "completed")
+  }))
+
 it.effect("restarts after Accounting acceptance and fences stale duplicate completion", () => {
   let completions = 0
   const job = {
     jobId: "00000000-0000-4000-8000-000000000021",
     tenantId,
+    fenceScope: `accounting.financial_operation:${tenantId}:${operationId}`,
+    leaseGeneration: "4",
     jobType: ProcessFinancialJobTypes.submit,
     idempotencyKey: operationId,
     priority: 100,

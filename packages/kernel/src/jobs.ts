@@ -17,6 +17,9 @@ export const DurableJobInput = Schema.Struct({
   priority: PostgresInt,
   payload: Schema.Json,
   correlationId: NonEmptyString,
+  fenceScope: Schema.NullOr(NonEmptyString).pipe(
+    Schema.withDecodingDefaultKey(Effect.succeed(null)),
+  ),
 })
 
 export const DurableJob = Schema.Struct({
@@ -27,6 +30,7 @@ export const DurableJob = Schema.Struct({
   priority: PostgresInt,
   payload: Schema.Json,
   correlationId: NonEmptyString,
+  fenceScope: NonEmptyString,
 })
 
 export type DurableJobInput = Schema.Schema.Type<typeof DurableJobInput>
