@@ -292,7 +292,11 @@ describe("catalog compatibility", () => {
         status: "confirmed",
         confirmedAt: "2026-08-12T00:00:00.000Z",
         total: "10.00",
-        lines: [{ itemId: "item-1", quantity: "1", unitPrice: "10.00" }],
+        lines: [{
+          itemId: "00000000-0000-4000-8000-000000000041",
+          quantity: "1",
+          unitPrice: "10.00",
+        }],
       })
 
       yield* Schema.decodeUnknownEffect(InventoryStockCorrectedEvent.payloadSchema)({

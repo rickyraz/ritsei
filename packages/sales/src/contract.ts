@@ -34,7 +34,7 @@ export const Quotation = Schema.Struct({
   total: Money,
 })
 export const SalesOrderLine = Schema.Struct({
-  itemId: Schema.String,
+  itemId: Uuid,
   quantity: Quantity,
   unitPrice: Money,
 })

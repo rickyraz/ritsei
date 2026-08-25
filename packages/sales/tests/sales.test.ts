@@ -89,7 +89,11 @@ describe("sales contract", () => {
           principal,
           tenantId,
           customerId: customer.id,
-          lines: [{ itemId: "item-1", quantity: "2", unitPrice: "10.00" }],
+          lines: [{
+            itemId: "00000000-0000-4000-8000-000000000041",
+            quantity: "2",
+            unitPrice: "10.00",
+          }],
         })
         const input = {
           principal,
@@ -143,7 +147,11 @@ describe("sales contract", () => {
         tenantId,
         customerId: customer.id,
         quotationId: quotation.id,
-        lines: [{ itemId: "item-1", quantity: "10", unitPrice: "125.00" }],
+        lines: [{
+          itemId: "00000000-0000-4000-8000-000000000041",
+          quantity: "10",
+          unitPrice: "125.00",
+        }],
       })
 
       yield* Schema.decodeUnknownEffect(Quotation)(quotation)
@@ -201,7 +209,11 @@ describe("sales contract", () => {
         principal,
         tenantId,
         customerId: customer.id,
-        lines: [{ itemId: "item-1", quantity: "1", unitPrice: "10.00" }],
+        lines: [{
+          itemId: "00000000-0000-4000-8000-000000000041",
+          quantity: "1",
+          unitPrice: "10.00",
+        }],
       })
       yield* sales.confirmOrder({
         principal,
