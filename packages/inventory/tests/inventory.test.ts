@@ -135,7 +135,7 @@ describe("inventory contract", () => {
     Effect.gen(function* () {
       const error = yield* Effect.flip(
         Schema.decodeUnknownEffect(StockBalance)({
-          tenantId: "tenant",
+          tenantId: "00000000-0000-4000-8000-000000000001",
           warehouseId: "warehouse",
           itemId: "item",
           onHand: "9223372036854775808",
