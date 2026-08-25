@@ -249,6 +249,20 @@ describe("inventory contract", () => {
       )
       assert.strictEqual(duplicateTransferItems._tag, "SchemaError")
 
+      const sameWarehouseTransfer = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateStockTransferInput)({
+          principal,
+          tenantId,
+          sourceWarehouseId: "00000000-0000-4000-8000-000000000002",
+          destinationWarehouseId: "00000000-0000-4000-8000-000000000002",
+          lines: [{
+            itemId: "00000000-0000-4000-8000-000000000003",
+            quantity: "1",
+          }],
+        }),
+      )
+      assert.strictEqual(sameWarehouseTransfer._tag, "SchemaError")
+
       const invalidTransfer = yield* Effect.flip(
         Schema.decodeUnknownEffect(ConfirmStockTransferInput)({
           principal,
