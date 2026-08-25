@@ -4,13 +4,19 @@ type CatalogEntry = {
   readonly owningDomain: string
   readonly stability: string
   readonly requiredCapability?: string
+  readonly scope?: readonly string[]
+  readonly idempotency?: string
+  readonly retryPolicy?: { readonly maxAttempts?: number }
   readonly preconditions?: readonly string[]
+  readonly effects?: readonly string[]
   readonly errorSchemas?: readonly unknown[]
   readonly transactionSemantics?: string
-  readonly compensation?: unknown
+  readonly compensation?: { readonly kind?: string; readonly recovery?: string }
   readonly correlationFields?: readonly string[]
   readonly filterableFields?: readonly string[]
+  readonly occurredAtSemantics?: string
   readonly deliveryExpectation?: string
+  readonly sensitivity?: string
 }
 
 type DomainTarget = {
@@ -144,11 +150,20 @@ for (const target of targets) {
   const publicEvent = publicEventEntry !== undefined
   const actionContract = publicActionEntry !== undefined &&
     publicActionEntry.requiredCapability === publicActionEntry.id &&
+    publicActionEntry.scope?.includes("tenant") === true &&
+    ["required", "inherent", "unsupported"].includes(publicActionEntry.idempotency ?? "") &&
+    (publicActionEntry.retryPolicy?.maxAttempts ?? 0) >= 1 &&
     publicActionEntry.preconditions?.includes("authorized") === true &&
+    (publicActionEntry.effects?.length ?? 0) > 0 &&
     (publicActionEntry.errorSchemas?.length ?? 0) > 0 &&
     publicActionEntry.transactionSemantics === "local_atomic" &&
-    publicActionEntry.compensation !== undefined
+    (publicActionEntry.compensation?.kind === "action" ||
+      publicActionEntry.compensation?.recovery === "manual")
   const eventContract = publicEventEntry !== undefined &&
+    publicEventEntry.id.startsWith(`${target.domain}.`) &&
+    publicEventEntry.scope?.includes("tenant") === true &&
+    publicEventEntry.occurredAtSemantics === "owner_commit_time" &&
+    publicEventEntry.sensitivity === "business_internal_minimized" &&
     (publicEventEntry.correlationFields?.length ?? 0) > 0 &&
     new Set(publicEventEntry.correlationFields).size ===
       publicEventEntry.correlationFields!.length &&
