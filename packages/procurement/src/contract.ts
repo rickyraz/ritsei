@@ -141,7 +141,7 @@ export const GoodsReceipt = Schema.Struct({
   warehouseId: Uuid,
   idempotencyKey: NonEmptyString,
   receivedAt: InstantString,
-  lines: Schema.Array(GoodsReceiptLine),
+  lines: Schema.Array(GoodsReceiptLine).check(Schema.isMinLength(1)),
 })
 
 export type PurchaseReceiptLineInput = Schema.Schema.Type<typeof PurchaseReceiptLineInput>

@@ -16,6 +16,7 @@ import {
 } from "../../messaging/mod.ts"
 import { makePartyTestLayer, PartyCapabilities, PartyService } from "../../party/mod.ts"
 import {
+  GoodsReceipt,
   makeProcurementTestLayer,
   ProcurementCapabilities,
   ProcurementPurchaseOrderConfirmedEvent,
@@ -666,6 +667,13 @@ describe("procurement contract", () => {
         lines: [{ purchaseOrderLineId: lineId, quantity: "1" }],
       }
       const first = yield* procurement.receivePurchaseOrder(firstInput)
+      yield* Schema.decodeUnknownEffect(GoodsReceipt)(first)
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(GoodsReceipt)({ ...first, lines: [] }),
+        ))._tag,
+        "SchemaError",
+      )
       const replay = yield* procurement.receivePurchaseOrder(firstInput)
       assert.strictEqual(replay.id, first.id)
       assert.strictEqual(replay.lines[0]?.quantity, "1")
