@@ -40,7 +40,7 @@ export const SalesOrderLine = Schema.Struct({
 export const SalesOrder = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  customerId: Schema.String,
+  customerId: Uuid,
   quotationId: Schema.NullOr(Schema.String),
   status: Schema.Literals(["draft", "confirmed", "cancelled"]),
   confirmedAt: Schema.NullOr(Schema.String),

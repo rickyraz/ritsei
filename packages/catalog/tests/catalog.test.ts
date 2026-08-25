@@ -287,7 +287,7 @@ describe("catalog compatibility", () => {
       yield* Schema.decodeUnknownEffect(SalesConfirmOrderAction.outputSchema)({
         id: "00000000-0000-4000-8000-000000000031",
         tenantId: "00000000-0000-4000-8000-000000000001",
-        customerId: "customer-1",
+        customerId: "00000000-0000-4000-8000-000000000032",
         quotationId: null,
         status: "confirmed",
         confirmedAt: "2026-08-12T00:00:00.000Z",
