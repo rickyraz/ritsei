@@ -46,8 +46,9 @@ supplier acknowledgement, stock release, receipt reversal, invoice voiding, or f
 
 The current scope deliberately excludes sourcing, requisitions, approvals, blanket agreements,
 price catalogs, tax, multi-currency, supplier communication, return, invoice matching, payables,
-settlement, events, API exposure, and Process Studio publication. Goods Receipt is implemented only
-as the bounded synchronous receipt boundary described below.
+settlement, API expansion, and Process Studio publication. Purchase-order confirmation now has a
+bounded PUBLIC action/event catalog slice; Goods Receipt remains the bounded synchronous Level 2
+receipt boundary described below.
 
 ## Authority Matrix
 
@@ -242,8 +243,11 @@ evidence beyond the current authorization decision and stored business state.
 
 ## Publication and Integration Boundary
 
-The current Procurement package publishes no Typed Action Catalog entry and no domain event.
-Purchase Order creation, confirmation, and cancellation do not write a Messaging outbox record.
+The Procurement package publishes the bounded PUBLIC
+`procurement.purchase_order.confirm` action and `procurement.purchase_order.confirmed` event.
+Purchase Order creation and cancellation remain private. Confirmation appends the owner event
+through the public Messaging contract inside the same transaction as the status change; an
+idempotent replay returns the original order without appending a second event.
 
 Do not add an event merely because a state changes. Publication requires:
 
@@ -298,19 +302,19 @@ ledger boundaries. A Purchase Order total is not by itself a payable or journal 
 
 ## Maturity
 
-The bounded Supplier Account, Purchase Order, and Goods Receipt lifecycle remains Level 2:
+The bounded Procurement capability is Level 3 for purchase-order confirmation and Level 2 for
+Goods Receipt:
 
-- public Effect Schema contracts and typed failures;
-- tenant-aware authorization;
-- atomic draft, confirmation, cancellation, and receipt persistence;
-- database constraints and immutability triggers;
-- confirmation and receipt idempotency with row-lock concurrency;
-- receipt quantity allocation and Inventory movement provenance;
-- rollback and PostgreSQL invariant tests;
-- explicit owner-local correction and return gates.
+- `procurement.purchase_order.confirm` is a PUBLIC typed action;
+- `procurement.purchase_order.confirmed` is a PUBLIC owner event;
+- action/event schemas, capability identity, tenant scope, correlation, and at-least-once metadata
+  are catalog-tested;
+- confirmation uses atomic persistence plus Messaging publication and idempotent replay;
+- Supplier Account, Purchase Order, and Goods Receipt retain their existing Level 2 invariant
+  proofs and explicit owner-local correction/return gates.
 
-Procurement is not Level 3 because it publishes no stable action/event catalog, process-visible
-failure contract, correlation metadata, event, or compensation metadata.
+Procurement must not advertise receipt, invoice matching, payables, or external supplier delivery as
+Level 3 until each receives its own action/event and recovery contract.
 
 ## Runtime Composition Status
 

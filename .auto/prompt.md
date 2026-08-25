@@ -1,74 +1,83 @@
-# Autoresearch: Validate the RITSEI Analytic Plane
+# Autoresearch: Raise eligible RITSEI domains to Level 3
 
 ## Objective
 
-Stress-test and document a provider-independent RITSEI Analytic Plane that preserves domain authority,
-rebuildability, explicit freshness, tenant-safe authorization, and ADR-0034 non-interference without
-activating speculative OLAP infrastructure.
+Move every currently implemented domain provider in the canonical domain-maturity roadmap to a
+real Level 3 Process Provider without inventing ERP semantics, weakening invariants, or touching
+Process Studio runtime work.
+
+The eligible provider domains are:
+
+- identity
+- party
+- inventory
+- accounting
+- sales
+- procurement
+
+A domain counts only when its public package exposes a bounded PUBLIC action and PUBLIC event,
+with owner authorization, tenant scope, stable failures, idempotency/concurrency proof,
+compensation or manual recovery, and catalog compatibility tests. Existing bounded capabilities
+may be Level 3 while unrelated sibling commands remain out of scope.
+
+`billing` remains out of scope until invoice/payment/settlement ownership is decided. `integrations`
+is a transport boundary, not an internal domain provider. `process` is an application coordinator,
+not Process Studio. `workflow` and all visual/runtime Process Studio work are explicitly forbidden.
 
 ## Metrics
 
-- **Primary:** `analytic_architecture_gates` (unitless, higher is better).
-- **Secondary:** `remaining_gates`.
+- **Primary:** `domain_level3_capabilities` (unitless, higher is better) — eligible provider domains
+  with a real PUBLIC action/event slice and executable catalog/contract proof.
+- **Secondary:** `remaining_domain_gates` (unitless, lower is better), `public_actions`,
+  `public_events`.
 
 ## How to Run
 
-`./.auto/measure.sh`; repository correctness checks run automatically from `.auto/checks.sh`.
+`./.auto/measure.sh` — emits structured metric lines.
+
+Repository correctness checks run automatically from `.auto/checks.sh` after every passing
+measurement.
 
 ## Files in Scope
 
-- `docs/architecture/`
-- `docs/architecture/reference/`
-- `docs/decisions/`
-- `docs/deployment/README.md`
-- `docs/README.md`
-- `docs/documentation-boundaries.md`
-- `ARCHITECTURE.md`
-- `AGENTS.md`
-- `.auto/`
+- `packages/identity/` — bounded public identity action/event slice.
+- `packages/party/` — bounded party/relationship action/event slice.
+- `packages/inventory/` — existing Level 3 slice and future bounded provider proofs.
+- `packages/accounting/` — existing Level 3 slice and future bounded provider proofs.
+- `packages/sales/` — existing Level 3 slice and future bounded provider proofs.
+- `packages/procurement/` — promote the bounded Purchase Order/Goods Receipt capability.
+- `packages/catalog/` and `packages/*/tests/` — compatibility and invariant proofs.
+- `docs/roadmap/domain-maturity.md` and owning architecture/ADR documents when status changes.
+- `tooling/domain-maturity/` and `.auto/` — objective measurement only.
 
 ## Off Limits
 
-- Adding an analytics package, schema, API, DSL, dependency, credential, or deployment.
-- Activating ClickHouse, Pinot, Iceberg, DuckDB, PgQue, a warehouse, or a broker.
-- Making analytics a fourth top-level workload class.
-- Letting a derived metric or projection become business or financial authority.
-- Claiming read-your-writes or hard isolation without executable evidence.
+- Process Studio designer, Process IR, workflow runtime, process catalog aggregation, or visual UI.
+- `billing` invoice/payment/settlement semantics without an accepted ownership ADR.
+- `integrations` provider implementations, brokers, OAuth products, or external delivery claims.
+- New dependencies, speculative ERP modules, generic repositories, or broad refactors.
+- Weakening authorization, validation, constraints, transaction boundaries, idempotency, audit,
+  tenant isolation, or manual-recovery behavior.
+- Claiming a domain Level 3 by editing roadmap prose without an executable public contract and tests.
 
-## Acceptance Gates
+## Constraints
 
-1. An accepted ADR selects the bounded, rebuildable analytic subsystem.
-2. A canonical analytics architecture owns facts, metrics, freshness, query, and provider gates.
-3. A reference study verifies the proposal against primary external sources.
-4. Documentation indexes and ownership boundaries name the new source of truth.
-5. The system-wide architecture includes a concise Analytic Plane contract.
-6. The architecture overview includes the analytic projection path.
-7. Workload isolation states analytics uses existing query and async classes.
-8. Deployment guidance links analytics to existing profiles without selecting a vendor.
-9. The canonical document states the no-primary-fallback invariant.
-10. The canonical document defines provider activation gates.
-11. Rebuild sources support snapshot plus replay when events alone are insufficient.
-12. Validation covers parity, replay, corrections, authorization, tenancy, freshness, and non-interference.
-13. Existing architecture files retain a surgical diff instead of repository-wide Markdown reformatting.
-14. Workload-isolation references preserve the ADR-0040 financial-authority exception.
-15. Runtime comparison references no longer restate the superseded PostgreSQL-only authority model.
-16. Multi-source freshness cannot advance beyond the oldest required source completeness frontier.
-17. Correction visibility is explicit, and deterministic rebuild proof fixes semantic versions and the source-completeness frontier.
-18. Dimension membership has a total, testable outcome with no implicit source-grain row loss.
-19. Empty inputs and absent groups have provider-independent row-cardinality and zero/null semantics.
-20. Derived expressions have total precision, rounding, null, zero-divisor, overflow, and non-finite semantics.
-21. Time-grained metrics use versioned, half-open temporal boundaries with deterministic timezone, precision, and DST resolution.
-22. Limited and paginated results use a total order and continuation bound to one fixed completeness frontier.
-23. Analytic observations and recommendations remain non-authoritative; every proposed action re-enters the current owning command boundary.
-24. Observation, review, and action preserve actor/delegation provenance and independently revalidate current evidence access and separation of duties.
-25. Findings bind immutable, verifiable evidence content to fixed semantic and completeness frontiers.
-26. Superseded, corrected, policy-invalidated, or withdrawn recommendations become non-actionable without rewriting history.
-27. Review and action idempotency binds the exact recommendation version, action version, and canonical validated input.
-28. Unknown recommendation-action outcomes remain unresolved until the owning domain confirms the exact attempt; retries, compensation, and successor effects cannot infer failure or create a new identity.
-29. Compensation is a separately authorized, idempotent owning-domain command bound to an owner-confirmed compensable effect; unknown, rejected, superseded, or withdrawn recommendations cannot imply compensation.
-30. Review and approval are historical decisions, not execution leases; delayed dispatch revalidates current evidence access, policy, delegation, action version, separation of duties, and recommendation actionability.
-31. Concurrent or recovered dispatch is durably fenced to one exact recommendation-action intent and owner-visible idempotency identity; stale workers cannot dispatch or finalize.
-32. Cancellation stops an undispatched attempt but never claims an already dispatched or unknown owning command was canceled; owner reconciliation and explicit compensation govern possible committed effects.
-33. Recommendation review or action authority does not imply access to protected command results; the owner independently authorizes and redacts disclosure, and coordinators retain only allowlisted receipts and references.
-34. Recommendation-visible failure status and logs expose only stable redacted classes and safe references; raw owner errors, causes, reconciliation details, and existence signals require separate owner-controlled diagnostic access.
-35. Notification, webhook, export, shared-link, and downstream analytic fan-out reapply current recipient scope and redaction through allowlisted schemas; queued payloads, metadata, retries, and receipts cannot bypass disclosure policy.
+- Use the smallest bounded capability that genuinely satisfies Level 3.
+- Follow `contract.ts -> errors.ts -> service.ts -> store.ts -> postgres.ts/memory.ts -> layers.ts`.
+- All TypeScript tests use `@effect/vitest`; use public package contracts in catalog tests.
+- Persistent writes remain owner-local and transactional; events publish through the public Messaging
+  contract inside the owner transaction.
+- New persistent IDs use the kernel UUIDv7 helper.
+- Preserve existing public HTTP behavior unless an endpoint is explicitly needed for the selected
+  bounded capability.
+- Do not use benchmark-only branches, hard-coded metric overrides, or documentation-only claims.
+
+## What's Been Tried
+
+- Inventory, Sales, and Accounting already have bounded PUBLIC Level 3 action/event slices.
+- Procurement, Party, and Identity now have bounded PUBLIC action/event slices; all six eligible
+  implemented provider domains are at the metric ceiling.
+- Identity required an Identity-owned authorization/publisher boundary to avoid auth -> identity
+  dependency cycles and accidental activation by generic test-layer MessagingService.
+- The previous autoresearch session completed analytic-plane documentation; that objective is closed
+  and is not part of this session.

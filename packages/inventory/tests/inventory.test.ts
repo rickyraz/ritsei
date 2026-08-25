@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
 import { DatabaseFailure, uuidv7 } from "../../kernel/mod.ts"
@@ -10,18 +11,33 @@ import {
   MessagingService,
 } from "../../messaging/mod.ts"
 import {
+  AdjustStockInput,
+  ConfirmStockTransferInput,
+  CreateItemInput,
+  CreateStockTransferInput,
+  CreateWarehouseInput,
   InventoryCapabilities,
   InventoryService,
   InventoryUnitOfMeasureMismatch,
   InventoryWarehouseLegalEntityMismatch,
+  Item,
   makeInventoryTestLayer,
+  ReceiveStockInput,
+  ReleaseReservationInput,
+  ReserveStockInput,
+  StockBalance,
+  StockCorrection,
   StockCorrectionIdempotencyConflict,
+  StockReservation,
   StockReservationIdempotencyConflict,
   StockReservationInvalidState,
   StockReservationLegalEntityMismatch,
+  StockTransfer,
   StockTransferDifferentLegalEntity,
   StockTransferInvalidState,
+  StockTransferLine,
   StockUnavailable,
+  Warehouse,
 } from "../mod.ts"
 
 const principal = { userAccountId: "keeper", sessionId: "session" }
@@ -97,6 +113,212 @@ const makeFailOnceMessagingLayer = () => {
 }
 
 describe("inventory contract", () => {
+  it.effect("bounds stock adjustments to PostgreSQL bigint", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AdjustStockInput)({
+          principal,
+          tenantId,
+          warehouseId: "00000000-0000-4000-8000-000000000002",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          adjustment: "9223372036854775808",
+          unitOfMeasure: "EA",
+          reason: "overflow",
+          ...correctionMetadata,
+          idempotencyKey: "overflow",
+        }),
+      )
+      assert.strictEqual(error._tag, "SchemaError")
+    }))
+
+  it.effect("validates warehouse UUID references at the input boundary", () =>
+    Effect.gen(function* () {
+      const invalidTenant = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateWarehouseInput)({
+          principal,
+          tenantId: "not-a-uuid",
+          legalEntityId,
+          name: "Warehouse",
+        }),
+      )
+      assert.strictEqual(invalidTenant._tag, "SchemaError")
+
+      const invalidItemName = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateItemInput)({
+          principal,
+          tenantId,
+          sku: "SKU-1",
+          name: "   ",
+        }),
+      )
+      assert.strictEqual(invalidItemName._tag, "SchemaError")
+
+      const invalidName = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateWarehouseInput)({
+          principal,
+          tenantId,
+          legalEntityId,
+          name: "   ",
+        }),
+      )
+      assert.strictEqual(invalidName._tag, "SchemaError")
+
+      const invalidLegalEntity = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateWarehouseInput)({
+          principal,
+          tenantId,
+          legalEntityId: "not-a-uuid",
+          name: "Warehouse",
+        }),
+      )
+      assert.strictEqual(invalidLegalEntity._tag, "SchemaError")
+
+      const invalidBranch = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateWarehouseInput)({
+          principal,
+          tenantId,
+          legalEntityId: "00000000-0000-4000-8000-000000000010",
+          primaryBranchId: "not-a-uuid",
+          name: "Warehouse",
+        }),
+      )
+      assert.strictEqual(invalidBranch._tag, "SchemaError")
+
+      const invalidReceiveWarehouse = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ReceiveStockInput)({
+          principal,
+          tenantId,
+          warehouseId: "not-a-uuid",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          quantity: "1",
+        }),
+      )
+      assert.strictEqual(invalidReceiveWarehouse._tag, "SchemaError")
+
+      const invalidReserveWarehouse = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ReserveStockInput)({
+          principal,
+          tenantId,
+          warehouseId: "not-a-uuid",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          quantity: "1",
+        }),
+      )
+      assert.strictEqual(invalidReserveWarehouse._tag, "SchemaError")
+
+      const invalidAdjustmentWarehouse = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AdjustStockInput)({
+          principal,
+          tenantId,
+          warehouseId: "not-a-uuid",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          adjustment: "1",
+          unitOfMeasure: "EA",
+          reason: "Correction",
+          ...correctionMetadata,
+          idempotencyKey: "invalid-adjustment",
+        }),
+      )
+      assert.strictEqual(invalidAdjustmentWarehouse._tag, "SchemaError")
+
+      const invalidTransferWarehouse = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateStockTransferInput)({
+          principal,
+          tenantId,
+          sourceWarehouseId: "not-a-uuid",
+          destinationWarehouseId: "00000000-0000-4000-8000-000000000002",
+          lines: [{
+            itemId: "00000000-0000-4000-8000-000000000003",
+            quantity: "1",
+          }],
+        }),
+      )
+      assert.strictEqual(invalidTransferWarehouse._tag, "SchemaError")
+
+      const duplicateTransferItems = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateStockTransferInput)({
+          principal,
+          tenantId,
+          sourceWarehouseId: "00000000-0000-4000-8000-000000000002",
+          destinationWarehouseId: "00000000-0000-4000-8000-000000000004",
+          lines: [
+            { itemId: "00000000-0000-4000-8000-000000000003", quantity: "1" },
+            { itemId: "00000000-0000-4000-8000-000000000003", quantity: "2" },
+          ],
+        }),
+      )
+      assert.strictEqual(duplicateTransferItems._tag, "SchemaError")
+
+      const sameWarehouseTransfer = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateStockTransferInput)({
+          principal,
+          tenantId,
+          sourceWarehouseId: "00000000-0000-4000-8000-000000000002",
+          destinationWarehouseId: "00000000-0000-4000-8000-000000000002",
+          lines: [{
+            itemId: "00000000-0000-4000-8000-000000000003",
+            quantity: "1",
+          }],
+        }),
+      )
+      assert.strictEqual(sameWarehouseTransfer._tag, "SchemaError")
+
+      const invalidTransfer = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ConfirmStockTransferInput)({
+          principal,
+          tenantId,
+          transferId: "not-a-uuid",
+        }),
+      )
+      assert.strictEqual(invalidTransfer._tag, "SchemaError")
+
+      const invalidReservation = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ReleaseReservationInput)({
+          principal,
+          tenantId,
+          reservationId: "not-a-uuid",
+        }),
+      )
+      assert.strictEqual(invalidReservation._tag, "SchemaError")
+    }))
+
+  it.effect("bounds positive inventory quantities to PostgreSQL bigint", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        Schema.decodeUnknownEffect(StockTransferLine)({
+          itemId: "item",
+          quantity: "9223372036854775808",
+        }),
+      )
+      assert.strictEqual(error._tag, "SchemaError")
+    }))
+
+  it.effect("bounds stock-balance quantities to PostgreSQL bigint", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        Schema.decodeUnknownEffect(StockBalance)({
+          tenantId: "00000000-0000-4000-8000-000000000001",
+          warehouseId: "00000000-0000-4000-8000-000000000002",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          onHand: "9223372036854775808",
+          reserved: "0",
+          unitOfMeasure: "EA",
+        }),
+      )
+      assert.strictEqual(error._tag, "SchemaError")
+      const exceedsOnHand = yield* Effect.flip(
+        Schema.decodeUnknownEffect(StockBalance)({
+          tenantId,
+          warehouseId: "00000000-0000-4000-8000-000000000002",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          onHand: "1",
+          reserved: "2",
+          unitOfMeasure: "EA",
+        }),
+      )
+      assert.strictEqual(exceedsOnHand._tag, "SchemaError")
+    }))
+
   it.effect("denies inventory capability in an ungranted tenant", () =>
     withInventory(Effect.gen(function* () {
       const inventory = yield* InventoryService
@@ -126,6 +348,35 @@ describe("inventory contract", () => {
         sku: "sku-1",
         name: "Widget",
       })
+      yield* Schema.decodeUnknownEffect(Warehouse)(warehouse)
+      assert.strictEqual(
+        (yield* Effect.flip(Schema.decodeUnknownEffect(Warehouse)({ ...warehouse, name: " " })))
+          ._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(Warehouse)({ ...warehouse, name: " Main " }),
+        ))._tag,
+        "SchemaError",
+      )
+      yield* Schema.decodeUnknownEffect(Item)(item)
+      assert.strictEqual(
+        (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, sku: " " })))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, sku: "sku-1" })))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, name: " " })))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, name: " Widget " })))._tag,
+        "SchemaError",
+      )
       const balance = yield* inventory.receiveStock({
         principal,
         tenantId,
@@ -138,7 +389,7 @@ describe("inventory contract", () => {
           principal,
           tenantId,
           warehouseId: warehouse.id,
-          legalEntityId: "legal-entity-b",
+          legalEntityId: "00000000-0000-4000-8000-000000000011",
           itemId: item.id,
           quantity: "1",
         })),
@@ -150,7 +401,7 @@ describe("inventory contract", () => {
         warehouseId: warehouse.id,
         itemId: item.id,
         quantity: "4",
-        idempotencyKey: "reservation-1",
+        idempotencyKey: " reservation-1 ",
       })
       const repeated = yield* inventory.reserveStock({
         principal,
@@ -160,6 +411,16 @@ describe("inventory contract", () => {
         quantity: "4",
         idempotencyKey: "reservation-1",
       })
+      yield* Schema.decodeUnknownEffect(StockReservation)(reservation)
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockReservation)({
+            ...reservation,
+            idempotencyKey: "   ",
+          }),
+        ))._tag,
+        "SchemaError",
+      )
 
       assert.strictEqual(item.unitOfMeasure, "EA")
       assert.strictEqual(balance.onHand, "10")
@@ -211,6 +472,20 @@ describe("inventory contract", () => {
   it.effect("applies normalized UOM corrections once and preserves reserved stock", () =>
     withInventory(Effect.gen(function* () {
       const inventory = yield* InventoryService
+      const invalidTenant = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AdjustStockInput)({
+          principal,
+          tenantId: "not-a-uuid",
+          warehouseId: "00000000-0000-4000-8000-000000000002",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          adjustment: "1",
+          unitOfMeasure: "EA",
+          reason: "cycle count",
+          ...correctionMetadata,
+          idempotencyKey: "invalid-tenant",
+        }),
+      )
+      assert.strictEqual(invalidTenant._tag, "SchemaError")
       const warehouse = yield* inventory.createWarehouse({
         principal,
         tenantId,
@@ -250,6 +525,25 @@ describe("inventory contract", () => {
         ...correctionMetadata,
         idempotencyKey: " correction-1 ",
       })
+      yield* Schema.decodeUnknownEffect(StockCorrection)(correction)
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockCorrection)({
+            ...correction,
+            reason: " Count correction ",
+          }),
+        ))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockCorrection)({
+            ...correction,
+            idempotencyKey: " correction-1 ",
+          }),
+        ))._tag,
+        "SchemaError",
+      )
       const repeated = yield* inventory.adjustStock({
         principal,
         tenantId,
@@ -292,20 +586,19 @@ describe("inventory contract", () => {
         })),
         InventoryUnitOfMeasureMismatch,
       )
-      assert.instanceOf(
-        yield* Effect.flip(inventory.adjustStock({
-          principal,
-          tenantId,
-          warehouseId: warehouse.id,
-          itemId: item.id,
-          adjustment: "1",
-          unitOfMeasure: "BOX",
-          reason: "Changed payload",
-          ...correctionMetadata,
-          idempotencyKey: "correction-1",
-        })),
-        StockCorrectionIdempotencyConflict,
-      )
+      const correctionConflict = yield* Effect.flip(inventory.adjustStock({
+        principal,
+        tenantId,
+        warehouseId: warehouse.id,
+        itemId: item.id,
+        adjustment: "1",
+        unitOfMeasure: "BOX",
+        reason: "Changed payload",
+        ...correctionMetadata,
+        idempotencyKey: " correction-1 ",
+      }))
+      assert.instanceOf(correctionConflict, StockCorrectionIdempotencyConflict)
+      assert.strictEqual(correctionConflict.idempotencyKey, "correction-1")
     })))
 
   it.effect("stock corrected atomic publication preserves metadata and one event on retry", () => {
@@ -436,8 +729,8 @@ describe("inventory contract", () => {
           yield* Effect.flip(inventory.adjustStock({
             principal,
             tenantId,
-            warehouseId: "warehouse",
-            itemId: "item",
+            warehouseId: "00000000-0000-4000-8000-000000000002",
+            itemId: "00000000-0000-4000-8000-000000000003",
             adjustment: "1",
             unitOfMeasure: "EA",
             reason: "Correction",
@@ -589,17 +882,16 @@ describe("inventory contract", () => {
         quantity: "4",
         idempotencyKey: "reservation-conflict",
       })
-      assert.instanceOf(
-        yield* Effect.flip(inventory.reserveStock({
-          principal,
-          tenantId,
-          warehouseId: warehouse.id,
-          itemId: item.id,
-          quantity: "5",
-          idempotencyKey: "reservation-conflict",
-        })),
-        StockReservationIdempotencyConflict,
-      )
+      const reservationConflict = yield* Effect.flip(inventory.reserveStock({
+        principal,
+        tenantId,
+        warehouseId: warehouse.id,
+        itemId: item.id,
+        quantity: "5",
+        idempotencyKey: " reservation-conflict ",
+      }))
+      assert.instanceOf(reservationConflict, StockReservationIdempotencyConflict)
+      assert.strictEqual(reservationConflict.idempotencyKey, "reservation-conflict")
     })))
 
   it.effect("rejects reservations above available stock", () =>
@@ -679,9 +971,44 @@ describe("inventory contract", () => {
           { itemId: cable.id, quantity: "3" },
         ],
       })
+      yield* Schema.decodeUnknownEffect(StockTransfer)(transfer)
       assert.strictEqual(transfer.status, "draft")
       assert.strictEqual(transfer.confirmedAt, null)
       assert.strictEqual(transfer.completedAt, null)
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockTransfer)({
+            ...transfer,
+            status: "confirmed",
+            confirmedAt: null,
+          }),
+        ))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockTransfer)({
+            ...transfer,
+            destinationWarehouseId: transfer.sourceWarehouseId,
+          }),
+        ))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockTransfer)({ ...transfer, lines: [] }),
+        ))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockTransfer)({
+            ...transfer,
+            lines: [transfer.lines[0]!, transfer.lines[0]!],
+          }),
+        ))._tag,
+        "SchemaError",
+      )
 
       assert.instanceOf(
         yield* Effect.flip(inventory.completeTransfer({
@@ -758,13 +1085,13 @@ describe("inventory contract", () => {
       const source = yield* inventory.createWarehouse({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-a",
+        legalEntityId: "00000000-0000-4000-8000-000000000011",
         name: "Source",
       })
       const destination = yield* inventory.createWarehouse({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-b",
+        legalEntityId: "00000000-0000-4000-8000-000000000012",
         name: "Destination",
       })
 
@@ -773,7 +1100,10 @@ describe("inventory contract", () => {
         tenantId,
         sourceWarehouseId: source.id,
         destinationWarehouseId: destination.id,
-        lines: [{ itemId: "item-1", quantity: "1" }],
+        lines: [{
+          itemId: "00000000-0000-4000-8000-000000000099",
+          quantity: "1",
+        }],
       }))
 
       assert.instanceOf(error, StockTransferDifferentLegalEntity)

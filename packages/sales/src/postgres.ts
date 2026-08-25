@@ -18,6 +18,7 @@ import type {
 import {
   CustomerAlreadyExists,
   CustomerNotFound,
+  QuotationCustomerMismatch,
   QuotationNotFound,
   SalesOrderConfirmationIdempotencyConflict,
 } from "./errors.ts"
@@ -92,7 +93,17 @@ export const makeSalesPostgresStore = Effect.fn("Sales.makePostgresStore")(funct
     },
   )
   const createOrder = Effect.fn("SalesStore.createOrder")(function* (decoded: CreateOrderCommand) {
-    return yield* database.transaction(async (tx) => {
+    const result = yield* database.transaction(async (tx) => {
+      if (decoded.quotationId !== undefined) {
+        const [quotation] = await tx.select({ customerId: quotations.customerId }).from(quotations)
+          .where(and(
+            eq(quotations.tenantId, decoded.tenantId),
+            eq(quotations.id, decoded.quotationId),
+          )).for("update")
+        if (quotation !== undefined && quotation.customerId !== decoded.customerId) {
+          return { _tag: "quotation-customer-mismatch" as const }
+        }
+      }
       const [order] = await tx.insert(orders).values({
         tenantId: decoded.tenantId,
         customerId: decoded.customerId,
@@ -108,7 +119,7 @@ export const makeSalesPostgresStore = Effect.fn("Sales.makePostgresStore")(funct
           unitPrice: line.unitPrice,
         })),
       ).returning(orderLineSelection)
-      return toSalesOrder(order!, lines)
+      return { _tag: "created" as const, order: toSalesOrder(order!, lines) }
     }, "sales.order.create").pipe(Effect.mapError((error) => {
       if (isDatabaseConstraint(error, "orders_tenant_customer_fkey", "23503")) {
         return new CustomerNotFound({ tenantId: decoded.tenantId, customerId: decoded.customerId })
@@ -122,8 +133,28 @@ export const makeSalesPostgresStore = Effect.fn("Sales.makePostgresStore")(funct
           quotationId: decoded.quotationId,
         })
       }
+      if (
+        decoded.quotationId !== undefined &&
+        isDatabaseConstraint(error, "orders_tenant_quotation_customer_fkey", "23503")
+      ) {
+        return new QuotationCustomerMismatch({
+          tenantId: decoded.tenantId,
+          quotationId: decoded.quotationId,
+          customerId: decoded.customerId,
+        })
+      }
       return error
     }))
+    if (result._tag === "quotation-customer-mismatch") {
+      return yield* Effect.fail(
+        new QuotationCustomerMismatch({
+          tenantId: decoded.tenantId,
+          quotationId: decoded.quotationId!,
+          customerId: decoded.customerId,
+        }),
+      )
+    }
+    return result.order
   })
   const confirmOrder = Effect.fn("SalesStore.confirmOrder")(
     function* (

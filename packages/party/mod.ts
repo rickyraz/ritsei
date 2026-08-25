@@ -1,4 +1,10 @@
 export { PartyCapabilities } from "./src/capabilities.ts"
+export {
+  PartyCreateAction,
+  PartyTypedActionCatalog,
+  PartyTypedEventCatalog,
+} from "./src/catalog.ts"
+export { PartyCreatedEvent, PartyCreatedEventPayload, PartyEventPublisher } from "./src/events.ts"
 
 export {
   AssignPartyRoleInput,
@@ -38,4 +44,9 @@ export {
   PartyRepresentationUserAccountNotFound,
   PartyRoleAlreadyAssigned,
 } from "./src/errors.ts"
-export { makePartyService, makePartyTestLayer, PartyLive } from "./src/layers.ts"
+export {
+  makePartyService,
+  makePartyTestLayer,
+  PartyEventPublisherLive,
+  PartyLive,
+} from "./src/layers.ts"

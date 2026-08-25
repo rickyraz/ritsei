@@ -1,5 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 
 import {
   AuthService,
@@ -7,6 +8,7 @@ import {
   makeAuthTestLayer,
   SessionUserAccountDisabled,
   SessionUserAccountNotFound,
+  Tenant,
   TenantAlreadyExists,
 } from "../mod.ts"
 
@@ -18,6 +20,7 @@ describe("auth contract", () => {
     withAuth(Effect.gen(function* () {
       const auth = yield* AuthService
       const tenant = yield* auth.createTenant({ slug: " ACME ", timezone: " Asia/Jakarta " })
+      yield* Schema.decodeUnknownEffect(Tenant)(tenant)
       assert.strictEqual(tenant.slug, "acme")
       assert.strictEqual(tenant.timezone, "Asia/Jakarta")
       const defaultTenant = yield* auth.createTenant({ slug: "default-timezone" })

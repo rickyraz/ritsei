@@ -285,14 +285,17 @@ export const financialCutoverControls = accountingSchema.table(
         (${table.openingBalanceVerified} and ${table.historicalBoundaryVerified} and
          ${table.reconciliationHealthy} and ${table.backupRecoveryVerified} and
          ${table.unresolvedAcceptedOperations} = 0 and
-         ${table.cutoverWatermark} is not null and ${table.verificationHash} is not null and
+         ${table.cutoverWatermark} is not null and ${table.cutoverWatermark} ~ '[^[:space:]]' and
+         ${table.verificationHash} is not null and ${table.verificationHash} ~ '[^[:space:]]' and
          ${table.evidenceArtifactId} is not null and
-         ${table.approvedBy} is not null and ${table.approvedAt} is not null))`,
+         ${table.approvedBy} is not null and ${table.approvedBy} ~ '[^[:space:]]' and
+         ${table.approvedAt} is not null))`,
     ),
     check(
       "financial_cutover_controls_activation_check",
       sql`(${table.status} <> 'tigerbeetle' or
-        (${table.activatedBy} is not null and ${table.activatedAt} is not null))`,
+        (${table.activatedBy} is not null and ${table.activatedBy} ~ '[^[:space:]]' and
+         ${table.activatedAt} is not null))`,
     ),
     index("financial_cutover_controls_status_index").on(table.status),
   ],
@@ -403,8 +406,9 @@ export const journalEntries = accountingSchema.table("journal_entries", {
   ),
   check(
     "journal_entries_reversal_state_check",
-    sql`(${table.status} in ('draft', 'posted') and ${table.reversesEntryId} is null) or
-      (${table.status} = 'reversed' and ${table.reversesEntryId} is not null)`,
+    sql`((${table.status} in ('draft', 'posted') and ${table.reversesEntryId} is null) or
+      (${table.status} = 'reversed' and ${table.reversesEntryId} is not null)) and
+      (${table.reversesEntryId} is null or ${table.reversesEntryId} <> ${table.id})`,
   ),
 ])
 

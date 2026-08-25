@@ -16,6 +16,33 @@ import {
   RevenuePostedEventPayload,
 } from "../../accounting/mod.ts"
 import { getCapabilityDefinition, isKnownCapability } from "../../authorization/mod.ts"
+import {
+  CreatePartyInput,
+  Party,
+  PartyCreateAction,
+  PartyCreatedEvent,
+  PartyCreatedEventPayload,
+  PartyTypedActionCatalog,
+  PartyTypedEventCatalog,
+} from "../../party/mod.ts"
+import {
+  CreateUserAccountForTenantInput,
+  IdentityCreateUserAccountAction,
+  IdentityTypedActionCatalog,
+  IdentityTypedEventCatalog,
+  UserAccount,
+  UserAccountCreatedEvent,
+  UserAccountCreatedEventPayload,
+} from "../../identity/mod.ts"
+import {
+  ConfirmPurchaseOrderInput,
+  ProcurementConfirmPurchaseOrderAction,
+  ProcurementPurchaseOrderConfirmedEvent,
+  ProcurementTypedActionCatalog,
+  ProcurementTypedEventCatalog,
+  PurchaseOrder,
+  PurchaseOrderConfirmedEventPayload,
+} from "../../procurement/mod.ts"
 import { type DomainActionCatalogEntry, type DomainEventCatalogEntry } from "../mod.ts"
 import {
   AdjustStockInput,
@@ -47,13 +74,19 @@ import {
 
 const actions: ReadonlyArray<DomainActionCatalogEntry> = [
   ...InventoryTypedActionCatalog,
+  ...IdentityTypedActionCatalog,
+  ...PartyTypedActionCatalog,
   ...AccountingTypedActionCatalog,
   ...SalesTypedActionCatalog,
+  ...ProcurementTypedActionCatalog,
 ]
 const events: ReadonlyArray<DomainEventCatalogEntry> = [
   ...InventoryTypedEventCatalog,
+  ...IdentityTypedEventCatalog,
+  ...PartyTypedEventCatalog,
   ...AccountingTypedEventCatalog,
   ...SalesTypedEventCatalog,
+  ...ProcurementTypedEventCatalog,
   ...ProcessTypedEventCatalog,
 ]
 
@@ -149,9 +182,27 @@ describe("catalog compatibility", () => {
       )
       assert.strictEqual(SalesConfirmOrderAction.inputSchema, ConfirmOrderInput)
       assert.strictEqual(SalesConfirmOrderAction.outputSchema, SalesOrder)
+      assert.strictEqual(
+        ProcurementConfirmPurchaseOrderAction.inputSchema,
+        ConfirmPurchaseOrderInput,
+      )
+      assert.strictEqual(ProcurementConfirmPurchaseOrderAction.outputSchema, PurchaseOrder)
+      assert.strictEqual(
+        IdentityCreateUserAccountAction.inputSchema,
+        CreateUserAccountForTenantInput,
+      )
+      assert.strictEqual(IdentityCreateUserAccountAction.outputSchema, UserAccount)
+      assert.strictEqual(PartyCreateAction.inputSchema, CreatePartyInput)
+      assert.strictEqual(PartyCreateAction.outputSchema, Party)
       assert.strictEqual(InventoryStockCorrectedEvent.payloadSchema, StockCorrectedEventPayload)
       assert.strictEqual(AccountingRevenuePostedEvent.payloadSchema, RevenuePostedEventPayload)
       assert.strictEqual(SalesOrderConfirmedEvent.payloadSchema, SalesOrderConfirmedEventPayload)
+      assert.strictEqual(
+        ProcurementPurchaseOrderConfirmedEvent.payloadSchema,
+        PurchaseOrderConfirmedEventPayload,
+      )
+      assert.strictEqual(UserAccountCreatedEvent.payloadSchema, UserAccountCreatedEventPayload)
+      assert.strictEqual(PartyCreatedEvent.payloadSchema, PartyCreatedEventPayload)
       assert.strictEqual(
         ProcessOrderConfirmationCompletedEvent.payloadSchema,
         OrderConfirmationCompletedEventPayload,
@@ -168,6 +219,12 @@ describe("catalog compatibility", () => {
       assertPayloadFields(AccountingRevenuePostedEvent, RevenuePostedEventPayload.fields)
       assertPayloadFields(SalesOrderConfirmedEvent, SalesOrderConfirmedEventPayload.fields)
       assertPayloadFields(
+        ProcurementPurchaseOrderConfirmedEvent,
+        PurchaseOrderConfirmedEventPayload.fields,
+      )
+      assertPayloadFields(UserAccountCreatedEvent, UserAccountCreatedEventPayload.fields)
+      assertPayloadFields(PartyCreatedEvent, PartyCreatedEventPayload.fields)
+      assertPayloadFields(
         ProcessOrderConfirmationCompletedEvent,
         ProcessOrderConfirmationCompletedEvent.payloadSchema.fields,
       )
@@ -180,14 +237,20 @@ describe("catalog compatibility", () => {
         ProcessOrderFulfillmentCompletedEvent.payloadSchema.fields,
       )
       assert.strictEqual(AccountingRevenuePostedEvent.stability, "PUBLIC")
+      assert.strictEqual(ProcurementConfirmPurchaseOrderAction.stability, "PUBLIC")
+      assert.strictEqual(ProcurementPurchaseOrderConfirmedEvent.stability, "PUBLIC")
+      assert.strictEqual(IdentityCreateUserAccountAction.stability, "PUBLIC")
+      assert.strictEqual(UserAccountCreatedEvent.stability, "PUBLIC")
+      assert.strictEqual(PartyCreateAction.stability, "PUBLIC")
+      assert.strictEqual(PartyCreatedEvent.stability, "PUBLIC")
 
       const principal = { userAccountId: "user-1", sessionId: "session-1" }
 
       yield* Schema.decodeUnknownEffect(InventoryAdjustStockAction.inputSchema)({
         principal,
-        tenantId: "tenant-1",
-        warehouseId: "warehouse-1",
-        itemId: "item-1",
+        tenantId: "00000000-0000-4000-8000-000000000001",
+        warehouseId: "00000000-0000-4000-8000-000000000002",
+        itemId: "00000000-0000-4000-8000-000000000003",
         adjustment: "-2",
         unitOfMeasure: "EA",
         reason: "cycle count",
@@ -197,10 +260,10 @@ describe("catalog compatibility", () => {
         idempotencyKey: "correction-1",
       })
       yield* Schema.decodeUnknownEffect(InventoryAdjustStockAction.outputSchema)({
-        id: "correction-1",
-        tenantId: "tenant-1",
-        warehouseId: "warehouse-1",
-        itemId: "item-1",
+        id: "00000000-0000-4000-8000-000000000021",
+        tenantId: "00000000-0000-4000-8000-000000000001",
+        warehouseId: "00000000-0000-4000-8000-000000000002",
+        itemId: "00000000-0000-4000-8000-000000000003",
         adjustment: "-2",
         unitOfMeasure: "EA",
         reason: "cycle count",
@@ -208,28 +271,32 @@ describe("catalog compatibility", () => {
       })
       yield* Schema.decodeUnknownEffect(InventoryAdjustStockAction.errorSchemas[2]!)({
         _tag: "StockCorrectionIdempotencyConflict",
-        tenantId: "tenant-1",
+        tenantId: "00000000-0000-4000-8000-000000000001",
         idempotencyKey: "correction-1",
       })
 
       yield* Schema.decodeUnknownEffect(SalesConfirmOrderAction.inputSchema)({
         principal,
-        tenantId: "tenant-1",
-        orderId: "order-1",
+        tenantId: "00000000-0000-4000-8000-000000000001",
+        orderId: "00000000-0000-4000-8000-000000000031",
         commandId: "command-1",
         correlationId: "correlation-1",
         causationId: null,
         idempotencyKey: "confirmation-1",
       })
       yield* Schema.decodeUnknownEffect(SalesConfirmOrderAction.outputSchema)({
-        id: "order-1",
-        tenantId: "tenant-1",
-        customerId: "customer-1",
+        id: "00000000-0000-4000-8000-000000000031",
+        tenantId: "00000000-0000-4000-8000-000000000001",
+        customerId: "00000000-0000-4000-8000-000000000032",
         quotationId: null,
         status: "confirmed",
         confirmedAt: "2026-08-12T00:00:00.000Z",
         total: "10.00",
-        lines: [{ itemId: "item-1", quantity: "1", unitPrice: "10.00" }],
+        lines: [{
+          itemId: "00000000-0000-4000-8000-000000000041",
+          quantity: "1",
+          unitPrice: "10.00",
+        }],
       })
 
       yield* Schema.decodeUnknownEffect(InventoryStockCorrectedEvent.payloadSchema)({

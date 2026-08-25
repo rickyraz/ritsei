@@ -53,8 +53,15 @@ export const makeSalesServiceFromStore = <R>(storeEffect: Effect.Effect<SalesSto
     const confirmOrder = Effect.fn("SalesService.confirmOrder")(function* (input: unknown) {
       const decoded = yield* Schema.decodeUnknownEffect(ConfirmOrderInput)(input)
       yield* authorize(decoded, SalesCapabilities.orderConfirm)
+      const normalized = {
+        ...decoded,
+        commandId: decoded.commandId.trim(),
+        correlationId: decoded.correlationId.trim(),
+        causationId: decoded.causationId?.trim() ?? null,
+        idempotencyKey: decoded.idempotencyKey.trim(),
+      }
       const mutation = yield* store.confirmOrder(
-        decoded,
+        normalized,
         (order) =>
           Schema.decodeUnknownEffect(SalesOrderConfirmedEventPayload)({
             orderId: order.id,
@@ -64,14 +71,14 @@ export const makeSalesServiceFromStore = <R>(storeEffect: Effect.Effect<SalesSto
               eventId: uuidv7(),
               eventType: SalesOrderConfirmedEvent.id,
               eventVersion: SalesOrderConfirmedEvent.version,
-              tenantId: decoded.tenantId,
+              tenantId: normalized.tenantId,
               aggregateType: SalesOrderConfirmedEvent.aggregateType,
               aggregateId: order.id,
-              commandId: decoded.commandId,
-              correlationId: decoded.correlationId,
-              causationId: decoded.causationId,
-              idempotencyKey: decoded.idempotencyKey,
-              actorPrincipalId: decoded.principal.userAccountId,
+              commandId: normalized.commandId,
+              correlationId: normalized.correlationId,
+              causationId: normalized.causationId,
+              idempotencyKey: normalized.idempotencyKey,
+              actorPrincipalId: normalized.principal.userAccountId,
               occurredAt: order.confirmedAt!,
               payload,
             })
@@ -85,9 +92,9 @@ export const makeSalesServiceFromStore = <R>(storeEffect: Effect.Effect<SalesSto
       if (mutation._tag === "idempotency-conflict") {
         return yield* Effect.fail(
           new SalesOrderConfirmationIdempotencyConflict({
-            tenantId: decoded.tenantId,
-            orderId: decoded.orderId,
-            idempotencyKey: decoded.idempotencyKey,
+            tenantId: normalized.tenantId,
+            orderId: normalized.orderId,
+            idempotencyKey: normalized.idempotencyKey,
           }),
         )
       }

@@ -184,6 +184,18 @@ it.effect.skipIf(databaseUrl === undefined)(
             unitOfMeasure: "box",
           })
           assert.notStrictEqual(otherItem.id, item.id)
+          const invalidItemUnitOfMeasure = yield* postgresFailure(() =>
+            client`
+              update inventory.items
+              set unit_of_measure = 'A B'
+              where tenant_id = ${tenant.id} and id = ${item.id}
+            `
+          )
+          assert.strictEqual((invalidItemUnitOfMeasure as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidItemUnitOfMeasure as { constraint_name?: string }).constraint_name,
+            "items_unit_of_measure_check",
+          )
           yield* inventory.receiveStock({
             principal,
             tenantId: tenant.id,
@@ -255,6 +267,100 @@ it.effect.skipIf(databaseUrl === undefined)(
           assert.strictEqual(
             (invalidReservationTransition as { constraint_name?: string }).constraint_name,
             "inventory_reservation_state_transition_check",
+          )
+          const invalidReservationStatus = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update inventory.reservations
+                set status = 'fulfilled'
+                where tenant_id = ${tenant.id} and id = ${duplicateReservations[0].id}
+              `
+            })
+          )
+          assert.strictEqual((invalidReservationStatus as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidReservationStatus as { constraint_name?: string }).constraint_name,
+            "inventory_reservation_balance_consistency_check",
+          )
+          const invalidReservedBalance = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update inventory.stock_balances
+                set reserved = reserved + 1
+                where tenant_id = ${tenant.id}
+                  and warehouse_id = ${warehouse.id}
+                  and item_id = ${item.id}
+              `
+            })
+          )
+          assert.strictEqual((invalidReservedBalance as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidReservedBalance as { constraint_name?: string }).constraint_name,
+            "inventory_reservation_balance_consistency_check",
+          )
+          const changedReservationQuantity = yield* postgresFailure(() =>
+            client`
+              update inventory.reservations
+              set quantity = 2
+              where tenant_id = ${tenant.id} and id = ${duplicateReservations[0].id}
+            `
+          )
+          assert.strictEqual((changedReservationQuantity as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (changedReservationQuantity as { constraint_name?: string }).constraint_name,
+            "inventory_reservation_identity_immutable",
+          )
+          const deletedReservation = yield* postgresFailure(() =>
+            client`
+              delete from inventory.reservations
+              where tenant_id = ${tenant.id} and id = ${duplicateReservations[0].id}
+            `
+          )
+          assert.strictEqual((deletedReservation as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (deletedReservation as { constraint_name?: string }).constraint_name,
+            "inventory_reservation_identity_immutable",
+          )
+          const orphanReservationMovement = yield* postgresFailure(() =>
+            client`
+              insert into inventory.movements
+                (tenant_id, warehouse_id, item_id, quantity, kind, reference_id)
+              values
+                (${tenant.id}, ${warehouse.id}, ${item.id}, 1, 'reservation', ${uuidv7()})
+            `
+          )
+          assert.strictEqual((orphanReservationMovement as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (orphanReservationMovement as { constraint_name?: string }).constraint_name,
+            "inventory_movement_reservation_reference_check",
+          )
+          const mismatchedReservationMovement = yield* postgresFailure(() =>
+            client`
+              insert into inventory.movements
+                (tenant_id, warehouse_id, item_id, quantity, kind, reference_id)
+              values
+                (${tenant.id}, ${warehouse.id}, ${item.id}, 2, 'reservation',
+                 ${duplicateReservations[0].id})
+            `
+          )
+          assert.strictEqual((mismatchedReservationMovement as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (mismatchedReservationMovement as { constraint_name?: string }).constraint_name,
+            "inventory_movement_reservation_reference_check",
+          )
+          const issueForActiveReservation = yield* postgresFailure(() =>
+            client`
+              insert into inventory.movements
+                (tenant_id, warehouse_id, item_id, quantity, kind, reference_id)
+              values
+                (${tenant.id}, ${warehouse.id}, ${item.id}, -1, 'issue',
+                 ${duplicateReservations[0].id})
+            `
+          )
+          assert.strictEqual((issueForActiveReservation as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (issueForActiveReservation as { constraint_name?: string }).constraint_name,
+            "inventory_movement_reservation_reference_check",
           )
           const invalidTransferInsert = yield* postgresFailure(() =>
             client`
@@ -367,6 +473,71 @@ it.effect.skipIf(databaseUrl === undefined)(
             { concurrency: "unbounded" },
           )
           assert.strictEqual(duplicates[0].id, duplicates[1].id)
+          const changedMovement = yield* postgresFailure(() =>
+            client`
+              update inventory.movements
+              set reason = 'edited correction'
+              where tenant_id = ${tenant.id} and id = ${duplicates[0].id}
+            `
+          )
+          assert.strictEqual((changedMovement as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (changedMovement as { constraint_name?: string }).constraint_name,
+            "inventory_movements_immutable",
+          )
+          const deletedMovement = yield* postgresFailure(() =>
+            client`
+              delete from inventory.movements
+              where tenant_id = ${tenant.id} and id = ${duplicates[0].id}
+            `
+          )
+          assert.strictEqual((deletedMovement as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (deletedMovement as { constraint_name?: string }).constraint_name,
+            "inventory_movements_immutable",
+          )
+          const invalidUnitOfMeasure = yield* postgresFailure(() =>
+            client`
+              insert into inventory.movements
+                (tenant_id, warehouse_id, item_id, quantity, kind,
+                 unit_of_measure, reason, idempotency_key)
+              values
+                (${tenant.id}, ${warehouse.id}, ${item.id}, 1, 'receipt',
+                 'box', 'manual correction', ${`invalid-uom-${uuidv7()}`})
+            `
+          )
+          assert.strictEqual((invalidUnitOfMeasure as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidUnitOfMeasure as { constraint_name?: string }).constraint_name,
+            "movements_correction_metadata_check",
+          )
+          for (const [kind, quantity] of [["issue", 1], ["receipt", -1]] as const) {
+            const invalidSign = yield* postgresFailure(() =>
+              client`
+                insert into inventory.movements
+                  (tenant_id, warehouse_id, item_id, quantity, kind)
+                values (${tenant.id}, ${warehouse.id}, ${item.id}, ${quantity}, ${kind})
+              `
+            )
+            assert.strictEqual((invalidSign as { code?: string }).code, "23514")
+            assert.strictEqual(
+              (invalidSign as { constraint_name?: string }).constraint_name,
+              "movements_kind_quantity_sign_check",
+            )
+          }
+          const invalidReleaseReference = yield* postgresFailure(() =>
+            client`
+              insert into inventory.movements
+                (tenant_id, warehouse_id, item_id, quantity, kind)
+              values
+                (${tenant.id}, ${warehouse.id}, ${item.id}, 1, 'release')
+            `
+          )
+          assert.strictEqual((invalidReleaseReference as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidReleaseReference as { constraint_name?: string }).constraint_name,
+            "inventory_movement_reservation_reference_check",
+          )
           const otherCorrection = yield* inventory.adjustStock({
             ...correctionInput,
             tenantId: otherTenant.id,
@@ -506,80 +677,51 @@ it.effect.skipIf(databaseUrl === undefined)(
           )
           assert.deepStrictEqual(rolledBackCounts, { movements: "0", events: "0" })
 
-          const brokenItem = yield* inventory.createItem({
+          const guardedItem = yield* inventory.createItem({
             principal,
             tenantId: tenant.id,
-            sku: "FULFILLMENT-GUARD",
-            name: "Fulfillment Guard Item",
+            sku: "RESERVATION-BALANCE-GUARD",
+            name: "Reservation Balance Guard Item",
             unitOfMeasure: "box",
           })
           yield* inventory.receiveStock({
             principal,
             tenantId: tenant.id,
             warehouseId: warehouse.id,
-            itemId: brokenItem.id,
+            itemId: guardedItem.id,
             quantity: "1",
           })
-          const brokenReservation = yield* inventory.reserveStock({
+          const guardedReservation = yield* inventory.reserveStock({
             principal,
             tenantId: tenant.id,
             warehouseId: warehouse.id,
-            itemId: brokenItem.id,
+            itemId: guardedItem.id,
             quantity: "1",
           })
-          yield* Effect.promise(() =>
-            client`
-              update inventory.stock_balances
-              set on_hand = 0, reserved = 0
-              where tenant_id = ${tenant.id}
-                and warehouse_id = ${warehouse.id}
-                and item_id = ${brokenItem.id}
-            `
+          const invalidGuardedBalance = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update inventory.stock_balances
+                set on_hand = 0, reserved = 0
+                where tenant_id = ${tenant.id}
+                  and warehouse_id = ${warehouse.id}
+                  and item_id = ${guardedItem.id}
+              `
+            })
           )
-          assert.instanceOf(
-            yield* Effect.flip(inventory.fulfillReservation({
-              principal,
-              tenantId: tenant.id,
-              reservationId: brokenReservation.id,
-            })),
-            StockUnavailable,
+          assert.strictEqual((invalidGuardedBalance as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidGuardedBalance as { constraint_name?: string }).constraint_name,
+            "inventory_on_hand_movement_consistency_check",
           )
-          const [brokenReservationRow] = yield* Effect.promise(() =>
+          const [guardedReservationRow] = yield* Effect.promise(() =>
             client<{ status: string }[]>`
               select status
               from inventory.reservations
-              where tenant_id = ${tenant.id} and id = ${brokenReservation.id}
+              where tenant_id = ${tenant.id} and id = ${guardedReservation.id}
             `
           )
-          assert.strictEqual(brokenReservationRow?.status, "active")
-          const [brokenMovementCount] = yield* Effect.promise(() =>
-            client<{ count: string }[]>`
-              select count(*)::text as count
-              from inventory.movements
-              where tenant_id = ${tenant.id}
-                and kind = 'issue'
-                and reference_id = ${brokenReservation.id}
-            `
-          )
-          assert.strictEqual(brokenMovementCount?.count, "0")
-          assert.instanceOf(
-            yield* Effect.flip(inventory.releaseReservation({
-              principal,
-              tenantId: tenant.id,
-              reservationId: brokenReservation.id,
-            })),
-            StockUnavailable,
-          )
-          const [brokenReleaseMovementCount] = yield* Effect.promise(() =>
-            client<{ count: string }[]>`
-              select count(*)::text as count
-              from inventory.movements
-              where tenant_id = ${tenant.id}
-                and kind = 'release'
-                and reference_id = ${brokenReservation.id}
-            `
-          )
-          assert.strictEqual(brokenReleaseMovementCount?.count, "0")
+          assert.strictEqual(guardedReservationRow?.status, "active")
         }).pipe(Effect.provide(authorizationLayer))
       })),
 )
@@ -763,6 +905,31 @@ it.effect.skipIf(databaseUrl === undefined)(
               `${a.warehouse_id}:${a.item_id}`.localeCompare(`${b.warehouse_id}:${b.item_id}`)
             ),
           )
+          const changedConfirmedLine = yield* postgresFailure(() =>
+            client`
+              update inventory.stock_transfer_lines
+              set quantity = 5
+              where tenant_id = ${tenant.id} and transfer_id = ${transfer.id}
+                and item_id = ${widget.id}
+            `
+          )
+          assert.strictEqual((changedConfirmedLine as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (changedConfirmedLine as { constraint_name?: string }).constraint_name,
+            "inventory_stock_transfer_lines_immutable",
+          )
+          const deletedConfirmedLine = yield* postgresFailure(() =>
+            client`
+              delete from inventory.stock_transfer_lines
+              where tenant_id = ${tenant.id} and transfer_id = ${transfer.id}
+                and item_id = ${cable.id}
+            `
+          )
+          assert.strictEqual((deletedConfirmedLine as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (deletedConfirmedLine as { constraint_name?: string }).constraint_name,
+            "inventory_stock_transfer_lines_immutable",
+          )
           assert.instanceOf(
             yield* Effect.flip(inventory.completeTransfer({
               principal,
@@ -770,6 +937,20 @@ it.effect.skipIf(databaseUrl === undefined)(
               transferId: transfer.id,
             })),
             StockTransferNotFound,
+          )
+          const incompleteTransfer = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update inventory.stock_transfers
+                set status = 'completed', completed_at = now()
+                where tenant_id = ${tenant.id} and id = ${transfer.id}
+              `
+            })
+          )
+          assert.strictEqual((incompleteTransfer as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (incompleteTransfer as { constraint_name?: string }).constraint_name,
+            "inventory_completed_transfer_receipts_check",
           )
 
           yield* inventory.completeTransfer({
@@ -1043,7 +1224,10 @@ it.effect.skipIf(databaseUrl === undefined)(
             tenantId: tenant.id,
             sourceWarehouseId: source.id,
             destinationWarehouseId: destination.id,
-            lines: [{ itemId: "item-not-needed", quantity: "1" }],
+            lines: [{
+              itemId: "00000000-0000-4000-8000-000000000099",
+              quantity: "1",
+            }],
           }))
           assert.instanceOf(error, StockTransferDifferentLegalEntity)
         }).pipe(Effect.provide(authorizationLayer))

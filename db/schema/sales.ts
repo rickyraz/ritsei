@@ -34,6 +34,10 @@ export const customers = salesSchema.table("customers", {
 }, (table) => [
   unique("customers_tenant_id_id_key").on(table.tenantId, table.id),
   unique("customers_tenant_email_key").on(table.tenantId, table.email),
+  check(
+    "customers_email_normalization_check",
+    sql`${table.email} = lower(btrim(${table.email})) and ${table.email} ~ '[^[:space:]]'`,
+  ),
   foreignKey({
     columns: [table.tenantId],
     foreignColumns: [tenants.id],
@@ -51,6 +55,7 @@ export const quotations = salesSchema.table("quotations", {
   updatedAt: updatedAt(),
 }, (table) => [
   unique("quotations_tenant_id_id_key").on(table.tenantId, table.id),
+  unique("quotations_tenant_id_id_customer_id_key").on(table.tenantId, table.id, table.customerId),
   foreignKey({
     columns: [table.tenantId],
     foreignColumns: [tenants.id],
@@ -91,6 +96,11 @@ export const orders = salesSchema.table("orders", {
     columns: [table.tenantId, table.quotationId],
     foreignColumns: [quotations.tenantId, quotations.id],
     name: "orders_tenant_quotation_fkey",
+  }),
+  foreignKey({
+    columns: [table.tenantId, table.quotationId, table.customerId],
+    foreignColumns: [quotations.tenantId, quotations.id, quotations.customerId],
+    name: "orders_tenant_quotation_customer_fkey",
   }),
   unique("orders_tenant_confirmation_idempotency_key").on(
     table.tenantId,

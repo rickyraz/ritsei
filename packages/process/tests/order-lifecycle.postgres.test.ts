@@ -915,11 +915,20 @@ it.effect.skipIf(databaseUrl === undefined)(
         const firstReservation = orderedReservations[0]!
         const invalidReservation = orderedReservations.at(-1)!
         yield* Effect.promise(() =>
-          client`
-            update inventory.reservations
-            set status = 'released'
-            where tenant_id = ${tenantId} and id = ${invalidReservation.id}
-          `
+          client.begin(async (transaction) => {
+            await transaction`
+              update inventory.reservations
+              set status = 'released'
+              where tenant_id = ${tenantId} and id = ${invalidReservation.id}
+            `
+            await transaction`
+              update inventory.stock_balances
+              set reserved = reserved - ${invalidReservation.quantity}
+              where tenant_id = ${tenantId}
+                and warehouse_id = ${invalidReservation.warehouseId}
+                and item_id = ${invalidReservation.itemId}
+            `
+          })
         )
         const beforeCounts = (yield* Effect.promise(() => readCounts(client, tenantId)))[0]!
         const beforeBalances = yield* Effect.promise(() =>

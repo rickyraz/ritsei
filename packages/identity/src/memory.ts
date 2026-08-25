@@ -1,5 +1,6 @@
 import * as Effect from "effect/Effect"
 
+import { uuidv7 } from "../../kernel/mod.ts"
 import type { UserAccount, UserAccountAuthenticationState } from "./contract.ts"
 import { UserAccountAlreadyExists, UserAccountNotFound } from "./errors.ts"
 import type { UserAccountStore } from "./store.ts"
@@ -8,8 +9,6 @@ export const makeUserAccountMemoryStore = (): UserAccountStore => {
   const stored = new Map<string, UserAccount>()
   const sessionInvalidatedAt = new Map<string, string | null>()
   const emails = new Set<string>()
-  let nextId = 1
-
   const find = Effect.fn("UserAccountStore.memory.find")(function* (id: string) {
     const userAccount = stored.get(id)
     if (userAccount === undefined) return yield* Effect.fail(new UserAccountNotFound({ id }))
@@ -18,7 +17,7 @@ export const makeUserAccountMemoryStore = (): UserAccountStore => {
 
   const create = Effect.fn("UserAccountStore.memory.create")(function* (email: string) {
     if (emails.has(email)) return yield* Effect.fail(new UserAccountAlreadyExists({ email }))
-    const userAccount = { id: String(nextId++), email, status: "active" as const }
+    const userAccount = { id: uuidv7(), email, status: "active" as const }
     emails.add(email)
     stored.set(userAccount.id, userAccount)
     sessionInvalidatedAt.set(userAccount.id, null)

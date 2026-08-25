@@ -6,6 +6,7 @@ import * as Schema from "effect/Schema"
 import { AuthorizationService } from "../../authorization/mod.ts"
 import { InventoryService } from "../../inventory/mod.ts"
 import { FinancialMajorAmount, uuidv7 } from "../../kernel/mod.ts"
+import { MessagingService } from "../../messaging/mod.ts"
 import { PartyService } from "../../party/mod.ts"
 import { ProcurementCapabilities } from "./capabilities.ts"
 import {
@@ -21,6 +22,10 @@ import {
   ReceivePurchaseOrderInput,
   SupplierAccount,
 } from "./contract.ts"
+import {
+  ProcurementPurchaseOrderConfirmedEvent,
+  PurchaseOrderConfirmedEventPayload,
+} from "./events.ts"
 import {
   PurchaseOrderConfirmationIdempotencyConflict,
   PurchaseOrderHasReceipts,
@@ -48,6 +53,7 @@ export const makeProcurementTestLayer = () =>
     ProcurementService,
     Effect.gen(function* () {
       const authorization = yield* AuthorizationService
+      const messaging = yield* MessagingService
       const party = yield* PartyService
       const clock = yield* Clock.Clock
       const now = () => new Date(clock.currentTimeMillisUnsafe())
@@ -150,6 +156,7 @@ export const makeProcurementTestLayer = () =>
               tenantId: decoded.tenantId,
               capability: ProcurementCapabilities.purchaseOrderConfirm,
             })
+            const normalizedIdempotencyKey = decoded.idempotencyKey.trim()
             const order = storedPurchaseOrders.get(decoded.purchaseOrderId)
             if (order?.tenantId !== decoded.tenantId) {
               return yield* Effect.fail(
@@ -160,12 +167,12 @@ export const makeProcurementTestLayer = () =>
               )
             }
             if (order.status === "confirmed") {
-              if (confirmationKeys.get(order.id) !== decoded.idempotencyKey) {
+              if (confirmationKeys.get(order.id) !== normalizedIdempotencyKey) {
                 return yield* Effect.fail(
                   new PurchaseOrderConfirmationIdempotencyConflict({
                     tenantId: decoded.tenantId,
                     purchaseOrderId: decoded.purchaseOrderId,
-                    idempotencyKey: decoded.idempotencyKey,
+                    idempotencyKey: normalizedIdempotencyKey,
                   }),
                 )
               }
@@ -180,14 +187,14 @@ export const makeProcurementTestLayer = () =>
                 }),
               )
             }
-            const confirmationKey = `${decoded.tenantId}:${decoded.idempotencyKey}`
+            const confirmationKey = `${decoded.tenantId}:${normalizedIdempotencyKey}`
             const existingOrderId = confirmationOrderIdsByKey.get(confirmationKey)
             if (existingOrderId !== undefined && existingOrderId !== order.id) {
               return yield* Effect.fail(
                 new PurchaseOrderConfirmationIdempotencyConflict({
                   tenantId: decoded.tenantId,
                   purchaseOrderId: decoded.purchaseOrderId,
-                  idempotencyKey: decoded.idempotencyKey,
+                  idempotencyKey: normalizedIdempotencyKey,
                 }),
               )
             }
@@ -196,8 +203,30 @@ export const makeProcurementTestLayer = () =>
               status: "confirmed",
               confirmedAt: now().toISOString(),
             }
+            const payload = yield* Schema.decodeUnknownEffect(
+              PurchaseOrderConfirmedEventPayload,
+            )({
+              purchaseOrderId: confirmed.id,
+              supplierAccountId: confirmed.supplierAccountId,
+              total: confirmed.total,
+            })
+            yield* messaging.append({
+              eventId: uuidv7(),
+              eventType: ProcurementPurchaseOrderConfirmedEvent.id,
+              eventVersion: ProcurementPurchaseOrderConfirmedEvent.version,
+              tenantId: decoded.tenantId,
+              aggregateType: ProcurementPurchaseOrderConfirmedEvent.aggregateType,
+              aggregateId: confirmed.id,
+              commandId: `procurement.purchase_order.confirm:${normalizedIdempotencyKey}`,
+              correlationId: `procurement.purchase_order:${confirmed.id}`,
+              causationId: null,
+              idempotencyKey: normalizedIdempotencyKey,
+              actorPrincipalId: decoded.principal.userAccountId,
+              occurredAt: confirmed.confirmedAt!,
+              payload,
+            })
             storedPurchaseOrders.set(order.id, confirmed)
-            confirmationKeys.set(order.id, decoded.idempotencyKey)
+            confirmationKeys.set(order.id, normalizedIdempotencyKey)
             confirmationOrderIdsByKey.set(confirmationKey, order.id)
             return confirmed
           }),
@@ -253,6 +282,7 @@ export const makeProcurementTestLayer = () =>
               tenantId: decoded.tenantId,
               capability: ProcurementCapabilities.purchaseReceiptReceive,
             })
+            const normalizedIdempotencyKey = decoded.idempotencyKey.trim()
             const lines = canonicalReceiptLines(decoded.lines)
             const duplicateLine = lines.find((line, index) =>
               index > 0 && lines[index - 1]!.purchaseOrderLineId === line.purchaseOrderLineId
@@ -266,7 +296,7 @@ export const makeProcurementTestLayer = () =>
                 }),
               )
             }
-            const receiptKey = `${decoded.tenantId}:${decoded.idempotencyKey}`
+            const receiptKey = `${decoded.tenantId}:${normalizedIdempotencyKey}`
             const existing = storedReceipts.get(receiptKey)
             if (existing !== undefined) {
               if (
@@ -278,7 +308,7 @@ export const makeProcurementTestLayer = () =>
                   new PurchaseReceiptIdempotencyConflict({
                     tenantId: decoded.tenantId,
                     purchaseOrderId: decoded.purchaseOrderId,
-                    idempotencyKey: decoded.idempotencyKey,
+                    idempotencyKey: normalizedIdempotencyKey,
                   }),
                 )
               }
@@ -381,7 +411,7 @@ export const makeProcurementTestLayer = () =>
               tenantId: decoded.tenantId,
               purchaseOrderId: decoded.purchaseOrderId,
               warehouseId: decoded.warehouseId,
-              idempotencyKey: decoded.idempotencyKey,
+              idempotencyKey: normalizedIdempotencyKey,
               receivedAt: now().toISOString(),
               lines: receivedLines,
             }

@@ -15,12 +15,21 @@ import { FinancialVerificationEvidence } from "./financial-readiness.ts"
 import * as AccountingErrors from "./errors.ts"
 
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
+const UpperNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim() && value === value.toUpperCase(),
+  { expected: "a trimmed uppercase nonblank string" },
+))
 const Uuid = Schema.String.check(Schema.isUUID())
 const NonNegativeInt = Schema.Int.check(
   Schema.isBetween({ minimum: 0, maximum: 0x7fffffff }),
 )
 const Money = FinancialMajorAmount
 const CurrencyCode = Schema.String.check(Schema.isPattern(/^[A-Za-z]{3}$/))
+const UpperCurrencyCode = Schema.String.check(Schema.isPattern(/^[A-Z]{3}$/))
 const FinancialEngine = Schema.Literals(["postgresql", "tigerbeetle"])
 const FinancialCutoverStatus = Schema.Literals([
   "postgresql",
@@ -32,13 +41,20 @@ const FinancialCutoverStatus = Schema.Literals([
 ])
 const Precision = Schema.Literal(2)
 const FiscalYearStartMonth = Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 12 }))
-const IsoDate = Schema.String.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}$/))
+const IsoDate = Schema.String.check(Schema.makeFilter(
+  (value) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+    const date = new Date(`${value}T00:00:00.000Z`)
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+  },
+  { expected: "a valid ISO calendar date" },
+))
 const InstantString = EventEnvelope.fields.occurredAt
 
 export const AccountingConfiguration = Schema.Struct({
   tenantId: Uuid,
   legalEntityId: Uuid,
-  baseCurrency: CurrencyCode,
+  baseCurrency: UpperCurrencyCode,
   precision: Precision,
   fiscalYearStartMonth: FiscalYearStartMonth,
   postingEnabled: Schema.Boolean,
@@ -48,8 +64,8 @@ export const AccountingConfiguration = Schema.Struct({
 export const Account = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  code: Schema.String,
-  name: Schema.String,
+  code: UpperNonEmptyString,
+  name: TrimmedNonEmptyString,
   type: Schema.Literals(["asset", "liability", "equity", "revenue", "expense"]),
 })
 
@@ -69,17 +85,29 @@ export const JournalLine = Schema.Struct({
 export const JournalEntry = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  reference: NonEmptyString,
+  reference: TrimmedNonEmptyString,
   status: Schema.Literals(["posted", "reversed"]),
   postedAt: InstantString,
   reversesEntryId: Schema.optional(Uuid),
-  lines: Schema.Array(JournalLine),
+  lines: Schema.Array(JournalLine).check(Schema.isMinLength(2)),
 }).check(Schema.makeFilter(
   (entry) =>
     entry.status === "reversed"
       ? entry.reversesEntryId !== undefined
       : entry.reversesEntryId === undefined,
   { expected: "journal reversal state consistent with its status" },
+)).check(Schema.makeFilter(
+  (entry) => {
+    const totals = entry.lines.reduce(
+      (sum, line) => ({
+        debit: sum.debit + requireExactMajorToMinor(line.debit, 2),
+        credit: sum.credit + requireExactMajorToMinor(line.credit, 2),
+      }),
+      { debit: 0n, credit: 0n },
+    )
+    return totals.debit === totals.credit
+  },
+  { expected: "journal entry debits and credits must balance" },
 ))
 
 export const AccountingPeriod = Schema.Struct({
@@ -111,7 +139,7 @@ export type JournalEntry = Schema.Schema.Type<typeof JournalEntry>
 export type AccountingPeriod = Schema.Schema.Type<typeof AccountingPeriod>
 export type RevenuePostingProfile = Schema.Schema.Type<typeof RevenuePostingProfile>
 
-const ScopedInput = { principal: Principal, tenantId: Schema.String }
+const ScopedInput = { principal: Principal, tenantId: Uuid }
 
 export const FinancialCutoverControl = Schema.Struct({
   tenantId: Uuid,
@@ -196,7 +224,7 @@ export const ActivateTigerBeetleCutoverInput = Schema.Struct({
 
 export const ConfigureLegalEntityInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
+  legalEntityId: Uuid,
   baseCurrency: CurrencyCode,
   precision: Precision,
   fiscalYearStartMonth: FiscalYearStartMonth,
@@ -208,8 +236,8 @@ export const ConfigureLegalEntityInput = Schema.Struct({
 
 export const CreateAccountInput = Schema.Struct({
   ...ScopedInput,
-  code: Schema.String,
-  name: Schema.String,
+  code: NonEmptyString,
+  name: NonEmptyString,
   type: Account.fields.type,
 })
 
@@ -221,9 +249,9 @@ export const PostJournalInput = Schema.Struct({
 
 export const ConfigureRevenuePostingInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
-  receivableAccountId: Schema.String,
-  revenueAccountId: Schema.String,
+  legalEntityId: Uuid,
+  receivableAccountId: Uuid,
+  revenueAccountId: Uuid,
 }).check(Schema.makeFilter(
   (profile) => profile.receivableAccountId !== profile.revenueAccountId,
   { expected: "revenue posting accounts must be distinct" },
@@ -231,7 +259,7 @@ export const ConfigureRevenuePostingInput = Schema.Struct({
 
 export const OpenPeriodInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
+  legalEntityId: Uuid,
   startsOn: IsoDate,
   endsOn: IsoDate,
 }).check(Schema.makeFilter(
@@ -241,13 +269,14 @@ export const OpenPeriodInput = Schema.Struct({
 
 export const ClosePeriodInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
-  periodId: Schema.String,
+  legalEntityId: Uuid,
+  periodId: Uuid,
 })
 
 export const PostRevenueForOrderInput = Schema.Struct({
-  ...ScopedInput,
-  legalEntityId: Schema.String,
+  principal: Principal,
+  tenantId: Uuid,
+  legalEntityId: Uuid,
   orderId: Uuid,
   amount: Schema.optionalKey(Money),
   commandId: NonEmptyString,
@@ -257,7 +286,7 @@ export const PostRevenueForOrderInput = Schema.Struct({
 
 export const ReverseRevenueForOrderInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
+  legalEntityId: Uuid,
   orderId: Uuid,
 })
 

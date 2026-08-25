@@ -13,6 +13,7 @@ import {
 
 import { tenants } from "./auth.ts"
 import { createdAt, id, money, updatedAt } from "./common.ts"
+import { warehouses } from "./inventory.ts"
 import { partyRelationships } from "./party.ts"
 
 export const procurementSchema = pgSchema("procurement")
@@ -99,6 +100,12 @@ export const purchaseOrderLines = procurementSchema.table("purchase_order_lines"
     table.purchaseOrderId,
     table.id,
   ),
+  unique("purchase_order_lines_tenant_order_id_item_id_key").on(
+    table.tenantId,
+    table.purchaseOrderId,
+    table.id,
+    table.itemId,
+  ),
   foreignKey({
     columns: [table.tenantId, table.purchaseOrderId],
     foreignColumns: [purchaseOrders.tenantId, purchaseOrders.id],
@@ -119,6 +126,11 @@ export const purchaseReceipts = procurementSchema.table("purchase_receipts", {
   updatedAt: updatedAt(),
 }, (table) => [
   unique("purchase_receipts_tenant_id_id_key").on(table.tenantId, table.id),
+  unique("purchase_receipts_tenant_id_id_order_key").on(
+    table.tenantId,
+    table.id,
+    table.purchaseOrderId,
+  ),
   unique("purchase_receipts_tenant_idempotency_key").on(table.tenantId, table.idempotencyKey),
   index("purchase_receipts_tenant_order_idx").on(table.tenantId, table.purchaseOrderId),
   foreignKey({
@@ -130,6 +142,11 @@ export const purchaseReceipts = procurementSchema.table("purchase_receipts", {
     columns: [table.tenantId, table.purchaseOrderId],
     foreignColumns: [purchaseOrders.tenantId, purchaseOrders.id],
     name: "purchase_receipts_tenant_purchase_order_fkey",
+  }),
+  foreignKey({
+    columns: [table.tenantId, table.warehouseId],
+    foreignColumns: [warehouses.tenantId, warehouses.id],
+    name: "purchase_receipts_tenant_warehouse_fkey",
   }),
   check(
     "purchase_receipts_idempotency_key_check",
@@ -165,17 +182,34 @@ export const purchaseReceiptLines = procurementSchema.table("purchase_receipt_li
     name: "purchase_receipt_lines_tenant_receipt_fkey",
   }).onDelete("cascade"),
   foreignKey({
-    columns: [table.tenantId, table.purchaseOrderId, table.purchaseOrderLineId],
+    columns: [table.tenantId, table.receiptId, table.purchaseOrderId],
+    foreignColumns: [
+      purchaseReceipts.tenantId,
+      purchaseReceipts.id,
+      purchaseReceipts.purchaseOrderId,
+    ],
+    name: "purchase_receipt_lines_tenant_receipt_order_fkey",
+  }),
+  foreignKey({
+    columns: [
+      table.tenantId,
+      table.purchaseOrderId,
+      table.purchaseOrderLineId,
+      table.itemId,
+    ],
     foreignColumns: [
       purchaseOrderLines.tenantId,
       purchaseOrderLines.purchaseOrderId,
       purchaseOrderLines.id,
+      purchaseOrderLines.itemId,
     ],
-    name: "purchase_receipt_lines_tenant_order_line_fkey",
+    name: "purchase_receipt_lines_tenant_order_line_item_fkey",
   }),
   check("purchase_receipt_lines_quantity_check", sql`${table.quantity} > 0`),
   check(
     "purchase_receipt_lines_unit_of_measure_check",
-    sql`${table.unitOfMeasure} <> '' and ${table.unitOfMeasure} = upper(trim(${table.unitOfMeasure}))`,
+    sql`${table.unitOfMeasure} <> '' and
+      ${table.unitOfMeasure} = upper(trim(${table.unitOfMeasure})) and
+      ${table.unitOfMeasure} ~ '^[A-Z][A-Z0-9_-]*$'`,
   ),
 ])

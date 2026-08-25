@@ -158,7 +158,7 @@ it.effect("preserves typed failure boundaries around the bootstrap result", () =
     const otherWarehouse = yield* inventory.createWarehouse({
       principal,
       tenantId: result.tenant.id,
-      legalEntityId: "other-legal-entity",
+      legalEntityId: "00000000-0000-4000-8000-000000000012",
       name: "Other Entity Warehouse",
     })
     assert.instanceOf(
@@ -167,7 +167,10 @@ it.effect("preserves typed failure boundaries around the bootstrap result", () =
         tenantId: result.tenant.id,
         sourceWarehouseId: result.warehouse.id,
         destinationWarehouseId: otherWarehouse.id,
-        lines: [{ itemId: "missing", quantity: "1" }],
+        lines: [{
+          itemId: "00000000-0000-4000-8000-000000000099",
+          quantity: "1",
+        }],
       })),
       StockTransferDifferentLegalEntity,
     )

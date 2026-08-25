@@ -80,7 +80,9 @@ export const items = inventorySchema.table("items", {
   }).onDelete("cascade"),
   check(
     "items_unit_of_measure_check",
-    sql`${table.unitOfMeasure} <> '' and ${table.unitOfMeasure} = upper(trim(${table.unitOfMeasure}))`,
+    sql`${table.unitOfMeasure} <> '' and
+      ${table.unitOfMeasure} = upper(trim(${table.unitOfMeasure})) and
+      ${table.unitOfMeasure} ~ '^[A-Z][A-Z0-9_-]*$'`,
   ),
 ])
 
@@ -220,8 +222,15 @@ export const movements = inventorySchema.table("movements", {
   unique("movements_tenant_idempotency_key").on(table.tenantId, table.idempotencyKey),
   check("movements_quantity_check", sql`${table.quantity} <> 0`),
   check(
+    "movements_kind_quantity_sign_check",
+    sql`(${table.kind} in ('receipt', 'reservation') and ${table.quantity} > 0) or
+      (${table.kind} in ('issue', 'release') and ${table.quantity} < 0)`,
+  ),
+  check(
     "movements_correction_metadata_check",
     sql`(${table.idempotencyKey} is null and ${table.unitOfMeasure} is null and ${table.reason} is null) or
-      (${table.idempotencyKey} is not null and ${table.unitOfMeasure} is not null and ${table.reason} is not null and ${table.reason} <> '' and ${table.kind} in ('receipt', 'issue'))`,
+      (${table.idempotencyKey} is not null and ${table.unitOfMeasure} is not null and
+        ${table.unitOfMeasure} ~ '^[A-Z][A-Z0-9_-]*$' and ${table.reason} is not null and
+        ${table.reason} <> '' and ${table.kind} in ('receipt', 'issue'))`,
   ),
 ])

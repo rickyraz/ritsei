@@ -13,6 +13,7 @@ import {
 import { AuthorizationService } from "../../authorization/mod.ts"
 import { InventoryService } from "../../inventory/mod.ts"
 import { Database, FinancialMajorAmount, isDatabaseConstraint, uuidv7 } from "../../kernel/mod.ts"
+import { MessagingService } from "../../messaging/mod.ts"
 import { PartyService } from "../../party/mod.ts"
 import { ProcurementCapabilities } from "./capabilities.ts"
 import {
@@ -26,6 +27,10 @@ import {
   ProcurementService,
   ReceivePurchaseOrderInput,
 } from "./contract.ts"
+import {
+  ProcurementPurchaseOrderConfirmedEvent,
+  PurchaseOrderConfirmedEventPayload,
+} from "./events.ts"
 import {
   PurchaseOrderConfirmationIdempotencyConflict,
   PurchaseOrderHasReceipts,
@@ -61,6 +66,7 @@ export const makeProcurementService = Effect.gen(function* () {
   const database = yield* Database
   const authorization = yield* AuthorizationService
   const party = yield* PartyService
+  const messaging = yield* MessagingService
   const clock = yield* Clock.Clock
   const now = () => new Date(clock.currentTimeMillisUnsafe())
 
@@ -206,28 +212,37 @@ export const makeProcurementService = Effect.gen(function* () {
           tenantId: decoded.tenantId,
           capability: ProcurementCapabilities.purchaseOrderConfirm,
         })
-        const result = yield* database.transaction(
-          async (tx) => {
-            const [row] = await tx.select({
-              ...purchaseOrderSelection,
-              confirmationIdempotencyKey: purchaseOrders.confirmationIdempotencyKey,
-            })
-              .from(purchaseOrders)
-              .where(and(
-                eq(purchaseOrders.tenantId, decoded.tenantId),
-                eq(purchaseOrders.id, decoded.purchaseOrderId),
-              ))
-              .for("update")
+        const normalizedIdempotencyKey = decoded.idempotencyKey.trim()
+        const result = yield* database.withTransaction(
+          Effect.gen(function* () {
+            const [row] = yield* database.query(
+              (db) =>
+                db.select({
+                  ...purchaseOrderSelection,
+                  confirmationIdempotencyKey: purchaseOrders.confirmationIdempotencyKey,
+                })
+                  .from(purchaseOrders)
+                  .where(and(
+                    eq(purchaseOrders.tenantId, decoded.tenantId),
+                    eq(purchaseOrders.id, decoded.purchaseOrderId),
+                  ))
+                  .for("update"),
+              "procurement.purchase_order.confirm.lookup",
+            )
             if (row === undefined) return { _tag: "not-found" as const }
-            const lines = await tx.select(purchaseOrderLineSelection)
-              .from(purchaseOrderLines)
-              .where(and(
-                eq(purchaseOrderLines.tenantId, decoded.tenantId),
-                eq(purchaseOrderLines.purchaseOrderId, row.id),
-              ))
+            const lines = yield* database.query(
+              (db) =>
+                db.select(purchaseOrderLineSelection)
+                  .from(purchaseOrderLines)
+                  .where(and(
+                    eq(purchaseOrderLines.tenantId, decoded.tenantId),
+                    eq(purchaseOrderLines.purchaseOrderId, row.id),
+                  )),
+              "procurement.purchase_order.confirm.lines",
+            )
             const current = toPurchaseOrder(row, lines)
             if (row.status === "confirmed") {
-              return row.confirmationIdempotencyKey === decoded.idempotencyKey
+              return row.confirmationIdempotencyKey === normalizedIdempotencyKey
                 ? { _tag: "existing" as const, order: current }
                 : { _tag: "idempotency-conflict" as const }
             }
@@ -235,21 +250,48 @@ export const makeProcurementService = Effect.gen(function* () {
               return { _tag: "invalid-state" as const, status: row.status }
             }
             const confirmedAt = now()
-            const [confirmed] = await tx.update(purchaseOrders)
-              .set({
-                status: "confirmed",
-                confirmationIdempotencyKey: decoded.idempotencyKey,
-                confirmedAt,
-                updatedAt: confirmedAt,
-              })
-              .where(and(
-                eq(purchaseOrders.tenantId, decoded.tenantId),
-                eq(purchaseOrders.id, decoded.purchaseOrderId),
-                eq(purchaseOrders.status, "draft"),
-              ))
-              .returning(purchaseOrderSelection)
-            return { _tag: "confirmed" as const, order: toPurchaseOrder(confirmed!, lines) }
-          },
+            const [confirmed] = yield* database.query(
+              (db) =>
+                db.update(purchaseOrders)
+                  .set({
+                    status: "confirmed",
+                    confirmationIdempotencyKey: normalizedIdempotencyKey,
+                    confirmedAt,
+                    updatedAt: confirmedAt,
+                  })
+                  .where(and(
+                    eq(purchaseOrders.tenantId, decoded.tenantId),
+                    eq(purchaseOrders.id, decoded.purchaseOrderId),
+                    eq(purchaseOrders.status, "draft"),
+                  ))
+                  .returning(purchaseOrderSelection),
+              "procurement.purchase_order.confirm.update",
+            )
+            const order = toPurchaseOrder(confirmed!, lines)
+            const payload = yield* Schema.decodeUnknownEffect(
+              PurchaseOrderConfirmedEventPayload,
+            )({
+              purchaseOrderId: order.id,
+              supplierAccountId: order.supplierAccountId,
+              total: order.total,
+            })
+            yield* messaging.append({
+              eventId: uuidv7(),
+              eventType: ProcurementPurchaseOrderConfirmedEvent.id,
+              eventVersion: ProcurementPurchaseOrderConfirmedEvent.version,
+              tenantId: decoded.tenantId,
+              aggregateType: ProcurementPurchaseOrderConfirmedEvent.aggregateType,
+              aggregateId: order.id,
+              commandId: `procurement.purchase_order.confirm:${normalizedIdempotencyKey}`,
+              correlationId: `procurement.purchase_order:${order.id}`,
+              causationId: null,
+              idempotencyKey: normalizedIdempotencyKey,
+              actorPrincipalId: decoded.principal.userAccountId,
+              occurredAt: confirmedAt.toISOString(),
+              payload,
+            })
+            return { _tag: "confirmed" as const, order }
+          }),
           "procurement.purchase_order.confirm",
         ).pipe(
           Effect.mapError((error) =>
@@ -260,7 +302,7 @@ export const makeProcurementService = Effect.gen(function* () {
               ? new PurchaseOrderConfirmationIdempotencyConflict({
                 tenantId: decoded.tenantId,
                 purchaseOrderId: decoded.purchaseOrderId,
-                idempotencyKey: decoded.idempotencyKey,
+                idempotencyKey: normalizedIdempotencyKey,
               })
               : error
           ),
@@ -278,7 +320,7 @@ export const makeProcurementService = Effect.gen(function* () {
             new PurchaseOrderConfirmationIdempotencyConflict({
               tenantId: decoded.tenantId,
               purchaseOrderId: decoded.purchaseOrderId,
-              idempotencyKey: decoded.idempotencyKey,
+              idempotencyKey: normalizedIdempotencyKey,
             }),
           )
         }
@@ -379,6 +421,7 @@ export const makeProcurementService = Effect.gen(function* () {
           tenantId: decoded.tenantId,
           capability: ProcurementCapabilities.purchaseReceiptReceive,
         })
+        const normalizedIdempotencyKey = decoded.idempotencyKey.trim()
         const lines = canonicalReceiptLines(decoded.lines)
         const duplicateLine = lines.find((line, index) =>
           index > 0 && lines[index - 1]!.purchaseOrderLineId === line.purchaseOrderLineId
@@ -401,7 +444,7 @@ export const makeProcurementService = Effect.gen(function* () {
                   .from(purchaseReceipts)
                   .where(and(
                     eq(purchaseReceipts.tenantId, decoded.tenantId),
-                    eq(purchaseReceipts.idempotencyKey, decoded.idempotencyKey),
+                    eq(purchaseReceipts.idempotencyKey, normalizedIdempotencyKey),
                   ))
                   .for("update"),
               "procurement.purchase_receipt.idempotency",
@@ -429,7 +472,7 @@ export const makeProcurementService = Effect.gen(function* () {
               new PurchaseReceiptIdempotencyConflict({
                 tenantId: decoded.tenantId,
                 purchaseOrderId: decoded.purchaseOrderId,
-                idempotencyKey: decoded.idempotencyKey,
+                idempotencyKey: normalizedIdempotencyKey,
               }),
             )
         return yield* database.withTransaction(
@@ -556,7 +599,7 @@ export const makeProcurementService = Effect.gen(function* () {
                   tenantId: decoded.tenantId,
                   purchaseOrderId: decoded.purchaseOrderId,
                   warehouseId: decoded.warehouseId,
-                  idempotencyKey: decoded.idempotencyKey,
+                  idempotencyKey: normalizedIdempotencyKey,
                 }).returning(purchaseReceiptSelection),
               "procurement.purchase_receipt.create",
             )
@@ -620,7 +663,7 @@ export const makeProcurementService = Effect.gen(function* () {
               ? new PurchaseReceiptIdempotencyConflict({
                 tenantId: decoded.tenantId,
                 purchaseOrderId: decoded.purchaseOrderId,
-                idempotencyKey: decoded.idempotencyKey,
+                idempotencyKey: normalizedIdempotencyKey,
               })
               : error
           ),

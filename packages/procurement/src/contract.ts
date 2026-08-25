@@ -4,8 +4,13 @@ import * as Schema from "effect/Schema"
 
 import { Principal } from "../../auth/mod.ts"
 import { AuthorizationDenied } from "../../authorization/mod.ts"
-import { InventoryService } from "../../inventory/mod.ts"
-import { DatabaseFailure, FinancialMajorAmount } from "../../kernel/mod.ts"
+import { InventoryService, UnitOfMeasure } from "../../inventory/mod.ts"
+import {
+  DatabaseFailure,
+  FinancialMajorAmount,
+  requireExactMajorToMinor,
+} from "../../kernel/mod.ts"
+import { EventIdempotencyConflict } from "../../messaging/mod.ts"
 import {
   PurchaseOrderConfirmationIdempotencyConflict,
   PurchaseOrderHasReceipts,
@@ -24,6 +29,10 @@ import {
 
 const Uuid = Schema.String.check(Schema.isUUID())
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
 const IsoTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/
 const InstantString = Schema.String.check(
   Schema.isPattern(IsoTimestamp),
@@ -66,12 +75,24 @@ export const PurchaseOrder = Schema.Struct({
   status: Schema.Literals(["draft", "confirmed", "cancelled"]),
   confirmedAt: Schema.NullOr(InstantString),
   total: FinancialMajorAmount,
-  lines: Schema.Array(PurchaseOrderLineSnapshot),
+  lines: Schema.Array(PurchaseOrderLineSnapshot).check(Schema.isMinLength(1)),
 }).check(Schema.makeFilter(
   (order) =>
     (order.status === "draft" && order.confirmedAt === null) ||
     (order.status !== "draft" && order.confirmedAt !== null),
   { expected: "purchase order confirmation metadata consistent with status" },
+)).check(Schema.makeFilter(
+  (order) => {
+    const lineTotal = order.lines.reduce(
+      (total, line) => total + requireExactMajorToMinor(line.unitPrice, 2) * BigInt(line.quantity),
+      0n,
+    )
+    return lineTotal === requireExactMajorToMinor(order.total, 2)
+  },
+  { expected: "purchase order total must equal its line totals" },
+)).check(Schema.makeFilter(
+  (order) => new Set(order.lines.map((line) => line.id)).size === order.lines.length,
+  { expected: "purchase order line identities must be unique" },
 ))
 
 export type SupplierAccount = Schema.Schema.Type<typeof SupplierAccount>
@@ -122,7 +143,12 @@ export const ReceivePurchaseOrderInput = Schema.Struct({
   purchaseOrderId: Uuid,
   warehouseId: Uuid,
   idempotencyKey: NonEmptyString,
-  lines: Schema.Array(PurchaseReceiptLineInput).check(Schema.isMinLength(1)),
+  lines: Schema.Array(PurchaseReceiptLineInput).check(Schema.isMinLength(1)).check(
+    Schema.makeFilter(
+      (lines) => new Set(lines.map((line) => line.purchaseOrderLineId)).size === lines.length,
+      { expected: "purchase receipt lines must reference unique purchase-order lines" },
+    ),
+  ),
 })
 
 export const GoodsReceiptLine = Schema.Struct({
@@ -130,7 +156,7 @@ export const GoodsReceiptLine = Schema.Struct({
   purchaseOrderLineId: Uuid,
   itemId: Uuid,
   quantity: Quantity,
-  unitOfMeasure: NonEmptyString,
+  unitOfMeasure: UnitOfMeasure,
 })
 
 export const GoodsReceipt = Schema.Struct({
@@ -138,17 +164,28 @@ export const GoodsReceipt = Schema.Struct({
   tenantId: Uuid,
   purchaseOrderId: Uuid,
   warehouseId: Uuid,
-  idempotencyKey: NonEmptyString,
+  idempotencyKey: TrimmedNonEmptyString,
   receivedAt: InstantString,
-  lines: Schema.Array(GoodsReceiptLine),
-})
+  lines: Schema.Array(GoodsReceiptLine).check(Schema.isMinLength(1)),
+}).check(Schema.makeFilter(
+  (receipt) =>
+    new Set(receipt.lines.map((line) => line.purchaseOrderLineId)).size === receipt.lines.length,
+  { expected: "goods receipt lines must reference unique purchase-order lines" },
+)).check(Schema.makeFilter(
+  (receipt) => new Set(receipt.lines.map((line) => line.id)).size === receipt.lines.length,
+  { expected: "goods receipt line identities must be unique" },
+))
 
 export type PurchaseReceiptLineInput = Schema.Schema.Type<typeof PurchaseReceiptLineInput>
 export type ReceivePurchaseOrder = Schema.Schema.Type<typeof ReceivePurchaseOrderInput>
 export type GoodsReceiptLine = Schema.Schema.Type<typeof GoodsReceiptLine>
 export type GoodsReceipt = Schema.Schema.Type<typeof GoodsReceipt>
 
-export type CommonFailure = AuthorizationDenied | DatabaseFailure | Schema.SchemaError
+export type CommonFailure =
+  | AuthorizationDenied
+  | DatabaseFailure
+  | EventIdempotencyConflict
+  | Schema.SchemaError
 
 export interface ProcurementService {
   readonly createSupplierAccount: (

@@ -59,6 +59,10 @@ import {
 } from "./service.ts"
 
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
 const Uuid = Schema.String.check(Schema.isUUID())
 const PositiveInt = Schema.Int.check(
   Schema.isBetween({ minimum: 1, maximum: 0x7fffffff }),
@@ -174,13 +178,13 @@ export const FinancialOperation = Schema.Struct({
   tenantId: Uuid,
   legalEntityId: Uuid,
   periodId: Uuid,
-  operationId: NonEmptyString,
+  operationId: TrimmedNonEmptyString,
   operationType: Schema.Literals(["journal_post", "journal_reverse", "revenue_post"]),
   engine: Schema.Literals(["postgresql", "tigerbeetle"]),
   engineVerified: Schema.Boolean,
   journalId: Uuid,
   sourceJournalId: Schema.NullOr(Uuid),
-  reference: NonEmptyString,
+  reference: TrimmedNonEmptyString,
   currency: CurrencyCode,
   mappingVersion: PositiveInt,
   status: FinancialOperationStatus,
@@ -294,11 +298,11 @@ export const FinancialReconciliationCheckpoint = Schema.Struct({
   legalEntityId: Uuid,
   engine: FinancialLedgerAuthority,
   status: Schema.Literals(["verified", "blocked"]),
-  recoveryWatermark: NonEmptyString,
-  sourceWatermark: NonEmptyString,
-  targetWatermark: NonEmptyString,
-  sourceSnapshotRef: NonEmptyString,
-  targetSnapshotRef: NonEmptyString,
+  recoveryWatermark: TrimmedNonEmptyString,
+  sourceWatermark: TrimmedNonEmptyString,
+  targetWatermark: TrimmedNonEmptyString,
+  sourceSnapshotRef: TrimmedNonEmptyString,
+  targetSnapshotRef: TrimmedNonEmptyString,
   operationSetHash: Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/)),
   accountBalanceHash: Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/)),
   transferSetHash: Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/)),
@@ -1431,7 +1435,15 @@ export const makeFinancialOperationService = Effect.gen(function* () {
 
   const reconcileFinancialCheckpoint = (input: unknown) =>
     Effect.gen(function* () {
-      const decoded = yield* Schema.decodeUnknownEffect(ReconcileFinancialCheckpointInput)(input)
+      const parsed = yield* Schema.decodeUnknownEffect(ReconcileFinancialCheckpointInput)(input)
+      const decoded = {
+        ...parsed,
+        recoveryWatermark: parsed.recoveryWatermark.trim(),
+        sourceWatermark: parsed.sourceWatermark.trim(),
+        targetWatermark: parsed.targetWatermark.trim(),
+        sourceSnapshotRef: parsed.sourceSnapshotRef.trim(),
+        targetSnapshotRef: parsed.targetSnapshotRef.trim(),
+      }
       yield* authorization.authorize({
         principal: decoded.principal,
         tenantId: decoded.tenantId,
@@ -2149,7 +2161,8 @@ export const makeFinancialOperationService = Effect.gen(function* () {
 
   const submit = (input: unknown, jobType: string) =>
     Effect.gen(function* () {
-      const decoded = yield* Schema.decodeUnknownEffect(FinancialOperationCommandInput)(input)
+      const parsed = yield* Schema.decodeUnknownEffect(FinancialOperationCommandInput)(input)
+      const decoded = { ...parsed, operationId: parsed.operationId.trim() }
       const fenceOption = yield* Effect.serviceOption(FencingContextService)
       const executionFence = Option.isSome(fenceOption) ? fenceOption.value : null
       const operation = yield* loadOperationOrFail(decoded.tenantId, decoded.operationId)
@@ -2601,7 +2614,12 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       const selectedAuthority = Option.isSome(ledgerOption)
         ? ledgerOption.value.authority
         : undefined
-      const decoded = yield* Schema.decodeUnknownEffect(CreateFinancialJournalIntentInput)(input)
+      const parsed = yield* Schema.decodeUnknownEffect(CreateFinancialJournalIntentInput)(input)
+      const decoded = {
+        ...parsed,
+        operationId: parsed.operationId.trim(),
+        correlationId: parsed.correlationId.trim(),
+      }
       const operationType = operationTypeOverride ?? decoded.operationType
       if (operationType !== "journal_reverse") {
         yield* validateLines(decoded.lines)

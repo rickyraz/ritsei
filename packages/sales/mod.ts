@@ -22,6 +22,7 @@ export {
 export {
   CustomerAlreadyExists,
   CustomerNotFound,
+  QuotationCustomerMismatch,
   QuotationNotFound,
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderInvalidState,

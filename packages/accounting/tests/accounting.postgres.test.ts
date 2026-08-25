@@ -965,6 +965,36 @@ it.effect.skipIf(databaseUrl === undefined)(
             (invalidReversalState as { constraint_name?: string }).constraint_name,
             "journal_entries_reversal_state_check",
           )
+          const [unpostedReversal] = yield* Effect.promise(() =>
+            client<{ id: string }[]>`
+              insert into accounting.journal_entries (tenant_id, reference)
+              values (${tenant!.id}, 'UNPOSTED-REVERSAL') returning id
+            `
+          )
+          const unpostedSourceReversal = yield* postgresFailure(() =>
+            client`
+              update accounting.journal_entries
+              set status = 'reversed', posted_at = now(), reverses_entry_id = ${source!.id}
+              where tenant_id = ${tenant!.id} and id = ${unpostedReversal!.id}
+            `
+          )
+          assert.strictEqual((unpostedSourceReversal as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (unpostedSourceReversal as { constraint_name?: string }).constraint_name,
+            "journal_entries_reversal_source_check",
+          )
+          const selfReversalState = yield* postgresFailure(() =>
+            client`
+              update accounting.journal_entries
+              set status = 'reversed', posted_at = now(), reverses_entry_id = ${source!.id}
+              where tenant_id = ${tenant!.id} and id = ${source!.id}
+            `
+          )
+          assert.strictEqual((selfReversalState as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (selfReversalState as { constraint_name?: string }).constraint_name,
+            "journal_entries_reversal_state_check",
+          )
 
           const unbalanced = yield* postgresFailure(() =>
             client.begin(async (transaction) => {

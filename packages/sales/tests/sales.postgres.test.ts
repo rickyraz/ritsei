@@ -7,6 +7,7 @@ import { AuthorizationService, makeAuthorizationTestLayer } from "../../authoriz
 import {
   CustomerNotFound,
   makeSalesService,
+  QuotationCustomerMismatch,
   SalesCapabilities,
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderConfirmedEvent,
@@ -29,6 +30,7 @@ const postgresFailure = (effect: () => Promise<unknown>) =>
   Effect.tryPromise({ try: effect, catch: (cause) => cause }).pipe(Effect.flip)
 const capabilities = [
   SalesCapabilities.customerCreate,
+  SalesCapabilities.quotationCreate,
   SalesCapabilities.orderCreate,
   SalesCapabilities.orderConfirm,
   SalesCapabilities.orderRead,
@@ -79,6 +81,26 @@ it.effect.skipIf(databaseUrl === undefined)(
             name: "Sales Customer",
             email: "sales-postgres@example.test",
           })
+          const mismatchedCustomer = yield* sales.createCustomer({
+            principal,
+            tenantId: tenant!.id,
+            name: "Mismatched Sales Customer",
+            email: "mismatched-sales@example.test",
+          })
+          const quotation = yield* sales.createQuotation({
+            principal,
+            tenantId: tenant!.id,
+            customerId: customer.id,
+            total: "10.00",
+          })
+          const mismatch = yield* Effect.flip(sales.createOrder({
+            principal,
+            tenantId: tenant!.id,
+            customerId: mismatchedCustomer.id,
+            quotationId: quotation.id,
+            lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "10.00" }],
+          }))
+          assert.instanceOf(mismatch, QuotationCustomerMismatch)
           const order = yield* sales.createOrder({
             principal,
             tenantId: tenant!.id,
@@ -89,6 +111,20 @@ it.effect.skipIf(databaseUrl === undefined)(
               unitPrice: LARGE_FINANCIAL_MAJOR,
             }],
           })
+          const invalidDraftTotal = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update sales.orders
+                set total = 0
+                where tenant_id = ${tenant!.id} and id = ${order.id}
+              `
+            })
+          )
+          assert.strictEqual((invalidDraftTotal as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidDraftTotal as { constraint_name?: string }).constraint_name,
+            "sales_draft_order_total_consistent",
+          )
           const aggregateOverflow = yield* Effect.flip(sales.createOrder({
             principal,
             tenantId: tenant!.id,
@@ -361,6 +397,33 @@ it.effect.skipIf(databaseUrl === undefined)(
 )
 
 it.effect.skipIf(databaseUrl === undefined)(
+  "rejects noncanonical customer email values in PostgreSQL",
+  () =>
+    withTemporaryDatabase(databaseUrl!, (client) =>
+      Effect.gen(function* () {
+        yield* runMigrations(client)
+        const [tenant] = yield* Effect.promise(() =>
+          client<{ id: string }[]>`
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
+          `
+        )
+        for (const email of ["   ", "Alice@EXAMPLE.COM", " alice@example.com "]) {
+          const failure = yield* postgresFailure(() =>
+            client`
+              insert into sales.customers (tenant_id, name, email)
+              values (${tenant!.id}, 'Invalid Email Customer', ${email})
+            `
+          )
+          assert.strictEqual((failure as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (failure as { constraint_name?: string }).constraint_name,
+            "customers_email_normalization_check",
+          )
+        }
+      })),
+)
+
+it.effect.skipIf(databaseUrl === undefined)(
   "rejects a cross-tenant customer reference through the PostgreSQL constraint",
   () =>
     withTemporaryDatabase(databaseUrl!, (client) =>
@@ -505,11 +568,16 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* Effect.promise(() =>
           client`
             insert into sales.order_lines (tenant_id, order_id, item_id, quantity, unit_price)
-            values (${tenant!.id}, ${badOrder!.id}, ${uuidv7()}, 1, 10.00)
+            values (${tenant!.id}, ${badOrder!.id}, ${uuidv7()}, 1, 11.00)
           `
         )
         const inconsistent = yield* postgresFailure(() =>
           client.begin(async (transaction) => {
+            await transaction`
+              update sales.order_lines
+              set unit_price = 10.00
+              where tenant_id = ${tenant!.id} and order_id = ${badOrder!.id}
+            `
             await transaction`
               update sales.orders
               set status = 'confirmed', confirmation_idempotency_key = 'bad-total-confirmation',

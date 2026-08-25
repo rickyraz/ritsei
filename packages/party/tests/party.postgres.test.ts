@@ -19,14 +19,19 @@ import {
   makePartyService,
   OrganizationRequired,
   PartyCapabilities,
+  PartyCreatedEvent,
+  PartyEventPublisher,
   PartyRelationshipAlreadyExists,
   PartyRelationshipNotFound,
   PartyRelationshipRoleNotAssigned,
   PartyRepresentationAlreadyExists,
   PartyRepresentationNotFound,
 } from "../mod.ts"
+import { makeMessagingService } from "../../messaging/mod.ts"
 
 const databaseUrl = Deno.env.get("DATABASE_URL")
+const postgresFailure = (effect: () => Promise<unknown>) =>
+  Effect.tryPromise({ try: effect, catch: (cause) => cause }).pipe(Effect.flip)
 
 it.effect.skipIf(databaseUrl === undefined)(
   "enforces scoped external identifier uniqueness in PostgreSQL",
@@ -47,15 +52,41 @@ it.effect.skipIf(databaseUrl === undefined)(
         const tenant = yield* auth.createTenant({ slug: `party-${uuidv7()}` })
         yield* Effect.gen(function* () {
           const authorization = yield* AuthorizationService
+          const messaging = yield* makeMessagingService.pipe(
+            Effect.provideService(Database, database),
+          )
           const party = yield* makePartyService.pipe(
             Effect.provideService(Database, database),
             Effect.provideService(AuthorizationService, authorization),
+            Effect.provideService(PartyEventPublisher, { append: messaging.append }),
           )
           const first = yield* party.create({
             principal,
             tenantId: tenant.id,
             kind: "organization",
             name: "First",
+          })
+          const [createdEvent] = yield* Effect.promise(() =>
+            client<{
+              event_type: string
+              event_version: number
+              aggregate_type: string
+              aggregate_id: string
+              payload: { partyId: string; kind: string }
+            }[]>`
+              select event_type, event_version, aggregate_type, aggregate_id, payload
+              from messaging.event_outbox
+              where tenant_id = ${tenant.id}
+                and event_type = ${PartyCreatedEvent.id}
+                and aggregate_id = ${first.id}
+            `
+          )
+          assert.deepStrictEqual(createdEvent, {
+            event_type: PartyCreatedEvent.id,
+            event_version: PartyCreatedEvent.version,
+            aggregate_type: PartyCreatedEvent.aggregateType,
+            aggregate_id: first.id,
+            payload: { partyId: first.id, kind: "organization" },
           })
           const second = yield* party.create({
             principal,
@@ -76,6 +107,58 @@ it.effect.skipIf(databaseUrl === undefined)(
           assert.instanceOf(
             yield* Effect.flip(party.attachIdentifier({ ...identifier, partyId: second.id })),
             ExternalIdentifierAlreadyAssigned,
+          )
+          const invalidProvider = yield* postgresFailure(() =>
+            client`
+              insert into party.party_identifiers
+                (tenant_id, party_id, provider, scheme, scope, value)
+              values
+                (${tenant.id}, ${first.id}, ' gs1 ', 'GLN', 'global', ${uuidv7()})
+            `
+          )
+          assert.strictEqual((invalidProvider as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidProvider as { constraint_name?: string }).constraint_name,
+            "party_identifiers_provider_check",
+          )
+          const invalidScheme = yield* postgresFailure(() =>
+            client`
+              insert into party.party_identifiers
+                (tenant_id, party_id, provider, scheme, scope, value)
+              values
+                (${tenant.id}, ${first.id}, 'GS1', ' gln ', 'global', ${uuidv7()})
+            `
+          )
+          assert.strictEqual((invalidScheme as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidScheme as { constraint_name?: string }).constraint_name,
+            "party_identifiers_scheme_check",
+          )
+          const invalidScope = yield* postgresFailure(() =>
+            client`
+              insert into party.party_identifiers
+                (tenant_id, party_id, provider, scheme, scope, value)
+              values
+                (${tenant.id}, ${first.id}, 'GS1', 'GLN', ' ', ${uuidv7()})
+            `
+          )
+          assert.strictEqual((invalidScope as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidScope as { constraint_name?: string }).constraint_name,
+            "party_identifiers_scope_check",
+          )
+          const invalidValue = yield* postgresFailure(() =>
+            client`
+              insert into party.party_identifiers
+                (tenant_id, party_id, provider, scheme, scope, value)
+              values
+                (${tenant.id}, ${first.id}, 'GS1', 'GLN', 'global', ${` ${uuidv7()} `})
+            `
+          )
+          assert.strictEqual((invalidValue as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidValue as { constraint_name?: string }).constraint_name,
+            "party_identifiers_value_check",
           )
         }).pipe(
           Effect.provide(
@@ -291,6 +374,28 @@ it.effect.skipIf(databaseUrl === undefined)(
             })),
             OrganizationRequired,
           )
+          const invalidLegalEntity = yield* postgresFailure(() =>
+            client`
+              insert into party.legal_entities (tenant_id, organization_party_id)
+              values (${tenant.id}, ${person.id})
+            `
+          )
+          assert.strictEqual((invalidLegalEntity as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidLegalEntity as { constraint_name?: string }).constraint_name,
+            "legal_entities_organization_party_kind_check",
+          )
+          const invalidPartyKindChange = yield* postgresFailure(() =>
+            client`
+              update party.parties set kind = 'person'
+              where tenant_id = ${tenant.id} and id = ${organization.id}
+            `
+          )
+          assert.strictEqual((invalidPartyKindChange as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidPartyKindChange as { constraint_name?: string }).constraint_name,
+            "legal_entities_organization_party_kind_check",
+          )
           const branch = yield* party.createBranch({
             principal,
             tenantId: tenant.id,
@@ -380,6 +485,18 @@ it.effect.skipIf(databaseUrl === undefined)(
           }
           const representation = yield* party.createPartyRepresentation(input)
           assert.strictEqual(representation.active, true)
+          const blankKind = yield* postgresFailure(() =>
+            client`
+              insert into party.party_representations
+                (tenant_id, user_account_id, party_id, kind)
+              values (${tenant.id}, ${userAccount.id}, ${representedParty.id}, '   ')
+            `
+          )
+          assert.strictEqual((blankKind as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (blankKind as { constraint_name?: string }).constraint_name,
+            "party_representations_kind_check",
+          )
           assert.instanceOf(
             yield* Effect.flip(party.createPartyRepresentation(input)),
             PartyRepresentationAlreadyExists,

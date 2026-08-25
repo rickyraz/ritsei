@@ -52,12 +52,12 @@ contract and database tests
 | `messaging`     | event envelope, transactional outbox, completed consumer receipts |                                                                                       `FOUNDATION` | add PgQue adapter only after its activation gates; never own domain event meaning                                                                                                      |
 | `auth`          | authentication principals and sessions                            |                                                                                       `FOUNDATION` | preserve separation from authorization and expose only public identity contracts                                                                                                       |
 | `authorization` | scoped capability decisions                                       |                                                                                       `FOUNDATION` | add capabilities only with protected business actions and denial tests                                                                                                                 |
-| `identity`      | identity domain                                                   |                                                                                          `PARTIAL` | clarify identity lifecycle and external identity boundaries                                                                                                                            |
-| `party`         | party and party relationships                                     |                                                                                          `PARTIAL` | mature customer/supplier/employee roles and relationship contracts                                                                                                                     |
+| `identity`      | identity domain                                                   | `PARTIAL`; `identity.user_account.create` v1 is a bounded Level 3 slice | clarify global account lifecycle and tenant-context authorization boundaries                                                                                                           |
+| `party`         | party and party relationships                                     | `PARTIAL`; `party.create` v1 is a bounded Level 3 slice | mature customer/supplier/employee roles and relationship contracts                                                                                                                     |
 | `inventory`     | items, warehouses, balances, movements, reservations, transfers   |                                          `PARTIAL`; `inventory.stock.adjust` v1 is a Level 3 slice | Keep broader actions private until they have catalog metadata and owner-published events; traceability and valuation remain out of scope                                               |
 | `accounting`    | accounts, periods, revenue posting, and reversal                  | `PARTIAL`; `accounting.revenue.post` and `accounting.revenue.posted` v1 are bounded Level 3 slices | Keep generic journals, AP/AR, payment, tax, and settlement out of scope; migrate the bounded slice only after the financial-ledger activation gates pass |
 | `sales`         | customers, quotations, sales orders                               |                                             `PARTIAL`; `sales.order.confirm` v1 is a Level 3 slice | Sales owns draft/confirmed/cancelled order state and publishes confirmation; Process coordinates fulfillment through Inventory; invoicing, returns, and credit policy remain undecided |
-| `procurement`   | supplier accounts, immutable purchase orders, and bounded goods receipts | `PARTIAL`; Purchase Order and Goods Receipt actions are Level 2 | mature receipt correction/return, catalog publication, and process-visible recovery; sourcing, invoice match, payables, and settlement remain gated |
+| `procurement`   | supplier accounts, immutable purchase orders, and bounded goods receipts | `PARTIAL`; `procurement.purchase_order.confirm` v1 is a bounded Level 3 slice | mature receipt correction/return and its catalog/publication proof; sourcing, invoice match, payables, and settlement remain gated |
 | `billing`       | package scaffold                                                  |                                                                                        `NOT READY` | decide invoice, payment, receivable, settlement, and accounting integration ownership                                                                                                  |
 | `integrations`  | external adapter and connector boundary                           |                                                                                    `BOUNDARY ONLY` | implement versioned standards, OpenAPI/CloudEvents adapters, OAuth scopes, delivery reliability, and external action/event normalization; do not become an internal domain owner       |
 | `process`       | bounded order-lifecycle application coordinator                   |                                                                                          `PARTIAL` | keep orchestration behind public domain contracts; do not treat it as Process Studio or a new domain owner                                                                             |
@@ -210,8 +210,7 @@ when it owns an invariant that cannot remain in an existing domain.
 
 ## Current Level 3 Evidence
 
-The bounded internal catalog currently has three Level 3 action slices and an additional Accounting
-event contributor:
+The bounded internal catalog currently has six eligible Level 3 action/event slices:
 
 ```text
 inventory.stock.adjust v1
@@ -227,6 +226,21 @@ sales.order.confirm v1
 accounting.revenue.posted v1
   -> PUBLIC event from the owner-controlled revenue transaction
   -> accounting.revenue.post v1 is PUBLIC and uses the confirmed Sales order total as the server-derived amount
+
+procurement.purchase_order.confirm v1
+  -> PUBLIC action + procurement.purchase_order.confirmed v1
+  -> owner-transactional confirmation and Messaging publication
+  -> idempotent replay and catalog compatibility proofs
+
+party.create v1
+  -> PUBLIC action + party.created v1
+  -> tenant-scoped authorization and owner event publication
+  -> catalog compatibility and PostgreSQL persistence proof
+
+identity.user_account.create v1
+  -> PUBLIC action + identity.user_account.created v1
+  -> global account storage with tenant-context authorization
+  -> dependency-safe publisher composition and PostgreSQL persistence proof
 ```
 
 This satisfies the bounded Level 3 action-provider gate for Sales, Inventory, and Accounting for
@@ -239,7 +253,7 @@ Do not start a broad workflow runtime until:
 
 ```text
 [x] at least two domains reach Level 3
-[ ] procurement is no longer an empty provider if purchase workflows are in scope
+[x] procurement is no longer an empty provider if purchase workflows are in scope
 [ ] billing/accounting ownership is clear for financial workflows
 [x] all catalog actions have stable failures and authorization
 [x] events have typed schemas and correlation fields

@@ -1,28 +1,50 @@
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
 import {
+  AssignPartyRoleInput,
+  AttachExternalIdentifierInput,
+  Branch,
   BranchAlreadyExists,
+  CreateBranchInput,
+  CreateLegalEntityInput,
+  CreatePartyInput,
+  CreatePartyRelationshipInput,
+  CreatePartyRepresentationInput,
+  ExternalIdentifier,
   ExternalIdentifierAlreadyAssigned,
+  GetPartyRelationshipInput,
+  LegalEntity,
   LegalEntityAlreadyExists,
   LegalEntityNotFound,
   makePartyTestLayer,
   OrganizationRequired,
+  Party,
   PartyCapabilities,
+  PartyCreatedEvent,
+  PartyEventPublisher,
+  PartyRelationship,
   PartyRelationshipAlreadyExists,
   PartyRelationshipNotFound,
   PartyRelationshipRoleNotAssigned,
+  PartyRepresentation,
   PartyRepresentationAlreadyExists,
   PartyRepresentationNotFound,
   PartyRepresentationUserAccountNotFound,
   PartyRoleAlreadyAssigned,
   PartyService,
+  SetPartyRepresentationActiveInput,
 } from "../mod.ts"
+import type { EventEnvelopeShape } from "../../messaging/mod.ts"
+import { makePartyMemoryStore } from "../src/memory.ts"
+import { makePartyServiceFromStore } from "../src/service.ts"
 
 const principal = { userAccountId: "party-admin", sessionId: "session" }
-const tenantId = "tenant-a"
+const tenantId = "00000000-0000-4000-8000-000000000001"
+const deniedTenantId = "00000000-0000-4000-8000-000000000002"
 const capabilities = [
   PartyCapabilities.partyCreate,
   PartyCapabilities.legalEntityCreate,
@@ -51,6 +73,71 @@ const withParty = <A, E>(program: Effect.Effect<A, E, PartyService>) =>
   )
 
 describe("party contract", () => {
+  it.effect("authorizes party creation and publishes its owner event", () =>
+    Effect.gen(function* () {
+      const published: EventEnvelopeShape[] = []
+      const service = yield* Effect.provide(
+        makePartyServiceFromStore(Effect.succeed(makePartyMemoryStore())),
+        Layer.mergeAll(
+          authorizationLayer,
+          Layer.succeed(PartyEventPublisher, {
+            append: (input) => {
+              published.push(input as EventEnvelopeShape)
+              return Effect.succeed(input as EventEnvelopeShape)
+            },
+          }),
+        ),
+      )
+      const invalidTenant = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreatePartyInput)({
+          principal,
+          tenantId: "not-a-uuid",
+          kind: "organization",
+          name: "Invalid Tenant",
+        }),
+      )
+      assert.strictEqual(invalidTenant._tag, "SchemaError")
+      const invalidName = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreatePartyInput)({
+          principal,
+          tenantId,
+          kind: "organization",
+          name: "   ",
+        }),
+      )
+      assert.strictEqual(invalidName._tag, "SchemaError")
+      const party = yield* service.create({
+        principal,
+        tenantId,
+        kind: "organization",
+        name: " ACME Indonesia ",
+      })
+
+      assert.match(
+        party.id,
+        /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      )
+      assert.strictEqual(party.name, "ACME Indonesia")
+      assert.strictEqual(published.length, 1)
+      assert.strictEqual(published[0].eventType, PartyCreatedEvent.id)
+      assert.strictEqual(published[0].tenantId, tenantId)
+      assert.strictEqual(published[0].aggregateId, party.id)
+      assert.deepStrictEqual(published[0].payload, {
+        partyId: party.id,
+        kind: party.kind,
+      })
+
+      yield* Schema.decodeUnknownEffect(Party)(party)
+      const denied = yield* Effect.flip(service.create({
+        principal,
+        tenantId: deniedTenantId,
+        kind: "organization",
+        name: "Denied Organization",
+      }))
+      assert.instanceOf(denied, AuthorizationDenied)
+      assert.strictEqual(published.length, 1)
+    }))
+
   it.effect("creates a party with roles and a scoped external identifier", () =>
     withParty(Effect.gen(function* () {
       const service = yield* PartyService
@@ -60,7 +147,46 @@ describe("party contract", () => {
         kind: "organization",
         name: " ACME Indonesia ",
       })
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(Party)({ ...party, name: " ACME Indonesia " }),
+        ))._tag,
+        "SchemaError",
+      )
+      const invalidRole = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AssignPartyRoleInput)({
+          principal,
+          tenantId,
+          partyId: "not-a-uuid",
+          role: "customer",
+        }),
+      )
+      assert.strictEqual(invalidRole._tag, "SchemaError")
       yield* service.assignRole({ principal, tenantId, partyId: party.id, role: "customer" })
+      const invalidIdentifier = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AttachExternalIdentifierInput)({
+          principal,
+          tenantId,
+          partyId: "not-a-uuid",
+          provider: "gs1",
+          scheme: "gln",
+          scope: "global",
+          value: "1234567890123",
+        }),
+      )
+      assert.strictEqual(invalidIdentifier._tag, "SchemaError")
+      const invalidIdentifierMetadata = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AttachExternalIdentifierInput)({
+          principal,
+          tenantId,
+          partyId: party.id,
+          provider: " ",
+          scheme: "GLN",
+          scope: "global",
+          value: "1234567890123",
+        }),
+      )
+      assert.strictEqual(invalidIdentifierMetadata._tag, "SchemaError")
       const identifier = yield* service.attachIdentifier({
         principal,
         tenantId,
@@ -70,11 +196,70 @@ describe("party contract", () => {
         scope: "global",
         value: "1234567890123",
       })
+      yield* Schema.decodeUnknownEffect(ExternalIdentifier)(identifier)
+      for (
+        const invalid of [
+          { provider: " gs1 " },
+          { scheme: "gln" },
+          { scope: " global " },
+          { value: " 1234567890123 " },
+        ]
+      ) {
+        assert.strictEqual(
+          (yield* Effect.flip(
+            Schema.decodeUnknownEffect(ExternalIdentifier)({ ...identifier, ...invalid }),
+          ))._tag,
+          "SchemaError",
+        )
+      }
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(ExternalIdentifier)({ ...identifier, value: " " }),
+        ))._tag,
+        "SchemaError",
+      )
+      const invalidLegalEntity = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateLegalEntityInput)({
+          principal,
+          tenantId,
+          organizationId: "not-a-uuid",
+        }),
+      )
+      assert.strictEqual(invalidLegalEntity._tag, "SchemaError")
       const legalEntity = yield* service.createLegalEntity({
         principal,
         tenantId,
         organizationId: party.id,
       })
+      yield* Schema.decodeUnknownEffect(LegalEntity)(legalEntity)
+      const invalidBranchName = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateBranchInput)({
+          principal,
+          tenantId,
+          legalEntityId: legalEntity.id,
+          name: "   ",
+        }),
+      )
+      assert.strictEqual(invalidBranchName._tag, "SchemaError")
+      const invalidBranchTimezone = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateBranchInput)({
+          principal,
+          tenantId,
+          legalEntityId: legalEntity.id,
+          name: "Jakarta",
+          timezone: "   ",
+        }),
+      )
+      assert.strictEqual(invalidBranchTimezone._tag, "SchemaError")
+      const invalidBranchLegalEntity = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateBranchInput)({
+          principal,
+          tenantId,
+          legalEntityId: "not-a-uuid",
+          name: "Jakarta",
+        }),
+      )
+      assert.strictEqual(invalidBranchLegalEntity._tag, "SchemaError")
       const branch = yield* service.createBranch({
         principal,
         tenantId,
@@ -84,6 +269,42 @@ describe("party contract", () => {
         localTaxRegistration: " TAX-JKT-001 ",
         dedicatedJournalCode: "JKT-OPS",
       })
+      yield* Schema.decodeUnknownEffect(Branch)(branch)
+      for (
+        const invalid of [
+          { name: " Jakarta " },
+          { timezone: " Asia/Jakarta " },
+          { localTaxRegistration: " TAX-JKT-001 " },
+          { dedicatedJournalCode: " JKT-OPS " },
+        ]
+      ) {
+        assert.strictEqual(
+          (yield* Effect.flip(Schema.decodeUnknownEffect(Branch)({ ...branch, ...invalid })))._tag,
+          "SchemaError",
+        )
+      }
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(Branch)({ ...branch, localTaxRegistration: " " }),
+        ))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(Branch)({ ...branch, dedicatedJournalCode: " " }),
+        ))._tag,
+        "SchemaError",
+      )
+      const invalidRelationship = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreatePartyRelationshipInput)({
+          principal,
+          tenantId,
+          partyId: "not-a-uuid",
+          legalEntityId: legalEntity.id,
+          kind: "customer",
+        }),
+      )
+      assert.strictEqual(invalidRelationship._tag, "SchemaError")
       const relationship = yield* service.createRelationship({
         principal,
         tenantId,
@@ -91,6 +312,7 @@ describe("party contract", () => {
         legalEntityId: legalEntity.id,
         kind: "customer",
       })
+      yield* Schema.decodeUnknownEffect(PartyRelationship)(relationship)
 
       assert.strictEqual(party.name, "ACME Indonesia")
       assert.strictEqual(identifier.scheme, "GLN")
@@ -139,17 +361,43 @@ describe("party contract", () => {
         const input = {
           principal,
           tenantId,
-          userAccountId: "user-account-1",
+          userAccountId: "00000000-0000-4000-8000-000000000010",
           partyId: party.id,
           kind: "representative",
         }
+        const invalidRepresentation = yield* Effect.flip(
+          Schema.decodeUnknownEffect(CreatePartyRepresentationInput)({
+            ...input,
+            userAccountId: "not-a-uuid",
+          }),
+        )
+        assert.strictEqual(invalidRepresentation._tag, "SchemaError")
         const representation = yield* service.createPartyRepresentation(input)
+        yield* Schema.decodeUnknownEffect(PartyRepresentation)(representation)
+        assert.strictEqual(
+          (yield* Effect.flip(
+            Schema.decodeUnknownEffect(PartyRepresentation)({
+              ...representation,
+              kind: " representative ",
+            }),
+          ))._tag,
+          "SchemaError",
+        )
         assert.strictEqual(representation.active, true)
         assert.strictEqual(representation.kind, "representative")
         assert.instanceOf(
           yield* Effect.flip(service.createPartyRepresentation(input)),
           PartyRepresentationAlreadyExists,
         )
+        const invalidRepresentationToggle = yield* Effect.flip(
+          Schema.decodeUnknownEffect(SetPartyRepresentationActiveInput)({
+            principal,
+            tenantId,
+            representationId: "not-a-uuid",
+            active: false,
+          }),
+        )
+        assert.strictEqual(invalidRepresentationToggle._tag, "SchemaError")
         const deactivated = yield* service.setPartyRepresentationActive({
           principal,
           tenantId,
@@ -161,7 +409,7 @@ describe("party contract", () => {
           yield* Effect.flip(service.setPartyRepresentationActive({
             principal,
             tenantId,
-            representationId: "missing",
+            representationId: "00000000-0000-4000-8000-000000000012",
             active: true,
           })),
           PartyRepresentationNotFound,
@@ -169,12 +417,14 @@ describe("party contract", () => {
         assert.instanceOf(
           yield* Effect.flip(service.createPartyRepresentation({
             ...input,
-            userAccountId: "missing",
+            userAccountId: "00000000-0000-4000-8000-000000000011",
           })),
           PartyRepresentationUserAccountNotFound,
         )
       }),
-      makePartyTestLayer(new Set(["user-account-1"])).pipe(Layer.provide(authorization)),
+      makePartyTestLayer(new Set(["00000000-0000-4000-8000-000000000010"])).pipe(
+        Layer.provide(authorization),
+      ),
     )
   })
 
@@ -298,7 +548,7 @@ describe("party contract", () => {
         yield* Effect.flip(service.attachIdentifier({
           ...identifier,
           partyId: first.id,
-          legalEntityId: "missing",
+          legalEntityId: "00000000-0000-4000-8000-000000000015",
         })),
         LegalEntityNotFound,
       )
@@ -327,6 +577,14 @@ describe("party contract", () => {
         kind: "supplier",
       })
 
+      const invalidRelationshipRead = yield* Effect.flip(
+        Schema.decodeUnknownEffect(GetPartyRelationshipInput)({
+          principal,
+          tenantId,
+          relationshipId: "not-a-uuid",
+        }),
+      )
+      assert.strictEqual(invalidRelationshipRead._tag, "SchemaError")
       assert.deepStrictEqual(
         yield* service.getRelationship({ principal, tenantId, relationshipId: relationship.id }),
         relationship,
@@ -335,7 +593,7 @@ describe("party contract", () => {
         yield* Effect.flip(service.getRelationship({
           principal,
           tenantId,
-          relationshipId: "missing",
+          relationshipId: "00000000-0000-4000-8000-000000000013",
         })),
         PartyRelationshipNotFound,
       )
@@ -357,7 +615,7 @@ describe("party contract", () => {
           yield* Effect.flip(service.getRelationship({
             principal,
             tenantId,
-            relationshipId: "missing",
+            relationshipId: "00000000-0000-4000-8000-000000000014",
           })),
           AuthorizationDenied,
         )
@@ -411,7 +669,7 @@ describe("party contract", () => {
         yield* Effect.flip(service.createBranch({
           principal,
           tenantId,
-          legalEntityId: "missing",
+          legalEntityId: "00000000-0000-4000-8000-000000000099",
           name: "Jakarta",
         })),
         LegalEntityNotFound,

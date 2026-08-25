@@ -23,6 +23,7 @@ import { makePartyService, PartyCapabilities, PartyService } from "../../party/m
 import {
   makeProcurementService,
   ProcurementCapabilities,
+  ProcurementPurchaseOrderConfirmedEvent,
   PurchaseOrderConfirmationIdempotencyConflict,
   PurchaseOrderHasReceipts,
   PurchaseOrderInvalidState,
@@ -91,12 +92,16 @@ it.effect.skipIf(databaseUrl === undefined)(
             Effect.provideService(Database, database),
             Effect.provideService(AuthorizationService, authorization),
           )
+          const messaging = yield* makeMessagingService.pipe(
+            Effect.provideService(Database, database),
+          )
           const procurement = yield* Effect.provide(
             makeProcurementService,
             Layer.mergeAll(
               Layer.succeed(Database, database),
               Layer.succeed(AuthorizationService, authorization),
               Layer.succeed(PartyService, party),
+              Layer.succeed(MessagingService, messaging),
             ),
           )
 
@@ -260,6 +265,53 @@ it.effect.skipIf(databaseUrl === undefined)(
           assert.strictEqual(confirmed.status, "confirmed")
           assert.isNotNull(confirmed.confirmedAt)
           assert.deepStrictEqual(replayed, confirmed)
+          const [confirmationEvent] = yield* Effect.promise(() =>
+            client<{
+              event_type: string
+              event_version: number
+              aggregate_type: string
+              aggregate_id: string
+              command_id: string
+              correlation_id: string
+              causation_id: string | null
+              idempotency_key: string
+              payload: { purchaseOrderId: string; supplierAccountId: string; total: string }
+            }[]>`
+              select event_type, event_version, aggregate_type, aggregate_id,
+                command_id, correlation_id, causation_id, idempotency_key, payload
+              from messaging.event_outbox
+              where tenant_id = ${tenant.id}
+                and event_type = ${ProcurementPurchaseOrderConfirmedEvent.id}
+                and aggregate_id = ${confirmed.id}
+            `
+          )
+          assert.deepStrictEqual(confirmationEvent, {
+            event_type: ProcurementPurchaseOrderConfirmedEvent.id,
+            event_version: ProcurementPurchaseOrderConfirmedEvent.version,
+            aggregate_type: ProcurementPurchaseOrderConfirmedEvent.aggregateType,
+            aggregate_id: confirmed.id,
+            command_id: `procurement.purchase_order.confirm:${confirmationInput.idempotencyKey}`,
+            correlation_id: `procurement.purchase_order:${confirmed.id}`,
+            causation_id: null,
+            idempotency_key: confirmationInput.idempotencyKey,
+            payload: {
+              purchaseOrderId: confirmed.id,
+              supplierAccountId: confirmed.supplierAccountId,
+              total: confirmed.total,
+            },
+          })
+          assert.strictEqual(
+            (yield* Effect.promise(() =>
+              client<{ count: string }[]>`
+                select count(*)::text as count
+                from messaging.event_outbox
+                where tenant_id = ${tenant.id}
+                  and event_type = ${ProcurementPurchaseOrderConfirmedEvent.id}
+                  and aggregate_id = ${confirmed.id}
+              `
+            ))[0]!.count,
+            "1",
+          )
           assert.deepStrictEqual(
             yield* procurement.getPurchaseOrder({
               principal,
@@ -617,22 +669,33 @@ it.effect.skipIf(databaseUrl === undefined)(
             )
           }
 
-          const [inconsistentOrder] = yield* Effect.promise(() =>
-            client<{ id: string }[]>`
-              insert into procurement.purchase_orders (tenant_id, supplier_account_id, total)
-              values (${tenant.id}, ${account.id}, 11.00)
-              returning id
-            `
+          const invalidDraftTotal = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update procurement.purchase_orders
+                set total = 6.00
+                where tenant_id = ${tenant.id} and id = ${constraintOrder.id}
+              `
+            })
           )
-          yield* Effect.promise(() =>
-            client`
-              insert into procurement.purchase_order_lines
-                (tenant_id, purchase_order_id, item_id, quantity, unit_price)
-              values (${tenant.id}, ${inconsistentOrder!.id}, ${uuidv7()}, 1, 10.00)
-            `
+          assert.strictEqual((invalidDraftTotal as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidDraftTotal as { constraint_name?: string }).constraint_name,
+            "purchase_order_draft_total_consistent",
           )
+
           const inconsistentTotal = yield* postgresFailure(() =>
             client.begin(async (transaction) => {
+              const [inconsistentOrder] = await transaction<{ id: string }[]>`
+                insert into procurement.purchase_orders (tenant_id, supplier_account_id, total)
+                values (${tenant.id}, ${account.id}, 11.00)
+                returning id
+              `
+              await transaction`
+                insert into procurement.purchase_order_lines
+                  (tenant_id, purchase_order_id, item_id, quantity, unit_price)
+                values (${tenant.id}, ${inconsistentOrder!.id}, ${uuidv7()}, 1, 10.00)
+              `
               await transaction`
                 update procurement.purchase_orders
                 set status = 'confirmed',
@@ -753,7 +816,11 @@ it.effect.skipIf(databaseUrl === undefined)(
           )
           const procurement = yield* Effect.provide(
             makeProcurementService,
-            Layer.merge(requirements, Layer.succeed(PartyService, party)),
+            Layer.mergeAll(
+              requirements,
+              Layer.succeed(PartyService, party),
+              Layer.succeed(MessagingService, messaging),
+            ),
           )
 
           const owner = yield* party.create({
@@ -809,6 +876,19 @@ it.effect.skipIf(databaseUrl === undefined)(
             supplierAccountId: supplierAccount.id,
             lines: [{ itemId: item.id, quantity: "3", unitPrice: "1.00" }],
           })
+          const draftOrderReceipt = yield* postgresFailure(() =>
+            client`
+              insert into procurement.purchase_receipts
+                (tenant_id, purchase_order_id, warehouse_id, idempotency_key)
+              values
+                (${tenant.id}, ${order.id}, ${warehouse.id}, 'draft-order-receipt')
+            `
+          )
+          assert.strictEqual((draftOrderReceipt as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (draftOrderReceipt as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_order_state_check",
+          )
           const confirmed = yield* procurement.confirmPurchaseOrder({
             principal,
             tenantId: tenant.id,
@@ -829,6 +909,169 @@ it.effect.skipIf(databaseUrl === undefined)(
             InventoryService,
             inventory,
           )
+          const cancelledOrderWithReceipt = yield* postgresFailure(() =>
+            client`
+              update procurement.purchase_orders
+              set status = 'cancelled', updated_at = now()
+              where tenant_id = ${tenant.id} and id = ${confirmed.id}
+            `
+          )
+          assert.strictEqual((cancelledOrderWithReceipt as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (cancelledOrderWithReceipt as { constraint_name?: string }).constraint_name,
+            "purchase_order_receipt_state_check",
+          )
+          const changedReceipt = yield* postgresFailure(() =>
+            client`
+              update procurement.purchase_receipts
+              set idempotency_key = 'edited-receipt'
+              where tenant_id = ${tenant.id} and id = ${first.id}
+            `
+          )
+          assert.strictEqual((changedReceipt as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (changedReceipt as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_facts_immutable",
+          )
+          const changedReceiptLine = yield* postgresFailure(() =>
+            client`
+              update procurement.purchase_receipt_lines
+              set quantity = 2
+              where tenant_id = ${tenant.id} and receipt_id = ${first.id}
+                and purchase_order_line_id = ${lineId}
+            `
+          )
+          assert.strictEqual((changedReceiptLine as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (changedReceiptLine as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_facts_immutable",
+          )
+          const deletedReceiptLine = yield* postgresFailure(() =>
+            client`
+              delete from procurement.purchase_receipt_lines
+              where tenant_id = ${tenant.id} and receipt_id = ${first.id}
+                and purchase_order_line_id = ${lineId}
+            `
+          )
+          assert.strictEqual((deletedReceiptLine as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (deletedReceiptLine as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_facts_immutable",
+          )
+          const deletedReceipt = yield* postgresFailure(() =>
+            client`
+              delete from procurement.purchase_receipts
+              where tenant_id = ${tenant.id} and id = ${first.id}
+            `
+          )
+          assert.strictEqual((deletedReceipt as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (deletedReceipt as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_facts_immutable",
+          )
+          const invalidWarehouseReceipt = yield* postgresFailure(() =>
+            client`
+              insert into procurement.purchase_receipts
+                (tenant_id, purchase_order_id, warehouse_id, idempotency_key)
+              values
+                (${tenant.id}, ${confirmed.id}, ${uuidv7()}, 'invalid-warehouse')
+            `
+          )
+          assert.strictEqual((invalidWarehouseReceipt as { code?: string }).code, "23503")
+          assert.strictEqual(
+            (invalidWarehouseReceipt as { constraint_name?: string }).constraint_name,
+            "purchase_receipts_tenant_warehouse_fkey",
+          )
+          const otherItem = yield* inventory.createItem({
+            principal,
+            tenantId: tenant.id,
+            sku: "receipt-other-item",
+            name: "Receipt Other Item",
+          })
+          const otherOrder = yield* procurement.createPurchaseOrder({
+            principal,
+            tenantId: tenant.id,
+            supplierAccountId: supplierAccount.id,
+            lines: [{ itemId: otherItem.id, quantity: "1", unitPrice: "1.00" }],
+          })
+          const otherConfirmed = yield* procurement.confirmPurchaseOrder({
+            principal,
+            tenantId: tenant.id,
+            purchaseOrderId: otherOrder.id,
+            idempotencyKey: "other-receipt-confirmation",
+          })
+          const otherLineId = otherConfirmed.lines[0]!.id
+          const mismatchedReceiptOrder = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              const [receipt] = await transaction<{ id: string }[]>`
+                insert into procurement.purchase_receipts
+                  (tenant_id, purchase_order_id, warehouse_id, idempotency_key)
+                values
+                  (${tenant.id}, ${confirmed.id}, ${warehouse.id}, 'direct-mismatched-receipt')
+                returning id
+              `
+              await transaction`
+                insert into procurement.purchase_receipt_lines
+                  (tenant_id, receipt_id, purchase_order_id, purchase_order_line_id,
+                   item_id, quantity, unit_of_measure)
+                values
+                  (${tenant.id}, ${receipt!.id}, ${otherConfirmed.id}, ${otherLineId},
+                   ${otherItem.id}, 1, 'EA')
+              `
+            })
+          )
+          assert.strictEqual((mismatchedReceiptOrder as { code?: string }).code, "23503")
+          assert.strictEqual(
+            (mismatchedReceiptOrder as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_lines_tenant_receipt_order_fkey",
+          )
+          const mismatchedReceiptItem = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              const [receipt] = await transaction<{ id: string }[]>`
+                insert into procurement.purchase_receipts
+                  (tenant_id, purchase_order_id, warehouse_id, idempotency_key)
+                values
+                  (${tenant.id}, ${confirmed.id}, ${warehouse.id}, 'direct-mismatched-item')
+                returning id
+              `
+              await transaction`
+                insert into procurement.purchase_receipt_lines
+                  (tenant_id, receipt_id, purchase_order_id, purchase_order_line_id,
+                   item_id, quantity, unit_of_measure)
+                values
+                  (${tenant.id}, ${receipt!.id}, ${confirmed.id}, ${lineId},
+                   ${uuidv7()}, 1, 'EA')
+              `
+            })
+          )
+          assert.strictEqual(
+            (mismatchedReceiptItem as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_lines_tenant_order_line_item_fkey",
+          )
+          const invalidReceiptUnit = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              const [receipt] = await transaction<{ id: string }[]>`
+                insert into procurement.purchase_receipts
+                  (tenant_id, purchase_order_id, warehouse_id, idempotency_key)
+                values
+                  (${tenant.id}, ${confirmed.id}, ${warehouse.id}, 'direct-invalid-unit')
+                returning id
+              `
+              await transaction`
+                insert into procurement.purchase_receipt_lines
+                  (tenant_id, receipt_id, purchase_order_id, purchase_order_line_id,
+                   item_id, quantity, unit_of_measure)
+                values
+                  (${tenant.id}, ${receipt!.id}, ${confirmed.id}, ${lineId},
+                   ${item.id}, 1, 'A B')
+              `
+            })
+          )
+          assert.strictEqual((invalidReceiptUnit as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidReceiptUnit as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_lines_unit_of_measure_check",
+          )
           const replay = yield* Effect.provideService(
             procurement.receivePurchaseOrder(receiptInput),
             InventoryService,
@@ -846,6 +1089,30 @@ it.effect.skipIf(databaseUrl === undefined)(
             inventory,
           )
           assert.strictEqual(second.lines[0]?.quantity, "2")
+          const overReceipt = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              const [receipt] = await transaction<{ id: string }[]>`
+                insert into procurement.purchase_receipts
+                  (tenant_id, purchase_order_id, warehouse_id, idempotency_key)
+                values
+                  (${tenant.id}, ${confirmed.id}, ${warehouse.id}, 'direct-over-receipt')
+                returning id
+              `
+              await transaction`
+                insert into procurement.purchase_receipt_lines
+                  (tenant_id, receipt_id, purchase_order_id, purchase_order_line_id,
+                   item_id, quantity, unit_of_measure)
+                values
+                  (${tenant.id}, ${receipt!.id}, ${confirmed.id}, ${lineId},
+                   ${item.id}, 1, 'EA')
+              `
+            })
+          )
+          assert.strictEqual((overReceipt as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (overReceipt as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_lines_ordered_quantity_check",
+          )
           assert.instanceOf(
             yield* Effect.flip(Effect.provideService(
               procurement.receivePurchaseOrder({
@@ -888,7 +1155,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               order by created_at
             `
           )
-          assert.deepStrictEqual(movements.map((row) => row.quantity), ["1", "2"])
+          assert.deepStrictEqual(movements.map((row) => row.quantity).toSorted(), ["1", "2"])
           assert.deepStrictEqual(
             movements.map((row) => row.reference_id).sort(),
             persistedReceipts.map((row) => row.id).sort(),

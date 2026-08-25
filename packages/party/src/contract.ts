@@ -4,6 +4,7 @@ import * as Schema from "effect/Schema"
 import { Principal } from "../../auth/mod.ts"
 import type { AuthorizationDenied } from "../../authorization/mod.ts"
 import type { DatabaseFailure } from "../../kernel/mod.ts"
+import type { EventIdempotencyConflict } from "../../messaging/mod.ts"
 import type {
   BranchAlreadyExists,
   ExternalIdentifierAlreadyAssigned,
@@ -20,8 +21,16 @@ import type {
   PartyRoleAlreadyAssigned,
 } from "./errors.ts"
 
-const NonEmptyString = Schema.String.check(Schema.isNonEmpty())
 const NonBlankString = Schema.String.check(Schema.isPattern(/\S/))
+const TrimmedNonBlankString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
+const UpperTrimmedNonBlankString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim() && value === value.toUpperCase(),
+  { expected: "a trimmed uppercase nonblank string" },
+))
+const Uuid = Schema.String.check(Schema.isUUID())
 
 export const PartyKind = Schema.Literals(["person", "organization"])
 export const PartyRole = Schema.Literals(["customer", "supplier", "employee", "partner"])
@@ -33,55 +42,55 @@ export const PartyRelationshipKind = Schema.Literals([
 ])
 
 export const Party = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
   kind: PartyKind,
-  name: Schema.String,
+  name: TrimmedNonBlankString,
 })
 
 export const ExternalIdentifier = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  partyId: Schema.String,
-  provider: Schema.String,
-  scheme: Schema.String,
-  scope: Schema.String,
-  legalEntityId: Schema.NullOr(Schema.String),
-  value: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  partyId: Uuid,
+  provider: UpperTrimmedNonBlankString,
+  scheme: UpperTrimmedNonBlankString,
+  scope: TrimmedNonBlankString,
+  legalEntityId: Schema.NullOr(Uuid),
+  value: TrimmedNonBlankString,
 })
 
 export const LegalEntity = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  organizationId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  organizationId: Uuid,
 })
 
 export const Branch = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  legalEntityId: Schema.String,
-  name: Schema.String,
-  timezone: Schema.NullOr(Schema.String),
-  localTaxRegistration: Schema.NullOr(Schema.String),
-  dedicatedJournalCode: Schema.NullOr(Schema.String),
+  id: Uuid,
+  tenantId: Uuid,
+  legalEntityId: Uuid,
+  name: TrimmedNonBlankString,
+  timezone: Schema.NullOr(TrimmedNonBlankString),
+  localTaxRegistration: Schema.NullOr(TrimmedNonBlankString),
+  dedicatedJournalCode: Schema.NullOr(TrimmedNonBlankString),
 })
 
-export const PartyRepresentationKind = NonBlankString
+export const PartyRepresentationKind = TrimmedNonBlankString
 
 export const PartyRepresentation = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  userAccountId: Schema.String,
-  partyId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  userAccountId: Uuid,
+  partyId: Uuid,
   kind: PartyRepresentationKind,
   active: Schema.Boolean,
 })
 
 export const PartyRelationship = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  partyId: Schema.String,
-  legalEntityId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  partyId: Uuid,
+  legalEntityId: Uuid,
   kind: PartyRelationshipKind,
   active: Schema.Boolean,
 })
@@ -99,78 +108,84 @@ export type PartyRelationshipKind = Schema.Schema.Type<typeof PartyRelationshipK
 
 export const CreatePartyInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
+  tenantId: Uuid,
   kind: PartyKind,
-  name: NonEmptyString,
+  name: NonBlankString,
 })
 
 export const AssignPartyRoleInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  partyId: Schema.String,
+  tenantId: Uuid,
+  partyId: Uuid,
   role: PartyRole,
 })
 
 export const CreatePartyRelationshipInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  partyId: Schema.String,
-  legalEntityId: Schema.String,
+  tenantId: Uuid,
+  partyId: Uuid,
+  legalEntityId: Uuid,
   kind: PartyRelationshipKind,
 })
 
 export const GetPartyRelationshipInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  relationshipId: Schema.String,
+  tenantId: Uuid,
+  relationshipId: Uuid,
 })
 
 export const AttachExternalIdentifierInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  partyId: Schema.String,
-  provider: NonEmptyString,
-  scheme: NonEmptyString,
-  scope: NonEmptyString,
-  legalEntityId: Schema.optionalKey(Schema.String),
-  value: NonEmptyString,
+  tenantId: Uuid,
+  partyId: Uuid,
+  provider: NonBlankString,
+  scheme: NonBlankString,
+  scope: NonBlankString,
+  legalEntityId: Schema.optionalKey(Uuid),
+  value: NonBlankString,
 })
 
 export const CreateLegalEntityInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  organizationId: Schema.String,
+  tenantId: Uuid,
+  organizationId: Uuid,
 })
 
 export const CreateBranchInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  legalEntityId: Schema.String,
-  name: NonEmptyString,
-  timezone: Schema.optionalKey(NonEmptyString),
+  tenantId: Uuid,
+  legalEntityId: Uuid,
+  name: NonBlankString,
+  timezone: Schema.optionalKey(NonBlankString),
   localTaxRegistration: Schema.optionalKey(NonBlankString),
   dedicatedJournalCode: Schema.optionalKey(NonBlankString),
 })
 
 export const CreatePartyRepresentationInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  userAccountId: Schema.String,
-  partyId: Schema.String,
+  tenantId: Uuid,
+  userAccountId: Uuid,
+  partyId: Uuid,
   kind: PartyRepresentationKind,
 })
 
 export const SetPartyRepresentationActiveInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  representationId: Schema.String,
+  tenantId: Uuid,
+  representationId: Uuid,
   active: Schema.Boolean,
 })
 
 export interface PartyService {
   readonly create: (
     input: unknown,
-  ) => Effect.Effect<Party, AuthorizationDenied | DatabaseFailure | Schema.SchemaError>
+  ) => Effect.Effect<
+    Party,
+    | AuthorizationDenied
+    | DatabaseFailure
+    | EventIdempotencyConflict
+    | Schema.SchemaError
+  >
   readonly createLegalEntity: (
     input: unknown,
   ) => Effect.Effect<

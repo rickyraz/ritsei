@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 
+import { uuidv7 } from "../../kernel/mod.ts"
 import { AuthService, CreateTenantInput, IssueSessionInput, type Tenant } from "./contract.ts"
 import {
   InvalidSessionToken,
@@ -24,7 +25,6 @@ export const makeMemoryAuthLayer = (
         string,
         { userAccountId: string; sessionId: string; expiresAt: number }
       >()
-      let nextTenantId = 1
       let nextSessionId = 1
 
       const createTenant = Effect.fn("auth.createTenant")(function* (input: unknown) {
@@ -34,7 +34,7 @@ export const makeMemoryAuthLayer = (
         if ([...storedTenants.values()].some((tenant) => tenant.slug === slug)) {
           return yield* Effect.fail(new TenantAlreadyExists({ slug }))
         }
-        const tenant = { id: `tenant-${nextTenantId++}`, slug, timezone }
+        const tenant = { id: uuidv7(), slug, timezone }
         storedTenants.set(tenant.id, tenant)
         return tenant
       })

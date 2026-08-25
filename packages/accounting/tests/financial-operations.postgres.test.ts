@@ -122,6 +122,23 @@ it.effect.skipIf(databaseUrl === undefined)(
               ) returning id
             `
           )
+          const blankApproval = yield* Effect.flip(Effect.tryPromise({
+            try: () =>
+              client`
+              update accounting.financial_cutover_controls
+              set status = 'approved', cutover_watermark = ' ',
+                verification_hash = 'test-hash', opening_balance_verified = true,
+                historical_boundary_verified = true, reconciliation_healthy = true,
+                backup_recovery_verified = true, evidence_artifact_id = ${evidenceArtifact!.id},
+                approved_by = 'test-operator', approved_at = now()
+              where tenant_id = ${tenant!.id} and legal_entity_id = ${legalEntity!.id}
+            `,
+            catch: (cause) => cause,
+          }))
+          assert.strictEqual(
+            (blankApproval as { constraint_name?: string }).constraint_name,
+            "financial_cutover_controls_approval_check",
+          )
           yield* Effect.promise(() =>
             client`
               update accounting.financial_cutover_controls
@@ -146,6 +163,19 @@ it.effect.skipIf(databaseUrl === undefined)(
               set financial_engine = 'tigerbeetle'
               where tenant_id = ${tenant!.id} and legal_entity_id = ${legalEntity!.id}
             `
+          )
+          const blankActivation = yield* Effect.flip(Effect.tryPromise({
+            try: () =>
+              client`
+              update accounting.financial_cutover_controls
+              set status = 'tigerbeetle', activated_by = ' ', activated_at = now()
+              where tenant_id = ${tenant!.id} and legal_entity_id = ${legalEntity!.id}
+            `,
+            catch: (cause) => cause,
+          }))
+          assert.strictEqual(
+            (blankActivation as { constraint_name?: string }).constraint_name,
+            "financial_cutover_controls_activation_check",
           )
           yield* Effect.promise(() =>
             client`
@@ -742,12 +772,16 @@ it.effect.skipIf(databaseUrl === undefined)(
               { accountId: debitAccount!.id, debit: "12.50", credit: "0" },
               { accountId: creditAccount!.id, debit: "0", credit: "12.50" },
             ],
-            correlationId: `correlation-${uuidv7()}`,
+            correlationId: ` correlation-${uuidv7()} `,
           }
           const concurrentInput = {
             ...input,
             operationId: `concurrent-${uuidv7()}`,
             reference: `concurrent-${uuidv7()}`,
+          }
+          const paddedInput = {
+            ...input,
+            operationId: ` ${input.operationId} `,
           }
           const concurrentIntents = yield* Effect.all([
             service.createJournalIntent(concurrentInput),
@@ -760,21 +794,25 @@ it.effect.skipIf(databaseUrl === undefined)(
           })
           assert.strictEqual(concurrentPosted.status, "reconciled")
 
-          const intent = yield* service.createJournalIntent(input)
+          const intent = yield* service.createJournalIntent(paddedInput)
           assert.strictEqual(intent.status, "intent")
+          assert.strictEqual(intent.operationId, input.operationId)
 
           const [queued] = yield* Effect.promise(() =>
-            client<{ job_type: string; idempotency_key: string }[]>`
-              select job_type, idempotency_key from process.jobs
-              where tenant_id = ${tenant!.id} and idempotency_key = ${input.operationId}
+            client<{ job_type: string; idempotency_key: string; correlation_id: string }[]>`
+              select job_type, idempotency_key, correlation_id from process.jobs
+              where tenant_id = ${
+              tenant!.id
+            } and idempotency_key = ${paddedInput.operationId.trim()}
             `
           )
           assert.strictEqual(queued!.job_type, "accounting.financial_operation.submit")
           assert.strictEqual(queued!.idempotency_key, input.operationId)
+          assert.strictEqual(queued!.correlation_id, input.correlationId.trim())
 
           const posted = yield* service.submitFinancialOperation({
             tenantId: tenant!.id,
-            operationId: input.operationId,
+            operationId: paddedInput.operationId,
           })
           assert.strictEqual(posted.status, "reconciled")
           const projectedTransfers = yield* Effect.promise(() =>
@@ -1107,14 +1145,18 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            recoveryWatermark: `checkpoint-${uuidv7()}`,
-            sourceWatermark: "postgres:test-watermark",
-            targetWatermark: "tigerbeetle:test-watermark",
-            sourceSnapshotRef: "postgres:test-snapshot",
-            targetSnapshotRef: "tigerbeetle:test-snapshot",
+            recoveryWatermark: ` checkpoint-${uuidv7()} `,
+            sourceWatermark: " postgres:test-watermark ",
+            targetWatermark: " tigerbeetle:test-watermark ",
+            sourceSnapshotRef: " postgres:test-snapshot ",
+            targetSnapshotRef: " tigerbeetle:test-snapshot ",
             evidenceArtifactId: null,
           })
           assert.include(["verified", "blocked"], checkpoint.status)
+          assert.strictEqual(checkpoint.sourceWatermark, "postgres:test-watermark")
+          assert.strictEqual(checkpoint.targetWatermark, "tigerbeetle:test-watermark")
+          assert.strictEqual(checkpoint.sourceSnapshotRef, "postgres:test-snapshot")
+          assert.strictEqual(checkpoint.targetSnapshotRef, "tigerbeetle:test-snapshot")
           const checkpointReplay = yield* service.reconcileFinancialCheckpoint({
             principal,
             tenantId: tenant!.id,

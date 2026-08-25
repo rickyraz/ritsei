@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm"
 import {
   boolean,
+  check,
   foreignKey,
   pgSchema,
   primaryKey,
@@ -74,6 +75,10 @@ export const partyRepresentations = partySchema.table(
       foreignColumns: [parties.tenantId, parties.id],
       name: "party_representations_party_fkey",
     }).onDelete("cascade"),
+    check(
+      "party_representations_kind_check",
+      sql`${table.kind} ~ '[^[:space:]]'`,
+    ),
   ],
 )
 
@@ -208,4 +213,20 @@ export const partyIdentifiers = partySchema.table("party_identifiers", {
     foreignColumns: [legalEntities.tenantId, legalEntities.id],
     name: "party_identifiers_tenant_legal_entity_fkey",
   }).onDelete("cascade"),
+  check(
+    "party_identifiers_provider_check",
+    sql`${table.provider} <> '' and ${table.provider} = upper(trim(${table.provider}))`,
+  ),
+  check(
+    "party_identifiers_scheme_check",
+    sql`${table.scheme} <> '' and ${table.scheme} = upper(trim(${table.scheme}))`,
+  ),
+  check(
+    "party_identifiers_scope_check",
+    sql`${table.scope} <> '' and ${table.scope} = trim(${table.scope})`,
+  ),
+  check(
+    "party_identifiers_value_check",
+    sql`${table.value} <> '' and ${table.value} = trim(${table.value})`,
+  ),
 ])

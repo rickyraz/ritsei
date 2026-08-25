@@ -1,0 +1,77 @@
+-- owner: sales
+-- reviewed: 2026-08-25
+-- generated-by: drizzle-kit 1.0.0-rc.4 --custom
+-- rationale: keep draft Sales order totals aligned with mutable draft lines
+
+CREATE OR REPLACE FUNCTION sales.assert_draft_order_total_for(
+  target_tenant_id uuid,
+  target_order_id uuid
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, sales
+AS $$
+DECLARE
+  order_status text;
+  stored_total numeric;
+  line_count bigint;
+  derived_total numeric;
+BEGIN
+  SELECT status::text, total
+  INTO order_status, stored_total
+  FROM sales.orders
+  WHERE tenant_id = target_tenant_id
+    AND id = target_order_id
+  FOR UPDATE;
+
+  IF NOT FOUND OR order_status <> 'draft' THEN
+    RETURN;
+  END IF;
+
+  SELECT count(*), coalesce(sum(quantity::numeric * unit_price), 0)
+  INTO line_count, derived_total
+  FROM sales.order_lines
+  WHERE tenant_id = target_tenant_id
+    AND order_id = target_order_id;
+
+  IF line_count > 0 AND stored_total <> derived_total THEN
+    RAISE EXCEPTION USING
+      ERRCODE = '23514',
+      CONSTRAINT = 'sales_draft_order_total_consistent',
+      MESSAGE = 'draft sales order total must match its lines';
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION sales.assert_draft_order_total()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, sales
+AS $$
+BEGIN
+  IF TG_TABLE_NAME = 'orders' THEN
+    PERFORM sales.assert_draft_order_total_for(NEW.tenant_id, NEW.id);
+  ELSE
+    IF TG_OP <> 'INSERT' THEN
+      PERFORM sales.assert_draft_order_total_for(OLD.tenant_id, OLD.order_id);
+    END IF;
+    IF TG_OP <> 'DELETE' THEN
+      PERFORM sales.assert_draft_order_total_for(NEW.tenant_id, NEW.order_id);
+    END IF;
+  END IF;
+
+  RETURN NULL;
+END;
+$$;
+
+CREATE CONSTRAINT TRIGGER sales_draft_order_total_trigger
+AFTER INSERT OR UPDATE ON sales.orders
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION sales.assert_draft_order_total();
+
+CREATE CONSTRAINT TRIGGER sales_draft_order_line_total_trigger
+AFTER INSERT OR UPDATE OR DELETE ON sales.order_lines
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION sales.assert_draft_order_total();
