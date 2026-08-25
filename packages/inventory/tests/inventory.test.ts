@@ -898,6 +898,15 @@ describe("inventory contract", () => {
         ))._tag,
         "SchemaError",
       )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockTransfer)({
+            ...transfer,
+            lines: [transfer.lines[0]!, transfer.lines[0]!],
+          }),
+        ))._tag,
+        "SchemaError",
+      )
 
       assert.instanceOf(
         yield* Effect.flip(inventory.completeTransfer({

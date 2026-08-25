@@ -135,6 +135,9 @@ export const StockTransfer = Schema.Struct({
         transfer.confirmedAt !== null &&
         transfer.completedAt !== null)),
   { expected: "stock transfer identity, status, and dates are consistent" },
+)).check(Schema.makeFilter(
+  (transfer) => new Set(transfer.lines.map((line) => line.itemId)).size === transfer.lines.length,
+  { expected: "stock transfer items must be unique" },
 ))
 
 export type Warehouse = Schema.Schema.Type<typeof Warehouse>
