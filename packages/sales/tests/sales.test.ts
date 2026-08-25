@@ -18,6 +18,7 @@ import {
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderConfirmedEvent,
   SalesOrderInvalidState,
+  SalesOrderLine,
   SalesOrderNotFound,
   SalesService,
 } from "../mod.ts"
@@ -73,6 +74,18 @@ const withSales = <A, E>(
 }
 
 describe("sales contract", () => {
+  it.effect("bounds order-line quantities to PostgreSQL bigint", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        Schema.decodeUnknownEffect(SalesOrderLine)({
+          itemId: "00000000-0000-4000-8000-000000000041",
+          quantity: "9223372036854775808",
+          unitPrice: "10.00",
+        }),
+      )
+      assert.strictEqual(error._tag, "SchemaError")
+    }))
+
   it.effect("publishes one confirmation event across idempotent replay", () => {
     const published: EventEnvelopeShape[] = []
     return withSales(
