@@ -65,8 +65,8 @@ const DefaultUnitOfMeasure = UnitOfMeasureInput.pipe(
 export const Warehouse = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  legalEntityId: Schema.String,
-  primaryBranchId: Schema.NullOr(Schema.String),
+  legalEntityId: Uuid,
+  primaryBranchId: Schema.NullOr(Uuid),
   name: Schema.String,
 })
 export const Item = Schema.Struct({
