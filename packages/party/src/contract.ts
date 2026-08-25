@@ -2,6 +2,23 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import { Principal } from "../../auth/mod.ts"
+import type { AuthorizationDenied } from "../../authorization/mod.ts"
+import type { DatabaseFailure } from "../../kernel/mod.ts"
+import type {
+  BranchAlreadyExists,
+  ExternalIdentifierAlreadyAssigned,
+  LegalEntityAlreadyExists,
+  LegalEntityNotFound,
+  OrganizationRequired,
+  PartyNotFound,
+  PartyRelationshipAlreadyExists,
+  PartyRelationshipNotFound,
+  PartyRelationshipRoleNotAssigned,
+  PartyRepresentationAlreadyExists,
+  PartyRepresentationNotFound,
+  PartyRepresentationUserAccountNotFound,
+  PartyRoleAlreadyAssigned,
+} from "./errors.ts"
 
 const NonEmptyString = Schema.String.check(Schema.isNonEmpty())
 const NonBlankString = Schema.String.check(Schema.isPattern(/\S/))
@@ -151,29 +168,86 @@ export const SetPartyRepresentationActiveInput = Schema.Struct({
 })
 
 export interface PartyService {
-  readonly create: (input: unknown) => Effect.Effect<Party, import("./errors.ts").PartyFailure>
+  readonly create: (
+    input: unknown,
+  ) => Effect.Effect<Party, AuthorizationDenied | DatabaseFailure | Schema.SchemaError>
   readonly createLegalEntity: (
     input: unknown,
-  ) => Effect.Effect<LegalEntity, import("./errors.ts").PartyFailure>
+  ) => Effect.Effect<
+    LegalEntity,
+    | PartyNotFound
+    | OrganizationRequired
+    | LegalEntityAlreadyExists
+    | AuthorizationDenied
+    | DatabaseFailure
+    | Schema.SchemaError
+  >
   readonly createBranch: (
     input: unknown,
-  ) => Effect.Effect<Branch, import("./errors.ts").PartyFailure>
+  ) => Effect.Effect<
+    Branch,
+    | LegalEntityNotFound
+    | BranchAlreadyExists
+    | AuthorizationDenied
+    | DatabaseFailure
+    | Schema.SchemaError
+  >
   readonly createPartyRepresentation: (
     input: unknown,
-  ) => Effect.Effect<PartyRepresentation, import("./errors.ts").PartyFailure>
+  ) => Effect.Effect<
+    PartyRepresentation,
+    | PartyRepresentationUserAccountNotFound
+    | PartyRepresentationAlreadyExists
+    | PartyNotFound
+    | AuthorizationDenied
+    | DatabaseFailure
+    | Schema.SchemaError
+  >
   readonly setPartyRepresentationActive: (
     input: unknown,
-  ) => Effect.Effect<PartyRepresentation, import("./errors.ts").PartyFailure>
-  readonly assignRole: (input: unknown) => Effect.Effect<void, import("./errors.ts").PartyFailure>
+  ) => Effect.Effect<
+    PartyRepresentation,
+    PartyRepresentationNotFound | AuthorizationDenied | DatabaseFailure | Schema.SchemaError
+  >
+  readonly assignRole: (
+    input: unknown,
+  ) => Effect.Effect<
+    void,
+    | PartyNotFound
+    | PartyRoleAlreadyAssigned
+    | AuthorizationDenied
+    | DatabaseFailure
+    | Schema.SchemaError
+  >
   readonly createRelationship: (
     input: unknown,
-  ) => Effect.Effect<PartyRelationship, import("./errors.ts").PartyFailure>
+  ) => Effect.Effect<
+    PartyRelationship,
+    | LegalEntityNotFound
+    | PartyNotFound
+    | PartyRelationshipAlreadyExists
+    | PartyRelationshipRoleNotAssigned
+    | AuthorizationDenied
+    | DatabaseFailure
+    | Schema.SchemaError
+  >
   readonly getRelationship: (
     input: unknown,
-  ) => Effect.Effect<PartyRelationship, import("./errors.ts").PartyFailure>
+  ) => Effect.Effect<
+    PartyRelationship,
+    PartyRelationshipNotFound | AuthorizationDenied | DatabaseFailure | Schema.SchemaError
+  >
   readonly attachIdentifier: (
     input: unknown,
-  ) => Effect.Effect<ExternalIdentifier, import("./errors.ts").PartyFailure>
+  ) => Effect.Effect<
+    ExternalIdentifier,
+    | LegalEntityNotFound
+    | PartyNotFound
+    | ExternalIdentifierAlreadyAssigned
+    | AuthorizationDenied
+    | DatabaseFailure
+    | Schema.SchemaError
+  >
 }
 
 export const PartyService = Context.Service<PartyService>("RITSEI/PartyService")

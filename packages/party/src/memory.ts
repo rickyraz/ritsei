@@ -33,8 +33,7 @@ export const makePartyMemoryStore = (validUserAccountIds?: ReadonlySet<string>):
   const relationships = new Map<string, PartyRelationship>()
   const identifiers = new Set<string>()
   const representations = new Map<string, import("./contract.ts").PartyRepresentation>()
-  let nextId = 1
-  const id = () => String(nextId++)
+  const id = () => crypto.randomUUID()
   const create = Effect.fn("PartyStore.memory.create")((
     tenantId: string,
     kind: Party["kind"],
