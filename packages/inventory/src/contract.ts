@@ -121,7 +121,7 @@ export const StockTransfer = Schema.Struct({
   status: StockTransferStatus,
   confirmedAt: Schema.NullOr(InstantString),
   completedAt: Schema.NullOr(InstantString),
-  lines: Schema.Array(StockTransferLine),
+  lines: Schema.Array(StockTransferLine).check(Schema.isMinLength(1)),
 }).check(Schema.makeFilter(
   (transfer) =>
     transfer.sourceWarehouseId !== transfer.destinationWarehouseId &&
