@@ -4,7 +4,7 @@ import * as Schema from "effect/Schema"
 
 import { Principal } from "../../auth/mod.ts"
 import { AuthorizationDenied } from "../../authorization/mod.ts"
-import { InventoryService } from "../../inventory/mod.ts"
+import { InventoryService, UnitOfMeasure } from "../../inventory/mod.ts"
 import { DatabaseFailure, FinancialMajorAmount } from "../../kernel/mod.ts"
 import { EventIdempotencyConflict } from "../../messaging/mod.ts"
 import {
@@ -131,7 +131,7 @@ export const GoodsReceiptLine = Schema.Struct({
   purchaseOrderLineId: Uuid,
   itemId: Uuid,
   quantity: Quantity,
-  unitOfMeasure: NonEmptyString,
+  unitOfMeasure: UnitOfMeasure,
 })
 
 export const GoodsReceipt = Schema.Struct({
