@@ -29,6 +29,7 @@ import {
   StockTransferInvalidState,
   StockTransferLine,
   StockUnavailable,
+  Warehouse,
 } from "../mod.ts"
 
 const principal = { userAccountId: "keeper", sessionId: "session" }
@@ -177,6 +178,7 @@ describe("inventory contract", () => {
         sku: "sku-1",
         name: "Widget",
       })
+      yield* Schema.decodeUnknownEffect(Warehouse)(warehouse)
       const balance = yield* inventory.receiveStock({
         principal,
         tenantId,
