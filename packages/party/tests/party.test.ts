@@ -17,6 +17,7 @@ import {
   PartyCapabilities,
   PartyCreatedEvent,
   PartyEventPublisher,
+  PartyRelationship,
   PartyRelationshipAlreadyExists,
   PartyRelationshipNotFound,
   PartyRelationshipRoleNotAssigned,
@@ -150,6 +151,7 @@ describe("party contract", () => {
         legalEntityId: legalEntity.id,
         kind: "customer",
       })
+      yield* Schema.decodeUnknownEffect(PartyRelationship)(relationship)
 
       assert.strictEqual(party.name, "ACME Indonesia")
       assert.strictEqual(identifier.scheme, "GLN")

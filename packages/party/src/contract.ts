@@ -80,10 +80,10 @@ export const PartyRepresentation = Schema.Struct({
 })
 
 export const PartyRelationship = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  partyId: Schema.String,
-  legalEntityId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  partyId: Uuid,
+  legalEntityId: Uuid,
   kind: PartyRelationshipKind,
   active: Schema.Boolean,
 })
