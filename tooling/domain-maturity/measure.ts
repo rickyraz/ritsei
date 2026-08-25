@@ -10,6 +10,8 @@ type DomainTarget = {
   readonly actionsExport: string
   readonly eventsExport: string
   readonly contractTests: readonly string[]
+  readonly publicationTest: { readonly path: string; readonly marker: string }
+  readonly catalogMarker: string
 }
 
 const targets: readonly DomainTarget[] = [
@@ -19,6 +21,11 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "IdentityTypedActionCatalog",
     eventsExport: "IdentityTypedEventCatalog",
     contractTests: ["packages/identity/tests/identity.test.ts"],
+    publicationTest: {
+      path: "packages/identity/tests/identity.postgres.test.ts",
+      marker: "UserAccountCreatedEvent",
+    },
+    catalogMarker: "IdentityTypedActionCatalog",
   },
   {
     domain: "party",
@@ -26,6 +33,11 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "PartyTypedActionCatalog",
     eventsExport: "PartyTypedEventCatalog",
     contractTests: ["packages/party/tests/party.test.ts"],
+    publicationTest: {
+      path: "packages/party/tests/party.postgres.test.ts",
+      marker: "PartyCreatedEvent",
+    },
+    catalogMarker: "PartyTypedActionCatalog",
   },
   {
     domain: "inventory",
@@ -33,6 +45,11 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "InventoryTypedActionCatalog",
     eventsExport: "InventoryTypedEventCatalog",
     contractTests: ["packages/inventory/tests/inventory.test.ts"],
+    publicationTest: {
+      path: "packages/inventory/tests/inventory.postgres.test.ts",
+      marker: "InventoryStockCorrectedEvent",
+    },
+    catalogMarker: "InventoryTypedActionCatalog",
   },
   {
     domain: "accounting",
@@ -40,6 +57,11 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "AccountingTypedActionCatalog",
     eventsExport: "AccountingTypedEventCatalog",
     contractTests: ["packages/accounting/tests/accounting.test.ts"],
+    publicationTest: {
+      path: "packages/accounting/tests/accounting.postgres.test.ts",
+      marker: "AccountingRevenuePostedEvent",
+    },
+    catalogMarker: "AccountingTypedActionCatalog",
   },
   {
     domain: "sales",
@@ -47,6 +69,11 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "SalesTypedActionCatalog",
     eventsExport: "SalesTypedEventCatalog",
     contractTests: ["packages/sales/tests/sales.test.ts"],
+    publicationTest: {
+      path: "packages/sales/tests/sales.postgres.test.ts",
+      marker: "SalesOrderConfirmedEvent",
+    },
+    catalogMarker: "SalesTypedActionCatalog",
   },
   {
     domain: "procurement",
@@ -54,6 +81,11 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "ProcurementTypedActionCatalog",
     eventsExport: "ProcurementTypedEventCatalog",
     contractTests: ["packages/procurement/tests/procurement.test.ts"],
+    publicationTest: {
+      path: "packages/procurement/tests/procurement.postgres.test.ts",
+      marker: "ProcurementPurchaseOrderConfirmedEvent",
+    },
+    catalogMarker: "ProcurementTypedActionCatalog",
   },
 ]
 
@@ -77,6 +109,14 @@ const exists = async (path: string) => {
   }
 }
 
+const contains = async (path: string, marker: string) => {
+  try {
+    return (await Deno.readTextFile(path)).includes(marker)
+  } catch {
+    return false
+  }
+}
+
 const results = []
 for (const target of targets) {
   const moduleExports = await import(target.module) as Record<string, unknown>
@@ -91,12 +131,25 @@ for (const target of targets) {
     entry.stability === "PUBLIC"
   )
   const tests = (await Promise.all(target.contractTests.map(exists))).every(Boolean)
-  const catalogCompatibility = await exists(catalogTest)
-  const level3 = publicAction && publicEvent && tests && catalogCompatibility
-  results.push({ target, level3, publicAction, publicEvent, tests, catalogCompatibility })
+  const catalogCompatibility = await contains(catalogTest, target.catalogMarker)
+  const publicationProof = await contains(
+    target.publicationTest.path,
+    target.publicationTest.marker,
+  )
+  const level3 = publicAction && publicEvent && tests && catalogCompatibility && publicationProof
+  results.push({
+    target,
+    level3,
+    publicAction,
+    publicEvent,
+    tests,
+    catalogCompatibility,
+    publicationProof,
+  })
   console.log(
     `${level3 ? "PASS" : "OPEN"} ${target.domain} ` +
-      `action=${publicAction} event=${publicEvent} tests=${tests} catalog=${catalogCompatibility}`,
+      `action=${publicAction} event=${publicEvent} tests=${tests} ` +
+      `catalog=${catalogCompatibility} publication=${publicationProof}`,
   )
 }
 
