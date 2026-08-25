@@ -52,7 +52,12 @@ export const SalesOrder = Schema.Struct({
   confirmedAt: Schema.NullOr(InstantString),
   total: Money,
   lines: Schema.Array(SalesOrderLine).check(Schema.isMinLength(1)),
-})
+}).check(Schema.makeFilter(
+  (order) =>
+    (order.status === "draft" && order.confirmedAt === null) ||
+    (order.status !== "draft" && order.confirmedAt !== null),
+  { expected: "sales order confirmation metadata consistent with status" },
+))
 
 export type Customer = Schema.Schema.Type<typeof Customer>
 export type Quotation = Schema.Schema.Type<typeof Quotation>

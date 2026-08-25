@@ -109,6 +109,24 @@ describe("sales contract", () => {
         Schema.decodeUnknownEffect(SalesOrder.fields.lines)([]),
       )
       assert.strictEqual(emptyLines._tag, "SchemaError")
+
+      const invalidConfirmationMetadata = yield* Effect.flip(
+        Schema.decodeUnknownEffect(SalesOrder)({
+          id: "00000000-0000-4000-8000-000000000031",
+          tenantId,
+          customerId: "00000000-0000-4000-8000-000000000032",
+          quotationId: null,
+          status: "draft",
+          confirmedAt: "2026-08-20T00:00:00.000Z",
+          total: "10.00",
+          lines: [{
+            itemId: "00000000-0000-4000-8000-000000000041",
+            quantity: "1",
+            unitPrice: "10.00",
+          }],
+        }),
+      )
+      assert.strictEqual(invalidConfirmationMetadata._tag, "SchemaError")
     }))
 
   it.effect("validates sales creation relationship IDs as UUIDs", () =>
