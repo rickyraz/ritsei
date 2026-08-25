@@ -14,8 +14,11 @@
 
 ## Policy
 
-RITSEI uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-with the concise, imperative, focused-history practices documented by
+RITSEI uses a type-first [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+format with an optional subsystem/package scope. This is RITSEI’s hybrid convention:
+the type stays first for changelog and release tooling, while the scope provides
+package-level navigation. It also follows the concise, imperative, focused-history
+practices documented by
 [Git](https://git-scm.com/book/en/v2/Distributed-Git-Contributing-to-a-Project)
 and [GitHub](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-open-source).
 “Silicon Valley standard” is not a formal authority; this is RITSEI’s explicit
