@@ -102,8 +102,8 @@ export const StockCorrection = Schema.Struct({
   itemId: Uuid,
   adjustment: SignedQuantity,
   unitOfMeasure: UnitOfMeasure,
-  reason: NonEmptyString,
-  idempotencyKey: NonEmptyString,
+  reason: TrimmedNonEmptyString,
+  idempotencyKey: TrimmedNonEmptyString,
 })
 export const StockReservationStatus = Schema.Literals(["active", "released", "fulfilled"])
 export const StockReservation = Schema.Struct({

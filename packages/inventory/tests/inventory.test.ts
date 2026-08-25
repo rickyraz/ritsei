@@ -526,6 +526,24 @@ describe("inventory contract", () => {
         idempotencyKey: " correction-1 ",
       })
       yield* Schema.decodeUnknownEffect(StockCorrection)(correction)
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockCorrection)({
+            ...correction,
+            reason: " Count correction ",
+          }),
+        ))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockCorrection)({
+            ...correction,
+            idempotencyKey: " correction-1 ",
+          }),
+        ))._tag,
+        "SchemaError",
+      )
       const repeated = yield* inventory.adjustStock({
         principal,
         tenantId,
