@@ -41,7 +41,7 @@ export const SalesOrder = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
   customerId: Uuid,
-  quotationId: Schema.NullOr(Schema.String),
+  quotationId: Schema.NullOr(Uuid),
   status: Schema.Literals(["draft", "confirmed", "cancelled"]),
   confirmedAt: Schema.NullOr(Schema.String),
   total: Money,
