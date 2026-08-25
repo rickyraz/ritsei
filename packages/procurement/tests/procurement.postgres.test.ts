@@ -885,6 +885,20 @@ it.effect.skipIf(databaseUrl === undefined)(
             InventoryService,
             inventory,
           )
+          const mismatchedReceiptItem = yield* Effect.flip(Effect.tryPromise({
+            try: () =>
+              client`
+              update procurement.purchase_receipt_lines
+              set item_id = ${uuidv7()}
+              where tenant_id = ${tenant.id} and receipt_id = ${first.id}
+                and purchase_order_line_id = ${lineId}
+            `,
+            catch: (cause) => cause,
+          }))
+          assert.strictEqual(
+            (mismatchedReceiptItem as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_lines_tenant_order_line_item_fkey",
+          )
           const replay = yield* Effect.provideService(
             procurement.receivePurchaseOrder(receiptInput),
             InventoryService,

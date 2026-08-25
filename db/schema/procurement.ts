@@ -99,6 +99,12 @@ export const purchaseOrderLines = procurementSchema.table("purchase_order_lines"
     table.purchaseOrderId,
     table.id,
   ),
+  unique("purchase_order_lines_tenant_order_id_item_id_key").on(
+    table.tenantId,
+    table.purchaseOrderId,
+    table.id,
+    table.itemId,
+  ),
   foreignKey({
     columns: [table.tenantId, table.purchaseOrderId],
     foreignColumns: [purchaseOrders.tenantId, purchaseOrders.id],
@@ -165,13 +171,19 @@ export const purchaseReceiptLines = procurementSchema.table("purchase_receipt_li
     name: "purchase_receipt_lines_tenant_receipt_fkey",
   }).onDelete("cascade"),
   foreignKey({
-    columns: [table.tenantId, table.purchaseOrderId, table.purchaseOrderLineId],
+    columns: [
+      table.tenantId,
+      table.purchaseOrderId,
+      table.purchaseOrderLineId,
+      table.itemId,
+    ],
     foreignColumns: [
       purchaseOrderLines.tenantId,
       purchaseOrderLines.purchaseOrderId,
       purchaseOrderLines.id,
+      purchaseOrderLines.itemId,
     ],
-    name: "purchase_receipt_lines_tenant_order_line_fkey",
+    name: "purchase_receipt_lines_tenant_order_line_item_fkey",
   }),
   check("purchase_receipt_lines_quantity_check", sql`${table.quantity} > 0`),
   check(
