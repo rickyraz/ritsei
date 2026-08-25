@@ -742,7 +742,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               { accountId: debitAccount!.id, debit: "12.50", credit: "0" },
               { accountId: creditAccount!.id, debit: "0", credit: "12.50" },
             ],
-            correlationId: `correlation-${uuidv7()}`,
+            correlationId: ` correlation-${uuidv7()} `,
           }
           const concurrentInput = {
             ...input,
@@ -764,13 +764,14 @@ it.effect.skipIf(databaseUrl === undefined)(
           assert.strictEqual(intent.status, "intent")
 
           const [queued] = yield* Effect.promise(() =>
-            client<{ job_type: string; idempotency_key: string }[]>`
-              select job_type, idempotency_key from process.jobs
+            client<{ job_type: string; idempotency_key: string; correlation_id: string }[]>`
+              select job_type, idempotency_key, correlation_id from process.jobs
               where tenant_id = ${tenant!.id} and idempotency_key = ${input.operationId}
             `
           )
           assert.strictEqual(queued!.job_type, "accounting.financial_operation.submit")
           assert.strictEqual(queued!.idempotency_key, input.operationId)
+          assert.strictEqual(queued!.correlation_id, input.correlationId.trim())
 
           const posted = yield* service.submitFinancialOperation({
             tenantId: tenant!.id,

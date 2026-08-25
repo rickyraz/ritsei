@@ -2606,6 +2606,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
         ? ledgerOption.value.authority
         : undefined
       const decoded = yield* Schema.decodeUnknownEffect(CreateFinancialJournalIntentInput)(input)
+      const normalizedCorrelationId = decoded.correlationId.trim()
       const operationType = operationTypeOverride ?? decoded.operationType
       if (operationType !== "journal_reverse") {
         yield* validateLines(decoded.lines)
@@ -2925,7 +2926,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
               tenantId: decoded.tenantId,
               operationId: decoded.operationId,
             },
-            correlationId: decoded.correlationId,
+            correlationId: normalizedCorrelationId,
           })
           return inserted!
         }),
