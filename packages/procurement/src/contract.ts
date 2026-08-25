@@ -155,7 +155,11 @@ export const GoodsReceipt = Schema.Struct({
   idempotencyKey: NonEmptyString,
   receivedAt: InstantString,
   lines: Schema.Array(GoodsReceiptLine).check(Schema.isMinLength(1)),
-})
+}).check(Schema.makeFilter(
+  (receipt) =>
+    new Set(receipt.lines.map((line) => line.purchaseOrderLineId)).size === receipt.lines.length,
+  { expected: "goods receipt lines must reference unique purchase-order lines" },
+))
 
 export type PurchaseReceiptLineInput = Schema.Schema.Type<typeof PurchaseReceiptLineInput>
 export type ReceivePurchaseOrder = Schema.Schema.Type<typeof ReceivePurchaseOrderInput>
