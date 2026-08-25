@@ -122,6 +122,23 @@ it.effect.skipIf(databaseUrl === undefined)(
               ) returning id
             `
           )
+          const blankApproval = yield* Effect.flip(Effect.tryPromise({
+            try: () =>
+              client`
+              update accounting.financial_cutover_controls
+              set status = 'approved', cutover_watermark = ' ',
+                verification_hash = 'test-hash', opening_balance_verified = true,
+                historical_boundary_verified = true, reconciliation_healthy = true,
+                backup_recovery_verified = true, evidence_artifact_id = ${evidenceArtifact!.id},
+                approved_by = 'test-operator', approved_at = now()
+              where tenant_id = ${tenant!.id} and legal_entity_id = ${legalEntity!.id}
+            `,
+            catch: (cause) => cause,
+          }))
+          assert.strictEqual(
+            (blankApproval as { constraint_name?: string }).constraint_name,
+            "financial_cutover_controls_approval_check",
+          )
           yield* Effect.promise(() =>
             client`
               update accounting.financial_cutover_controls
@@ -146,6 +163,19 @@ it.effect.skipIf(databaseUrl === undefined)(
               set financial_engine = 'tigerbeetle'
               where tenant_id = ${tenant!.id} and legal_entity_id = ${legalEntity!.id}
             `
+          )
+          const blankActivation = yield* Effect.flip(Effect.tryPromise({
+            try: () =>
+              client`
+              update accounting.financial_cutover_controls
+              set status = 'tigerbeetle', activated_by = ' ', activated_at = now()
+              where tenant_id = ${tenant!.id} and legal_entity_id = ${legalEntity!.id}
+            `,
+            catch: (cause) => cause,
+          }))
+          assert.strictEqual(
+            (blankActivation as { constraint_name?: string }).constraint_name,
+            "financial_cutover_controls_activation_check",
           )
           yield* Effect.promise(() =>
             client`
