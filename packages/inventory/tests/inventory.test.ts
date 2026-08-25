@@ -24,6 +24,7 @@ import {
   StockReservationIdempotencyConflict,
   StockReservationInvalidState,
   StockReservationLegalEntityMismatch,
+  StockTransfer,
   StockTransferDifferentLegalEntity,
   StockTransferInvalidState,
   StockTransferLine,
@@ -731,6 +732,7 @@ describe("inventory contract", () => {
           { itemId: cable.id, quantity: "3" },
         ],
       })
+      yield* Schema.decodeUnknownEffect(StockTransfer)(transfer)
       assert.strictEqual(transfer.status, "draft")
       assert.strictEqual(transfer.confirmedAt, null)
       assert.strictEqual(transfer.completedAt, null)

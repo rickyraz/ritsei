@@ -5,6 +5,7 @@ import * as Schema from "effect/Schema"
 import { Principal } from "../../auth/mod.ts"
 import type { AuthorizationDenied } from "../../authorization/mod.ts"
 import type { DatabaseFailure } from "../../kernel/mod.ts"
+import { EventEnvelope } from "../../messaging/mod.ts"
 import type { EventIdempotencyConflict } from "../../messaging/mod.ts"
 import type {
   InventoryReferenceNotFound,
@@ -54,6 +55,7 @@ const SignedQuantity = Schema.String.check(
   ),
 )
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const InstantString = EventEnvelope.fields.occurredAt
 export const UnitOfMeasure = Schema.String.check(Schema.isPattern(/^[A-Z][A-Z0-9_-]*$/))
 const UnitOfMeasureInput = NonEmptyString
 const DefaultUnitOfMeasure = UnitOfMeasureInput.pipe(
@@ -108,14 +110,14 @@ export const StockTransferLine = Schema.Struct({
   quantity: Quantity,
 })
 export const StockTransfer = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  legalEntityId: Schema.String,
-  sourceWarehouseId: Schema.String,
-  destinationWarehouseId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  legalEntityId: Uuid,
+  sourceWarehouseId: Uuid,
+  destinationWarehouseId: Uuid,
   status: StockTransferStatus,
-  confirmedAt: Schema.NullOr(Schema.String),
-  completedAt: Schema.NullOr(Schema.String),
+  confirmedAt: Schema.NullOr(InstantString),
+  completedAt: Schema.NullOr(InstantString),
   lines: Schema.Array(StockTransferLine),
 })
 
