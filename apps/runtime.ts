@@ -18,7 +18,7 @@ import {
   WebCryptoLive,
 } from "../packages/kernel/mod.ts"
 import { makeMessagingService, MessagingService } from "../packages/messaging/mod.ts"
-import { makePartyService, PartyService } from "../packages/party/mod.ts"
+import { makePartyService, PartyEventPublisherLive, PartyService } from "../packages/party/mod.ts"
 import { makeSalesService, SalesService } from "../packages/sales/mod.ts"
 import { InventoryService, makeInventoryService } from "../packages/inventory/mod.ts"
 import { ProcurementLive } from "../packages/procurement/mod.ts"
@@ -67,12 +67,15 @@ export const serviceLayers = (
 
   const BusinessRequirements = Layer.mergeAll(PlatformCore, AuthorizationLive)
 
-  const PartyLive = Layer.effect(PartyService, makePartyService).pipe(
-    Layer.provide(BusinessRequirements),
-  )
-
   const MessagingLive = Layer.effect(MessagingService, makeMessagingService).pipe(
     Layer.provide(DatabaseLive),
+  )
+
+  const PartyLive = Layer.effect(PartyService, makePartyService).pipe(
+    Layer.provide(Layer.merge(
+      BusinessRequirements,
+      PartyEventPublisherLive.pipe(Layer.provide(MessagingLive)),
+    )),
   )
 
   const SalesLive = Layer.effect(SalesService, makeSalesService).pipe(

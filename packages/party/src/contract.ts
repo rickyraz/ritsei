@@ -4,6 +4,7 @@ import * as Schema from "effect/Schema"
 import { Principal } from "../../auth/mod.ts"
 import type { AuthorizationDenied } from "../../authorization/mod.ts"
 import type { DatabaseFailure } from "../../kernel/mod.ts"
+import type { EventIdempotencyConflict } from "../../messaging/mod.ts"
 import type {
   BranchAlreadyExists,
   ExternalIdentifierAlreadyAssigned,
@@ -170,7 +171,13 @@ export const SetPartyRepresentationActiveInput = Schema.Struct({
 export interface PartyService {
   readonly create: (
     input: unknown,
-  ) => Effect.Effect<Party, AuthorizationDenied | DatabaseFailure | Schema.SchemaError>
+  ) => Effect.Effect<
+    Party,
+    | AuthorizationDenied
+    | DatabaseFailure
+    | EventIdempotencyConflict
+    | Schema.SchemaError
+  >
   readonly createLegalEntity: (
     input: unknown,
   ) => Effect.Effect<

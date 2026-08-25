@@ -36,6 +36,7 @@ export type ActionEffect =
   | "revenue_journal_posted"
   | "sales_order_confirmed"
   | "purchase_order_confirmed"
+  | "party_created"
   | "financial_intent_recorded"
 
 export type EventDeliveryExpectation = "at_least_once"

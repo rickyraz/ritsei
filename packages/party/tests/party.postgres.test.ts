@@ -19,12 +19,15 @@ import {
   makePartyService,
   OrganizationRequired,
   PartyCapabilities,
+  PartyCreatedEvent,
+  PartyEventPublisher,
   PartyRelationshipAlreadyExists,
   PartyRelationshipNotFound,
   PartyRelationshipRoleNotAssigned,
   PartyRepresentationAlreadyExists,
   PartyRepresentationNotFound,
 } from "../mod.ts"
+import { makeMessagingService } from "../../messaging/mod.ts"
 
 const databaseUrl = Deno.env.get("DATABASE_URL")
 
@@ -47,15 +50,41 @@ it.effect.skipIf(databaseUrl === undefined)(
         const tenant = yield* auth.createTenant({ slug: `party-${uuidv7()}` })
         yield* Effect.gen(function* () {
           const authorization = yield* AuthorizationService
+          const messaging = yield* makeMessagingService.pipe(
+            Effect.provideService(Database, database),
+          )
           const party = yield* makePartyService.pipe(
             Effect.provideService(Database, database),
             Effect.provideService(AuthorizationService, authorization),
+            Effect.provideService(PartyEventPublisher, { append: messaging.append }),
           )
           const first = yield* party.create({
             principal,
             tenantId: tenant.id,
             kind: "organization",
             name: "First",
+          })
+          const [createdEvent] = yield* Effect.promise(() =>
+            client<{
+              event_type: string
+              event_version: number
+              aggregate_type: string
+              aggregate_id: string
+              payload: { partyId: string; kind: string }
+            }[]>`
+              select event_type, event_version, aggregate_type, aggregate_id, payload
+              from messaging.event_outbox
+              where tenant_id = ${tenant.id}
+                and event_type = ${PartyCreatedEvent.id}
+                and aggregate_id = ${first.id}
+            `
+          )
+          assert.deepStrictEqual(createdEvent, {
+            event_type: PartyCreatedEvent.id,
+            event_version: PartyCreatedEvent.version,
+            aggregate_type: PartyCreatedEvent.aggregateType,
+            aggregate_id: first.id,
+            payload: { partyId: first.id, kind: "organization" },
           })
           const second = yield* party.create({
             principal,

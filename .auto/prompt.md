@@ -75,8 +75,11 @@ measurement.
 ## What's Been Tried
 
 - Inventory, Sales, and Accounting already have bounded PUBLIC Level 3 action/event slices.
-- Procurement has bounded Level 2 SupplierAccount, PurchaseOrder, and GoodsReceipt behavior and is
-  the smallest next promotion candidate.
+- Procurement's bounded purchase-order confirmation has now been promoted to the metric's fourth
+  Level 3 provider; its canonical roadmap/architecture wording still needs to be synchronized.
 - Identity and Party are partial and need carefully bounded action/event ownership before promotion.
+- A Party experiment exposed that optional generic MessagingService resolution lets outer test layers
+  activate production event publication unexpectedly. Use a dedicated Party-owned event-publisher
+  composition boundary instead of relying on optional generic service presence.
 - The previous autoresearch session completed analytic-plane documentation; that objective is closed
   and is not part of this session.

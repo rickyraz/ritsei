@@ -1,8 +1,11 @@
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 
 import { AuthorizationService } from "../../authorization/mod.ts"
+import { Database, uuidv7 } from "../../kernel/mod.ts"
 import { PartyCapabilities } from "./capabilities.ts"
+import { PartyCreatedEvent, PartyCreatedEventPayload, PartyEventPublisher } from "./events.ts"
 import {
   AssignPartyRoleInput,
   AttachExternalIdentifierInput,
@@ -27,6 +30,8 @@ export const makePartyServiceFromStore = <R>(
   Effect.gen(function* () {
     const partyStore = yield* store
     const authorization = yield* AuthorizationService
+    const databaseOption = yield* Effect.serviceOption(Database)
+    const publisherOption = yield* Effect.serviceOption(PartyEventPublisher)
 
     const create = Effect.fn("PartyService.create")(function* (input: unknown) {
       const decoded = yield* Schema.decodeUnknownEffect(CreatePartyInput)(input)
@@ -35,7 +40,33 @@ export const makePartyServiceFromStore = <R>(
         tenantId: decoded.tenantId,
         capability: PartyCapabilities.partyCreate,
       })
-      return yield* partyStore.create(decoded.tenantId, decoded.kind, decoded.name.trim())
+      const createAndPublish = Effect.gen(function* () {
+        const party = yield* partyStore.create(decoded.tenantId, decoded.kind, decoded.name.trim())
+        if (Option.isNone(publisherOption)) return party
+        const payload = yield* Schema.decodeUnknownEffect(PartyCreatedEventPayload)({
+          partyId: party.id,
+          kind: party.kind,
+        })
+        yield* publisherOption.value.append({
+          eventId: uuidv7(),
+          eventType: PartyCreatedEvent.id,
+          eventVersion: PartyCreatedEvent.version,
+          tenantId: decoded.tenantId,
+          aggregateType: PartyCreatedEvent.aggregateType,
+          aggregateId: party.id,
+          commandId: `party.create:${party.id}`,
+          correlationId: `party:${party.id}`,
+          causationId: null,
+          idempotencyKey: `party.created:${party.id}`,
+          actorPrincipalId: decoded.principal.userAccountId,
+          occurredAt: new Date().toISOString(),
+          payload,
+        })
+        return party
+      })
+      return Option.isSome(databaseOption)
+        ? yield* databaseOption.value.withTransaction(createAndPublish, "party.create.atomic")
+        : yield* createAndPublish
     })
     const createLegalEntity = Effect.fn("PartyService.createLegalEntity")(
       function* (input: unknown) {
