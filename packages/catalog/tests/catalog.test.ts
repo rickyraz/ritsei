@@ -277,7 +277,7 @@ describe("catalog compatibility", () => {
 
       yield* Schema.decodeUnknownEffect(SalesConfirmOrderAction.inputSchema)({
         principal,
-        tenantId: "tenant-1",
+        tenantId: "00000000-0000-4000-8000-000000000001",
         orderId: "00000000-0000-4000-8000-000000000031",
         commandId: "command-1",
         correlationId: "correlation-1",

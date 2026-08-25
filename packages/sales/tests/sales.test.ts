@@ -91,6 +91,19 @@ describe("sales contract", () => {
         }),
       )
       assert.strictEqual(error._tag, "SchemaError")
+
+      const invalidTenant = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ConfirmOrderInput)({
+          principal,
+          tenantId: "not-a-uuid",
+          orderId: "00000000-0000-4000-8000-000000000031",
+          commandId: "command-1",
+          correlationId: "correlation-1",
+          causationId: null,
+          idempotencyKey: "confirmation-1",
+        }),
+      )
+      assert.strictEqual(invalidTenant._tag, "SchemaError")
     }))
 
   it.effect("validates sales creation relationship IDs as UUIDs", () =>

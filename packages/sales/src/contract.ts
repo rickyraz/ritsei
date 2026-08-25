@@ -59,7 +59,7 @@ export type Quotation = Schema.Schema.Type<typeof Quotation>
 export type SalesOrderLine = Schema.Schema.Type<typeof SalesOrderLine>
 export type SalesOrder = Schema.Schema.Type<typeof SalesOrder>
 
-const ScopedInput = { principal: Principal, tenantId: Schema.String }
+const ScopedInput = { principal: Principal, tenantId: Uuid }
 export const CreateCustomerInput = Schema.Struct({
   ...ScopedInput,
   name: Schema.String,
