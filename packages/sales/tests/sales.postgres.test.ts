@@ -383,6 +383,33 @@ it.effect.skipIf(databaseUrl === undefined)(
 )
 
 it.effect.skipIf(databaseUrl === undefined)(
+  "rejects noncanonical customer email values in PostgreSQL",
+  () =>
+    withTemporaryDatabase(databaseUrl!, (client) =>
+      Effect.gen(function* () {
+        yield* runMigrations(client)
+        const [tenant] = yield* Effect.promise(() =>
+          client<{ id: string }[]>`
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
+          `
+        )
+        for (const email of ["   ", "Alice@EXAMPLE.COM", " alice@example.com "]) {
+          const failure = yield* postgresFailure(() =>
+            client`
+              insert into sales.customers (tenant_id, name, email)
+              values (${tenant!.id}, 'Invalid Email Customer', ${email})
+            `
+          )
+          assert.strictEqual((failure as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (failure as { constraint_name?: string }).constraint_name,
+            "customers_email_normalization_check",
+          )
+        }
+      })),
+)
+
+it.effect.skipIf(databaseUrl === undefined)(
   "rejects a cross-tenant customer reference through the PostgreSQL constraint",
   () =>
     withTemporaryDatabase(databaseUrl!, (client) =>

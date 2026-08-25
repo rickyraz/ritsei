@@ -34,6 +34,10 @@ export const customers = salesSchema.table("customers", {
 }, (table) => [
   unique("customers_tenant_id_id_key").on(table.tenantId, table.id),
   unique("customers_tenant_email_key").on(table.tenantId, table.email),
+  check(
+    "customers_email_normalization_check",
+    sql`${table.email} = lower(btrim(${table.email})) and ${table.email} ~ '[^[:space:]]'`,
+  ),
   foreignKey({
     columns: [table.tenantId],
     foreignColumns: [tenants.id],
