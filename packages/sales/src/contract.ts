@@ -21,7 +21,7 @@ const Quantity = Schema.String.check(Schema.isPattern(/^[1-9]\d*$/))
 const InstantString = EventEnvelope.fields.occurredAt
 
 export const Customer = Schema.Struct({
-  id: Schema.String,
+  id: Uuid,
   tenantId: Schema.String,
   name: Schema.String,
   email: Schema.String,

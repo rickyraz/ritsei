@@ -10,6 +10,7 @@ import {
   MessagingService,
 } from "../../messaging/mod.ts"
 import {
+  Customer,
   CustomerAlreadyExists,
   makeSalesTestLayer,
   SalesOrder,
@@ -82,6 +83,7 @@ describe("sales contract", () => {
           name: "ACME",
           email: "event@acme.test",
         })
+        yield* Schema.decodeUnknownEffect(Customer)(customer)
         const order = yield* sales.createOrder({
           principal,
           tenantId,
