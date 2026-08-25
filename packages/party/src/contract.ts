@@ -53,9 +53,9 @@ export const ExternalIdentifier = Schema.Struct({
 })
 
 export const LegalEntity = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  organizationId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  organizationId: Uuid,
 })
 
 export const Branch = Schema.Struct({

@@ -7,6 +7,7 @@ import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authoriza
 import {
   BranchAlreadyExists,
   ExternalIdentifierAlreadyAssigned,
+  LegalEntity,
   LegalEntityAlreadyExists,
   LegalEntityNotFound,
   makePartyTestLayer,
@@ -130,6 +131,7 @@ describe("party contract", () => {
         tenantId,
         organizationId: party.id,
       })
+      yield* Schema.decodeUnknownEffect(LegalEntity)(legalEntity)
       const branch = yield* service.createBranch({
         principal,
         tenantId,
