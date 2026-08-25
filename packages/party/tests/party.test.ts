@@ -10,6 +10,7 @@ import {
   CreateBranchInput,
   CreateLegalEntityInput,
   CreatePartyInput,
+  CreatePartyRepresentationInput,
   ExternalIdentifier,
   ExternalIdentifierAlreadyAssigned,
   LegalEntity,
@@ -282,6 +283,13 @@ describe("party contract", () => {
           partyId: party.id,
           kind: "representative",
         }
+        const invalidRepresentation = yield* Effect.flip(
+          Schema.decodeUnknownEffect(CreatePartyRepresentationInput)({
+            ...input,
+            userAccountId: "not-a-uuid",
+          }),
+        )
+        assert.strictEqual(invalidRepresentation._tag, "SchemaError")
         const representation = yield* service.createPartyRepresentation(input)
         yield* Schema.decodeUnknownEffect(PartyRepresentation)(representation)
         assert.strictEqual(representation.active, true)
@@ -309,7 +317,7 @@ describe("party contract", () => {
         assert.instanceOf(
           yield* Effect.flip(service.createPartyRepresentation({
             ...input,
-            userAccountId: "missing",
+            userAccountId: "00000000-0000-4000-8000-000000000011",
           })),
           PartyRepresentationUserAccountNotFound,
         )

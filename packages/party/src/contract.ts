@@ -156,9 +156,9 @@ export const CreateBranchInput = Schema.Struct({
 
 export const CreatePartyRepresentationInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  userAccountId: Schema.String,
-  partyId: Schema.String,
+  tenantId: Uuid,
+  userAccountId: Uuid,
+  partyId: Uuid,
   kind: PartyRepresentationKind,
 })
 
