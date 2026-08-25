@@ -16,6 +16,7 @@ import {
   InventoryService,
   InventoryUnitOfMeasureMismatch,
   InventoryWarehouseLegalEntityMismatch,
+  Item,
   makeInventoryTestLayer,
   StockBalance,
   StockCorrection,
@@ -179,6 +180,7 @@ describe("inventory contract", () => {
         name: "Widget",
       })
       yield* Schema.decodeUnknownEffect(Warehouse)(warehouse)
+      yield* Schema.decodeUnknownEffect(Item)(item)
       const balance = yield* inventory.receiveStock({
         principal,
         tenantId,

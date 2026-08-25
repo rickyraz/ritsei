@@ -70,8 +70,8 @@ export const Warehouse = Schema.Struct({
   name: Schema.String,
 })
 export const Item = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
   sku: Schema.String,
   name: Schema.String,
   unitOfMeasure: UnitOfMeasure,
