@@ -130,6 +130,25 @@ describe("sales contract", () => {
       assert.strictEqual(invalidConfirmationMetadata._tag, "SchemaError")
       assert.strictEqual(
         (yield* Effect.flip(
+          Schema.decodeUnknownEffect(SalesOrder)({
+            id: "00000000-0000-4000-8000-000000000031",
+            tenantId,
+            customerId: "00000000-0000-4000-8000-000000000032",
+            quotationId: null,
+            status: "draft",
+            confirmedAt: null,
+            total: "0.01",
+            lines: [{
+              itemId: "00000000-0000-4000-8000-000000000041",
+              quantity: "1",
+              unitPrice: "10.00",
+            }],
+          }),
+        ))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
           Schema.decodeUnknownEffect(CreateCustomerInput)({
             principal,
             tenantId,

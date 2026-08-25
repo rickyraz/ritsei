@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 
 import { Principal } from "../../auth/mod.ts"
-import { FinancialMajorAmount } from "../../kernel/mod.ts"
+import { FinancialMajorAmount, requireExactMajorToMinor } from "../../kernel/mod.ts"
 import { EventEnvelope, EventIdempotencyConflict } from "../../messaging/mod.ts"
 import {
   CustomerAlreadyExists,
@@ -57,6 +57,15 @@ export const SalesOrder = Schema.Struct({
     (order.status === "draft" && order.confirmedAt === null) ||
     (order.status !== "draft" && order.confirmedAt !== null),
   { expected: "sales order confirmation metadata consistent with status" },
+)).check(Schema.makeFilter(
+  (order) => {
+    const lineTotal = order.lines.reduce(
+      (total, line) => total + requireExactMajorToMinor(line.unitPrice, 2) * BigInt(line.quantity),
+      0n,
+    )
+    return lineTotal === requireExactMajorToMinor(order.total, 2)
+  },
+  { expected: "sales order total must equal its line totals" },
 ))
 
 export type Customer = Schema.Schema.Type<typeof Customer>
