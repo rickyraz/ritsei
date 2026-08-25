@@ -235,8 +235,8 @@ export const PostJournalInput = Schema.Struct({
 export const ConfigureRevenuePostingInput = Schema.Struct({
   ...ScopedInput,
   legalEntityId: Schema.String,
-  receivableAccountId: Schema.String,
-  revenueAccountId: Schema.String,
+  receivableAccountId: Uuid,
+  revenueAccountId: Uuid,
 }).check(Schema.makeFilter(
   (profile) => profile.receivableAccountId !== profile.revenueAccountId,
   { expected: "revenue posting accounts must be distinct" },

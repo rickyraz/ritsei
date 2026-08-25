@@ -473,6 +473,12 @@ describe("accounting contract", () => {
         }),
       )
       assert.strictEqual(inputFailure._tag, "SchemaError")
+      const malformedReceivable = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ConfigureRevenuePostingInput.fields.receivableAccountId)(
+          "not-a-uuid",
+        ),
+      )
+      assert.strictEqual(malformedReceivable._tag, "SchemaError")
       const outputFailure = yield* Effect.flip(
         Schema.decodeUnknownEffect(RevenuePostingProfile)({
           tenantId,
