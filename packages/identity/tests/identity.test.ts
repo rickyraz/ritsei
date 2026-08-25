@@ -31,6 +31,7 @@ import {
 
 const identityTenantId = "00000000-0000-4000-8000-000000000001"
 const identityDeniedTenantId = "00000000-0000-4000-8000-000000000002"
+const missingUserAccountId = "00000000-0000-4000-8000-000000000099"
 
 const withUserAccount = <A, E>(program: Effect.Effect<A, E, UserAccountService>) =>
   Effect.provide(program, makeUserAccountTestLayer())
@@ -169,12 +170,17 @@ describe("user account contract", () => {
         )
         assert.instanceOf(
           yield* Effect.flip(service.update({
-            id: "00000000-0000-4000-8000-000000000099",
+            id: missingUserAccountId,
             email: "missing@example.com",
           })),
           UserAccountNotFound,
         )
-        assert.instanceOf(yield* Effect.flip(service.remove("missing")), UserAccountNotFound)
+        assert.instanceOf(
+          yield* Effect.flip(service.remove(missingUserAccountId)),
+          UserAccountNotFound,
+        )
+        const invalidLifecycleId = yield* Effect.flip(service.remove("not-a-uuid"))
+        assert.strictEqual(invalidLifecycleId._tag, "SchemaError")
       }),
     ))
 
@@ -201,7 +207,7 @@ describe("user account contract", () => {
         )
         assert.instanceOf(
           yield* Effect.flip(service.update({
-            id: "00000000-0000-4000-8000-000000000099",
+            id: missingUserAccountId,
             email: "failure@example.com",
           })),
           DatabaseFailure,
@@ -241,15 +247,21 @@ describe("user account contract", () => {
         const created = yield* service.create({ email: "many@example.com" })
         assert.deepStrictEqual(yield* service.getByIds([]), [])
         assert.deepStrictEqual(
-          yield* service.getByIds([created.id, "missing"]),
+          yield* service.getByIds([created.id, missingUserAccountId]),
           [created],
         )
         assert.instanceOf(
-          yield* Effect.flip(service.getAuthenticationState("missing")),
+          yield* Effect.flip(service.getAuthenticationState(missingUserAccountId)),
           UserAccountNotFound,
         )
-        assert.instanceOf(yield* Effect.flip(service.disable("missing")), UserAccountNotFound)
-        assert.instanceOf(yield* Effect.flip(service.enable("missing")), UserAccountNotFound)
+        assert.instanceOf(
+          yield* Effect.flip(service.disable(missingUserAccountId)),
+          UserAccountNotFound,
+        )
+        assert.instanceOf(
+          yield* Effect.flip(service.enable(missingUserAccountId)),
+          UserAccountNotFound,
+        )
       }),
     ))
 

@@ -16,6 +16,7 @@ const LowercaseTrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
 ))
 const InstantString = EventEnvelope.fields.occurredAt
 const Uuid = Schema.String.check(Schema.isUUID())
+export const UserAccountId = Uuid
 
 export const CreateUserAccountInput = Schema.Struct({
   email: NonEmptyString,
@@ -72,16 +73,23 @@ export interface UserAccountService {
     id: string,
   ) => Effect.Effect<
     UserAccount,
-    import("./errors.ts").UserAccountNotFound | import("../../kernel/mod.ts").DatabaseFailure
+    | import("./errors.ts").UserAccountNotFound
+    | import("effect/Schema").SchemaError
+    | import("../../kernel/mod.ts").DatabaseFailure
   >
   readonly getByIds: (
     ids: readonly string[],
-  ) => Effect.Effect<readonly UserAccount[], import("../../kernel/mod.ts").DatabaseFailure>
+  ) => Effect.Effect<
+    readonly UserAccount[],
+    import("effect/Schema").SchemaError | import("../../kernel/mod.ts").DatabaseFailure
+  >
   readonly getAuthenticationState: (
     id: string,
   ) => Effect.Effect<
     UserAccountAuthenticationState,
-    import("./errors.ts").UserAccountNotFound | import("../../kernel/mod.ts").DatabaseFailure
+    | import("./errors.ts").UserAccountNotFound
+    | import("effect/Schema").SchemaError
+    | import("../../kernel/mod.ts").DatabaseFailure
   >
   readonly list: () => Effect.Effect<
     readonly UserAccount[],
@@ -100,19 +108,25 @@ export interface UserAccountService {
     id: string,
   ) => Effect.Effect<
     UserAccount,
-    import("./errors.ts").UserAccountNotFound | import("../../kernel/mod.ts").DatabaseFailure
+    | import("./errors.ts").UserAccountNotFound
+    | import("effect/Schema").SchemaError
+    | import("../../kernel/mod.ts").DatabaseFailure
   >
   readonly enable: (
     id: string,
   ) => Effect.Effect<
     UserAccount,
-    import("./errors.ts").UserAccountNotFound | import("../../kernel/mod.ts").DatabaseFailure
+    | import("./errors.ts").UserAccountNotFound
+    | import("effect/Schema").SchemaError
+    | import("../../kernel/mod.ts").DatabaseFailure
   >
   readonly remove: (
     id: string,
   ) => Effect.Effect<
     void,
-    import("./errors.ts").UserAccountNotFound | import("../../kernel/mod.ts").DatabaseFailure
+    | import("./errors.ts").UserAccountNotFound
+    | import("effect/Schema").SchemaError
+    | import("../../kernel/mod.ts").DatabaseFailure
   >
 }
 

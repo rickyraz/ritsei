@@ -61,7 +61,7 @@ export const makeAuthService = Effect.gen(function* () {
     const decoded = yield* Schema.decodeUnknownEffect(IssueSessionInput)(input)
     const account = yield* userAccounts.getAuthenticationState(decoded.userAccountId).pipe(
       Effect.mapError((error) =>
-        error instanceof UserAccountNotFound
+        error instanceof UserAccountNotFound || error instanceof Schema.SchemaError
           ? new SessionUserAccountNotFound({ userAccountId: decoded.userAccountId })
           : error
       ),
@@ -94,7 +94,9 @@ export const makeAuthService = Effect.gen(function* () {
     if (row === undefined) return yield* Effect.fail(new InvalidSessionToken({}))
     const account = yield* userAccounts.getAuthenticationState(row.userAccountId).pipe(
       Effect.mapError((error) =>
-        error instanceof UserAccountNotFound ? new InvalidSessionToken({}) : error
+        error instanceof UserAccountNotFound || error instanceof Schema.SchemaError
+          ? new InvalidSessionToken({})
+          : error
       ),
     )
     if (

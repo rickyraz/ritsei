@@ -22,5 +22,5 @@ export class UserAccountAlreadyExists
 
 export class UserAccountNotFound
   extends Schema.TaggedError<UserAccountNotFound>()("UserAccountNotFound", {
-    id: Schema.String,
+    id: Uuid,
   }) {}
