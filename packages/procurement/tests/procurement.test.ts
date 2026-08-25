@@ -680,7 +680,7 @@ describe("procurement contract", () => {
         tenantId,
         purchaseOrderId: confirmed.id,
         warehouseId: warehouse.id,
-        idempotencyKey: "receipt-1",
+        idempotencyKey: " receipt-1 ",
         lines: [{ purchaseOrderLineId: lineId, quantity: "1" }],
       }
       const duplicateReceiptLines = yield* Effect.flip(
@@ -695,6 +695,13 @@ describe("procurement contract", () => {
       assert.strictEqual(duplicateReceiptLines._tag, "SchemaError")
       const first = yield* procurement.receivePurchaseOrder(firstInput)
       yield* Schema.decodeUnknownEffect(GoodsReceipt)(first)
+      assert.strictEqual(first.idempotencyKey, "receipt-1")
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(GoodsReceipt)({ ...first, idempotencyKey: " receipt-1 " }),
+        ))._tag,
+        "SchemaError",
+      )
       assert.strictEqual(
         (yield* Effect.flip(
           Schema.decodeUnknownEffect(GoodsReceipt)({ ...first, lines: [] }),
@@ -731,7 +738,10 @@ describe("procurement contract", () => {
         ))._tag,
         "SchemaError",
       )
-      const replay = yield* procurement.receivePurchaseOrder(firstInput)
+      const replay = yield* procurement.receivePurchaseOrder({
+        ...firstInput,
+        idempotencyKey: "receipt-1",
+      })
       assert.strictEqual(replay.id, first.id)
       assert.strictEqual(replay.lines[0]?.quantity, "1")
 

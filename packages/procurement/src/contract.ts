@@ -29,6 +29,10 @@ import {
 
 const Uuid = Schema.String.check(Schema.isUUID())
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
 const IsoTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/
 const InstantString = Schema.String.check(
   Schema.isPattern(IsoTimestamp),
@@ -160,7 +164,7 @@ export const GoodsReceipt = Schema.Struct({
   tenantId: Uuid,
   purchaseOrderId: Uuid,
   warehouseId: Uuid,
-  idempotencyKey: NonEmptyString,
+  idempotencyKey: TrimmedNonEmptyString,
   receivedAt: InstantString,
   lines: Schema.Array(GoodsReceiptLine).check(Schema.isMinLength(1)),
 }).check(Schema.makeFilter(

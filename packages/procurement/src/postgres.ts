@@ -420,6 +420,7 @@ export const makeProcurementService = Effect.gen(function* () {
           tenantId: decoded.tenantId,
           capability: ProcurementCapabilities.purchaseReceiptReceive,
         })
+        const normalizedIdempotencyKey = decoded.idempotencyKey.trim()
         const lines = canonicalReceiptLines(decoded.lines)
         const duplicateLine = lines.find((line, index) =>
           index > 0 && lines[index - 1]!.purchaseOrderLineId === line.purchaseOrderLineId
@@ -442,7 +443,7 @@ export const makeProcurementService = Effect.gen(function* () {
                   .from(purchaseReceipts)
                   .where(and(
                     eq(purchaseReceipts.tenantId, decoded.tenantId),
-                    eq(purchaseReceipts.idempotencyKey, decoded.idempotencyKey),
+                    eq(purchaseReceipts.idempotencyKey, normalizedIdempotencyKey),
                   ))
                   .for("update"),
               "procurement.purchase_receipt.idempotency",
@@ -470,7 +471,7 @@ export const makeProcurementService = Effect.gen(function* () {
               new PurchaseReceiptIdempotencyConflict({
                 tenantId: decoded.tenantId,
                 purchaseOrderId: decoded.purchaseOrderId,
-                idempotencyKey: decoded.idempotencyKey,
+                idempotencyKey: normalizedIdempotencyKey,
               }),
             )
         return yield* database.withTransaction(
@@ -597,7 +598,7 @@ export const makeProcurementService = Effect.gen(function* () {
                   tenantId: decoded.tenantId,
                   purchaseOrderId: decoded.purchaseOrderId,
                   warehouseId: decoded.warehouseId,
-                  idempotencyKey: decoded.idempotencyKey,
+                  idempotencyKey: normalizedIdempotencyKey,
                 }).returning(purchaseReceiptSelection),
               "procurement.purchase_receipt.create",
             )
@@ -661,7 +662,7 @@ export const makeProcurementService = Effect.gen(function* () {
               ? new PurchaseReceiptIdempotencyConflict({
                 tenantId: decoded.tenantId,
                 purchaseOrderId: decoded.purchaseOrderId,
-                idempotencyKey: decoded.idempotencyKey,
+                idempotencyKey: normalizedIdempotencyKey,
               })
               : error
           ),
