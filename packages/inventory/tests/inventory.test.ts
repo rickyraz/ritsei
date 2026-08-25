@@ -24,6 +24,7 @@ import {
   StockReservationLegalEntityMismatch,
   StockTransferDifferentLegalEntity,
   StockTransferInvalidState,
+  StockTransferLine,
   StockUnavailable,
 } from "../mod.ts"
 
@@ -113,6 +114,17 @@ describe("inventory contract", () => {
           reason: "overflow",
           ...correctionMetadata,
           idempotencyKey: "overflow",
+        }),
+      )
+      assert.strictEqual(error._tag, "SchemaError")
+    }))
+
+  it.effect("bounds positive inventory quantities to PostgreSQL bigint", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        Schema.decodeUnknownEffect(StockTransferLine)({
+          itemId: "item",
+          quantity: "9223372036854775808",
         }),
       )
       assert.strictEqual(error._tag, "SchemaError")

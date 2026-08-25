@@ -30,7 +30,12 @@ import type {
 } from "./errors.ts"
 
 const Uuid = Schema.String.check(Schema.isUUID())
-const Quantity = Schema.String.check(Schema.isPattern(/^[1-9]\d*$/))
+const Quantity = Schema.String.check(
+  Schema.makeFilter(
+    (value) => /^[1-9]\d*$/.test(value) && BigInt(value) <= 9_223_372_036_854_775_807n,
+    { expected: "a positive PostgreSQL bigint quantity" },
+  ),
+)
 const SignedQuantity = Schema.String.check(
   Schema.makeFilter(
     (value) => {
