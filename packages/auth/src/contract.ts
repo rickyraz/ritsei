@@ -1,0 +1,72 @@
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+
+const PositiveSeconds = Schema.Int.check(Schema.isGreaterThan(0))
+const NonBlankString = Schema.String.check(Schema.isPattern(/\S/))
+
+export const CreateTenantInput = Schema.Struct({
+  slug: Schema.String,
+  timezone: Schema.optionalKey(NonBlankString),
+})
+export const IssueSessionInput = Schema.Struct({
+  userAccountId: Schema.String,
+  ttlSeconds: PositiveSeconds,
+})
+export const Tenant = Schema.Struct({
+  id: Schema.String,
+  slug: Schema.String,
+  timezone: Schema.String,
+})
+export const Session = Schema.Struct({
+  id: Schema.String,
+  userAccountId: Schema.String,
+  expiresAt: Schema.String,
+})
+export const Principal = Schema.Struct({
+  userAccountId: Schema.String,
+  sessionId: Schema.String,
+})
+
+export type Tenant = Schema.Schema.Type<typeof Tenant>
+export type Session = Schema.Schema.Type<typeof Session>
+export type Principal = Schema.Schema.Type<typeof Principal>
+
+export interface IssuedSession {
+  readonly token: string
+  readonly session: Session
+}
+
+export interface AuthService {
+  readonly createTenant: (
+    input: unknown,
+  ) => Effect.Effect<
+    Tenant,
+    | import("./errors.ts").TenantAlreadyExists
+    | import("../../kernel/mod.ts").DatabaseFailure
+    | Schema.SchemaError
+  >
+  readonly issueSession: (
+    input: unknown,
+  ) => Effect.Effect<
+    IssuedSession,
+    | import("./errors.ts").SessionUserAccountNotFound
+    | import("./errors.ts").SessionUserAccountDisabled
+    | import("../../kernel/mod.ts").DatabaseFailure
+    | Schema.SchemaError
+  >
+  readonly authenticate: (
+    token: string,
+  ) => Effect.Effect<
+    Principal,
+    import("./errors.ts").InvalidSessionToken | import("../../kernel/mod.ts").DatabaseFailure
+  >
+  readonly revoke: (
+    sessionId: string,
+  ) => Effect.Effect<
+    void,
+    import("./errors.ts").InvalidSessionToken | import("../../kernel/mod.ts").DatabaseFailure
+  >
+}
+
+export const AuthService = Context.Service<AuthService>("RITSEI/AuthService")

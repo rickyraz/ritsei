@@ -1,21 +1,25 @@
 export {
   AuthService,
   CreateTenantInput,
-  InvalidSessionToken,
   IssueSessionInput,
-  makeAuthService,
-  makeAuthTestLayer,
   Principal,
   Session,
-  SessionUserAccountDisabled,
-  SessionUserAccountNotFound,
   Tenant,
-  TenantAlreadyExists,
-} from "./src/service.ts"
+} from "./src/contract.ts"
 export type {
   AuthService as AuthServiceShape,
   IssuedSession,
   Principal as PrincipalType,
   Session as SessionType,
   Tenant as TenantType,
-} from "./src/service.ts"
+} from "./src/contract.ts"
+
+export {
+  InvalidSessionToken,
+  SessionUserAccountDisabled,
+  SessionUserAccountNotFound,
+  TenantAlreadyExists,
+} from "./src/errors.ts"
+
+export { makeAuthService } from "./src/service.ts"
+export { makeAuthTestLayer } from "./src/layers.ts"

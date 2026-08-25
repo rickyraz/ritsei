@@ -18,25 +18,29 @@ export type { CapabilityDefinition as CapabilityDefinitionType } from "./src/cap
 export {
   AddTenantMembershipInput,
   AuthorizationDecision,
-  AuthorizationDenied,
   AuthorizationInput,
   AuthorizationService,
   Capability,
-  CapabilityAlreadyGranted,
   GrantCapabilityInput,
-  makeAuthorizationService,
-  makeAuthorizationTestLayer,
   TenantMembership,
-  TenantMembershipAlreadyExists,
   TenantMembershipInput,
-  TenantMembershipNotActive,
-  TenantMembershipNotFound,
   TenantMembershipStatus,
-  TenantMembershipUserAccountNotFound,
-} from "./src/service.ts"
+} from "./src/contract.ts"
 export type {
   AuthorizationService as AuthorizationServiceShape,
   Capability as CapabilityType,
   TenantMembership as TenantMembershipType,
   TenantMembershipStatus as TenantMembershipStatusType,
-} from "./src/service.ts"
+} from "./src/contract.ts"
+
+export {
+  AuthorizationDenied,
+  CapabilityAlreadyGranted,
+  TenantMembershipAlreadyExists,
+  TenantMembershipNotActive,
+  TenantMembershipNotFound,
+  TenantMembershipUserAccountNotFound,
+} from "./src/errors.ts"
+
+export { makeAuthorizationService } from "./src/service.ts"
+export { makeAuthorizationTestLayer } from "./src/layers.ts"

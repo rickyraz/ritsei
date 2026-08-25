@@ -2,14 +2,12 @@ export { IdentityCapabilities } from "./src/capabilities.ts"
 
 export {
   CreateUserAccountInput,
-  makeUserAccountService,
-  makeUserAccountTestLayer,
   UpdateUserAccountInput,
   UserAccount,
-  UserAccountAlreadyExists,
   UserAccountAuthenticationState,
-  UserAccountNotFound,
   UserAccountService,
   UserAccountStatus,
-} from "./src/service.ts"
-export type { UserAccountService as UserAccountServiceShape } from "./src/service.ts"
+} from "./src/contract.ts"
+export type { UserAccountService as UserAccountServiceShape } from "./src/contract.ts"
+export { UserAccountAlreadyExists, UserAccountNotFound } from "./src/errors.ts"
+export { makeUserAccountService, makeUserAccountTestLayer } from "./src/layers.ts"
