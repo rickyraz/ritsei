@@ -11,6 +11,8 @@ import {
   makePartyTestLayer,
   OrganizationRequired,
   PartyCapabilities,
+  PartyCreatedEvent,
+  PartyEventPublisher,
   PartyRelationshipAlreadyExists,
   PartyRelationshipNotFound,
   PartyRelationshipRoleNotAssigned,
@@ -20,6 +22,9 @@ import {
   PartyRoleAlreadyAssigned,
   PartyService,
 } from "../mod.ts"
+import type { EventEnvelopeShape } from "../../messaging/mod.ts"
+import { makePartyMemoryStore } from "../src/memory.ts"
+import { makePartyServiceFromStore } from "../src/service.ts"
 
 const principal = { userAccountId: "party-admin", sessionId: "session" }
 const tenantId = "tenant-a"
@@ -51,6 +56,48 @@ const withParty = <A, E>(program: Effect.Effect<A, E, PartyService>) =>
   )
 
 describe("party contract", () => {
+  it.effect("authorizes party creation and publishes its owner event", () =>
+    Effect.gen(function* () {
+      const published: EventEnvelopeShape[] = []
+      const service = yield* Effect.provide(
+        makePartyServiceFromStore(Effect.succeed(makePartyMemoryStore())),
+        Layer.mergeAll(
+          authorizationLayer,
+          Layer.succeed(PartyEventPublisher, {
+            append: (input) => {
+              published.push(input as EventEnvelopeShape)
+              return Effect.succeed(input as EventEnvelopeShape)
+            },
+          }),
+        ),
+      )
+      const party = yield* service.create({
+        principal,
+        tenantId,
+        kind: "organization",
+        name: " ACME Indonesia ",
+      })
+
+      assert.strictEqual(party.name, "ACME Indonesia")
+      assert.strictEqual(published.length, 1)
+      assert.strictEqual(published[0].eventType, PartyCreatedEvent.id)
+      assert.strictEqual(published[0].tenantId, tenantId)
+      assert.strictEqual(published[0].aggregateId, party.id)
+      assert.deepStrictEqual(published[0].payload, {
+        partyId: party.id,
+        kind: party.kind,
+      })
+
+      const denied = yield* Effect.flip(service.create({
+        principal,
+        tenantId: "tenant-b",
+        kind: "organization",
+        name: "Denied Organization",
+      }))
+      assert.instanceOf(denied, AuthorizationDenied)
+      assert.strictEqual(published.length, 1)
+    }))
+
   it.effect("creates a party with roles and a scoped external identifier", () =>
     withParty(Effect.gen(function* () {
       const service = yield* PartyService
