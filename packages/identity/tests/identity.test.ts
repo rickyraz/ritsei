@@ -3,12 +3,19 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 
 import {
+  IdentityAccountAuthorizer,
+  IdentityAuthorizationDenied,
+  IdentityEventPublisher,
   makeUserAccountService,
   makeUserAccountTestLayer,
   UserAccountAlreadyExists,
+  UserAccountCreatedEvent,
   UserAccountNotFound,
   UserAccountService,
 } from "../mod.ts"
+import type { EventEnvelopeShape } from "../../messaging/mod.ts"
+import { makeUserAccountMemoryStore } from "../src/memory.ts"
+import { makeUserAccountServiceFromStore } from "../src/service.ts"
 import {
   Database,
   DatabaseFailure,
@@ -21,6 +28,55 @@ const withUserAccount = <A, E>(program: Effect.Effect<A, E, UserAccountService>)
   Effect.provide(program, makeUserAccountTestLayer())
 
 describe("user account contract", () => {
+  it.effect("authorizes tenant account creation and publishes its owner event", () =>
+    Effect.gen(function* () {
+      const published: EventEnvelopeShape[] = []
+      const service = yield* Effect.provide(
+        makeUserAccountServiceFromStore(Effect.succeed(makeUserAccountMemoryStore())),
+        Layer.mergeAll(
+          Layer.succeed(IdentityAccountAuthorizer, {
+            authorize: ({ tenantId }) =>
+              tenantId === "tenant-a" ? Effect.void : Effect.fail(
+                new IdentityAuthorizationDenied({
+                  tenantId,
+                  capability: "identity.user_account.create",
+                }),
+              ),
+          }),
+          Layer.succeed(IdentityEventPublisher, {
+            append: (input) => {
+              published.push(input as EventEnvelopeShape)
+              return Effect.succeed(input as EventEnvelopeShape)
+            },
+          }),
+        ),
+      )
+      const principal = { userAccountId: "actor", sessionId: "session" }
+      const created = yield* service.createForTenant({
+        principal,
+        tenantId: "tenant-a",
+        email: "  USER@Example.COM ",
+      })
+
+      assert.strictEqual(created.email, "user@example.com")
+      assert.strictEqual(published.length, 1)
+      assert.strictEqual(published[0].eventType, UserAccountCreatedEvent.id)
+      assert.strictEqual(published[0].tenantId, "tenant-a")
+      assert.strictEqual(published[0].aggregateId, created.id)
+      assert.deepStrictEqual(published[0].payload, {
+        userAccountId: created.id,
+        email: created.email,
+      })
+
+      const denied = yield* Effect.flip(service.createForTenant({
+        principal,
+        tenantId: "tenant-b",
+        email: "denied@example.com",
+      }))
+      assert.instanceOf(denied, IdentityAuthorizationDenied)
+      assert.strictEqual((yield* service.list()).length, 1)
+    }))
+
   it.effect("creates a normalized user account", () =>
     withUserAccount(
       Effect.gen(function* () {
