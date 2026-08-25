@@ -254,8 +254,8 @@ export const OpenPeriodInput = Schema.Struct({
 
 export const ClosePeriodInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
-  periodId: Schema.String,
+  legalEntityId: Uuid,
+  periodId: Uuid,
 })
 
 export const PostRevenueForOrderInput = Schema.Struct({

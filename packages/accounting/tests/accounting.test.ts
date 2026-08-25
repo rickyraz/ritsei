@@ -25,6 +25,7 @@ import {
   AccountingPeriodNotOpen,
   AccountingService,
   AccountNotFound,
+  ClosePeriodInput,
   ConfigureRevenuePostingInput,
   CreateAccountInput,
   CreateFinancialJournalIntentInput,
@@ -512,6 +513,10 @@ describe("accounting contract", () => {
         Schema.decodeUnknownEffect(OpenPeriodInput.fields.legalEntityId)("not-a-uuid"),
       )
       assert.strictEqual(malformedLegalEntity._tag, "SchemaError")
+      const malformedClosePeriod = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ClosePeriodInput.fields.periodId)("not-a-uuid"),
+      )
+      assert.strictEqual(malformedClosePeriod._tag, "SchemaError")
       const inputFailure = yield* Effect.flip(
         Schema.decodeUnknownEffect(OpenPeriodInput)({
           principal,
