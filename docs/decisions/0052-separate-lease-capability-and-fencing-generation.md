@@ -135,5 +135,19 @@ transaction or subsystem boundary.
 ## Related Documents
 
 - RFC 9562: <https://www.rfc-editor.org/rfc/rfc9562>
-- Martin Kleppmann, “How to do distributed locking”:
-  <https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html>
+
+### Recommended external reading
+
+- Martin Kleppmann,
+  [How to do distributed locking](https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html)
+  — fencing tokens and stale-writer rejection.
+- etcd, [etcd versus other key-value stores](https://etcd.io/docs/v3.6/learning/why/)
+  — leases, revisions, and fencing external resources.
+- Mike Burrows,
+  [The Chubby lock service for loosely-coupled distributed systems](https://research.google/pubs/the-chubby-lock-service-for-loosely-coupled-distributed-systems/)
+  — production distributed lock-service design.
+- Apache ZooKeeper, [Programmer’s Guide](https://zookeeper.apache.org/doc/r3.5.2-alpha/zookeeperProgrammers.pdf)
+  — zxid, sequence numbers, and ordering.
+- Thoughtworks,
+  [Patterns of distributed systems](https://www.thoughtworks.com/en-us/insights/podcasts/technology-podcasts/patterns-distributed-systems)
+  — generation clocks and high-water marks.
