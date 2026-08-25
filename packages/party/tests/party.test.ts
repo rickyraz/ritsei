@@ -264,6 +264,19 @@ describe("party contract", () => {
         dedicatedJournalCode: "JKT-OPS",
       })
       yield* Schema.decodeUnknownEffect(Branch)(branch)
+      for (
+        const invalid of [
+          { name: " Jakarta " },
+          { timezone: " Asia/Jakarta " },
+          { localTaxRegistration: " TAX-JKT-001 " },
+          { dedicatedJournalCode: " JKT-OPS " },
+        ]
+      ) {
+        assert.strictEqual(
+          (yield* Effect.flip(Schema.decodeUnknownEffect(Branch)({ ...branch, ...invalid })))._tag,
+          "SchemaError",
+        )
+      }
       assert.strictEqual(
         (yield* Effect.flip(
           Schema.decodeUnknownEffect(Branch)({ ...branch, localTaxRegistration: " " }),
