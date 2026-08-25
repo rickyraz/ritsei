@@ -101,7 +101,7 @@ export type PartyRelationshipKind = Schema.Schema.Type<typeof PartyRelationshipK
 
 export const CreatePartyInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
+  tenantId: Uuid,
   kind: PartyKind,
   name: NonEmptyString,
 })

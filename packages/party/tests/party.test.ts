@@ -7,6 +7,7 @@ import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authoriza
 import {
   Branch,
   BranchAlreadyExists,
+  CreatePartyInput,
   ExternalIdentifier,
   ExternalIdentifierAlreadyAssigned,
   LegalEntity,
@@ -79,6 +80,15 @@ describe("party contract", () => {
           }),
         ),
       )
+      const invalidTenant = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreatePartyInput)({
+          principal,
+          tenantId: "not-a-uuid",
+          kind: "organization",
+          name: "Invalid Tenant",
+        }),
+      )
+      assert.strictEqual(invalidTenant._tag, "SchemaError")
       const party = yield* service.create({
         principal,
         tenantId,

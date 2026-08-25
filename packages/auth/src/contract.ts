@@ -4,6 +4,7 @@ import * as Schema from "effect/Schema"
 
 const PositiveSeconds = Schema.Int.check(Schema.isGreaterThan(0))
 const NonBlankString = Schema.String.check(Schema.isPattern(/\S/))
+const Uuid = Schema.String.check(Schema.isUUID())
 
 export const CreateTenantInput = Schema.Struct({
   slug: Schema.String,
@@ -14,7 +15,7 @@ export const IssueSessionInput = Schema.Struct({
   ttlSeconds: PositiveSeconds,
 })
 export const Tenant = Schema.Struct({
-  id: Schema.String,
+  id: Uuid,
   slug: Schema.String,
   timezone: Schema.String,
 })
