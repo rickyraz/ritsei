@@ -47,6 +47,7 @@ import {
 const principal = { userAccountId: "accountant", sessionId: "session" }
 const tenantId = "00000000-0000-4000-8000-000000000001"
 const otherTenantId = "00000000-0000-4000-8000-000000000002"
+const revenueLegalEntityId = "00000000-0000-4000-8000-000000000010"
 const revenueOrderIds = {
   open: "00000000-0000-4000-8000-000000000010",
   closed: "00000000-0000-4000-8000-000000000011",
@@ -133,7 +134,7 @@ const prepareRevenuePosting = Effect.gen(function* () {
   yield* accounting.configureLegalEntity({
     principal,
     tenantId,
-    legalEntityId: "legal-entity-a",
+    legalEntityId: revenueLegalEntityId,
     baseCurrency: "USD",
     precision: 2,
     fiscalYearStartMonth: 1,
@@ -156,14 +157,14 @@ const prepareRevenuePosting = Effect.gen(function* () {
   yield* accounting.configureRevenuePosting({
     principal,
     tenantId,
-    legalEntityId: "legal-entity-a",
+    legalEntityId: revenueLegalEntityId,
     receivableAccountId: receivable.id,
     revenueAccountId: revenue.id,
   })
   const period = yield* accounting.openPeriod({
     principal,
     tenantId,
-    legalEntityId: "legal-entity-a",
+    legalEntityId: revenueLegalEntityId,
     startsOn: "1900-01-01",
     endsOn: "2100-12-31",
   })
@@ -918,7 +919,7 @@ describe("accounting contract", () => {
       const decoded = yield* Schema.decodeUnknownEffect(PostRevenueForOrderInput)({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-a",
+        legalEntityId: revenueLegalEntityId,
         orderId: revenueOrderIds.open,
         commandId: "revenue-derived-command",
         correlationId: "revenue-derived-correlation",
@@ -942,18 +943,29 @@ describe("accounting contract", () => {
         Schema.decodeUnknownEffect(PostRevenueForOrderInput)({
           principal,
           tenantId: "not-a-uuid",
-          legalEntityId: "legal-entity-a",
+          legalEntityId: revenueLegalEntityId,
           orderId: revenueOrderIds.open,
           amount: "125.00",
           ...revenueMetadata,
         }),
       )
       assert.strictEqual(invalidTenant._tag, "SchemaError")
+      const invalidLegalEntity = yield* Effect.flip(
+        Schema.decodeUnknownEffect(PostRevenueForOrderInput)({
+          principal,
+          tenantId,
+          legalEntityId: "not-a-uuid",
+          orderId: revenueOrderIds.open,
+          amount: "125.00",
+          ...revenueMetadata,
+        }),
+      )
+      assert.strictEqual(invalidLegalEntity._tag, "SchemaError")
       const { accounting } = yield* prepareRevenuePosting
       const journal = yield* accounting.postRevenueForOrder({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-a",
+        legalEntityId: revenueLegalEntityId,
         orderId: revenueOrderIds.open,
         amount: "125.00",
         ...revenueMetadata,
@@ -971,14 +983,14 @@ describe("accounting contract", () => {
       yield* accounting.closePeriod({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-a",
+        legalEntityId: revenueLegalEntityId,
         periodId: period.id,
       })
       assert.instanceOf(
         yield* Effect.flip(accounting.postRevenueForOrder({
           principal,
           tenantId,
-          legalEntityId: "legal-entity-a",
+          legalEntityId: revenueLegalEntityId,
           orderId: revenueOrderIds.closed,
           amount: "125.00",
           ...revenueMetadata,
@@ -993,7 +1005,7 @@ describe("accounting contract", () => {
       const posted = yield* accounting.postRevenueForOrder({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-a",
+        legalEntityId: revenueLegalEntityId,
         orderId: revenueOrderIds.reverse,
         amount: "125.00",
         ...revenueMetadata,
@@ -1001,13 +1013,13 @@ describe("accounting contract", () => {
       const reversal = yield* accounting.reverseRevenueForOrder({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-a",
+        legalEntityId: revenueLegalEntityId,
         orderId: revenueOrderIds.reverse,
       })
       const repeated = yield* accounting.reverseRevenueForOrder({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-a",
+        legalEntityId: revenueLegalEntityId,
         orderId: revenueOrderIds.reverse,
       })
       assert.strictEqual(reversal.reversesEntryId, posted.id)
@@ -1022,7 +1034,7 @@ describe("accounting contract", () => {
         const input = {
           principal,
           tenantId,
-          legalEntityId: "legal-entity-a",
+          legalEntityId: revenueLegalEntityId,
           orderId: revenueOrderIds.idempotency,
           amount: "125.00",
           commandId: "revenue-post-command",
@@ -1084,7 +1096,7 @@ describe("accounting contract", () => {
         const input = {
           principal,
           tenantId,
-          legalEntityId: "legal-entity-a",
+          legalEntityId: revenueLegalEntityId,
           orderId: revenueOrderIds.rollback,
           amount: "125.00",
           ...revenueMetadata,

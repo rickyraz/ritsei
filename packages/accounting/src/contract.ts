@@ -248,7 +248,7 @@ export const ClosePeriodInput = Schema.Struct({
 export const PostRevenueForOrderInput = Schema.Struct({
   principal: Principal,
   tenantId: Uuid,
-  legalEntityId: Schema.String,
+  legalEntityId: Uuid,
   orderId: Uuid,
   amount: Schema.optionalKey(Money),
   commandId: NonEmptyString,
