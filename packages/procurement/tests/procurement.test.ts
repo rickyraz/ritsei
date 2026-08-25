@@ -277,6 +277,12 @@ describe("procurement contract", () => {
       )
       assert.strictEqual(
         (yield* Effect.flip(
+          Schema.decodeUnknownEffect(PurchaseOrder)({ ...readDraft, total: "0.01" }),
+        ))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
           Schema.decodeUnknownEffect(PurchaseOrder)({
             ...readDraft,
             status: "confirmed",

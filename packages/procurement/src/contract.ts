@@ -5,7 +5,11 @@ import * as Schema from "effect/Schema"
 import { Principal } from "../../auth/mod.ts"
 import { AuthorizationDenied } from "../../authorization/mod.ts"
 import { InventoryService, UnitOfMeasure } from "../../inventory/mod.ts"
-import { DatabaseFailure, FinancialMajorAmount } from "../../kernel/mod.ts"
+import {
+  DatabaseFailure,
+  FinancialMajorAmount,
+  requireExactMajorToMinor,
+} from "../../kernel/mod.ts"
 import { EventIdempotencyConflict } from "../../messaging/mod.ts"
 import {
   PurchaseOrderConfirmationIdempotencyConflict,
@@ -73,6 +77,15 @@ export const PurchaseOrder = Schema.Struct({
     (order.status === "draft" && order.confirmedAt === null) ||
     (order.status !== "draft" && order.confirmedAt !== null),
   { expected: "purchase order confirmation metadata consistent with status" },
+)).check(Schema.makeFilter(
+  (order) => {
+    const lineTotal = order.lines.reduce(
+      (total, line) => total + requireExactMajorToMinor(line.unitPrice, 2) * BigInt(line.quantity),
+      0n,
+    )
+    return lineTotal === requireExactMajorToMinor(order.total, 2)
+  },
+  { expected: "purchase order total must equal its line totals" },
 ))
 
 export type SupplierAccount = Schema.Schema.Type<typeof SupplierAccount>
