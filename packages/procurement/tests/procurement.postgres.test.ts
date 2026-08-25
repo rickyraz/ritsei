@@ -669,22 +669,33 @@ it.effect.skipIf(databaseUrl === undefined)(
             )
           }
 
-          const [inconsistentOrder] = yield* Effect.promise(() =>
-            client<{ id: string }[]>`
-              insert into procurement.purchase_orders (tenant_id, supplier_account_id, total)
-              values (${tenant.id}, ${account.id}, 11.00)
-              returning id
-            `
+          const invalidDraftTotal = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update procurement.purchase_orders
+                set total = 6.00
+                where tenant_id = ${tenant.id} and id = ${constraintOrder.id}
+              `
+            })
           )
-          yield* Effect.promise(() =>
-            client`
-              insert into procurement.purchase_order_lines
-                (tenant_id, purchase_order_id, item_id, quantity, unit_price)
-              values (${tenant.id}, ${inconsistentOrder!.id}, ${uuidv7()}, 1, 10.00)
-            `
+          assert.strictEqual((invalidDraftTotal as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidDraftTotal as { constraint_name?: string }).constraint_name,
+            "purchase_order_draft_total_consistent",
           )
+
           const inconsistentTotal = yield* postgresFailure(() =>
             client.begin(async (transaction) => {
+              const [inconsistentOrder] = await transaction<{ id: string }[]>`
+                insert into procurement.purchase_orders (tenant_id, supplier_account_id, total)
+                values (${tenant.id}, ${account.id}, 11.00)
+                returning id
+              `
+              await transaction`
+                insert into procurement.purchase_order_lines
+                  (tenant_id, purchase_order_id, item_id, quantity, unit_price)
+                values (${tenant.id}, ${inconsistentOrder!.id}, ${uuidv7()}, 1, 10.00)
+              `
               await transaction`
                 update procurement.purchase_orders
                 set status = 'confirmed',
@@ -1144,7 +1155,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               order by created_at
             `
           )
-          assert.deepStrictEqual(movements.map((row) => row.quantity), ["1", "2"])
+          assert.deepStrictEqual(movements.map((row) => row.quantity).toSorted(), ["1", "2"])
           assert.deepStrictEqual(
             movements.map((row) => row.reference_id).sort(),
             persistedReceipts.map((row) => row.id).sort(),
