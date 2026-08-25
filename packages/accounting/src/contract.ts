@@ -209,7 +209,7 @@ export const ActivateTigerBeetleCutoverInput = Schema.Struct({
 
 export const ConfigureLegalEntityInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
+  legalEntityId: Uuid,
   baseCurrency: CurrencyCode,
   precision: Precision,
   fiscalYearStartMonth: FiscalYearStartMonth,

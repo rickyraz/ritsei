@@ -26,6 +26,7 @@ import {
   AccountingService,
   AccountNotFound,
   ClosePeriodInput,
+  ConfigureLegalEntityInput,
   ConfigureRevenuePostingInput,
   CreateAccountInput,
   CreateFinancialJournalIntentInput,
@@ -177,10 +178,16 @@ describe("accounting contract", () => {
   it.effect("configures a legal entity once", () =>
     withAccounting(Effect.gen(function* () {
       const accounting = yield* AccountingService
+      const malformedLegalEntity = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ConfigureLegalEntityInput.fields.legalEntityId)(
+          "not-a-uuid",
+        ),
+      )
+      assert.strictEqual(malformedLegalEntity._tag, "SchemaError")
       const configuration = yield* accounting.configureLegalEntity({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-a",
+        legalEntityId: "00000000-0000-4000-8000-000000000070",
         baseCurrency: "usd",
         precision: 2,
         fiscalYearStartMonth: 1,
@@ -193,7 +200,7 @@ describe("accounting contract", () => {
       const cutoverBlocked = yield* Effect.flip(accounting.configureLegalEntity({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-tb",
+        legalEntityId: "00000000-0000-4000-8000-000000000071",
         baseCurrency: "USD",
         precision: 2,
         fiscalYearStartMonth: 1,
@@ -206,7 +213,7 @@ describe("accounting contract", () => {
         (yield* Effect.flip(accounting.configureLegalEntity({
           principal,
           tenantId,
-          legalEntityId: "legal-entity-b",
+          legalEntityId: "00000000-0000-4000-8000-000000000072",
           baseCurrency: "USD",
           precision: 3,
           fiscalYearStartMonth: 1,
@@ -218,7 +225,7 @@ describe("accounting contract", () => {
       const error = yield* Effect.flip(accounting.configureLegalEntity({
         principal,
         tenantId,
-        legalEntityId: "legal-entity-a",
+        legalEntityId: "00000000-0000-4000-8000-000000000070",
         baseCurrency: "USD",
         precision: 2,
         fiscalYearStartMonth: 1,
@@ -234,7 +241,7 @@ describe("accounting contract", () => {
         const error = yield* Effect.flip(accounting.configureLegalEntity({
           principal,
           tenantId,
-          legalEntityId: "legal-entity-a",
+          legalEntityId: "00000000-0000-4000-8000-000000000070",
           baseCurrency: "USD",
           precision: 2,
           fiscalYearStartMonth: 1,
