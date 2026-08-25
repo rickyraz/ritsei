@@ -467,7 +467,7 @@ describe("accounting contract", () => {
         Schema.decodeUnknownEffect(ConfigureRevenuePostingInput)({
           principal,
           tenantId,
-          legalEntityId: "legal-entity-a",
+          legalEntityId: "00000000-0000-4000-8000-000000000060",
           receivableAccountId: "account-1",
           revenueAccountId: "account-1",
         }),
@@ -479,6 +479,12 @@ describe("accounting contract", () => {
         ),
       )
       assert.strictEqual(malformedReceivable._tag, "SchemaError")
+      const malformedLegalEntity = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ConfigureRevenuePostingInput.fields.legalEntityId)(
+          "not-a-uuid",
+        ),
+      )
+      assert.strictEqual(malformedLegalEntity._tag, "SchemaError")
       const outputFailure = yield* Effect.flip(
         Schema.decodeUnknownEffect(RevenuePostingProfile)({
           tenantId,

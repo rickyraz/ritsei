@@ -234,7 +234,7 @@ export const PostJournalInput = Schema.Struct({
 
 export const ConfigureRevenuePostingInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
+  legalEntityId: Uuid,
   receivableAccountId: Uuid,
   revenueAccountId: Uuid,
 }).check(Schema.makeFilter(
