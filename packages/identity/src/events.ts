@@ -13,7 +13,7 @@ export const IdentityPrincipal = Schema.Struct({
 export type IdentityPrincipal = Schema.Schema.Type<typeof IdentityPrincipal>
 
 export const UserAccountCreatedEventPayload = Schema.Struct({
-  userAccountId: NonEmptyString,
+  userAccountId: Schema.String.check(Schema.isUUID()),
   email: NonEmptyString,
 })
 

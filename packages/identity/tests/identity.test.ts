@@ -85,7 +85,10 @@ describe("user account contract", () => {
         )
 
         assert.strictEqual(userAccount.email, "user@example.com")
-        assert.strictEqual(userAccount.id, "1")
+        assert.match(
+          userAccount.id,
+          /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        )
         assert.strictEqual(userAccount.status, "active")
       }),
     ))

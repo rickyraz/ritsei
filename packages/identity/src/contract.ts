@@ -9,6 +9,7 @@ export const UserAccountStatus = Schema.Literals(["active", "disabled"])
 export type UserAccountStatus = Schema.Schema.Type<typeof UserAccountStatus>
 
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const Uuid = Schema.String.check(Schema.isUUID())
 
 export const CreateUserAccountInput = Schema.Struct({
   email: NonEmptyString,
@@ -26,13 +27,13 @@ export const UpdateUserAccountInput = Schema.Struct({
 })
 
 export const UserAccount = Schema.Struct({
-  id: Schema.String,
+  id: Uuid,
   email: Schema.String,
   status: UserAccountStatus,
 })
 
 export const UserAccountAuthenticationState = Schema.Struct({
-  id: Schema.String,
+  id: Uuid,
   status: UserAccountStatus,
   sessionInvalidatedAt: Schema.NullOr(Schema.String),
 })
