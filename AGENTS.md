@@ -307,6 +307,8 @@ Rules for new work:
   fencing requires a per-job monotonic `BIGINT` generation enforced at the
   side-effect mutation boundary; it must never decrease or reset while the job
   row exists.
+- Keep fencing generation and idempotency identity separate: generation proves
+  freshness; operation/command/idempotency keys control replay and duplicates.
 - Keep `created_at` as the audit timestamp and business numbers as separate
   fields; UUIDv7 is neither an audit timestamp nor a human-readable number.
 - Do not rewrite existing UUIDv4 rows solely to convert their UUID version.

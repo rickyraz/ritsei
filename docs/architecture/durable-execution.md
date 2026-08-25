@@ -18,6 +18,8 @@
 >   [`../decisions/0052-separate-lease-capability-and-fencing-generation.md`](../decisions/0052-separate-lease-capability-and-fencing-generation.md)
 > - Per-job lease-generation invariants:
 >   [`../decisions/0053-clarify-per-job-lease-generation-invariants.md`](../decisions/0053-clarify-per-job-lease-generation-invariants.md)
+> - Fencing and idempotency identities:
+>   [`../decisions/0054-keep-fencing-and-idempotency-identities-orthogonal.md`](../decisions/0054-keep-fencing-and-idempotency-identities-orthogonal.md)
 
 ## Decision
 
@@ -67,9 +69,11 @@ proof. A side effect that can outlive a lease must use a monotonic lease generat
 mutation boundary; the fenced resource stores its own highest accepted generation and rejects lower
 values. The generation is monotonic for one durable job row, never resets while that identity exists,
 and is not globally ordered across different jobs. Checking the token only when completing the job
-is insufficient. The capability-versus-fencing decision is owned by
-[ADR-0052](../decisions/0052-separate-lease-capability-and-fencing-generation.md) and its invariants
-by [ADR-0053](../decisions/0053-clarify-per-job-lease-generation-invariants.md).
+is insufficient. Generation proves freshness, not logical operation identity; idempotency keys
+must independently control replay and duplicate suppression. The capability-versus-fencing decision
+is owned by [ADR-0052](../decisions/0052-separate-lease-capability-and-fencing-generation.md), its
+invariants by [ADR-0053](../decisions/0053-clarify-per-job-lease-generation-invariants.md), and the
+identity separation by [ADR-0054](../decisions/0054-keep-fencing-and-idempotency-identities-orthogonal.md).
 
 ## Direct Transaction Examples
 
