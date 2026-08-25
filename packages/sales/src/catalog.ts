@@ -9,7 +9,7 @@ import {
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderInvalidState,
   SalesOrderNotFound,
-} from "./service.ts"
+} from "./contract.ts"
 import { SalesOrderConfirmedEvent } from "./events.ts"
 
 export { SalesOrderConfirmedEvent, SalesOrderConfirmedEventPayload } from "./events.ts"

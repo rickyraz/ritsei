@@ -1,0 +1,105 @@
+import type * as Effect from "effect/Effect"
+import type { DatabaseFailure } from "../../kernel/mod.ts"
+import type {
+  Branch,
+  ExternalIdentifier,
+  LegalEntity,
+  Party,
+  PartyKind,
+  PartyRelationship,
+  PartyRelationshipKind,
+  PartyRepresentation,
+  PartyRepresentationKind,
+  PartyRole,
+} from "./contract.ts"
+import type {
+  BranchAlreadyExists,
+  ExternalIdentifierAlreadyAssigned,
+  LegalEntityAlreadyExists,
+  LegalEntityNotFound,
+  OrganizationRequired,
+  PartyNotFound,
+  PartyRelationshipAlreadyExists,
+  PartyRelationshipNotFound,
+  PartyRelationshipRoleNotAssigned,
+  PartyRepresentationAlreadyExists,
+  PartyRepresentationNotFound,
+  PartyRepresentationUserAccountNotFound,
+  PartyRoleAlreadyAssigned,
+} from "./errors.ts"
+
+type Failure = DatabaseFailure
+
+export interface PartyStore {
+  readonly create: (
+    tenantId: string,
+    kind: PartyKind,
+    name: string,
+  ) => Effect.Effect<Party, Failure>
+  readonly createLegalEntity: (
+    tenantId: string,
+    organizationId: string,
+  ) => Effect.Effect<
+    LegalEntity,
+    PartyNotFound | OrganizationRequired | LegalEntityAlreadyExists | Failure
+  >
+  readonly createBranch: (
+    tenantId: string,
+    legalEntityId: string,
+    name: string,
+    timezone: string | null,
+    localTaxRegistration: string | null,
+    dedicatedJournalCode: string | null,
+  ) => Effect.Effect<Branch, LegalEntityNotFound | BranchAlreadyExists | Failure>
+  readonly createPartyRepresentation: (
+    tenantId: string,
+    userAccountId: string,
+    partyId: string,
+    kind: PartyRepresentationKind,
+  ) => Effect.Effect<
+    PartyRepresentation,
+    | PartyRepresentationUserAccountNotFound
+    | PartyRepresentationAlreadyExists
+    | PartyNotFound
+    | Failure
+  >
+  readonly setPartyRepresentationActive: (
+    tenantId: string,
+    representationId: string,
+    active: boolean,
+  ) => Effect.Effect<PartyRepresentation, PartyRepresentationNotFound | Failure>
+  readonly assignRole: (
+    tenantId: string,
+    partyId: string,
+    role: PartyRole,
+  ) => Effect.Effect<void, PartyNotFound | PartyRoleAlreadyAssigned | Failure>
+  readonly createRelationship: (
+    tenantId: string,
+    partyId: string,
+    legalEntityId: string,
+    kind: PartyRelationshipKind,
+  ) => Effect.Effect<
+    PartyRelationship,
+    | LegalEntityNotFound
+    | PartyNotFound
+    | PartyRelationshipAlreadyExists
+    | PartyRelationshipRoleNotAssigned
+    | Failure
+  >
+  readonly getRelationship: (
+    tenantId: string,
+    relationshipId: string,
+  ) => Effect.Effect<PartyRelationship, PartyRelationshipNotFound | Failure>
+  readonly attachIdentifier: (
+    tenantId: string,
+    partyId: string,
+    provider: string,
+    scheme: string,
+    scope: string,
+    legalEntityId: string | null,
+    value: string,
+  ) => Effect.Effect<
+    ExternalIdentifier,
+    LegalEntityNotFound | PartyNotFound | ExternalIdentifierAlreadyAssigned | Failure
+  >
+}

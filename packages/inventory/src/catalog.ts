@@ -3,14 +3,13 @@ import { defineActionCatalogEntry } from "../../catalog/mod.ts"
 import { DatabaseFailure } from "../../kernel/mod.ts"
 import { EventIdempotencyConflict } from "../../messaging/mod.ts"
 import { InventoryCapabilities } from "./capabilities.ts"
+import { AdjustStockInput, StockCorrection } from "./contract.ts"
 import {
-  AdjustStockInput,
   InventoryReferenceNotFound,
   InventoryUnitOfMeasureMismatch,
-  StockCorrection,
   StockCorrectionIdempotencyConflict,
   StockUnavailable,
-} from "./service.ts"
+} from "./errors.ts"
 import { InventoryStockCorrectedEvent } from "./events.ts"
 
 export { InventoryStockCorrectedEvent, StockCorrectedEventPayload } from "./events.ts"

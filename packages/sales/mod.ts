@@ -6,7 +6,6 @@ export {
   SalesTypedActionCatalog,
   SalesTypedEventCatalog,
 } from "./src/catalog.ts"
-
 export {
   CancelConfirmedOrderInput,
   ConfirmOrderInput,
@@ -14,24 +13,25 @@ export {
   CreateOrderInput,
   CreateQuotationInput,
   Customer,
+  GetConfirmedOrderTotalInput,
+  Quotation,
+  SalesOrder,
+  SalesOrderLine,
+  SalesService,
+} from "./src/contract.ts"
+export {
   CustomerAlreadyExists,
   CustomerNotFound,
-  GetConfirmedOrderTotalInput,
-  makeSalesService,
-  makeSalesTestLayer,
-  Quotation,
   QuotationNotFound,
-  SalesOrder,
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderInvalidState,
-  SalesOrderLine,
   SalesOrderNotFound,
-  SalesService,
-} from "./src/service.ts"
+} from "./src/errors.ts"
+export { makeSalesService, makeSalesTestLayer } from "./src/layers.ts"
 export type {
   Customer as CustomerType,
   Quotation as QuotationType,
   SalesOrder as SalesOrderType,
   SalesOrderLine as SalesOrderLineType,
   SalesService as SalesServiceShape,
-} from "./src/service.ts"
+} from "./src/contract.ts"
