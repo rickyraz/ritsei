@@ -708,6 +708,18 @@ describe("procurement contract", () => {
         ))._tag,
         "SchemaError",
       )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(GoodsReceipt)({
+            ...first,
+            lines: [
+              first.lines[0]!,
+              { ...first.lines[0]!, purchaseOrderLineId: "00000000-0000-4000-8000-000000000099" },
+            ],
+          }),
+        ))._tag,
+        "SchemaError",
+      )
       const replay = yield* procurement.receivePurchaseOrder(firstInput)
       assert.strictEqual(replay.id, first.id)
       assert.strictEqual(replay.lines[0]?.quantity, "1")

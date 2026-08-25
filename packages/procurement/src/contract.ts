@@ -162,6 +162,9 @@ export const GoodsReceipt = Schema.Struct({
   (receipt) =>
     new Set(receipt.lines.map((line) => line.purchaseOrderLineId)).size === receipt.lines.length,
   { expected: "goods receipt lines must reference unique purchase-order lines" },
+)).check(Schema.makeFilter(
+  (receipt) => new Set(receipt.lines.map((line) => line.id)).size === receipt.lines.length,
+  { expected: "goods receipt line identities must be unique" },
 ))
 
 export type PurchaseReceiptLineInput = Schema.Schema.Type<typeof PurchaseReceiptLineInput>
