@@ -516,6 +516,10 @@ describe("accounting contract", () => {
 
   it.effect("rejects reversed accounting period dates", () =>
     Effect.gen(function* () {
+      const invalidCalendarDate = yield* Effect.flip(
+        Schema.decodeUnknownEffect(OpenPeriodInput.fields.startsOn)("2026-02-30"),
+      )
+      assert.strictEqual(invalidCalendarDate._tag, "SchemaError")
       const malformedLegalEntity = yield* Effect.flip(
         Schema.decodeUnknownEffect(OpenPeriodInput.fields.legalEntityId)("not-a-uuid"),
       )
