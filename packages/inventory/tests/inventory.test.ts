@@ -864,6 +864,16 @@ describe("inventory contract", () => {
       assert.strictEqual(transfer.status, "draft")
       assert.strictEqual(transfer.confirmedAt, null)
       assert.strictEqual(transfer.completedAt, null)
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(StockTransfer)({
+            ...transfer,
+            status: "confirmed",
+            confirmedAt: null,
+          }),
+        ))._tag,
+        "SchemaError",
+      )
 
       assert.instanceOf(
         yield* Effect.flip(inventory.completeTransfer({
