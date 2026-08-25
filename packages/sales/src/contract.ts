@@ -28,7 +28,7 @@ export const Customer = Schema.Struct({
 })
 export const Quotation = Schema.Struct({
   id: Uuid,
-  tenantId: Schema.String,
+  tenantId: Uuid,
   customerId: Schema.String,
   status: Schema.Literals(["draft", "sent", "accepted", "rejected", "expired"]),
   total: Money,
