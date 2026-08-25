@@ -139,7 +139,12 @@ export const ReceivePurchaseOrderInput = Schema.Struct({
   purchaseOrderId: Uuid,
   warehouseId: Uuid,
   idempotencyKey: NonEmptyString,
-  lines: Schema.Array(PurchaseReceiptLineInput).check(Schema.isMinLength(1)),
+  lines: Schema.Array(PurchaseReceiptLineInput).check(Schema.isMinLength(1)).check(
+    Schema.makeFilter(
+      (lines) => new Set(lines.map((line) => line.purchaseOrderLineId)).size === lines.length,
+      { expected: "purchase receipt lines must reference unique purchase-order lines" },
+    ),
+  ),
 })
 
 export const GoodsReceiptLine = Schema.Struct({

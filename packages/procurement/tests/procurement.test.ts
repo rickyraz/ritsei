@@ -28,6 +28,7 @@ import {
   PurchaseOrderLineSnapshot,
   PurchaseOrderNotFound,
   PurchaseReceiptQuantityExceeded,
+  ReceivePurchaseOrderInput,
   SupplierAccountAlreadyExists,
   SupplierAccountNotFound,
   SupplierRelationshipNotEligible,
@@ -682,6 +683,16 @@ describe("procurement contract", () => {
         idempotencyKey: "receipt-1",
         lines: [{ purchaseOrderLineId: lineId, quantity: "1" }],
       }
+      const duplicateReceiptLines = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ReceivePurchaseOrderInput)({
+          ...firstInput,
+          lines: [
+            { purchaseOrderLineId: lineId, quantity: "1" },
+            { purchaseOrderLineId: lineId, quantity: "1" },
+          ],
+        }),
+      )
+      assert.strictEqual(duplicateReceiptLines._tag, "SchemaError")
       const first = yield* procurement.receivePurchaseOrder(firstInput)
       yield* Schema.decodeUnknownEffect(GoodsReceipt)(first)
       assert.strictEqual(
