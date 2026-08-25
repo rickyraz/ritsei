@@ -369,18 +369,17 @@ describe("accounting contract", () => {
         ],
       })
       assert.strictEqual(scaledReplay.id, journal.id)
-      assert.instanceOf(
-        yield* Effect.flip(accounting.postJournal({
-          principal,
-          tenantId,
-          reference: "SALE-1",
-          lines: [
-            { accountId: cash.id, debit: "124.00", credit: "0" },
-            { accountId: revenue.id, debit: "0", credit: "124.00" },
-          ],
-        })),
-        JournalIdempotencyConflict,
-      )
+      const journalConflict = yield* Effect.flip(accounting.postJournal({
+        principal,
+        tenantId,
+        reference: " SALE-1 ",
+        lines: [
+          { accountId: cash.id, debit: "124.00", credit: "0" },
+          { accountId: revenue.id, debit: "0", credit: "124.00" },
+        ],
+      }))
+      assert.instanceOf(journalConflict, JournalIdempotencyConflict)
+      assert.strictEqual(journalConflict.reference, "SALE-1")
     })))
 
   it.effect("rejects non-timezone-qualified journal posted timestamps", () =>

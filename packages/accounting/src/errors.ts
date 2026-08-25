@@ -1,6 +1,10 @@
 import * as Schema from "effect/Schema"
 
 const Uuid = Schema.String.check(Schema.isUUID())
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
 
 export class AccountingConfigurationAlreadyExists
   extends Schema.TaggedError<AccountingConfigurationAlreadyExists>()(
@@ -67,14 +71,14 @@ export class JournalReferenceAlreadyExists
   extends Schema.TaggedError<JournalReferenceAlreadyExists>()(
     "JournalReferenceAlreadyExists",
     {
-      tenantId: Schema.String,
-      reference: Schema.String,
+      tenantId: Uuid,
+      reference: TrimmedNonEmptyString,
     },
   ) {}
 export class JournalIdempotencyConflict
   extends Schema.TaggedError<JournalIdempotencyConflict>()("JournalIdempotencyConflict", {
-    tenantId: Schema.String,
-    reference: Schema.String,
+    tenantId: Uuid,
+    reference: TrimmedNonEmptyString,
   }) {}
 export class InvalidJournalLine
   extends Schema.TaggedError<InvalidJournalLine>()("InvalidJournalLine", {
