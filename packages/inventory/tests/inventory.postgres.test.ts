@@ -700,7 +700,7 @@ it.effect.skipIf(databaseUrl === undefined)(
           assert.strictEqual((invalidGuardedBalance as { code?: string }).code, "23514")
           assert.strictEqual(
             (invalidGuardedBalance as { constraint_name?: string }).constraint_name,
-            "inventory_reservation_balance_consistency_check",
+            "inventory_on_hand_movement_consistency_check",
           )
           const [guardedReservationRow] = yield* Effect.promise(() =>
             client<{ status: string }[]>`
