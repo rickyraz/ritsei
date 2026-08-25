@@ -164,8 +164,8 @@ export const CreatePartyRepresentationInput = Schema.Struct({
 
 export const SetPartyRepresentationActiveInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  representationId: Schema.String,
+  tenantId: Uuid,
+  representationId: Uuid,
   active: Schema.Boolean,
 })
 

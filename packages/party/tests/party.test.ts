@@ -32,6 +32,7 @@ import {
   PartyRepresentationUserAccountNotFound,
   PartyRoleAlreadyAssigned,
   PartyService,
+  SetPartyRepresentationActiveInput,
 } from "../mod.ts"
 import type { EventEnvelopeShape } from "../../messaging/mod.ts"
 import { makePartyMemoryStore } from "../src/memory.ts"
@@ -298,6 +299,15 @@ describe("party contract", () => {
           yield* Effect.flip(service.createPartyRepresentation(input)),
           PartyRepresentationAlreadyExists,
         )
+        const invalidRepresentationToggle = yield* Effect.flip(
+          Schema.decodeUnknownEffect(SetPartyRepresentationActiveInput)({
+            principal,
+            tenantId,
+            representationId: "not-a-uuid",
+            active: false,
+          }),
+        )
+        assert.strictEqual(invalidRepresentationToggle._tag, "SchemaError")
         const deactivated = yield* service.setPartyRepresentationActive({
           principal,
           tenantId,
@@ -309,7 +319,7 @@ describe("party contract", () => {
           yield* Effect.flip(service.setPartyRepresentationActive({
             principal,
             tenantId,
-            representationId: "missing",
+            representationId: "00000000-0000-4000-8000-000000000012",
             active: true,
           })),
           PartyRepresentationNotFound,
