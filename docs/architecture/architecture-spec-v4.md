@@ -190,6 +190,29 @@ A module may publicly expose:
 
 Table definitions and repository implementations remain internal.
 
+Effect-backed packages use the smallest boundary shape justified by their persistence and test
+semantics:
+
+```text
+contract.ts  -> public Schema DTOs, service interfaces, and service keys
+errors.ts    -> public tagged failures
+service.ts   -> domain/application orchestration and compatibility exports
+store.ts     -> private semantic persistence port
+postgres.ts  -> PostgreSQL/Drizzle implementation
+memory.ts    -> deterministic test implementation when safe
+layers.ts    -> named live/test composition
+```
+
+`mod.ts` exports contracts, errors, service operations, and layers; it does not export private
+stores or persistence adapters. Platform contracts and adapters follow the same rule in `kernel`.
+Invariant-heavy financial and durable-workflow implementations may keep their specialized ports and
+adapters separate rather than forcing them into a generic repository shape.
+
+Production composition is named in `apps/runtime.ts` (`PlatformCore`, `PlatformLive`, domain `*Live`
+layers, and `ApplicationLive`). HTTP handler groups resolve static services once during group
+construction; request-scoped `CurrentPrincipal` remains inside each request operation. Public
+Effect operations use stable `Effect.fn("Domain.operation")` names for readable execution traces.
+
 Dependencies must be visible in the Effect environment type. Business errors must remain tagged and
 exhaustively handled.
 
