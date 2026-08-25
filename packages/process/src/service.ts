@@ -444,6 +444,30 @@ export interface ProcessService {
 
 export const ProcessService = Context.Service<ProcessService>("RITSEI/ProcessService")
 
+const withProcessOperationNames = (service: ProcessService): ProcessService => ({
+  confirmOrder: Effect.fn("ProcessService.confirmOrder")((input: unknown) =>
+    service.confirmOrder(input)
+  ),
+  cancelOrder: Effect.fn("ProcessService.cancelOrder")((input: unknown) =>
+    service.cancelOrder(input)
+  ),
+  fulfillOrder: Effect.fn("ProcessService.fulfillOrder")((input: unknown) =>
+    service.fulfillOrder(input)
+  ),
+  recoverOrder: Effect.fn("ProcessService.recoverOrder")((input: unknown) =>
+    service.recoverOrder(input)
+  ),
+  markManualRecovery: Effect.fn("ProcessService.markManualRecovery")((input: unknown) =>
+    service.markManualRecovery(input)
+  ),
+  claimJob: Effect.fn("ProcessService.claimJob")((input: unknown) => service.claimJob(input)),
+  renewJob: Effect.fn("ProcessService.renewJob")((input: unknown) => service.renewJob(input)),
+  completeJob: Effect.fn("ProcessService.completeJob")((input: unknown) =>
+    service.completeJob(input)
+  ),
+  failJob: Effect.fn("ProcessService.failJob")((input: unknown) => service.failJob(input)),
+})
+
 export const makeProcessJobEnqueuer = Effect.gen(function* () {
   const database = yield* Database
   return {
@@ -1908,7 +1932,7 @@ export const makeProcessService = Effect.gen(function* () {
       return yield* decodeJob(toProcessJob(result.row), decoded.tenantId, decoded.jobId)
     })
 
-  return {
+  const service: ProcessService = {
     confirmOrder: execute,
     cancelOrder,
     fulfillOrder,
@@ -1927,5 +1951,6 @@ export const makeProcessService = Effect.gen(function* () {
     renewJob,
     completeJob,
     failJob,
-  } satisfies ProcessService
+  }
+  return withProcessOperationNames(service)
 })
