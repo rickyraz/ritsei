@@ -1,5 +1,10 @@
 import * as Schema from "effect/Schema"
 
+const Uuid = Schema.String.check(Schema.isUUID())
+const LowercaseTrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim() && value === value.toLowerCase(),
+  { expected: "a trimmed lowercase nonblank string" },
+))
 const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
   (value) => /\S/.test(value) && value === value.trim(),
   { expected: "a trimmed nonblank string" },
@@ -7,31 +12,31 @@ const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
 
 export class CustomerAlreadyExists
   extends Schema.TaggedError<CustomerAlreadyExists>()("CustomerAlreadyExists", {
-    tenantId: Schema.String,
-    email: Schema.String,
+    tenantId: Uuid,
+    email: LowercaseTrimmedNonEmptyString,
   }) {}
 export class CustomerNotFound extends Schema.TaggedError<CustomerNotFound>()("CustomerNotFound", {
-  tenantId: Schema.String,
-  customerId: Schema.String,
+  tenantId: Uuid,
+  customerId: Uuid,
 }) {}
 export class QuotationNotFound
   extends Schema.TaggedError<QuotationNotFound>()("QuotationNotFound", {
-    tenantId: Schema.String,
-    quotationId: Schema.String,
+    tenantId: Uuid,
+    quotationId: Uuid,
   }) {}
 export class SalesOrderNotFound
   extends Schema.TaggedError<SalesOrderNotFound>()("SalesOrderNotFound", {
-    tenantId: Schema.String,
-    orderId: Schema.String,
+    tenantId: Uuid,
+    orderId: Uuid,
   }) {}
 export class SalesOrderInvalidState
   extends Schema.TaggedError<SalesOrderInvalidState>()("SalesOrderInvalidState", {
-    tenantId: Schema.String,
-    orderId: Schema.String,
+    tenantId: Uuid,
+    orderId: Uuid,
     status: Schema.Literals(["draft", "confirmed", "cancelled"]),
   }) {}
 export class SalesOrderConfirmationIdempotencyConflict
   extends Schema.TaggedError<SalesOrderConfirmationIdempotencyConflict>()(
     "SalesOrderConfirmationIdempotencyConflict",
-    { tenantId: Schema.String, orderId: Schema.String, idempotencyKey: TrimmedNonEmptyString },
+    { tenantId: Uuid, orderId: Uuid, idempotencyKey: TrimmedNonEmptyString },
   ) {}
