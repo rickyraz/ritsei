@@ -2,6 +2,11 @@ import * as Schema from "effect/Schema"
 
 import { StockReservationStatus, StockTransferStatus, UnitOfMeasure } from "./contract.ts"
 
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
+
 export class InventoryReferenceNotFound
   extends Schema.TaggedError<InventoryReferenceNotFound>()("InventoryReferenceNotFound", {
     tenantId: Schema.String,
@@ -59,7 +64,7 @@ export class StockCorrectionIdempotencyConflict
     "StockCorrectionIdempotencyConflict",
     {
       tenantId: Schema.String,
-      idempotencyKey: Schema.String,
+      idempotencyKey: TrimmedNonEmptyString,
     },
   ) {}
 export class StockReservationIdempotencyConflict
@@ -67,7 +72,7 @@ export class StockReservationIdempotencyConflict
     "StockReservationIdempotencyConflict",
     {
       tenantId: Schema.String,
-      idempotencyKey: Schema.String,
+      idempotencyKey: TrimmedNonEmptyString,
     },
   ) {}
 export class StockReservationLegalEntityMismatch

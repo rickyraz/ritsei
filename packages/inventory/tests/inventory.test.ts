@@ -586,20 +586,19 @@ describe("inventory contract", () => {
         })),
         InventoryUnitOfMeasureMismatch,
       )
-      assert.instanceOf(
-        yield* Effect.flip(inventory.adjustStock({
-          principal,
-          tenantId,
-          warehouseId: warehouse.id,
-          itemId: item.id,
-          adjustment: "1",
-          unitOfMeasure: "BOX",
-          reason: "Changed payload",
-          ...correctionMetadata,
-          idempotencyKey: "correction-1",
-        })),
-        StockCorrectionIdempotencyConflict,
-      )
+      const correctionConflict = yield* Effect.flip(inventory.adjustStock({
+        principal,
+        tenantId,
+        warehouseId: warehouse.id,
+        itemId: item.id,
+        adjustment: "1",
+        unitOfMeasure: "BOX",
+        reason: "Changed payload",
+        ...correctionMetadata,
+        idempotencyKey: " correction-1 ",
+      }))
+      assert.instanceOf(correctionConflict, StockCorrectionIdempotencyConflict)
+      assert.strictEqual(correctionConflict.idempotencyKey, "correction-1")
     })))
 
   it.effect("stock corrected atomic publication preserves metadata and one event on retry", () => {
@@ -883,17 +882,16 @@ describe("inventory contract", () => {
         quantity: "4",
         idempotencyKey: "reservation-conflict",
       })
-      assert.instanceOf(
-        yield* Effect.flip(inventory.reserveStock({
-          principal,
-          tenantId,
-          warehouseId: warehouse.id,
-          itemId: item.id,
-          quantity: "5",
-          idempotencyKey: "reservation-conflict",
-        })),
-        StockReservationIdempotencyConflict,
-      )
+      const reservationConflict = yield* Effect.flip(inventory.reserveStock({
+        principal,
+        tenantId,
+        warehouseId: warehouse.id,
+        itemId: item.id,
+        quantity: "5",
+        idempotencyKey: " reservation-conflict ",
+      }))
+      assert.instanceOf(reservationConflict, StockReservationIdempotencyConflict)
+      assert.strictEqual(reservationConflict.idempotencyKey, "reservation-conflict")
     })))
 
   it.effect("rejects reservations above available stock", () =>
