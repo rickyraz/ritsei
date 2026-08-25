@@ -30,6 +30,8 @@ import {
 import { makeMessagingService } from "../../messaging/mod.ts"
 
 const databaseUrl = Deno.env.get("DATABASE_URL")
+const postgresFailure = (effect: () => Promise<unknown>) =>
+  Effect.tryPromise({ try: effect, catch: (cause) => cause }).pipe(Effect.flip)
 
 it.effect.skipIf(databaseUrl === undefined)(
   "enforces scoped external identifier uniqueness in PostgreSQL",
@@ -319,6 +321,28 @@ it.effect.skipIf(databaseUrl === undefined)(
               organizationId: person.id,
             })),
             OrganizationRequired,
+          )
+          const invalidLegalEntity = yield* postgresFailure(() =>
+            client`
+              insert into party.legal_entities (tenant_id, organization_party_id)
+              values (${tenant.id}, ${person.id})
+            `
+          )
+          assert.strictEqual((invalidLegalEntity as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidLegalEntity as { constraint_name?: string }).constraint_name,
+            "legal_entities_organization_party_kind_check",
+          )
+          const invalidPartyKindChange = yield* postgresFailure(() =>
+            client`
+              update party.parties set kind = 'person'
+              where tenant_id = ${tenant.id} and id = ${organization.id}
+            `
+          )
+          assert.strictEqual((invalidPartyKindChange as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidPartyKindChange as { constraint_name?: string }).constraint_name,
+            "legal_entities_organization_party_kind_check",
           )
           const branch = yield* party.createBranch({
             principal,
