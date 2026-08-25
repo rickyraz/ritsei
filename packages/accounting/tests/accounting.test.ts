@@ -885,6 +885,10 @@ describe("accounting contract", () => {
         }),
       )
       assert.strictEqual(blankName._tag, "SchemaError")
+      const paddedName = yield* Effect.flip(
+        Schema.decodeUnknownEffect(Account.fields.name)(" Cash "),
+      )
+      assert.strictEqual(paddedName._tag, "SchemaError")
       const lowercaseCode = yield* Effect.flip(
         Schema.decodeUnknownEffect(Account.fields.code)("cash"),
       )

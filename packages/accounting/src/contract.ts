@@ -15,6 +15,10 @@ import { FinancialVerificationEvidence } from "./financial-readiness.ts"
 import * as AccountingErrors from "./errors.ts"
 
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
 const UpperNonEmptyString = Schema.String.check(Schema.makeFilter(
   (value) => /\S/.test(value) && value === value.trim() && value === value.toUpperCase(),
   { expected: "a trimmed uppercase nonblank string" },
@@ -61,7 +65,7 @@ export const Account = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
   code: UpperNonEmptyString,
-  name: NonEmptyString,
+  name: TrimmedNonEmptyString,
   type: Schema.Literals(["asset", "liability", "equity", "revenue", "expense"]),
 })
 
