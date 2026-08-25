@@ -38,7 +38,7 @@ export const Party = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
   kind: PartyKind,
-  name: Schema.String,
+  name: NonBlankString,
 })
 
 export const ExternalIdentifier = Schema.Struct({
@@ -103,7 +103,7 @@ export const CreatePartyInput = Schema.Struct({
   principal: Principal,
   tenantId: Uuid,
   kind: PartyKind,
-  name: NonEmptyString,
+  name: NonBlankString,
 })
 
 export const AssignPartyRoleInput = Schema.Struct({

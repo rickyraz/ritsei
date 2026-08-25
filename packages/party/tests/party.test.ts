@@ -89,6 +89,15 @@ describe("party contract", () => {
         }),
       )
       assert.strictEqual(invalidTenant._tag, "SchemaError")
+      const invalidName = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreatePartyInput)({
+          principal,
+          tenantId,
+          kind: "organization",
+          name: "   ",
+        }),
+      )
+      assert.strictEqual(invalidName._tag, "SchemaError")
       const party = yield* service.create({
         principal,
         tenantId,
