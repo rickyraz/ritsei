@@ -360,6 +360,10 @@ describe("inventory contract", () => {
         "SchemaError",
       )
       assert.strictEqual(
+        (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, sku: "sku-1" })))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
         (yield* Effect.flip(Schema.decodeUnknownEffect(Item)({ ...item, name: " " })))._tag,
         "SchemaError",
       )

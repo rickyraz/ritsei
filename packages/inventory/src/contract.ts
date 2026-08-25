@@ -55,6 +55,10 @@ const SignedQuantity = Schema.String.check(
   ),
 )
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const UpperNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim() && value === value.toUpperCase(),
+  { expected: "a trimmed uppercase nonblank string" },
+))
 const InstantString = EventEnvelope.fields.occurredAt
 export const UnitOfMeasure = Schema.String.check(Schema.isPattern(/^[A-Z][A-Z0-9_-]*$/))
 const UnitOfMeasureInput = NonEmptyString
@@ -72,7 +76,7 @@ export const Warehouse = Schema.Struct({
 export const Item = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  sku: NonEmptyString,
+  sku: UpperNonEmptyString,
   name: NonEmptyString,
   unitOfMeasure: UnitOfMeasure,
 })
