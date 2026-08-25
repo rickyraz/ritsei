@@ -104,6 +104,11 @@ describe("sales contract", () => {
         }),
       )
       assert.strictEqual(invalidTenant._tag, "SchemaError")
+
+      const emptyLines = yield* Effect.flip(
+        Schema.decodeUnknownEffect(SalesOrder.fields.lines)([]),
+      )
+      assert.strictEqual(emptyLines._tag, "SchemaError")
     }))
 
   it.effect("validates sales creation relationship IDs as UUIDs", () =>

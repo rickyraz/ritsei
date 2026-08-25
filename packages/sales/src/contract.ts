@@ -51,7 +51,7 @@ export const SalesOrder = Schema.Struct({
   status: Schema.Literals(["draft", "confirmed", "cancelled"]),
   confirmedAt: Schema.NullOr(InstantString),
   total: Money,
-  lines: Schema.Array(SalesOrderLine),
+  lines: Schema.Array(SalesOrderLine).check(Schema.isMinLength(1)),
 })
 
 export type Customer = Schema.Schema.Type<typeof Customer>
