@@ -124,7 +124,7 @@ export type JournalEntry = Schema.Schema.Type<typeof JournalEntry>
 export type AccountingPeriod = Schema.Schema.Type<typeof AccountingPeriod>
 export type RevenuePostingProfile = Schema.Schema.Type<typeof RevenuePostingProfile>
 
-const ScopedInput = { principal: Principal, tenantId: Schema.String }
+const ScopedInput = { principal: Principal, tenantId: Uuid }
 
 export const FinancialCutoverControl = Schema.Struct({
   tenantId: Uuid,

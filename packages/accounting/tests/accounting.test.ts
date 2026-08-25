@@ -26,6 +26,7 @@ import {
   AccountingService,
   AccountNotFound,
   ConfigureRevenuePostingInput,
+  CreateAccountInput,
   CreateFinancialJournalIntentInput,
   CreateFinancialRevenueIntentInput,
   FinancialCutoverControl,
@@ -818,6 +819,20 @@ describe("accounting contract", () => {
         )
         assert.strictEqual(failure._tag, "SchemaError")
       }
+    }))
+
+  it.effect("rejects malformed accounting input tenant identities", () =>
+    Effect.gen(function* () {
+      const failure = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateAccountInput)({
+          principal,
+          tenantId: "not-a-uuid",
+          code: "1000",
+          name: "Cash",
+          type: "asset",
+        }),
+      )
+      assert.strictEqual(failure._tag, "SchemaError")
     }))
 
   it.effect("rejects malformed account identities", () =>
