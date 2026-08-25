@@ -22,6 +22,7 @@ import {
   Item,
   makeInventoryTestLayer,
   ReceiveStockInput,
+  ReleaseReservationInput,
   ReserveStockInput,
   StockBalance,
   StockCorrection,
@@ -196,6 +197,15 @@ describe("inventory contract", () => {
         }),
       )
       assert.strictEqual(invalidTransfer._tag, "SchemaError")
+
+      const invalidReservation = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ReleaseReservationInput)({
+          principal,
+          tenantId,
+          reservationId: "not-a-uuid",
+        }),
+      )
+      assert.strictEqual(invalidReservation._tag, "SchemaError")
     }))
 
   it.effect("bounds positive inventory quantities to PostgreSQL bigint", () =>

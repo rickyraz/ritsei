@@ -173,7 +173,7 @@ export const ReserveStockInput = Schema.Struct({
 })
 export const ReleaseReservationInput = Schema.Struct({
   ...ScopedInput,
-  reservationId: Schema.String,
+  reservationId: Uuid,
 })
 export const FulfillReservationInput = ReleaseReservationInput
 export const CreateStockTransferInput = Schema.Struct({
