@@ -12,6 +12,7 @@ import {
 } from "../../messaging/mod.ts"
 import {
   AdjustStockInput,
+  CreateStockTransferInput,
   CreateWarehouseInput,
   InventoryCapabilities,
   InventoryService,
@@ -171,6 +172,20 @@ describe("inventory contract", () => {
         }),
       )
       assert.strictEqual(invalidReserveWarehouse._tag, "SchemaError")
+
+      const invalidTransferWarehouse = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateStockTransferInput)({
+          principal,
+          tenantId,
+          sourceWarehouseId: "not-a-uuid",
+          destinationWarehouseId: "00000000-0000-4000-8000-000000000002",
+          lines: [{
+            itemId: "00000000-0000-4000-8000-000000000003",
+            quantity: "1",
+          }],
+        }),
+      )
+      assert.strictEqual(invalidTransferWarehouse._tag, "SchemaError")
     }))
 
   it.effect("bounds positive inventory quantities to PostgreSQL bigint", () =>

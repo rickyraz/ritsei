@@ -178,8 +178,8 @@ export const ReleaseReservationInput = Schema.Struct({
 export const FulfillReservationInput = ReleaseReservationInput
 export const CreateStockTransferInput = Schema.Struct({
   ...ScopedInput,
-  sourceWarehouseId: Schema.String,
-  destinationWarehouseId: Schema.String,
+  sourceWarehouseId: Uuid,
+  destinationWarehouseId: Uuid,
   lines: Schema.Array(StockTransferLine).check(Schema.isMinLength(1)),
 })
 export const ConfirmStockTransferInput = Schema.Struct({
