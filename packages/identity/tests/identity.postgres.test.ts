@@ -15,6 +15,8 @@ import { makeMessagingService } from "../../messaging/mod.ts"
 import { withTemporaryDatabase } from "../../../tests/support/postgres-database.ts"
 
 const databaseUrl = Deno.env.get("DATABASE_URL")
+const postgresFailure = (effect: () => Promise<unknown>) =>
+  Effect.tryPromise({ try: effect, catch: (cause) => cause }).pipe(Effect.flip)
 
 const makeDatabaseService = (client: Parameters<typeof makePostgresDatabase>[0]) =>
   makeUserAccountService.pipe(
@@ -150,6 +152,17 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* runMigrations(client)
         const service = yield* makeDatabaseService(client)
         const created = yield* service.create({ email: "status@example.test" })
+        const activeWithDisabledAt = yield* postgresFailure(() =>
+          client`
+            update identity.user_accounts set disabled_at = now()
+            where id = ${created.id}
+          `
+        )
+        assert.strictEqual((activeWithDisabledAt as { code?: string }).code, "23514")
+        assert.strictEqual(
+          (activeWithDisabledAt as { constraint_name?: string }).constraint_name,
+          "user_accounts_status_disabled_at_check",
+        )
         assert.strictEqual(
           (yield* service.getAuthenticationState(created.id)).sessionInvalidatedAt,
           null,
@@ -159,6 +172,17 @@ it.effect.skipIf(databaseUrl === undefined)(
         const disabledState = yield* service.getAuthenticationState(created.id)
         assert.strictEqual(disabledState.status, "disabled")
         assert.ok(disabledState.sessionInvalidatedAt !== null)
+        const disabledWithoutTimestamp = yield* postgresFailure(() =>
+          client`
+            update identity.user_accounts set disabled_at = null
+            where id = ${created.id}
+          `
+        )
+        assert.strictEqual((disabledWithoutTimestamp as { code?: string }).code, "23514")
+        assert.strictEqual(
+          (disabledWithoutTimestamp as { constraint_name?: string }).constraint_name,
+          "user_accounts_status_disabled_at_check",
+        )
         assert.strictEqual((yield* service.enable(created.id)).status, "active")
         assert.strictEqual(
           (yield* service.getAuthenticationState(created.id)).status,

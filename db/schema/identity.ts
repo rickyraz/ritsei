@@ -19,5 +19,10 @@ export const userAccounts = identitySchema.table(
   (table) => [
     unique("user_accounts_email_key").on(table.email),
     check("user_accounts_status_check", sql`${table.status} in ('active', 'disabled')`),
+    check(
+      "user_accounts_status_disabled_at_check",
+      sql`(${table.status} = 'active' and ${table.disabledAt} is null) or
+        (${table.status} = 'disabled' and ${table.disabledAt} is not null)`,
+    ),
   ],
 )
