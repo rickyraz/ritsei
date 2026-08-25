@@ -374,6 +374,15 @@ describe("party contract", () => {
         assert.strictEqual(invalidRepresentation._tag, "SchemaError")
         const representation = yield* service.createPartyRepresentation(input)
         yield* Schema.decodeUnknownEffect(PartyRepresentation)(representation)
+        assert.strictEqual(
+          (yield* Effect.flip(
+            Schema.decodeUnknownEffect(PartyRepresentation)({
+              ...representation,
+              kind: " representative ",
+            }),
+          ))._tag,
+          "SchemaError",
+        )
         assert.strictEqual(representation.active, true)
         assert.strictEqual(representation.kind, "representative")
         assert.instanceOf(

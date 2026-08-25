@@ -75,7 +75,7 @@ export const Branch = Schema.Struct({
   dedicatedJournalCode: Schema.NullOr(TrimmedNonBlankString),
 })
 
-export const PartyRepresentationKind = NonBlankString
+export const PartyRepresentationKind = TrimmedNonBlankString
 
 export const PartyRepresentation = Schema.Struct({
   id: Uuid,
