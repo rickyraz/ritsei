@@ -165,10 +165,10 @@ export const AdjustStockInput = Schema.Struct({
 })
 export const ReserveStockInput = Schema.Struct({
   ...ScopedInput,
-  warehouseId: Schema.String,
-  itemId: Schema.String,
+  warehouseId: Uuid,
+  itemId: Uuid,
   quantity: Quantity,
-  legalEntityId: Schema.optionalKey(Schema.String),
+  legalEntityId: Schema.optionalKey(Uuid),
   idempotencyKey: Schema.optionalKey(Schema.String.check(Schema.isPattern(/\S/))),
 })
 export const ReleaseReservationInput = Schema.Struct({
