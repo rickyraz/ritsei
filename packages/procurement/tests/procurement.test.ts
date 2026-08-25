@@ -9,11 +9,16 @@ import {
   InventoryService,
   makeInventoryTestLayer,
 } from "../../inventory/mod.ts"
-import { makeMessagingTestLayer } from "../../messaging/mod.ts"
+import {
+  EventEnvelopeShape,
+  makeMessagingTestLayer,
+  MessagingService,
+} from "../../messaging/mod.ts"
 import { makePartyTestLayer, PartyCapabilities, PartyService } from "../../party/mod.ts"
 import {
   makeProcurementTestLayer,
   ProcurementCapabilities,
+  ProcurementPurchaseOrderConfirmedEvent,
   ProcurementService,
   PurchaseOrder,
   PurchaseOrderConfirmationIdempotencyConflict,
@@ -50,6 +55,7 @@ const capabilities = [
 const withProcurement = <A, E>(
   program: Effect.Effect<A, E, PartyService | ProcurementService | InventoryService>,
   granted: ReadonlyArray<(typeof capabilities)[number]> = capabilities,
+  onPublished?: (event: EventEnvelopeShape) => void,
 ) => {
   const authorization = makeAuthorizationTestLayer(
     [tenantId, otherTenantId].flatMap((tenantId) =>
@@ -61,7 +67,18 @@ const withProcurement = <A, E>(
     ),
   )
   const party = makePartyTestLayer().pipe(Layer.provide(authorization))
-  const messaging = makeMessagingTestLayer()
+  const messaging = Layer.effect(
+    MessagingService,
+    Effect.gen(function* () {
+      const base = yield* MessagingService
+      if (onPublished === undefined) return base
+      return {
+        ...base,
+        append: (input: unknown) =>
+          base.append(input).pipe(Effect.tap((event) => Effect.sync(() => onPublished(event)))),
+      }
+    }),
+  ).pipe(Layer.provide(makeMessagingTestLayer()))
   const procurement = makeProcurementTestLayer().pipe(
     Layer.provide(Layer.mergeAll(authorization, party, messaging)),
   )
@@ -132,6 +149,36 @@ const createPurchaseOrder = Effect.gen(function* () {
 })
 
 describe("procurement contract", () => {
+  it.effect("publishes one confirmation event across idempotent replay", () => {
+    const published: EventEnvelopeShape[] = []
+    return withProcurement(
+      Effect.gen(function* () {
+        const procurement = yield* ProcurementService
+        const order = yield* createPurchaseOrder
+        const input = {
+          principal,
+          tenantId,
+          purchaseOrderId: order.id,
+          idempotencyKey: "confirm-event",
+        }
+        const confirmed = yield* procurement.confirmPurchaseOrder(input)
+        assert.strictEqual(published.length, 1)
+        assert.strictEqual(published[0].eventType, ProcurementPurchaseOrderConfirmedEvent.id)
+        assert.strictEqual(published[0].tenantId, tenantId)
+        assert.strictEqual(published[0].aggregateId, confirmed.id)
+        assert.deepStrictEqual(published[0].payload, {
+          purchaseOrderId: confirmed.id,
+          supplierAccountId: confirmed.supplierAccountId,
+          total: confirmed.total,
+        })
+        assert.deepStrictEqual(yield* procurement.confirmPurchaseOrder(input), confirmed)
+        assert.strictEqual(published.length, 1)
+      }),
+      capabilities,
+      (event) => published.push(event),
+    )
+  })
+
   it.effect("creates one supplier account for an active supplier relationship", () =>
     withProcurement(Effect.gen(function* () {
       const procurement = yield* ProcurementService
