@@ -3,11 +3,16 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
-import { makeMessagingTestLayer } from "../../messaging/mod.ts"
+import {
+  EventEnvelopeShape,
+  makeMessagingTestLayer,
+  MessagingService,
+} from "../../messaging/mod.ts"
 import {
   CustomerAlreadyExists,
   makeSalesTestLayer,
   SalesOrderConfirmationIdempotencyConflict,
+  SalesOrderConfirmedEvent,
   SalesOrderInvalidState,
   SalesOrderNotFound,
   SalesService,
@@ -39,15 +44,72 @@ const authorizationLayer = makeAuthorizationTestLayer(
   ),
 )
 
-const withSales = <A, E>(program: Effect.Effect<A, E, SalesService>) =>
-  Effect.provide(
+const withSales = <A, E>(
+  program: Effect.Effect<A, E, SalesService>,
+  onPublished?: (event: EventEnvelopeShape) => void,
+) => {
+  const messaging = Layer.effect(
+    MessagingService,
+    Effect.gen(function* () {
+      const base = yield* MessagingService
+      if (onPublished === undefined) return base
+      return {
+        ...base,
+        append: (input: unknown) =>
+          base.append(input).pipe(Effect.tap((event) => Effect.sync(() => onPublished(event)))),
+      }
+    }),
+  ).pipe(Layer.provide(makeMessagingTestLayer()))
+  return Effect.provide(
     program,
     makeSalesTestLayer().pipe(
-      Layer.provide(Layer.merge(authorizationLayer, makeMessagingTestLayer())),
+      Layer.provide(Layer.merge(authorizationLayer, messaging)),
     ),
   )
+}
 
 describe("sales contract", () => {
+  it.effect("publishes one confirmation event across idempotent replay", () => {
+    const published: EventEnvelopeShape[] = []
+    return withSales(
+      Effect.gen(function* () {
+        const sales = yield* SalesService
+        const customer = yield* sales.createCustomer({
+          principal,
+          tenantId,
+          name: "ACME",
+          email: "event@acme.test",
+        })
+        const order = yield* sales.createOrder({
+          principal,
+          tenantId,
+          customerId: customer.id,
+          lines: [{ itemId: "item-1", quantity: "2", unitPrice: "10.00" }],
+        })
+        const input = {
+          principal,
+          tenantId,
+          orderId: order.id,
+          ...confirmationMetadata,
+          idempotencyKey: "confirm-event",
+        }
+        const confirmed = yield* sales.confirmOrder(input)
+        assert.strictEqual(published.length, 1)
+        assert.strictEqual(published[0].eventType, SalesOrderConfirmedEvent.id)
+        assert.strictEqual(published[0].tenantId, tenantId)
+        assert.strictEqual(published[0].aggregateId, confirmed.id)
+        assert.strictEqual(published[0].commandId, confirmationMetadata.commandId)
+        assert.deepStrictEqual(published[0].payload, {
+          orderId: confirmed.id,
+          total: confirmed.total,
+        })
+        assert.deepStrictEqual(yield* sales.confirmOrder(input), confirmed)
+        assert.strictEqual(published.length, 1)
+      }),
+      (event) => published.push(event),
+    )
+  })
+
   it.effect("exposes confirmed cancellation only as a coordinator participant", () =>
     withSales(Effect.gen(function* () {
       const sales = yield* SalesService
