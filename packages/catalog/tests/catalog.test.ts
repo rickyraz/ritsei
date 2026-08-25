@@ -248,7 +248,7 @@ describe("catalog compatibility", () => {
 
       yield* Schema.decodeUnknownEffect(InventoryAdjustStockAction.inputSchema)({
         principal,
-        tenantId: "tenant-1",
+        tenantId: "00000000-0000-4000-8000-000000000001",
         warehouseId: "00000000-0000-4000-8000-000000000002",
         itemId: "00000000-0000-4000-8000-000000000003",
         adjustment: "-2",

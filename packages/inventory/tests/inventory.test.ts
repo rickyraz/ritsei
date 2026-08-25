@@ -366,6 +366,20 @@ describe("inventory contract", () => {
   it.effect("applies normalized UOM corrections once and preserves reserved stock", () =>
     withInventory(Effect.gen(function* () {
       const inventory = yield* InventoryService
+      const invalidTenant = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AdjustStockInput)({
+          principal,
+          tenantId: "not-a-uuid",
+          warehouseId: "00000000-0000-4000-8000-000000000002",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          adjustment: "1",
+          unitOfMeasure: "EA",
+          reason: "cycle count",
+          ...correctionMetadata,
+          idempotencyKey: "invalid-tenant",
+        }),
+      )
+      assert.strictEqual(invalidTenant._tag, "SchemaError")
       const warehouse = yield* inventory.createWarehouse({
         principal,
         tenantId,

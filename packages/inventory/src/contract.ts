@@ -152,7 +152,8 @@ export const ReceiveStockInput = Schema.Struct({
   referenceId: Schema.optionalKey(Schema.String.check(Schema.isUUID())),
 })
 export const AdjustStockInput = Schema.Struct({
-  ...ScopedInput,
+  principal: Principal,
+  tenantId: Uuid,
   warehouseId: Uuid,
   itemId: Uuid,
   adjustment: SignedQuantity,
