@@ -263,6 +263,18 @@ describe("sales contract", () => {
         name: "ACME",
         email: " SALES@ACME.TEST ",
       })
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(Customer)({ ...customer, name: " ACME " }),
+        ))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(Customer)({ ...customer, email: " EVENT@ACME.TEST " }),
+        ))._tag,
+        "SchemaError",
+      )
       const quotation = yield* sales.createQuotation({
         principal,
         tenantId,

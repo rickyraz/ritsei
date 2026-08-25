@@ -15,6 +15,14 @@ import {
 } from "./errors.ts"
 
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
+const LowercaseTrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim() && value === value.toLowerCase(),
+  { expected: "a trimmed lowercase nonblank string" },
+))
 const Uuid = Schema.String.check(Schema.isUUID())
 const Money = FinancialMajorAmount
 const Quantity = Schema.String.check(
@@ -28,8 +36,8 @@ const InstantString = EventEnvelope.fields.occurredAt
 export const Customer = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  name: NonEmptyString,
-  email: NonEmptyString,
+  name: TrimmedNonEmptyString,
+  email: LowercaseTrimmedNonEmptyString,
 })
 export const Quotation = Schema.Struct({
   id: Uuid,
