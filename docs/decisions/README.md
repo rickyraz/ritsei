@@ -76,5 +76,6 @@ current system; ADRs preserve decision history.
 | [`0050`](./0050-use-package-json-for-deno-dependency-resolution.md) | Use package.json and npm exports for Deno dependency resolution | Accepted |
 | [`0051`](./0051-adopt-uuidv7-for-persistent-identities.md) | Adopt UUIDv7 for persistent identities | Accepted |
 | [`0052`](./0052-separate-lease-capability-and-fencing-generation.md) | Separate lease capability from fencing generation | Accepted |
+| [`0053`](./0053-clarify-per-job-lease-generation-invariants.md) | Clarify per-job lease-generation invariants | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

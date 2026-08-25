@@ -16,6 +16,8 @@
 >   [`../decisions/0004-separate-events-jobs-and-workflows.md`](../decisions/0004-separate-events-jobs-and-workflows.md)
 > - Lease capability and fencing generation:
 >   [`../decisions/0052-separate-lease-capability-and-fencing-generation.md`](../decisions/0052-separate-lease-capability-and-fencing-generation.md)
+> - Per-job lease-generation invariants:
+>   [`../decisions/0053-clarify-per-job-lease-generation-invariants.md`](../decisions/0053-clarify-per-job-lease-generation-invariants.md)
 
 ## Decision
 
@@ -62,9 +64,12 @@ upgrade, and adapter gate defined by
 
 A job's random lease token is an opaque capability checked by equality. It is not a formal fencing
 proof. A side effect that can outlive a lease must use a monotonic lease generation at the actual
-mutation boundary; checking the token only when completing the job is insufficient. The complete
-capability-versus-fencing decision is owned by
-[ADR-0052](../decisions/0052-separate-lease-capability-and-fencing-generation.md).
+mutation boundary; the fenced resource stores its own highest accepted generation and rejects lower
+values. The generation is monotonic for one durable job row, never resets while that identity exists,
+and is not globally ordered across different jobs. Checking the token only when completing the job
+is insufficient. The capability-versus-fencing decision is owned by
+[ADR-0052](../decisions/0052-separate-lease-capability-and-fencing-generation.md) and its invariants
+by [ADR-0053](../decisions/0053-clarify-per-job-lease-generation-invariants.md).
 
 ## Direct Transaction Examples
 
