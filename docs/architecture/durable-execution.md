@@ -14,6 +14,8 @@
 > - Active runtime: [`./architecture-spec-v4.md`](./architecture-spec-v4.md)
 > - Async ADR:
 >   [`../decisions/0004-separate-events-jobs-and-workflows.md`](../decisions/0004-separate-events-jobs-and-workflows.md)
+> - Lease capability and fencing generation:
+>   [`../decisions/0052-separate-lease-capability-and-fencing-generation.md`](../decisions/0052-separate-lease-capability-and-fencing-generation.md)
 
 ## Decision
 
@@ -28,6 +30,9 @@ PgQue
 
 Job table
 -> leased, scheduled, prioritized work
+
+Lease semantics
+-> random capability token for possession checks; monotonic generation for stale-writer fencing
 
 pg_durable
 -> checkpointed multi-step workflow
@@ -54,6 +59,12 @@ Messaging-owned transactional event outbox and consumer receipts. It does not cl
 `pg_durable` is authoritative. PgQue activation additionally requires the installer, ticker, grants,
 upgrade, and adapter gate defined by
 [ADR-0033](../decisions/0033-extend-order-lifecycle-and-gate-pgque.md).
+
+A job's random lease token is an opaque capability checked by equality. It is not a formal fencing
+proof. A side effect that can outlive a lease must use a monotonic lease generation at the actual
+mutation boundary; checking the token only when completing the job is insufficient. The complete
+capability-versus-fencing decision is owned by
+[ADR-0052](../decisions/0052-separate-lease-capability-and-fencing-generation.md).
 
 ## Direct Transaction Examples
 

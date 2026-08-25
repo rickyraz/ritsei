@@ -300,8 +300,11 @@ Rules for new work:
   Application-created persistent IDs use the kernel-owned `uuidv7()` helper;
   domain packages must not import `@std/uuid` directly.
 - Do not use `crypto.randomUUID()` for persistent identities or stored event IDs.
-  UUIDv4 remains valid for opaque ephemeral values such as lease tokens and
-  test-only fixture randomness when ordering is not part of the identity.
+  UUIDv4 remains valid for opaque ephemeral lease capability tokens and test-only
+  fixture randomness when ordering is not part of the identity.
+- Do not confuse a random lease capability with fencing. True stale-writer
+  fencing requires a monotonic `BIGINT` generation enforced at the side-effect
+  mutation boundary.
 - Keep `created_at` as the audit timestamp and business numbers as separate
   fields; UUIDv7 is neither an audit timestamp nor a human-readable number.
 - Do not rewrite existing UUIDv4 rows solely to convert their UUID version.

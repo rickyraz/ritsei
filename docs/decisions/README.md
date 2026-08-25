@@ -75,5 +75,6 @@ current system; ADRs preserve decision history.
 | [`0049`](./0049-keep-solid-compiler-at-rendering-boundary.md) | Keep the Solid compiler at the rendering boundary | Accepted |
 | [`0050`](./0050-use-package-json-for-deno-dependency-resolution.md) | Use package.json and npm exports for Deno dependency resolution | Accepted |
 | [`0051`](./0051-adopt-uuidv7-for-persistent-identities.md) | Adopt UUIDv7 for persistent identities | Accepted |
+| [`0052`](./0052-separate-lease-capability-and-fencing-generation.md) | Separate lease capability from fencing generation | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.
