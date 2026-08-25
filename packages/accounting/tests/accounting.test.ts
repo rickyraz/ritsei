@@ -833,6 +833,26 @@ describe("accounting contract", () => {
         }),
       )
       assert.strictEqual(failure._tag, "SchemaError")
+      const blankCode = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateAccountInput)({
+          principal,
+          tenantId,
+          code: "   ",
+          name: "Cash",
+          type: "asset",
+        }),
+      )
+      assert.strictEqual(blankCode._tag, "SchemaError")
+      const blankName = yield* Effect.flip(
+        Schema.decodeUnknownEffect(Account)({
+          id: "00000000-0000-4000-8000-000000000099",
+          tenantId,
+          code: "1000",
+          name: "   ",
+          type: "asset",
+        }),
+      )
+      assert.strictEqual(blankName._tag, "SchemaError")
     }))
 
   it.effect("rejects malformed account identities", () =>

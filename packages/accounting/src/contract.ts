@@ -49,8 +49,8 @@ export const AccountingConfiguration = Schema.Struct({
 export const Account = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  code: Schema.String,
-  name: Schema.String,
+  code: NonEmptyString,
+  name: NonEmptyString,
   type: Schema.Literals(["asset", "liability", "equity", "revenue", "expense"]),
 })
 
@@ -221,8 +221,8 @@ export const ConfigureLegalEntityInput = Schema.Struct({
 
 export const CreateAccountInput = Schema.Struct({
   ...ScopedInput,
-  code: Schema.String,
-  name: Schema.String,
+  code: NonEmptyString,
+  name: NonEmptyString,
   type: Account.fields.type,
 })
 
