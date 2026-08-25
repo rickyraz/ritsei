@@ -45,11 +45,11 @@ export const ExternalIdentifier = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
   partyId: Uuid,
-  provider: Schema.String,
-  scheme: Schema.String,
-  scope: Schema.String,
+  provider: NonBlankString,
+  scheme: NonBlankString,
+  scope: NonBlankString,
   legalEntityId: Schema.NullOr(Uuid),
-  value: Schema.String,
+  value: NonBlankString,
 })
 
 export const LegalEntity = Schema.Struct({

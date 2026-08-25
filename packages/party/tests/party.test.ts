@@ -150,6 +150,12 @@ describe("party contract", () => {
         value: "1234567890123",
       })
       yield* Schema.decodeUnknownEffect(ExternalIdentifier)(identifier)
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(ExternalIdentifier)({ ...identifier, value: " " }),
+        ))._tag,
+        "SchemaError",
+      )
       const legalEntity = yield* service.createLegalEntity({
         principal,
         tenantId,
