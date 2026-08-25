@@ -74,7 +74,7 @@ export const JournalEntry = Schema.Struct({
   status: Schema.Literals(["posted", "reversed"]),
   postedAt: InstantString,
   reversesEntryId: Schema.optional(Uuid),
-  lines: Schema.Array(JournalLine),
+  lines: Schema.Array(JournalLine).check(Schema.isMinLength(2)),
 }).check(Schema.makeFilter(
   (entry) =>
     entry.status === "reversed"

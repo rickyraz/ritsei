@@ -403,6 +403,10 @@ describe("accounting contract", () => {
           credit: "0",
         }],
       }
+      const insufficientLines = yield* Effect.flip(
+        Schema.decodeUnknownEffect(JournalEntry)({ ...base, status: "posted" }),
+      )
+      assert.strictEqual(insufficientLines._tag, "SchemaError")
       const missingSource = yield* Effect.flip(
         Schema.decodeUnknownEffect(JournalEntry)({ ...base, status: "reversed" }),
       )
