@@ -227,6 +227,9 @@ describe("sales contract", () => {
           tenantId,
           orderId: order.id,
           ...confirmationMetadata,
+          commandId: " sales-confirm-command ",
+          correlationId: " sales-confirm-correlation ",
+          causationId: " sales-causation ",
           idempotencyKey: " confirm-event ",
         }
         const confirmed = yield* sales.confirmOrder(input)
@@ -236,6 +239,8 @@ describe("sales contract", () => {
         assert.strictEqual(published[0].tenantId, tenantId)
         assert.strictEqual(published[0].aggregateId, confirmed.id)
         assert.strictEqual(published[0].commandId, confirmationMetadata.commandId)
+        assert.strictEqual(published[0].correlationId, confirmationMetadata.correlationId)
+        assert.strictEqual(published[0].causationId, "sales-causation")
         assert.strictEqual(published[0].idempotencyKey, "confirm-event")
         assert.deepStrictEqual(published[0].payload, {
           orderId: confirmed.id,

@@ -55,6 +55,9 @@ export const makeSalesServiceFromStore = <R>(storeEffect: Effect.Effect<SalesSto
       yield* authorize(decoded, SalesCapabilities.orderConfirm)
       const normalized = {
         ...decoded,
+        commandId: decoded.commandId.trim(),
+        correlationId: decoded.correlationId.trim(),
+        causationId: decoded.causationId?.trim() ?? null,
         idempotencyKey: decoded.idempotencyKey.trim(),
       }
       const mutation = yield* store.confirmOrder(
