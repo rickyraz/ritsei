@@ -22,7 +22,7 @@ const InstantString = EventEnvelope.fields.occurredAt
 
 export const Customer = Schema.Struct({
   id: Uuid,
-  tenantId: Schema.String,
+  tenantId: Uuid,
   name: Schema.String,
   email: Schema.String,
 })
