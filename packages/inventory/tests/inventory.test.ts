@@ -17,6 +17,7 @@ import {
   InventoryUnitOfMeasureMismatch,
   InventoryWarehouseLegalEntityMismatch,
   makeInventoryTestLayer,
+  StockBalance,
   StockCorrection,
   StockCorrectionIdempotencyConflict,
   StockReservationIdempotencyConflict,
@@ -125,6 +126,21 @@ describe("inventory contract", () => {
         Schema.decodeUnknownEffect(StockTransferLine)({
           itemId: "item",
           quantity: "9223372036854775808",
+        }),
+      )
+      assert.strictEqual(error._tag, "SchemaError")
+    }))
+
+  it.effect("bounds stock-balance quantities to PostgreSQL bigint", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        Schema.decodeUnknownEffect(StockBalance)({
+          tenantId: "tenant",
+          warehouseId: "warehouse",
+          itemId: "item",
+          onHand: "9223372036854775808",
+          reserved: "0",
+          unitOfMeasure: "EA",
         }),
       )
       assert.strictEqual(error._tag, "SchemaError")

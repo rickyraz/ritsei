@@ -36,6 +36,12 @@ const Quantity = Schema.String.check(
     { expected: "a positive PostgreSQL bigint quantity" },
   ),
 )
+const NonNegativeQuantity = Schema.String.check(
+  Schema.makeFilter(
+    (value) => /^(0|[1-9]\d*)$/.test(value) && BigInt(value) <= 9_223_372_036_854_775_807n,
+    { expected: "a non-negative PostgreSQL bigint quantity" },
+  ),
+)
 const SignedQuantity = Schema.String.check(
   Schema.makeFilter(
     (value) => {
@@ -72,8 +78,8 @@ export const StockBalance = Schema.Struct({
   tenantId: Schema.String,
   warehouseId: Schema.String,
   itemId: Schema.String,
-  onHand: Schema.String,
-  reserved: Schema.String,
+  onHand: NonNegativeQuantity,
+  reserved: NonNegativeQuantity,
   unitOfMeasure: UnitOfMeasure,
 })
 export const StockCorrection = Schema.Struct({
