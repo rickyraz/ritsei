@@ -2,6 +2,7 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 
+import { EventEnvelope } from "../../messaging/mod.ts"
 import { IdentityPrincipal } from "./events.ts"
 import type { IdentityAuthorizationDenied, UserAccountAlreadyExists } from "./errors.ts"
 
@@ -9,6 +10,7 @@ export const UserAccountStatus = Schema.Literals(["active", "disabled"])
 export type UserAccountStatus = Schema.Schema.Type<typeof UserAccountStatus>
 
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const InstantString = EventEnvelope.fields.occurredAt
 const Uuid = Schema.String.check(Schema.isUUID())
 
 export const CreateUserAccountInput = Schema.Struct({
@@ -35,7 +37,7 @@ export const UserAccount = Schema.Struct({
 export const UserAccountAuthenticationState = Schema.Struct({
   id: Uuid,
   status: UserAccountStatus,
-  sessionInvalidatedAt: Schema.NullOr(Schema.String),
+  sessionInvalidatedAt: Schema.NullOr(InstantString),
 })
 
 export type UserAccount = Schema.Schema.Type<typeof UserAccount>

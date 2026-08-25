@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 
 import {
   IdentityAccountAuthorizer,
@@ -9,6 +10,7 @@ import {
   makeUserAccountService,
   makeUserAccountTestLayer,
   UserAccountAlreadyExists,
+  UserAccountAuthenticationState,
   UserAccountCreatedEvent,
   UserAccountNotFound,
   UserAccountService,
@@ -184,6 +186,7 @@ describe("user account contract", () => {
         const disabled = yield* service.disable(created.id)
         assert.strictEqual(disabled.status, "disabled")
         const disabledState = yield* service.getAuthenticationState(created.id)
+        yield* Schema.decodeUnknownEffect(UserAccountAuthenticationState)(disabledState)
         assert.strictEqual(disabledState.status, "disabled")
         assert.ok(disabledState.sessionInvalidatedAt !== null)
         assert.strictEqual((yield* service.enable(created.id)).status, "active")
