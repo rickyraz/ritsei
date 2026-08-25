@@ -247,6 +247,17 @@ describe("inventory contract", () => {
         }),
       )
       assert.strictEqual(error._tag, "SchemaError")
+      const exceedsOnHand = yield* Effect.flip(
+        Schema.decodeUnknownEffect(StockBalance)({
+          tenantId,
+          warehouseId: "00000000-0000-4000-8000-000000000002",
+          itemId: "00000000-0000-4000-8000-000000000003",
+          onHand: "1",
+          reserved: "2",
+          unitOfMeasure: "EA",
+        }),
+      )
+      assert.strictEqual(exceedsOnHand._tag, "SchemaError")
     }))
 
   it.effect("denies inventory capability in an ungranted tenant", () =>

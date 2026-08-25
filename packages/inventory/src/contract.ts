@@ -83,7 +83,10 @@ export const StockBalance = Schema.Struct({
   onHand: NonNegativeQuantity,
   reserved: NonNegativeQuantity,
   unitOfMeasure: UnitOfMeasure,
-})
+}).check(Schema.makeFilter(
+  (balance) => BigInt(balance.reserved) <= BigInt(balance.onHand),
+  { expected: "reserved stock cannot exceed on-hand stock" },
+))
 export const StockCorrection = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
