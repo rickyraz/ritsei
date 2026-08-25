@@ -42,13 +42,13 @@ export const Party = Schema.Struct({
 })
 
 export const ExternalIdentifier = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  partyId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  partyId: Uuid,
   provider: Schema.String,
   scheme: Schema.String,
   scope: Schema.String,
-  legalEntityId: Schema.NullOr(Schema.String),
+  legalEntityId: Schema.NullOr(Uuid),
   value: Schema.String,
 })
 
