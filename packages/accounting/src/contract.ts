@@ -21,6 +21,7 @@ const NonNegativeInt = Schema.Int.check(
 )
 const Money = FinancialMajorAmount
 const CurrencyCode = Schema.String.check(Schema.isPattern(/^[A-Za-z]{3}$/))
+const UpperCurrencyCode = Schema.String.check(Schema.isPattern(/^[A-Z]{3}$/))
 const FinancialEngine = Schema.Literals(["postgresql", "tigerbeetle"])
 const FinancialCutoverStatus = Schema.Literals([
   "postgresql",
@@ -38,7 +39,7 @@ const InstantString = EventEnvelope.fields.occurredAt
 export const AccountingConfiguration = Schema.Struct({
   tenantId: Uuid,
   legalEntityId: Uuid,
-  baseCurrency: CurrencyCode,
+  baseCurrency: UpperCurrencyCode,
   precision: Precision,
   fiscalYearStartMonth: FiscalYearStartMonth,
   postingEnabled: Schema.Boolean,

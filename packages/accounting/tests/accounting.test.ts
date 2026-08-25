@@ -806,6 +806,10 @@ describe("accounting contract", () => {
 
   it.effect("rejects malformed accounting configuration identities", () =>
     Effect.gen(function* () {
+      const lowercaseCurrency = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AccountingConfiguration.fields.baseCurrency)("usd"),
+      )
+      assert.strictEqual(lowercaseCurrency._tag, "SchemaError")
       for (const field of ["tenantId", "legalEntityId"] as const) {
         const failure = yield* Effect.flip(
           Schema.decodeUnknownEffect(AccountingConfiguration.fields[field])("not-a-uuid"),
