@@ -137,7 +137,7 @@ describe("inventory contract", () => {
         Schema.decodeUnknownEffect(StockBalance)({
           tenantId: "00000000-0000-4000-8000-000000000001",
           warehouseId: "00000000-0000-4000-8000-000000000002",
-          itemId: "item",
+          itemId: "00000000-0000-4000-8000-000000000003",
           onHand: "9223372036854775808",
           reserved: "0",
           unitOfMeasure: "EA",
