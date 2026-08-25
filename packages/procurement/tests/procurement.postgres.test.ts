@@ -865,6 +865,19 @@ it.effect.skipIf(databaseUrl === undefined)(
             supplierAccountId: supplierAccount.id,
             lines: [{ itemId: item.id, quantity: "3", unitPrice: "1.00" }],
           })
+          const draftOrderReceipt = yield* postgresFailure(() =>
+            client`
+              insert into procurement.purchase_receipts
+                (tenant_id, purchase_order_id, warehouse_id, idempotency_key)
+              values
+                (${tenant.id}, ${order.id}, ${warehouse.id}, 'draft-order-receipt')
+            `
+          )
+          assert.strictEqual((draftOrderReceipt as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (draftOrderReceipt as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_order_state_check",
+          )
           const confirmed = yield* procurement.confirmPurchaseOrder({
             principal,
             tenantId: tenant.id,
@@ -884,6 +897,18 @@ it.effect.skipIf(databaseUrl === undefined)(
             procurement.receivePurchaseOrder(receiptInput),
             InventoryService,
             inventory,
+          )
+          const cancelledOrderWithReceipt = yield* postgresFailure(() =>
+            client`
+              update procurement.purchase_orders
+              set status = 'cancelled', updated_at = now()
+              where tenant_id = ${tenant.id} and id = ${confirmed.id}
+            `
+          )
+          assert.strictEqual((cancelledOrderWithReceipt as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (cancelledOrderWithReceipt as { constraint_name?: string }).constraint_name,
+            "purchase_order_receipt_state_check",
           )
           const invalidWarehouseReceipt = yield* postgresFailure(() =>
             client`
