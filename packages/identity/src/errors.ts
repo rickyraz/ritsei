@@ -1,15 +1,23 @@
 import * as Schema from "effect/Schema"
 
-const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const Uuid = Schema.String.check(Schema.isUUID())
+const LowercaseTrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim() && value === value.toLowerCase(),
+  { expected: "a trimmed lowercase nonblank string" },
+))
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
 
 export class IdentityAuthorizationDenied extends Schema.TaggedError<IdentityAuthorizationDenied>()(
   "IdentityAuthorizationDenied",
-  { tenantId: NonEmptyString, capability: NonEmptyString },
+  { tenantId: Uuid, capability: TrimmedNonEmptyString },
 ) {}
 
 export class UserAccountAlreadyExists
   extends Schema.TaggedError<UserAccountAlreadyExists>()("UserAccountAlreadyExists", {
-    email: Schema.String,
+    email: LowercaseTrimmedNonEmptyString,
   }) {}
 
 export class UserAccountNotFound
