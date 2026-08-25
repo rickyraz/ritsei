@@ -406,8 +406,9 @@ export const journalEntries = accountingSchema.table("journal_entries", {
   ),
   check(
     "journal_entries_reversal_state_check",
-    sql`(${table.status} in ('draft', 'posted') and ${table.reversesEntryId} is null) or
-      (${table.status} = 'reversed' and ${table.reversesEntryId} is not null)`,
+    sql`((${table.status} in ('draft', 'posted') and ${table.reversesEntryId} is null) or
+      (${table.status} = 'reversed' and ${table.reversesEntryId} is not null)) and
+      (${table.reversesEntryId} is null or ${table.reversesEntryId} <> ${table.id})`,
   ),
 ])
 
