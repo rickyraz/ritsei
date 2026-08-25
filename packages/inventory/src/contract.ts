@@ -94,8 +94,8 @@ export const StockCorrection = Schema.Struct({
 })
 export const StockReservationStatus = Schema.Literals(["active", "released", "fulfilled"])
 export const StockReservation = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
   warehouseId: Schema.String,
   itemId: Schema.String,
   quantity: Quantity,

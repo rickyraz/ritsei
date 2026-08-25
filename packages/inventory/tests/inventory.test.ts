@@ -20,6 +20,7 @@ import {
   StockBalance,
   StockCorrection,
   StockCorrectionIdempotencyConflict,
+  StockReservation,
   StockReservationIdempotencyConflict,
   StockReservationInvalidState,
   StockReservationLegalEntityMismatch,
@@ -209,6 +210,7 @@ describe("inventory contract", () => {
         quantity: "4",
         idempotencyKey: "reservation-1",
       })
+      yield* Schema.decodeUnknownEffect(StockReservation)(reservation)
 
       assert.strictEqual(item.unitOfMeasure, "EA")
       assert.strictEqual(balance.onHand, "10")
