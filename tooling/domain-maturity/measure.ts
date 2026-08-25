@@ -33,6 +33,7 @@ type DomainTarget = {
   readonly actionsExport: string
   readonly eventsExport: string
   readonly contractTests: readonly string[]
+  readonly authorizationTest: { readonly path: string; readonly markers: readonly string[] }
   readonly publicationTest: { readonly path: string; readonly markers: readonly string[] }
   readonly catalogMarker: string
   readonly catalogEventMarker: string
@@ -45,6 +46,10 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "IdentityTypedActionCatalog",
     eventsExport: "IdentityTypedEventCatalog",
     contractTests: ["packages/identity/tests/identity.test.ts"],
+    authorizationTest: {
+      path: "packages/identity/tests/identity.test.ts",
+      markers: ["IdentityAuthorizationDenied", "assert.instanceOf"],
+    },
     publicationTest: {
       path: "packages/identity/tests/identity.postgres.test.ts",
       markers: ["UserAccountCreatedEvent", "event_outbox", "assert.deepStrictEqual"],
@@ -58,6 +63,10 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "PartyTypedActionCatalog",
     eventsExport: "PartyTypedEventCatalog",
     contractTests: ["packages/party/tests/party.test.ts"],
+    authorizationTest: {
+      path: "packages/party/tests/party.test.ts",
+      markers: ["AuthorizationDenied", "assert.instanceOf"],
+    },
     publicationTest: {
       path: "packages/party/tests/party.postgres.test.ts",
       markers: ["PartyCreatedEvent", "event_outbox", "assert.deepStrictEqual"],
@@ -71,6 +80,10 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "InventoryTypedActionCatalog",
     eventsExport: "InventoryTypedEventCatalog",
     contractTests: ["packages/inventory/tests/inventory.test.ts"],
+    authorizationTest: {
+      path: "packages/inventory/tests/inventory.test.ts",
+      markers: ["AuthorizationDenied", "assert.instanceOf"],
+    },
     publicationTest: {
       path: "packages/inventory/tests/inventory.postgres.test.ts",
       markers: ["InventoryStockCorrectedEvent", "event_outbox", "assert.deepStrictEqual"],
@@ -84,6 +97,10 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "AccountingTypedActionCatalog",
     eventsExport: "AccountingTypedEventCatalog",
     contractTests: ["packages/accounting/tests/accounting.test.ts"],
+    authorizationTest: {
+      path: "packages/accounting/tests/accounting.test.ts",
+      markers: ["AuthorizationDenied", "assert.instanceOf"],
+    },
     publicationTest: {
       path: "packages/accounting/tests/accounting.postgres.test.ts",
       markers: ["AccountingRevenuePostedEvent", "event_outbox", "assert.deepStrictEqual"],
@@ -97,6 +114,10 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "SalesTypedActionCatalog",
     eventsExport: "SalesTypedEventCatalog",
     contractTests: ["packages/sales/tests/sales.test.ts"],
+    authorizationTest: {
+      path: "packages/sales/tests/sales.test.ts",
+      markers: ["AuthorizationDenied", "assert.instanceOf"],
+    },
     publicationTest: {
       path: "packages/sales/tests/sales.postgres.test.ts",
       markers: ["SalesOrderConfirmedEvent", "event_outbox", "assert.deepStrictEqual"],
@@ -110,6 +131,10 @@ const targets: readonly DomainTarget[] = [
     actionsExport: "ProcurementTypedActionCatalog",
     eventsExport: "ProcurementTypedEventCatalog",
     contractTests: ["packages/procurement/tests/procurement.test.ts"],
+    authorizationTest: {
+      path: "packages/procurement/tests/procurement.test.ts",
+      markers: ["AuthorizationDenied", "assert.instanceOf"],
+    },
     publicationTest: {
       path: "packages/procurement/tests/procurement.postgres.test.ts",
       markers: [
@@ -220,13 +245,18 @@ for (const target of targets) {
     ) &&
     publicEventEntry.deliveryExpectation === "at_least_once"
   const tests = (await Promise.all(target.contractTests.map(exists))).every(Boolean)
+  const authorizationProof = (await Promise.all(
+    target.authorizationTest.markers.map((marker) =>
+      contains(target.authorizationTest.path, marker)
+    ),
+  )).every(Boolean)
   const catalogCompatibility = await contains(catalogTest, target.catalogMarker) &&
     await contains(catalogTest, target.catalogEventMarker)
   const publicationProof = (await Promise.all(
     target.publicationTest.markers.map((marker) => contains(target.publicationTest.path, marker)),
   )).every(Boolean)
   const level3 = publicAction && publicEvent && actionContract && eventContract && tests &&
-    executableContractTests && catalogCompatibility && publicationProof
+    executableContractTests && authorizationProof && catalogCompatibility && publicationProof
   results.push({
     target,
     level3,
@@ -236,6 +266,7 @@ for (const target of targets) {
     eventContract,
     tests,
     executableContractTests,
+    authorizationProof,
     catalogCompatibility,
     publicationProof,
   })
@@ -243,7 +274,8 @@ for (const target of targets) {
     `${level3 ? "PASS" : "OPEN"} ${target.domain} ` +
       `action=${publicAction} event=${publicEvent} action_contract=${actionContract} ` +
       `event_contract=${eventContract} tests=${tests} executable=${executableContractTests} ` +
-      `catalog=${catalogCompatibility} publication=${publicationProof}`,
+      `authorization=${authorizationProof} catalog=${catalogCompatibility} ` +
+      `publication=${publicationProof}`,
   )
 }
 
