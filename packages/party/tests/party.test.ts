@@ -169,6 +169,18 @@ describe("party contract", () => {
         }),
       )
       assert.strictEqual(invalidIdentifier._tag, "SchemaError")
+      const invalidIdentifierMetadata = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AttachExternalIdentifierInput)({
+          principal,
+          tenantId,
+          partyId: party.id,
+          provider: " ",
+          scheme: "GLN",
+          scope: "global",
+          value: "1234567890123",
+        }),
+      )
+      assert.strictEqual(invalidIdentifierMetadata._tag, "SchemaError")
       const identifier = yield* service.attachIdentifier({
         principal,
         tenantId,

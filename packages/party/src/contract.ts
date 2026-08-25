@@ -21,7 +21,6 @@ import type {
   PartyRoleAlreadyAssigned,
 } from "./errors.ts"
 
-const NonEmptyString = Schema.String.check(Schema.isNonEmpty())
 const NonBlankString = Schema.String.check(Schema.isPattern(/\S/))
 const Uuid = Schema.String.check(Schema.isUUID())
 
@@ -131,11 +130,11 @@ export const AttachExternalIdentifierInput = Schema.Struct({
   principal: Principal,
   tenantId: Uuid,
   partyId: Uuid,
-  provider: NonEmptyString,
-  scheme: NonEmptyString,
-  scope: NonEmptyString,
+  provider: NonBlankString,
+  scheme: NonBlankString,
+  scope: NonBlankString,
   legalEntityId: Schema.optionalKey(Uuid),
-  value: NonEmptyString,
+  value: NonBlankString,
 })
 
 export const CreateLegalEntityInput = Schema.Struct({
