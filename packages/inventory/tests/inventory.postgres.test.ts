@@ -256,6 +256,36 @@ it.effect.skipIf(databaseUrl === undefined)(
             (invalidReservationTransition as { constraint_name?: string }).constraint_name,
             "inventory_reservation_state_transition_check",
           )
+          const invalidReservationStatus = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update inventory.reservations
+                set status = 'fulfilled'
+                where tenant_id = ${tenant.id} and id = ${duplicateReservations[0].id}
+              `
+            })
+          )
+          assert.strictEqual((invalidReservationStatus as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidReservationStatus as { constraint_name?: string }).constraint_name,
+            "inventory_reservation_balance_consistency_check",
+          )
+          const invalidReservedBalance = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update inventory.stock_balances
+                set reserved = reserved + 1
+                where tenant_id = ${tenant.id}
+                  and warehouse_id = ${warehouse.id}
+                  and item_id = ${item.id}
+              `
+            })
+          )
+          assert.strictEqual((invalidReservedBalance as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidReservedBalance as { constraint_name?: string }).constraint_name,
+            "inventory_reservation_balance_consistency_check",
+          )
           const changedReservationQuantity = yield* postgresFailure(() =>
             client`
               update inventory.reservations
@@ -581,80 +611,51 @@ it.effect.skipIf(databaseUrl === undefined)(
           )
           assert.deepStrictEqual(rolledBackCounts, { movements: "0", events: "0" })
 
-          const brokenItem = yield* inventory.createItem({
+          const guardedItem = yield* inventory.createItem({
             principal,
             tenantId: tenant.id,
-            sku: "FULFILLMENT-GUARD",
-            name: "Fulfillment Guard Item",
+            sku: "RESERVATION-BALANCE-GUARD",
+            name: "Reservation Balance Guard Item",
             unitOfMeasure: "box",
           })
           yield* inventory.receiveStock({
             principal,
             tenantId: tenant.id,
             warehouseId: warehouse.id,
-            itemId: brokenItem.id,
+            itemId: guardedItem.id,
             quantity: "1",
           })
-          const brokenReservation = yield* inventory.reserveStock({
+          const guardedReservation = yield* inventory.reserveStock({
             principal,
             tenantId: tenant.id,
             warehouseId: warehouse.id,
-            itemId: brokenItem.id,
+            itemId: guardedItem.id,
             quantity: "1",
           })
-          yield* Effect.promise(() =>
-            client`
-              update inventory.stock_balances
-              set on_hand = 0, reserved = 0
-              where tenant_id = ${tenant.id}
-                and warehouse_id = ${warehouse.id}
-                and item_id = ${brokenItem.id}
-            `
+          const invalidGuardedBalance = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              await transaction`
+                update inventory.stock_balances
+                set on_hand = 0, reserved = 0
+                where tenant_id = ${tenant.id}
+                  and warehouse_id = ${warehouse.id}
+                  and item_id = ${guardedItem.id}
+              `
+            })
           )
-          assert.instanceOf(
-            yield* Effect.flip(inventory.fulfillReservation({
-              principal,
-              tenantId: tenant.id,
-              reservationId: brokenReservation.id,
-            })),
-            StockUnavailable,
+          assert.strictEqual((invalidGuardedBalance as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidGuardedBalance as { constraint_name?: string }).constraint_name,
+            "inventory_reservation_balance_consistency_check",
           )
-          const [brokenReservationRow] = yield* Effect.promise(() =>
+          const [guardedReservationRow] = yield* Effect.promise(() =>
             client<{ status: string }[]>`
               select status
               from inventory.reservations
-              where tenant_id = ${tenant.id} and id = ${brokenReservation.id}
+              where tenant_id = ${tenant.id} and id = ${guardedReservation.id}
             `
           )
-          assert.strictEqual(brokenReservationRow?.status, "active")
-          const [brokenMovementCount] = yield* Effect.promise(() =>
-            client<{ count: string }[]>`
-              select count(*)::text as count
-              from inventory.movements
-              where tenant_id = ${tenant.id}
-                and kind = 'issue'
-                and reference_id = ${brokenReservation.id}
-            `
-          )
-          assert.strictEqual(brokenMovementCount?.count, "0")
-          assert.instanceOf(
-            yield* Effect.flip(inventory.releaseReservation({
-              principal,
-              tenantId: tenant.id,
-              reservationId: brokenReservation.id,
-            })),
-            StockUnavailable,
-          )
-          const [brokenReleaseMovementCount] = yield* Effect.promise(() =>
-            client<{ count: string }[]>`
-              select count(*)::text as count
-              from inventory.movements
-              where tenant_id = ${tenant.id}
-                and kind = 'release'
-                and reference_id = ${brokenReservation.id}
-            `
-          )
-          assert.strictEqual(brokenReleaseMovementCount?.count, "0")
+          assert.strictEqual(guardedReservationRow?.status, "active")
         }).pipe(Effect.provide(authorizationLayer))
       })),
 )
