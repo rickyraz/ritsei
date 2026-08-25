@@ -1,8 +1,16 @@
 type CatalogEntry = {
   readonly kind: string
   readonly id: string
+  readonly version?: number
   readonly owningDomain: string
   readonly stability: string
+  readonly compatibilityRange?: {
+    readonly minimumVersion?: number
+    readonly maximumVersion?: number
+  }
+  readonly inputSchema?: unknown
+  readonly outputSchema?: unknown
+  readonly payloadSchema?: unknown
   readonly requiredCapability?: string
   readonly scope?: readonly string[]
   readonly idempotency?: string
@@ -175,6 +183,13 @@ for (const target of targets) {
   const publicAction = publicActionEntry !== undefined
   const publicEvent = publicEventEntry !== undefined
   const actionContract = publicActionEntry !== undefined &&
+    typeof publicActionEntry.version === "number" &&
+    typeof publicActionEntry.compatibilityRange?.minimumVersion === "number" &&
+    typeof publicActionEntry.compatibilityRange.maximumVersion === "number" &&
+    publicActionEntry.compatibilityRange.minimumVersion <= publicActionEntry.version &&
+    publicActionEntry.version <= publicActionEntry.compatibilityRange.maximumVersion &&
+    publicActionEntry.inputSchema !== undefined &&
+    publicActionEntry.outputSchema !== undefined &&
     publicActionEntry.requiredCapability === publicActionEntry.id &&
     publicActionEntry.scope?.includes("tenant") === true &&
     ["required", "inherent", "unsupported"].includes(publicActionEntry.idempotency ?? "") &&
@@ -186,6 +201,12 @@ for (const target of targets) {
     (publicActionEntry.compensation?.kind === "action" ||
       publicActionEntry.compensation?.recovery === "manual")
   const eventContract = publicEventEntry !== undefined &&
+    typeof publicEventEntry.version === "number" &&
+    typeof publicEventEntry.compatibilityRange?.minimumVersion === "number" &&
+    typeof publicEventEntry.compatibilityRange.maximumVersion === "number" &&
+    publicEventEntry.compatibilityRange.minimumVersion <= publicEventEntry.version &&
+    publicEventEntry.version <= publicEventEntry.compatibilityRange.maximumVersion &&
+    publicEventEntry.payloadSchema !== undefined &&
     publicEventEntry.id.startsWith(`${target.domain}.`) &&
     publicEventEntry.scope?.includes("tenant") === true &&
     publicEventEntry.occurredAtSemantics === "owner_commit_time" &&
