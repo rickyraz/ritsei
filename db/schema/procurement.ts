@@ -125,6 +125,11 @@ export const purchaseReceipts = procurementSchema.table("purchase_receipts", {
   updatedAt: updatedAt(),
 }, (table) => [
   unique("purchase_receipts_tenant_id_id_key").on(table.tenantId, table.id),
+  unique("purchase_receipts_tenant_id_id_order_key").on(
+    table.tenantId,
+    table.id,
+    table.purchaseOrderId,
+  ),
   unique("purchase_receipts_tenant_idempotency_key").on(table.tenantId, table.idempotencyKey),
   index("purchase_receipts_tenant_order_idx").on(table.tenantId, table.purchaseOrderId),
   foreignKey({
@@ -170,6 +175,15 @@ export const purchaseReceiptLines = procurementSchema.table("purchase_receipt_li
     foreignColumns: [purchaseReceipts.tenantId, purchaseReceipts.id],
     name: "purchase_receipt_lines_tenant_receipt_fkey",
   }).onDelete("cascade"),
+  foreignKey({
+    columns: [table.tenantId, table.receiptId, table.purchaseOrderId],
+    foreignColumns: [
+      purchaseReceipts.tenantId,
+      purchaseReceipts.id,
+      purchaseReceipts.purchaseOrderId,
+    ],
+    name: "purchase_receipt_lines_tenant_receipt_order_fkey",
+  }),
   foreignKey({
     columns: [
       table.tenantId,

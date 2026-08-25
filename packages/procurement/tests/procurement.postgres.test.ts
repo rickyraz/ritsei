@@ -885,6 +885,40 @@ it.effect.skipIf(databaseUrl === undefined)(
             InventoryService,
             inventory,
           )
+          const otherItem = yield* inventory.createItem({
+            principal,
+            tenantId: tenant.id,
+            sku: "receipt-other-item",
+            name: "Receipt Other Item",
+          })
+          const otherOrder = yield* procurement.createPurchaseOrder({
+            principal,
+            tenantId: tenant.id,
+            supplierAccountId: supplierAccount.id,
+            lines: [{ itemId: otherItem.id, quantity: "1", unitPrice: "1.00" }],
+          })
+          const otherConfirmed = yield* procurement.confirmPurchaseOrder({
+            principal,
+            tenantId: tenant.id,
+            purchaseOrderId: otherOrder.id,
+            idempotencyKey: "other-receipt-confirmation",
+          })
+          const otherLineId = otherConfirmed.lines[0]!.id
+          const mismatchedReceiptOrder = yield* postgresFailure(() =>
+            client`
+              update procurement.purchase_receipt_lines
+              set purchase_order_id = ${otherConfirmed.id},
+                  purchase_order_line_id = ${otherLineId},
+                  item_id = ${otherItem.id}
+              where tenant_id = ${tenant.id} and receipt_id = ${first.id}
+                and purchase_order_line_id = ${lineId}
+            `
+          )
+          assert.strictEqual((mismatchedReceiptOrder as { code?: string }).code, "23503")
+          assert.strictEqual(
+            (mismatchedReceiptOrder as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_lines_tenant_receipt_order_fkey",
+          )
           const mismatchedReceiptItem = yield* Effect.flip(Effect.tryPromise({
             try: () =>
               client`
