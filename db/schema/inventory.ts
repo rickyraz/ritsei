@@ -222,6 +222,8 @@ export const movements = inventorySchema.table("movements", {
   check(
     "movements_correction_metadata_check",
     sql`(${table.idempotencyKey} is null and ${table.unitOfMeasure} is null and ${table.reason} is null) or
-      (${table.idempotencyKey} is not null and ${table.unitOfMeasure} is not null and ${table.reason} is not null and ${table.reason} <> '' and ${table.kind} in ('receipt', 'issue'))`,
+      (${table.idempotencyKey} is not null and ${table.unitOfMeasure} is not null and
+        ${table.unitOfMeasure} ~ '^[A-Z][A-Z0-9_-]*$' and ${table.reason} is not null and
+        ${table.reason} <> '' and ${table.kind} in ('receipt', 'issue'))`,
   ),
 ])

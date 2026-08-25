@@ -367,6 +367,21 @@ it.effect.skipIf(databaseUrl === undefined)(
             { concurrency: "unbounded" },
           )
           assert.strictEqual(duplicates[0].id, duplicates[1].id)
+          const invalidUnitOfMeasure = yield* postgresFailure(() =>
+            client`
+              insert into inventory.movements
+                (tenant_id, warehouse_id, item_id, quantity, kind,
+                 unit_of_measure, reason, idempotency_key)
+              values
+                (${tenant.id}, ${warehouse.id}, ${item.id}, 1, 'receipt',
+                 'box', 'manual correction', ${`invalid-uom-${uuidv7()}`})
+            `
+          )
+          assert.strictEqual((invalidUnitOfMeasure as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidUnitOfMeasure as { constraint_name?: string }).constraint_name,
+            "movements_correction_metadata_check",
+          )
           const otherCorrection = yield* inventory.adjustStock({
             ...correctionInput,
             tenantId: otherTenant.id,
