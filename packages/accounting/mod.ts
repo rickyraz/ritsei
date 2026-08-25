@@ -112,6 +112,14 @@ export {
   makePostgresqlFinancialLedger,
   makePostgresqlFinancialLedgerLayer,
 } from "./src/postgresql-ledger.ts"
+export {
+  AccountingLive,
+  AccountingPostgresLive,
+  FinancialOperationsLive,
+  FinancialOperationsPostgresLive,
+  makeAccountingTestLive,
+  makeFinancialOperationsTestLive,
+} from "./src/layers.ts"
 
 export {
   Account,

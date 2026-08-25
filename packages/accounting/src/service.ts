@@ -550,6 +550,45 @@ export const AccountingService = Context.Service<AccountingService>(
   "RITSEI/AccountingService",
 )
 
+const withAccountingOperationNames = (service: AccountingService): AccountingService => ({
+  configureLegalEntity: Effect.fn("AccountingService.configureLegalEntity")((input: unknown) =>
+    service.configureLegalEntity(input)
+  ),
+  recordFinancialVerificationArtifact: Effect.fn(
+    "AccountingService.recordFinancialVerificationArtifact",
+  )((input: unknown) => service.recordFinancialVerificationArtifact(input)),
+  prepareTigerBeetleCutover: Effect.fn("AccountingService.prepareTigerBeetleCutover")((
+    input: unknown,
+  ) => service.prepareTigerBeetleCutover(input)),
+  approveTigerBeetleCutover: Effect.fn("AccountingService.approveTigerBeetleCutover")((
+    input: unknown,
+  ) => service.approveTigerBeetleCutover(input)),
+  activateTigerBeetleCutover: Effect.fn("AccountingService.activateTigerBeetleCutover")((
+    input: unknown,
+  ) => service.activateTigerBeetleCutover(input)),
+  createAccount: Effect.fn("AccountingService.createAccount")((input: unknown) =>
+    service.createAccount(input)
+  ),
+  configureRevenuePosting: Effect.fn("AccountingService.configureRevenuePosting")((
+    input: unknown,
+  ) => service.configureRevenuePosting(input)),
+  openPeriod: Effect.fn("AccountingService.openPeriod")((input: unknown) =>
+    service.openPeriod(input)
+  ),
+  closePeriod: Effect.fn("AccountingService.closePeriod")((input: unknown) =>
+    service.closePeriod(input)
+  ),
+  postRevenueForOrder: Effect.fn("AccountingService.postRevenueForOrder")((input: unknown) =>
+    service.postRevenueForOrder(input)
+  ),
+  reverseRevenueForOrder: Effect.fn("AccountingService.reverseRevenueForOrder")((input: unknown) =>
+    service.reverseRevenueForOrder(input)
+  ),
+  postJournal: Effect.fn("AccountingService.postJournal")((input: unknown) =>
+    service.postJournal(input)
+  ),
+})
+
 const toMinor = (value: string) => requireExactMajorToMinor(value, 2)
 
 const journalEntrySelection = {
@@ -795,7 +834,7 @@ export const makeAccountingService = Effect.gen(function* () {
       "accounting.financial_cutover.get",
     )
 
-  return {
+  const service: AccountingService = {
     recordFinancialVerificationArtifact: (input) =>
       Effect.gen(function* () {
         const decoded = yield* Schema.decodeUnknownEffect(RecordFinancialVerificationArtifactInput)(
@@ -2292,7 +2331,8 @@ export const makeAccountingService = Effect.gen(function* () {
         }
         return result.success.journal
       }),
-  } satisfies AccountingService
+  }
+  return withAccountingOperationNames(service)
 })
 
 export const makeAccountingTestLayer = () =>
@@ -2959,6 +2999,6 @@ export const makeAccountingTestLayer = () =>
             return journal
           }),
       }
-      return service
+      return withAccountingOperationNames(service)
     }),
   )
