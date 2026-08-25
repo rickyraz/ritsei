@@ -146,8 +146,8 @@ export const CreateLegalEntityInput = Schema.Struct({
 
 export const CreateBranchInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  legalEntityId: Schema.String,
+  tenantId: Uuid,
+  legalEntityId: Uuid,
   name: NonBlankString,
   timezone: Schema.optionalKey(NonBlankString),
   localTaxRegistration: Schema.optionalKey(NonBlankString),

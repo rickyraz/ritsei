@@ -182,6 +182,15 @@ describe("party contract", () => {
         }),
       )
       assert.strictEqual(invalidBranchTimezone._tag, "SchemaError")
+      const invalidBranchLegalEntity = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateBranchInput)({
+          principal,
+          tenantId,
+          legalEntityId: "not-a-uuid",
+          name: "Jakarta",
+        }),
+      )
+      assert.strictEqual(invalidBranchLegalEntity._tag, "SchemaError")
       const branch = yield* service.createBranch({
         principal,
         tenantId,
@@ -535,7 +544,7 @@ describe("party contract", () => {
         yield* Effect.flip(service.createBranch({
           principal,
           tenantId,
-          legalEntityId: "missing",
+          legalEntityId: "00000000-0000-4000-8000-000000000099",
           name: "Jakarta",
         })),
         LegalEntityNotFound,
