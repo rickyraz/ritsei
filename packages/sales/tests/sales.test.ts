@@ -227,7 +227,7 @@ describe("sales contract", () => {
           tenantId,
           orderId: order.id,
           ...confirmationMetadata,
-          idempotencyKey: "confirm-event",
+          idempotencyKey: " confirm-event ",
         }
         const confirmed = yield* sales.confirmOrder(input)
         yield* Schema.decodeUnknownEffect(SalesOrder)(confirmed)
@@ -236,11 +236,15 @@ describe("sales contract", () => {
         assert.strictEqual(published[0].tenantId, tenantId)
         assert.strictEqual(published[0].aggregateId, confirmed.id)
         assert.strictEqual(published[0].commandId, confirmationMetadata.commandId)
+        assert.strictEqual(published[0].idempotencyKey, "confirm-event")
         assert.deepStrictEqual(published[0].payload, {
           orderId: confirmed.id,
           total: confirmed.total,
         })
-        assert.deepStrictEqual(yield* sales.confirmOrder(input), confirmed)
+        assert.deepStrictEqual(
+          yield* sales.confirmOrder({ ...input, idempotencyKey: "confirm-event" }),
+          confirmed,
+        )
         assert.strictEqual(published.length, 1)
       }),
       (event) => published.push(event),
