@@ -86,6 +86,9 @@ export const PurchaseOrder = Schema.Struct({
     return lineTotal === requireExactMajorToMinor(order.total, 2)
   },
   { expected: "purchase order total must equal its line totals" },
+)).check(Schema.makeFilter(
+  (order) => new Set(order.lines.map((line) => line.id)).size === order.lines.length,
+  { expected: "purchase order line identities must be unique" },
 ))
 
 export type SupplierAccount = Schema.Schema.Type<typeof SupplierAccount>
