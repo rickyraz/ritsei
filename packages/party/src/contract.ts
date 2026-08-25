@@ -64,8 +64,8 @@ export const Branch = Schema.Struct({
   legalEntityId: Uuid,
   name: NonBlankString,
   timezone: Schema.NullOr(NonBlankString),
-  localTaxRegistration: Schema.NullOr(Schema.String),
-  dedicatedJournalCode: Schema.NullOr(Schema.String),
+  localTaxRegistration: Schema.NullOr(NonBlankString),
+  dedicatedJournalCode: Schema.NullOr(NonBlankString),
 })
 
 export const PartyRepresentationKind = NonBlankString

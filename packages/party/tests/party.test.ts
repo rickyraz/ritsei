@@ -192,6 +192,18 @@ describe("party contract", () => {
         dedicatedJournalCode: "JKT-OPS",
       })
       yield* Schema.decodeUnknownEffect(Branch)(branch)
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(Branch)({ ...branch, localTaxRegistration: " " }),
+        ))._tag,
+        "SchemaError",
+      )
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(Branch)({ ...branch, dedicatedJournalCode: " " }),
+        ))._tag,
+        "SchemaError",
+      )
       const relationship = yield* service.createRelationship({
         principal,
         tenantId,
