@@ -47,75 +47,90 @@ export const serviceLayers = (
   configuration: RitseiRuntimeConfiguration,
   financialSigner?: Layer.Layer<FinancialVerificationSignerService>,
 ) => {
-  const database = PostgresDatabaseLive(client)
-  const financialLedger = makeFinancialLedgerLayer(database, configuration)
+  const DatabaseLive = PostgresDatabaseLive(client)
+  const PlatformCore = DatabaseLive
+  const PlatformLive = Layer.merge(PlatformCore, WebCryptoLive)
+  const financialLedger = makeFinancialLedgerLayer(DatabaseLive, configuration)
 
-  const userAccount = Layer.effect(UserAccountService, makeUserAccountService).pipe(
-    Layer.provide(database),
+  const IdentityLive = Layer.effect(UserAccountService, makeUserAccountService).pipe(
+    Layer.provide(DatabaseLive),
   )
 
-  const auth = Layer.effect(AuthService, makeAuthService).pipe(
-    Layer.provide(Layer.mergeAll(database, WebCryptoLive, userAccount)),
+  const AuthLive = Layer.effect(AuthService, makeAuthService).pipe(
+    Layer.provide(Layer.mergeAll(PlatformLive, IdentityLive)),
   )
 
-  const authorization = Layer.effect(AuthorizationService, makeAuthorizationService).pipe(
-    Layer.provide(database),
+  const AuthorizationLive = Layer.effect(AuthorizationService, makeAuthorizationService).pipe(
+    Layer.provide(DatabaseLive),
   )
 
-  const businessRequirements = Layer.merge(database, authorization)
+  const BusinessRequirements = Layer.merge(PlatformCore, AuthorizationLive)
 
-  const party = Layer.effect(PartyService, makePartyService).pipe(
-    Layer.provide(businessRequirements),
+  const PartyLive = Layer.effect(PartyService, makePartyService).pipe(
+    Layer.provide(BusinessRequirements),
   )
 
-  const messaging = Layer.effect(MessagingService, makeMessagingService).pipe(
-    Layer.provide(database),
+  const MessagingLive = Layer.effect(MessagingService, makeMessagingService).pipe(
+    Layer.provide(DatabaseLive),
   )
 
-  const sales = Layer.effect(SalesService, makeSalesService).pipe(
-    Layer.provide(Layer.merge(businessRequirements, messaging)),
+  const SalesLive = Layer.effect(SalesService, makeSalesService).pipe(
+    Layer.provide(Layer.merge(BusinessRequirements, MessagingLive)),
   )
 
-  const inventory = Layer.effect(InventoryService, makeInventoryService).pipe(
-    Layer.provide(Layer.merge(businessRequirements, messaging)),
+  const InventoryLive = Layer.effect(InventoryService, makeInventoryService).pipe(
+    Layer.provide(Layer.merge(BusinessRequirements, MessagingLive)),
   )
 
-  const accountingRequirements = financialSigner === undefined
-    ? Layer.mergeAll(businessRequirements, messaging, sales, financialLedger)
-    : Layer.mergeAll(businessRequirements, messaging, sales, financialLedger, financialSigner)
-  const accounting = Layer.effect(AccountingService, makeAccountingService).pipe(
-    Layer.provide(accountingRequirements),
+  const AccountingRequirements = financialSigner === undefined
+    ? Layer.mergeAll(BusinessRequirements, MessagingLive, SalesLive, financialLedger)
+    : Layer.mergeAll(
+      BusinessRequirements,
+      MessagingLive,
+      SalesLive,
+      financialLedger,
+      financialSigner,
+    )
+  const AccountingLive = Layer.effect(AccountingService, makeAccountingService).pipe(
+    Layer.provide(AccountingRequirements),
   )
 
-  const jobEnqueuer = Layer.effect(DurableJobEnqueuer, makeProcessJobEnqueuer).pipe(
-    Layer.provide(database),
-  )
+  const ProcessJobEnqueuerLive = Layer.effect(
+    DurableJobEnqueuer,
+    makeProcessJobEnqueuer,
+  ).pipe(Layer.provide(DatabaseLive))
 
-  const financialOperations = FinancialOperationServiceLive.pipe(
+  const FinancialOperationsLive = FinancialOperationServiceLive.pipe(
     Layer.provide(Layer.mergeAll(
-      businessRequirements,
-      messaging,
-      sales,
-      jobEnqueuer,
+      BusinessRequirements,
+      MessagingLive,
+      SalesLive,
+      ProcessJobEnqueuerLive,
       financialLedger,
     )),
   )
 
-  const process = Layer.effect(ProcessService, makeProcessService).pipe(
-    Layer.provide(Layer.mergeAll(businessRequirements, sales, inventory, accounting, messaging)),
+  const ProcessLive = Layer.effect(ProcessService, makeProcessService).pipe(
+    Layer.provide(
+      Layer.mergeAll(BusinessRequirements, SalesLive, InventoryLive, AccountingLive, MessagingLive),
+    ),
   )
 
-  return Layer.mergeAll(
-    userAccount,
-    auth,
-    authorization,
-    party,
-    sales,
-    inventory,
-    accounting,
-    financialOperations,
-    jobEnqueuer,
-    messaging,
-    process,
+  const ApplicationLive = Layer.mergeAll(
+    IdentityLive,
+    AuthLive,
+    AuthorizationLive,
+    PartyLive,
+    SalesLive,
+    InventoryLive,
+    AccountingLive,
+    FinancialOperationsLive,
+    ProcessJobEnqueuerLive,
+    MessagingLive,
+    ProcessLive,
   )
+
+  return ApplicationLive
 }
+
+export const makeApplicationLive = serviceLayers

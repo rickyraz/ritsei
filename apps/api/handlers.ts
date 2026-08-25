@@ -192,513 +192,610 @@ export const UserAccountHandlers = HttpApiBuilder.group(
   RitseiApi,
   "UserAccounts",
   (handlers) =>
-    handlers
-      .handle("create", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          const authorization = yield* AuthorizationService
-          yield* authorization.authorize({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            capability: IdentityCapabilities.userAccountCreate,
-          })
-          const userAccount = yield* UserAccountService.use((service) => service.create(payload))
-          yield* authorization.addMember({
-            userAccountId: userAccount.id,
-            tenantId: headers["x-tenant-id"],
-          })
-          return userAccount
-        })))
-      .handle("list", ({ headers }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          const authorization = yield* AuthorizationService
-          yield* authorization.authorize({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            capability: IdentityCapabilities.userAccountRead,
-          })
-          const members = yield* authorization.listMembers(headers["x-tenant-id"])
-          return yield* UserAccountService.use((service) =>
-            service.getByIds(members.map((member) => member.userAccountId))
-          )
-        })))
-      .handle("get", ({ headers, params }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          const authorization = yield* AuthorizationService
-          yield* authorization.authorize({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            capability: IdentityCapabilities.userAccountRead,
-          })
-          yield* authorization.getMember({
-            userAccountId: params.id,
-            tenantId: headers["x-tenant-id"],
-          })
-          return yield* UserAccountService.use((service) => service.getById(params.id))
-        })))
-      .handle("update", ({ headers, params, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          const authorization = yield* AuthorizationService
-          yield* authorization.authorize({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            capability: IdentityCapabilities.userAccountUpdate,
-          })
-          yield* authorization.getMember({
-            userAccountId: params.id,
-            tenantId: headers["x-tenant-id"],
-          })
-          return yield* UserAccountService.use((service) =>
-            service.update({ id: params.id, email: payload.email })
-          )
-        }))),
+    Effect.fn("Http.UserAccounts.handlers")(function* (handlers) {
+      const authorization = yield* AuthorizationService
+      const userAccounts = yield* UserAccountService
+      return handlers
+        .handle(
+          "create",
+          Effect.fn("Http.UserAccounts.create")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(Effect.gen(function* () {
+              yield* authorization.authorize({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                capability: IdentityCapabilities.userAccountCreate,
+              })
+              const userAccount = yield* userAccounts.create(payload)
+              yield* authorization.addMember({
+                userAccountId: userAccount.id,
+                tenantId: headers["x-tenant-id"],
+              })
+              return userAccount
+            }))
+          }),
+        )
+        .handle(
+          "list",
+          Effect.fn("Http.UserAccounts.list")(function* ({ headers }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(Effect.gen(function* () {
+              yield* authorization.authorize({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                capability: IdentityCapabilities.userAccountRead,
+              })
+              const members = yield* authorization.listMembers(headers["x-tenant-id"])
+              return yield* userAccounts.getByIds(members.map((member) => member.userAccountId))
+            }))
+          }),
+        )
+        .handle(
+          "get",
+          Effect.fn("Http.UserAccounts.get")(function* ({ headers, params }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(Effect.gen(function* () {
+              yield* authorization.authorize({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                capability: IdentityCapabilities.userAccountRead,
+              })
+              yield* authorization.getMember({
+                userAccountId: params.id,
+                tenantId: headers["x-tenant-id"],
+              })
+              return yield* userAccounts.getById(params.id)
+            }))
+          }),
+        )
+        .handle(
+          "update",
+          Effect.fn("Http.UserAccounts.update")(function* ({ headers, params, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(Effect.gen(function* () {
+              yield* authorization.authorize({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                capability: IdentityCapabilities.userAccountUpdate,
+              })
+              yield* authorization.getMember({
+                userAccountId: params.id,
+                tenantId: headers["x-tenant-id"],
+              })
+              return yield* userAccounts.update({ id: params.id, email: payload.email })
+            }))
+          }),
+        )
+    })(handlers),
 )
 
 export const PartyHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Parties",
   (handlers) =>
-    handlers
-      .handle("create", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* PartyService.use((service) =>
-            service.create({ principal, tenantId: headers["x-tenant-id"], ...payload })
-          )
-        })))
-      .handle("assignRole", ({ headers, params, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          yield* PartyService.use((service) =>
-            service.assignRole({
+    Effect.fn("Http.Parties.handlers")(function* (handlers) {
+      const party = yield* PartyService
+      return handlers
+        .handle(
+          "create",
+          Effect.fn("Http.Parties.create")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              party.create({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "assignRole",
+          Effect.fn("Http.Parties.assignRole")(function* ({ headers, params, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(party.assignRole({
               principal,
               tenantId: headers["x-tenant-id"],
               partyId: params.id,
               role: payload.role,
-            })
-          )
-        })))
-      .handle("attachIdentifier", ({ headers, params, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* PartyService.use((service) =>
-            service.attachIdentifier({
+            }))
+          }),
+        )
+        .handle(
+          "attachIdentifier",
+          Effect.fn("Http.Parties.attachIdentifier")(function* ({ headers, params, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(party.attachIdentifier({
               principal,
               tenantId: headers["x-tenant-id"],
               partyId: params.id,
               ...payload,
-            })
-          )
-        })))
-      .handle("createRelationship", ({ headers, params, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* PartyService.use((service) =>
-            service.createRelationship({
+            }))
+          }),
+        )
+        .handle(
+          "createRelationship",
+          Effect.fn("Http.Parties.createRelationship")(function* ({ headers, params, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(party.createRelationship({
               principal,
               tenantId: headers["x-tenant-id"],
               partyId: params.id,
               ...payload,
-            })
-          )
-        }))),
+            }))
+          }),
+        )
+    })(handlers),
 )
 
 export const AuthorizationHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Authorization",
   (handlers) =>
-    handlers
-      .handle("addMember", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          const authorization = yield* AuthorizationService
-          yield* authorization.authorize({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            capability: AuthorizationCapabilities.tenantMembershipAdd,
-          })
-          return yield* authorization.addMember({
-            userAccountId: payload.userAccountId,
-            tenantId: headers["x-tenant-id"],
-          })
-        })))
-      .handle("listMembers", ({ headers }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          const authorization = yield* AuthorizationService
-          yield* authorization.authorize({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            capability: AuthorizationCapabilities.tenantMembershipRead,
-          })
-          return yield* authorization.listMembers(headers["x-tenant-id"])
-        })))
-      .handle("suspendMember", ({ headers, params }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          const authorization = yield* AuthorizationService
-          yield* authorization.authorize({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            capability: AuthorizationCapabilities.tenantMembershipSuspend,
-          })
-          return yield* authorization.suspendMember({
-            userAccountId: params.userAccountId,
-            tenantId: headers["x-tenant-id"],
-          })
-        })))
-      .handle("activateMember", ({ headers, params }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          const authorization = yield* AuthorizationService
-          yield* authorization.authorize({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            capability: AuthorizationCapabilities.tenantMembershipActivate,
-          })
-          return yield* authorization.activateMember({
-            userAccountId: params.userAccountId,
-            tenantId: headers["x-tenant-id"],
-          })
-        })))
-      .handle("removeMember", ({ headers, params }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          const authorization = yield* AuthorizationService
-          yield* authorization.authorize({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            capability: AuthorizationCapabilities.tenantMembershipRemove,
-          })
-          yield* authorization.removeMember({
-            userAccountId: params.userAccountId,
-            tenantId: headers["x-tenant-id"],
-          })
-        })))
-      .handle("grant", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          const authorization = yield* AuthorizationService
-          yield* authorization.authorize({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            capability: AuthorizationCapabilities.capabilityGrant,
-          })
-          yield* authorization.grant({
-            userAccountId: payload.userAccountId,
-            tenantId: headers["x-tenant-id"],
-            capability: payload.capability,
-          })
-        }))),
+    Effect.fn("Http.Authorization.handlers")(function* (handlers) {
+      const authorization = yield* AuthorizationService
+      const authorize = (
+        principal: typeof CurrentPrincipal.Service,
+        tenantId: string,
+        capability: string,
+      ) => authorization.authorize({ principal, tenantId, capability })
+      return handlers
+        .handle(
+          "addMember",
+          Effect.fn("Http.Authorization.addMember")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(Effect.gen(function* () {
+              yield* authorize(
+                principal,
+                headers["x-tenant-id"],
+                AuthorizationCapabilities.tenantMembershipAdd,
+              )
+              return yield* authorization.addMember({
+                userAccountId: payload.userAccountId,
+                tenantId: headers["x-tenant-id"],
+              })
+            }))
+          }),
+        )
+        .handle(
+          "listMembers",
+          Effect.fn("Http.Authorization.listMembers")(function* ({ headers }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(Effect.gen(function* () {
+              yield* authorize(
+                principal,
+                headers["x-tenant-id"],
+                AuthorizationCapabilities.tenantMembershipRead,
+              )
+              return yield* authorization.listMembers(headers["x-tenant-id"])
+            }))
+          }),
+        )
+        .handle(
+          "suspendMember",
+          Effect.fn("Http.Authorization.suspendMember")(function* ({ headers, params }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(Effect.gen(function* () {
+              yield* authorize(
+                principal,
+                headers["x-tenant-id"],
+                AuthorizationCapabilities.tenantMembershipSuspend,
+              )
+              return yield* authorization.suspendMember({
+                userAccountId: params.userAccountId,
+                tenantId: headers["x-tenant-id"],
+              })
+            }))
+          }),
+        )
+        .handle(
+          "activateMember",
+          Effect.fn("Http.Authorization.activateMember")(function* ({ headers, params }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(Effect.gen(function* () {
+              yield* authorize(
+                principal,
+                headers["x-tenant-id"],
+                AuthorizationCapabilities.tenantMembershipActivate,
+              )
+              return yield* authorization.activateMember({
+                userAccountId: params.userAccountId,
+                tenantId: headers["x-tenant-id"],
+              })
+            }))
+          }),
+        )
+        .handle(
+          "removeMember",
+          Effect.fn("Http.Authorization.removeMember")(function* ({ headers, params }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(Effect.gen(function* () {
+              yield* authorize(
+                principal,
+                headers["x-tenant-id"],
+                AuthorizationCapabilities.tenantMembershipRemove,
+              )
+              return yield* authorization.removeMember({
+                userAccountId: params.userAccountId,
+                tenantId: headers["x-tenant-id"],
+              })
+            }))
+          }),
+        )
+        .handle(
+          "grant",
+          Effect.fn("Http.Authorization.grant")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(Effect.gen(function* () {
+              yield* authorize(
+                principal,
+                headers["x-tenant-id"],
+                AuthorizationCapabilities.capabilityGrant,
+              )
+              return yield* authorization.grant({
+                userAccountId: payload.userAccountId,
+                tenantId: headers["x-tenant-id"],
+                capability: payload.capability,
+              })
+            }))
+          }),
+        )
+    })(handlers),
 )
 
-export const SalesHandlers = HttpApiBuilder.group(RitseiApi, "Sales", (handlers) =>
-  handlers
-    .handle("createCustomer", ({ headers, payload }) =>
-      coreApiEffect(Effect.gen(function* () {
-        const principal = yield* CurrentPrincipal
-        return yield* SalesService.use((service) =>
-          service.createCustomer({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            ...payload,
-          })
+export const SalesHandlers = HttpApiBuilder.group(
+  RitseiApi,
+  "Sales",
+  (handlers) =>
+    Effect.fn("Http.Sales.handlers")(function* (handlers) {
+      const sales = yield* SalesService
+      return handlers
+        .handle(
+          "createCustomer",
+          Effect.fn("Http.Sales.createCustomer")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              sales.createCustomer({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
         )
-      })))
-    .handle("createQuotation", ({ headers, payload }) =>
-      coreApiEffect(Effect.gen(function* () {
-        const principal = yield* CurrentPrincipal
-        return yield* SalesService.use((service) =>
-          service.createQuotation({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            ...payload,
-          })
+        .handle(
+          "createQuotation",
+          Effect.fn("Http.Sales.createQuotation")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              sales.createQuotation({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
         )
-      })))
-    .handle("createOrder", ({ headers, payload }) =>
-      coreApiEffect(Effect.gen(function* () {
-        const principal = yield* CurrentPrincipal
-        return yield* SalesService.use((service) =>
-          service.createOrder({
-            principal,
-            tenantId: headers["x-tenant-id"],
-            ...payload,
-          })
+        .handle(
+          "createOrder",
+          Effect.fn("Http.Sales.createOrder")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              sales.createOrder({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
         )
-      }))))
+    })(handlers),
+)
 
 export const InventoryHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Inventory",
   (handlers) =>
-    handlers
-      .handle("createWarehouse", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* InventoryService.use((service) =>
-            service.createWarehouse({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("createItem", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* InventoryService.use((service) =>
-            service.createItem({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("receiveStock", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* InventoryService.use((service) =>
-            service.receiveStock({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("reserveStock", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* InventoryService.use((service) =>
-            service.reserveStock({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("createTransfer", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* InventoryService.use((service) =>
-            service.createTransfer({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("confirmTransfer", ({ headers, params }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* InventoryService.use((service) =>
-            service.confirmTransfer({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              transferId: params.id,
-            })
-          )
-        })))
-      .handle("completeTransfer", ({ headers, params }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* InventoryService.use((service) =>
-            service.completeTransfer({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              transferId: params.id,
-            })
-          )
-        }))),
+    Effect.fn("Http.Inventory.handlers")(function* (handlers) {
+      const inventory = yield* InventoryService
+      return handlers
+        .handle(
+          "createWarehouse",
+          Effect.fn("Http.Inventory.createWarehouse")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              inventory.createWarehouse({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                ...payload,
+              }),
+            )
+          }),
+        )
+        .handle(
+          "createItem",
+          Effect.fn("Http.Inventory.createItem")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              inventory.createItem({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "receiveStock",
+          Effect.fn("Http.Inventory.receiveStock")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              inventory.receiveStock({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "reserveStock",
+          Effect.fn("Http.Inventory.reserveStock")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              inventory.reserveStock({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "createTransfer",
+          Effect.fn("Http.Inventory.createTransfer")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              inventory.createTransfer({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "confirmTransfer",
+          Effect.fn("Http.Inventory.confirmTransfer")(function* ({ headers, params }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              inventory.confirmTransfer({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                transferId: params.id,
+              }),
+            )
+          }),
+        )
+        .handle(
+          "completeTransfer",
+          Effect.fn("Http.Inventory.completeTransfer")(function* ({ headers, params }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              inventory.completeTransfer({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                transferId: params.id,
+              }),
+            )
+          }),
+        )
+    })(handlers),
 )
 
 export const ProcessHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Process",
   (handlers) =>
-    handlers
-      .handle("confirmOrder", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* ProcessService.use((service) =>
-            service.confirmOrder({ principal, tenantId: headers["x-tenant-id"], ...payload })
-          )
-        })))
-      .handle("cancelOrder", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* ProcessService.use((service) =>
-            service.cancelOrder({ principal, tenantId: headers["x-tenant-id"], ...payload })
-          )
-        })))
-      .handle("fulfillOrder", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* ProcessService.use((service) =>
-            service.fulfillOrder({ principal, tenantId: headers["x-tenant-id"], ...payload })
-          )
-        })))
-      .handle("recoverOrder", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* ProcessService.use((service) =>
-            service.recoverOrder({ principal, tenantId: headers["x-tenant-id"], ...payload })
-          )
-        })))
-      .handle("manualRecovery", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* ProcessService.use((service) =>
-            service.markManualRecovery({ principal, tenantId: headers["x-tenant-id"], ...payload })
-          )
-        }))),
+    Effect.fn("Http.Process.handlers")(function* (handlers) {
+      const process = yield* ProcessService
+      return handlers
+        .handle(
+          "confirmOrder",
+          Effect.fn("Http.Process.confirmOrder")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              process.confirmOrder({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "cancelOrder",
+          Effect.fn("Http.Process.cancelOrder")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              process.cancelOrder({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "fulfillOrder",
+          Effect.fn("Http.Process.fulfillOrder")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              process.fulfillOrder({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "recoverOrder",
+          Effect.fn("Http.Process.recoverOrder")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              process.recoverOrder({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "manualRecovery",
+          Effect.fn("Http.Process.manualRecovery")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              process.markManualRecovery({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                ...payload,
+              }),
+            )
+          }),
+        )
+    })(handlers),
 )
 
 export const AccountingHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Accounting",
   (handlers) =>
-    handlers
-      .handle("prepareTigerBeetleCutover", ({ headers, params }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* AccountingService.use((service) =>
-            service.prepareTigerBeetleCutover({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              legalEntityId: params.id,
-            })
-          )
-        })))
-      .handle("recordFinancialVerificationArtifact", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* AccountingService.use((service) =>
-            service.recordFinancialVerificationArtifact({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              evidence: payload,
-            })
-          )
-        })))
-      .handle("approveTigerBeetleCutover", ({ headers, params, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* AccountingService.use((service) =>
-            service.approveTigerBeetleCutover({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              legalEntityId: params.id,
-              ...payload,
-            })
-          )
-        })))
-      .handle("activateTigerBeetleCutover", ({ headers, params }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* AccountingService.use((service) =>
-            service.activateTigerBeetleCutover({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              legalEntityId: params.id,
-            })
-          )
-        })))
-      .handle("configureLegalEntity", ({ headers, params, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* AccountingService.use((service) =>
-            service.configureLegalEntity({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              legalEntityId: params.id,
-              ...payload,
-            })
-          )
-        })))
-      .handle("createAccount", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* AccountingService.use((service) =>
-            service.createAccount({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("postJournal", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* AccountingService.use((service) =>
-            service.postJournal({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("rebuildFinancialProjections", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* FinancialOperationService.use((service) =>
-            service.rebuildFinancialProjections({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("reconcileFinancialCheckpoint", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* FinancialOperationService.use((service) =>
-            service.reconcileFinancialCheckpoint({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("createFinancialJournalIntent", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* FinancialOperationService.use((service) =>
-            service.createJournalIntent({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("createFinancialRevenueIntent", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* FinancialOperationService.use((service) =>
-            service.createRevenueIntent({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        })))
-      .handle("createFinancialReversalIntent", ({ headers, payload }) =>
-        coreApiEffect(Effect.gen(function* () {
-          const principal = yield* CurrentPrincipal
-          return yield* FinancialOperationService.use((service) =>
-            service.createReversalIntent({
-              principal,
-              tenantId: headers["x-tenant-id"],
-              ...payload,
-            })
-          )
-        }))),
+    Effect.fn("Http.Accounting.handlers")(function* (handlers) {
+      const accounting = yield* AccountingService
+      const financialOperations = yield* FinancialOperationService
+      return handlers
+        .handle(
+          "prepareTigerBeetleCutover",
+          Effect.fn("Http.Accounting.prepareTigerBeetleCutover")(function* ({ headers, params }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              accounting.prepareTigerBeetleCutover({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                legalEntityId: params.id,
+              }),
+            )
+          }),
+        )
+        .handle(
+          "recordFinancialVerificationArtifact",
+          Effect.fn("Http.Accounting.recordFinancialVerificationArtifact")(
+            function* ({ headers, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(
+                accounting.recordFinancialVerificationArtifact({
+                  principal,
+                  tenantId: headers["x-tenant-id"],
+                  evidence: payload,
+                }),
+              )
+            },
+          ),
+        )
+        .handle(
+          "approveTigerBeetleCutover",
+          Effect.fn("Http.Accounting.approveTigerBeetleCutover")(
+            function* ({ headers, params, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(
+                accounting.approveTigerBeetleCutover({
+                  principal,
+                  tenantId: headers["x-tenant-id"],
+                  legalEntityId: params.id,
+                  ...payload,
+                }),
+              )
+            },
+          ),
+        )
+        .handle(
+          "activateTigerBeetleCutover",
+          Effect.fn("Http.Accounting.activateTigerBeetleCutover")(function* ({ headers, params }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              accounting.activateTigerBeetleCutover({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                legalEntityId: params.id,
+              }),
+            )
+          }),
+        )
+        .handle(
+          "configureLegalEntity",
+          Effect.fn("Http.Accounting.configureLegalEntity")(
+            function* ({ headers, params, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(
+                accounting.configureLegalEntity({
+                  principal,
+                  tenantId: headers["x-tenant-id"],
+                  legalEntityId: params.id,
+                  ...payload,
+                }),
+              )
+            },
+          ),
+        )
+        .handle(
+          "createAccount",
+          Effect.fn("Http.Accounting.createAccount")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              accounting.createAccount({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "postJournal",
+          Effect.fn("Http.Accounting.postJournal")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              accounting.postJournal({ principal, tenantId: headers["x-tenant-id"], ...payload }),
+            )
+          }),
+        )
+        .handle(
+          "rebuildFinancialProjections",
+          Effect.fn("Http.Accounting.rebuildFinancialProjections")(
+            function* ({ headers, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(
+                financialOperations.rebuildFinancialProjections({
+                  principal,
+                  tenantId: headers["x-tenant-id"],
+                  ...payload,
+                }),
+              )
+            },
+          ),
+        )
+        .handle(
+          "reconcileFinancialCheckpoint",
+          Effect.fn("Http.Accounting.reconcileFinancialCheckpoint")(
+            function* ({ headers, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(
+                financialOperations.reconcileFinancialCheckpoint({
+                  principal,
+                  tenantId: headers["x-tenant-id"],
+                  ...payload,
+                }),
+              )
+            },
+          ),
+        )
+        .handle(
+          "createFinancialJournalIntent",
+          Effect.fn("Http.Accounting.createFinancialJournalIntent")(
+            function* ({ headers, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(
+                financialOperations.createJournalIntent({
+                  principal,
+                  tenantId: headers["x-tenant-id"],
+                  ...payload,
+                }),
+              )
+            },
+          ),
+        )
+        .handle(
+          "createFinancialRevenueIntent",
+          Effect.fn("Http.Accounting.createFinancialRevenueIntent")(
+            function* ({ headers, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(
+                financialOperations.createRevenueIntent({
+                  principal,
+                  tenantId: headers["x-tenant-id"],
+                  ...payload,
+                }),
+              )
+            },
+          ),
+        )
+        .handle(
+          "createFinancialReversalIntent",
+          Effect.fn("Http.Accounting.createFinancialReversalIntent")(
+            function* ({ headers, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(
+                financialOperations.createReversalIntent({
+                  principal,
+                  tenantId: headers["x-tenant-id"],
+                  ...payload,
+                }),
+              )
+            },
+          ),
+        )
+    })(handlers),
 )
-
 export const ApiHandlers = Layer.mergeAll(
   HealthHandlers,
   UserAccountHandlers,
