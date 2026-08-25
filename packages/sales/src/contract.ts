@@ -67,13 +67,13 @@ export const CreateCustomerInput = Schema.Struct({
 })
 export const CreateQuotationInput = Schema.Struct({
   ...ScopedInput,
-  customerId: Schema.String,
+  customerId: Uuid,
   total: Money,
 })
 export const CreateOrderInput = Schema.Struct({
   ...ScopedInput,
-  customerId: Schema.String,
-  quotationId: Schema.optionalKey(Schema.String),
+  customerId: Uuid,
+  quotationId: Schema.optionalKey(Uuid),
   lines: Schema.Array(SalesOrderLine).check(Schema.isMinLength(1)),
 })
 export const ConfirmOrderInput = Schema.Struct({

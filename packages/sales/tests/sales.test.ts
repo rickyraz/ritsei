@@ -11,6 +11,8 @@ import {
 } from "../../messaging/mod.ts"
 import {
   ConfirmOrderInput,
+  CreateOrderInput,
+  CreateQuotationInput,
   Customer,
   CustomerAlreadyExists,
   makeSalesTestLayer,
@@ -89,6 +91,34 @@ describe("sales contract", () => {
         }),
       )
       assert.strictEqual(error._tag, "SchemaError")
+    }))
+
+  it.effect("validates sales creation relationship IDs as UUIDs", () =>
+    Effect.gen(function* () {
+      const invalidQuotationCustomer = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateQuotationInput)({
+          principal,
+          tenantId,
+          customerId: "not-a-uuid",
+          total: "10.00",
+        }),
+      )
+      assert.strictEqual(invalidQuotationCustomer._tag, "SchemaError")
+
+      const invalidOrderQuotation = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateOrderInput)({
+          principal,
+          tenantId,
+          customerId: "00000000-0000-4000-8000-000000000032",
+          quotationId: "not-a-uuid",
+          lines: [{
+            itemId: "00000000-0000-4000-8000-000000000041",
+            quantity: "1",
+            unitPrice: "10.00",
+          }],
+        }),
+      )
+      assert.strictEqual(invalidOrderQuotation._tag, "SchemaError")
     }))
 
   it.effect("bounds order-line quantities to PostgreSQL bigint", () =>
