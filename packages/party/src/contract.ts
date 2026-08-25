@@ -45,7 +45,7 @@ export const Party = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
   kind: PartyKind,
-  name: NonBlankString,
+  name: TrimmedNonBlankString,
 })
 
 export const ExternalIdentifier = Schema.Struct({

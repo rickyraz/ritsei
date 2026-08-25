@@ -147,6 +147,12 @@ describe("party contract", () => {
         kind: "organization",
         name: " ACME Indonesia ",
       })
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(Party)({ ...party, name: " ACME Indonesia " }),
+        ))._tag,
+        "SchemaError",
+      )
       const invalidRole = yield* Effect.flip(
         Schema.decodeUnknownEffect(AssignPartyRoleInput)({
           principal,
