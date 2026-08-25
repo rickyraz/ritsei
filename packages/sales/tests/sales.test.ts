@@ -13,6 +13,7 @@ import {
   Customer,
   CustomerAlreadyExists,
   makeSalesTestLayer,
+  Quotation,
   SalesOrder,
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderConfirmedEvent,
@@ -145,6 +146,7 @@ describe("sales contract", () => {
         lines: [{ itemId: "item-1", quantity: "10", unitPrice: "125.00" }],
       })
 
+      yield* Schema.decodeUnknownEffect(Quotation)(quotation)
       assert.strictEqual(customer.email, "sales@acme.test")
       assert.strictEqual(quotation.status, "draft")
       assert.strictEqual(order.quotationId, quotation.id)
