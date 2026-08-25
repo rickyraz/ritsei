@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
 import {
@@ -10,6 +11,7 @@ import {
   LegalEntityNotFound,
   makePartyTestLayer,
   OrganizationRequired,
+  Party,
   PartyCapabilities,
   PartyCreatedEvent,
   PartyEventPublisher,
@@ -27,7 +29,8 @@ import { makePartyMemoryStore } from "../src/memory.ts"
 import { makePartyServiceFromStore } from "../src/service.ts"
 
 const principal = { userAccountId: "party-admin", sessionId: "session" }
-const tenantId = "tenant-a"
+const tenantId = "00000000-0000-4000-8000-000000000001"
+const deniedTenantId = "00000000-0000-4000-8000-000000000002"
 const capabilities = [
   PartyCapabilities.partyCreate,
   PartyCapabilities.legalEntityCreate,
@@ -92,9 +95,10 @@ describe("party contract", () => {
         kind: party.kind,
       })
 
+      yield* Schema.decodeUnknownEffect(Party)(party)
       const denied = yield* Effect.flip(service.create({
         principal,
-        tenantId: "tenant-b",
+        tenantId: deniedTenantId,
         kind: "organization",
         name: "Denied Organization",
       }))

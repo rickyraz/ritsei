@@ -36,7 +36,7 @@ export const PartyRelationshipKind = Schema.Literals([
 
 export const Party = Schema.Struct({
   id: Uuid,
-  tenantId: Schema.String,
+  tenantId: Uuid,
   kind: PartyKind,
   name: Schema.String,
 })
