@@ -390,6 +390,29 @@ it.effect.skipIf(databaseUrl === undefined)(
             { concurrency: "unbounded" },
           )
           assert.strictEqual(duplicates[0].id, duplicates[1].id)
+          const changedMovement = yield* postgresFailure(() =>
+            client`
+              update inventory.movements
+              set reason = 'edited correction'
+              where tenant_id = ${tenant.id} and id = ${duplicates[0].id}
+            `
+          )
+          assert.strictEqual((changedMovement as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (changedMovement as { constraint_name?: string }).constraint_name,
+            "inventory_movements_immutable",
+          )
+          const deletedMovement = yield* postgresFailure(() =>
+            client`
+              delete from inventory.movements
+              where tenant_id = ${tenant.id} and id = ${duplicates[0].id}
+            `
+          )
+          assert.strictEqual((deletedMovement as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (deletedMovement as { constraint_name?: string }).constraint_name,
+            "inventory_movements_immutable",
+          )
           const invalidUnitOfMeasure = yield* postgresFailure(() =>
             client`
               insert into inventory.movements
