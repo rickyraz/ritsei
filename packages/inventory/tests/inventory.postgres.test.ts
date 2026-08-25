@@ -382,6 +382,20 @@ it.effect.skipIf(databaseUrl === undefined)(
             (invalidUnitOfMeasure as { constraint_name?: string }).constraint_name,
             "movements_correction_metadata_check",
           )
+          for (const [kind, quantity] of [["issue", 1], ["receipt", -1], ["release", 1]] as const) {
+            const invalidSign = yield* postgresFailure(() =>
+              client`
+                insert into inventory.movements
+                  (tenant_id, warehouse_id, item_id, quantity, kind)
+                values (${tenant.id}, ${warehouse.id}, ${item.id}, ${quantity}, ${kind})
+              `
+            )
+            assert.strictEqual((invalidSign as { code?: string }).code, "23514")
+            assert.strictEqual(
+              (invalidSign as { constraint_name?: string }).constraint_name,
+              "movements_kind_quantity_sign_check",
+            )
+          }
           const otherCorrection = yield* inventory.adjustStock({
             ...correctionInput,
             tenantId: otherTenant.id,
