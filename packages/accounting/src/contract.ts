@@ -15,6 +15,10 @@ import { FinancialVerificationEvidence } from "./financial-readiness.ts"
 import * as AccountingErrors from "./errors.ts"
 
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const UpperNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim() && value === value.toUpperCase(),
+  { expected: "a trimmed uppercase nonblank string" },
+))
 const Uuid = Schema.String.check(Schema.isUUID())
 const NonNegativeInt = Schema.Int.check(
   Schema.isBetween({ minimum: 0, maximum: 0x7fffffff }),
@@ -56,7 +60,7 @@ export const AccountingConfiguration = Schema.Struct({
 export const Account = Schema.Struct({
   id: Uuid,
   tenantId: Uuid,
-  code: NonEmptyString,
+  code: UpperNonEmptyString,
   name: NonEmptyString,
   type: Schema.Literals(["asset", "liability", "equity", "revenue", "expense"]),
 })

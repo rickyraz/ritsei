@@ -885,6 +885,10 @@ describe("accounting contract", () => {
         }),
       )
       assert.strictEqual(blankName._tag, "SchemaError")
+      const lowercaseCode = yield* Effect.flip(
+        Schema.decodeUnknownEffect(Account.fields.code)("cash"),
+      )
+      assert.strictEqual(lowercaseCode._tag, "SchemaError")
     }))
 
   it.effect("rejects malformed account identities", () =>
