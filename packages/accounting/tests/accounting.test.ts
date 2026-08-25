@@ -679,6 +679,13 @@ describe("accounting contract", () => {
         lastError: null,
         reconciledAt: null,
       }
+      const paddedReference = yield* Effect.flip(
+        Schema.decodeUnknownEffect(FinancialOperation)({
+          ...operation,
+          reference: " reference-1 ",
+        }),
+      )
+      assert.strictEqual(paddedReference._tag, "SchemaError")
       const reversedWithoutSource = yield* Effect.flip(
         Schema.decodeUnknownEffect(FinancialOperation)({
           ...operation,

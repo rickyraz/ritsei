@@ -59,6 +59,10 @@ import {
 } from "./service.ts"
 
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const TrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim(),
+  { expected: "a trimmed nonblank string" },
+))
 const Uuid = Schema.String.check(Schema.isUUID())
 const PositiveInt = Schema.Int.check(
   Schema.isBetween({ minimum: 1, maximum: 0x7fffffff }),
@@ -180,7 +184,7 @@ export const FinancialOperation = Schema.Struct({
   engineVerified: Schema.Boolean,
   journalId: Uuid,
   sourceJournalId: Schema.NullOr(Uuid),
-  reference: NonEmptyString,
+  reference: TrimmedNonEmptyString,
   currency: CurrencyCode,
   mappingVersion: PositiveInt,
   status: FinancialOperationStatus,
