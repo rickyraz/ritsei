@@ -298,11 +298,11 @@ export const FinancialReconciliationCheckpoint = Schema.Struct({
   legalEntityId: Uuid,
   engine: FinancialLedgerAuthority,
   status: Schema.Literals(["verified", "blocked"]),
-  recoveryWatermark: NonEmptyString,
-  sourceWatermark: NonEmptyString,
-  targetWatermark: NonEmptyString,
-  sourceSnapshotRef: NonEmptyString,
-  targetSnapshotRef: NonEmptyString,
+  recoveryWatermark: TrimmedNonEmptyString,
+  sourceWatermark: TrimmedNonEmptyString,
+  targetWatermark: TrimmedNonEmptyString,
+  sourceSnapshotRef: TrimmedNonEmptyString,
+  targetSnapshotRef: TrimmedNonEmptyString,
   operationSetHash: Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/)),
   accountBalanceHash: Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/)),
   transferSetHash: Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/)),
@@ -1435,7 +1435,15 @@ export const makeFinancialOperationService = Effect.gen(function* () {
 
   const reconcileFinancialCheckpoint = (input: unknown) =>
     Effect.gen(function* () {
-      const decoded = yield* Schema.decodeUnknownEffect(ReconcileFinancialCheckpointInput)(input)
+      const parsed = yield* Schema.decodeUnknownEffect(ReconcileFinancialCheckpointInput)(input)
+      const decoded = {
+        ...parsed,
+        recoveryWatermark: parsed.recoveryWatermark.trim(),
+        sourceWatermark: parsed.sourceWatermark.trim(),
+        targetWatermark: parsed.targetWatermark.trim(),
+        sourceSnapshotRef: parsed.sourceSnapshotRef.trim(),
+        targetSnapshotRef: parsed.targetSnapshotRef.trim(),
+      }
       yield* authorization.authorize({
         principal: decoded.principal,
         tenantId: decoded.tenantId,

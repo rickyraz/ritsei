@@ -1115,14 +1115,18 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            recoveryWatermark: `checkpoint-${uuidv7()}`,
-            sourceWatermark: "postgres:test-watermark",
-            targetWatermark: "tigerbeetle:test-watermark",
-            sourceSnapshotRef: "postgres:test-snapshot",
-            targetSnapshotRef: "tigerbeetle:test-snapshot",
+            recoveryWatermark: ` checkpoint-${uuidv7()} `,
+            sourceWatermark: " postgres:test-watermark ",
+            targetWatermark: " tigerbeetle:test-watermark ",
+            sourceSnapshotRef: " postgres:test-snapshot ",
+            targetSnapshotRef: " tigerbeetle:test-snapshot ",
             evidenceArtifactId: null,
           })
           assert.include(["verified", "blocked"], checkpoint.status)
+          assert.strictEqual(checkpoint.sourceWatermark, "postgres:test-watermark")
+          assert.strictEqual(checkpoint.targetWatermark, "tigerbeetle:test-watermark")
+          assert.strictEqual(checkpoint.sourceSnapshotRef, "postgres:test-snapshot")
+          assert.strictEqual(checkpoint.targetSnapshotRef, "tigerbeetle:test-snapshot")
           const checkpointReplay = yield* service.reconcileFinancialCheckpoint({
             principal,
             tenantId: tenant!.id,
