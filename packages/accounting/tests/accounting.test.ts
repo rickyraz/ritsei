@@ -1000,6 +1000,12 @@ describe("accounting contract", () => {
         Schema.decodeUnknownEffect(ReverseRevenueForOrderInput.fields.orderId)("not-a-uuid"),
       )
       assert.strictEqual(failure._tag, "SchemaError")
+      const legalEntityFailure = yield* Effect.flip(
+        Schema.decodeUnknownEffect(ReverseRevenueForOrderInput.fields.legalEntityId)(
+          "not-a-uuid",
+        ),
+      )
+      assert.strictEqual(legalEntityFailure._tag, "SchemaError")
     }))
 
   it.effect("posts revenue in an open period", () =>

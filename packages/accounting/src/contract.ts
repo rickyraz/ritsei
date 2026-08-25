@@ -271,7 +271,7 @@ export const PostRevenueForOrderInput = Schema.Struct({
 
 export const ReverseRevenueForOrderInput = Schema.Struct({
   ...ScopedInput,
-  legalEntityId: Schema.String,
+  legalEntityId: Uuid,
   orderId: Uuid,
 })
 
