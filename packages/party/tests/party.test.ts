@@ -22,6 +22,7 @@ import {
   PartyRelationshipAlreadyExists,
   PartyRelationshipNotFound,
   PartyRelationshipRoleNotAssigned,
+  PartyRepresentation,
   PartyRepresentationAlreadyExists,
   PartyRepresentationNotFound,
   PartyRepresentationUserAccountNotFound,
@@ -202,11 +203,12 @@ describe("party contract", () => {
         const input = {
           principal,
           tenantId,
-          userAccountId: "user-account-1",
+          userAccountId: "00000000-0000-4000-8000-000000000010",
           partyId: party.id,
           kind: "representative",
         }
         const representation = yield* service.createPartyRepresentation(input)
+        yield* Schema.decodeUnknownEffect(PartyRepresentation)(representation)
         assert.strictEqual(representation.active, true)
         assert.strictEqual(representation.kind, "representative")
         assert.instanceOf(
@@ -237,7 +239,9 @@ describe("party contract", () => {
           PartyRepresentationUserAccountNotFound,
         )
       }),
-      makePartyTestLayer(new Set(["user-account-1"])).pipe(Layer.provide(authorization)),
+      makePartyTestLayer(new Set(["00000000-0000-4000-8000-000000000010"])).pipe(
+        Layer.provide(authorization),
+      ),
     )
   })
 

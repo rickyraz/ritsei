@@ -71,10 +71,10 @@ export const Branch = Schema.Struct({
 export const PartyRepresentationKind = NonBlankString
 
 export const PartyRepresentation = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  userAccountId: Schema.String,
-  partyId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  userAccountId: Uuid,
+  partyId: Uuid,
   kind: PartyRepresentationKind,
   active: Schema.Boolean,
 })
