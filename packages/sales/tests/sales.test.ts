@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
 import {
@@ -11,6 +12,7 @@ import {
 import {
   CustomerAlreadyExists,
   makeSalesTestLayer,
+  SalesOrder,
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderConfirmedEvent,
   SalesOrderInvalidState,
@@ -94,6 +96,7 @@ describe("sales contract", () => {
           idempotencyKey: "confirm-event",
         }
         const confirmed = yield* sales.confirmOrder(input)
+        yield* Schema.decodeUnknownEffect(SalesOrder)(confirmed)
         assert.strictEqual(published.length, 1)
         assert.strictEqual(published[0].eventType, SalesOrderConfirmedEvent.id)
         assert.strictEqual(published[0].tenantId, tenantId)

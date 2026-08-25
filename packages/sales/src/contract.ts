@@ -15,6 +15,7 @@ import {
 } from "./errors.ts"
 
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const Uuid = Schema.String.check(Schema.isUUID())
 const Money = FinancialMajorAmount
 const Quantity = Schema.String.check(Schema.isPattern(/^[1-9]\d*$/))
 
@@ -37,7 +38,7 @@ export const SalesOrderLine = Schema.Struct({
   unitPrice: Money,
 })
 export const SalesOrder = Schema.Struct({
-  id: Schema.String,
+  id: Uuid,
   tenantId: Schema.String,
   customerId: Schema.String,
   quotationId: Schema.NullOr(Schema.String),

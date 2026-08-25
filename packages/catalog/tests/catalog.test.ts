@@ -285,7 +285,7 @@ describe("catalog compatibility", () => {
         idempotencyKey: "confirmation-1",
       })
       yield* Schema.decodeUnknownEffect(SalesConfirmOrderAction.outputSchema)({
-        id: "order-1",
+        id: "00000000-0000-4000-8000-000000000031",
         tenantId: "tenant-1",
         customerId: "customer-1",
         quotationId: null,
