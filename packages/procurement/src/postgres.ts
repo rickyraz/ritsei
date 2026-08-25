@@ -212,6 +212,7 @@ export const makeProcurementService = Effect.gen(function* () {
           tenantId: decoded.tenantId,
           capability: ProcurementCapabilities.purchaseOrderConfirm,
         })
+        const normalizedIdempotencyKey = decoded.idempotencyKey.trim()
         const result = yield* database.withTransaction(
           Effect.gen(function* () {
             const [row] = yield* database.query(
@@ -241,7 +242,7 @@ export const makeProcurementService = Effect.gen(function* () {
             )
             const current = toPurchaseOrder(row, lines)
             if (row.status === "confirmed") {
-              return row.confirmationIdempotencyKey === decoded.idempotencyKey
+              return row.confirmationIdempotencyKey === normalizedIdempotencyKey
                 ? { _tag: "existing" as const, order: current }
                 : { _tag: "idempotency-conflict" as const }
             }
@@ -254,7 +255,7 @@ export const makeProcurementService = Effect.gen(function* () {
                 db.update(purchaseOrders)
                   .set({
                     status: "confirmed",
-                    confirmationIdempotencyKey: decoded.idempotencyKey,
+                    confirmationIdempotencyKey: normalizedIdempotencyKey,
                     confirmedAt,
                     updatedAt: confirmedAt,
                   })
@@ -281,10 +282,10 @@ export const makeProcurementService = Effect.gen(function* () {
               tenantId: decoded.tenantId,
               aggregateType: ProcurementPurchaseOrderConfirmedEvent.aggregateType,
               aggregateId: order.id,
-              commandId: `procurement.purchase_order.confirm:${decoded.idempotencyKey}`,
+              commandId: `procurement.purchase_order.confirm:${normalizedIdempotencyKey}`,
               correlationId: `procurement.purchase_order:${order.id}`,
               causationId: null,
-              idempotencyKey: decoded.idempotencyKey,
+              idempotencyKey: normalizedIdempotencyKey,
               actorPrincipalId: decoded.principal.userAccountId,
               occurredAt: confirmedAt.toISOString(),
               payload,
@@ -301,7 +302,7 @@ export const makeProcurementService = Effect.gen(function* () {
               ? new PurchaseOrderConfirmationIdempotencyConflict({
                 tenantId: decoded.tenantId,
                 purchaseOrderId: decoded.purchaseOrderId,
-                idempotencyKey: decoded.idempotencyKey,
+                idempotencyKey: normalizedIdempotencyKey,
               })
               : error
           ),
@@ -319,7 +320,7 @@ export const makeProcurementService = Effect.gen(function* () {
             new PurchaseOrderConfirmationIdempotencyConflict({
               tenantId: decoded.tenantId,
               purchaseOrderId: decoded.purchaseOrderId,
-              idempotencyKey: decoded.idempotencyKey,
+              idempotencyKey: normalizedIdempotencyKey,
             }),
           )
         }

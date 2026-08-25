@@ -326,10 +326,13 @@ describe("procurement contract", () => {
         principal,
         tenantId,
         purchaseOrderId: order.id,
-        idempotencyKey: "confirm-same-key",
+        idempotencyKey: " confirm-same-key ",
       }
       const confirmed = yield* procurement.confirmPurchaseOrder(input)
-      const replayed = yield* procurement.confirmPurchaseOrder(input)
+      const replayed = yield* procurement.confirmPurchaseOrder({
+        ...input,
+        idempotencyKey: "confirm-same-key",
+      })
       assert.deepStrictEqual(replayed, confirmed)
       assert.isFalse("confirmationIdempotencyKey" in confirmed)
       assert.instanceOf(

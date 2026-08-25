@@ -156,6 +156,7 @@ export const makeProcurementTestLayer = () =>
               tenantId: decoded.tenantId,
               capability: ProcurementCapabilities.purchaseOrderConfirm,
             })
+            const normalizedIdempotencyKey = decoded.idempotencyKey.trim()
             const order = storedPurchaseOrders.get(decoded.purchaseOrderId)
             if (order?.tenantId !== decoded.tenantId) {
               return yield* Effect.fail(
@@ -166,12 +167,12 @@ export const makeProcurementTestLayer = () =>
               )
             }
             if (order.status === "confirmed") {
-              if (confirmationKeys.get(order.id) !== decoded.idempotencyKey) {
+              if (confirmationKeys.get(order.id) !== normalizedIdempotencyKey) {
                 return yield* Effect.fail(
                   new PurchaseOrderConfirmationIdempotencyConflict({
                     tenantId: decoded.tenantId,
                     purchaseOrderId: decoded.purchaseOrderId,
-                    idempotencyKey: decoded.idempotencyKey,
+                    idempotencyKey: normalizedIdempotencyKey,
                   }),
                 )
               }
@@ -186,14 +187,14 @@ export const makeProcurementTestLayer = () =>
                 }),
               )
             }
-            const confirmationKey = `${decoded.tenantId}:${decoded.idempotencyKey}`
+            const confirmationKey = `${decoded.tenantId}:${normalizedIdempotencyKey}`
             const existingOrderId = confirmationOrderIdsByKey.get(confirmationKey)
             if (existingOrderId !== undefined && existingOrderId !== order.id) {
               return yield* Effect.fail(
                 new PurchaseOrderConfirmationIdempotencyConflict({
                   tenantId: decoded.tenantId,
                   purchaseOrderId: decoded.purchaseOrderId,
-                  idempotencyKey: decoded.idempotencyKey,
+                  idempotencyKey: normalizedIdempotencyKey,
                 }),
               )
             }
@@ -216,16 +217,16 @@ export const makeProcurementTestLayer = () =>
               tenantId: decoded.tenantId,
               aggregateType: ProcurementPurchaseOrderConfirmedEvent.aggregateType,
               aggregateId: confirmed.id,
-              commandId: `procurement.purchase_order.confirm:${decoded.idempotencyKey}`,
+              commandId: `procurement.purchase_order.confirm:${normalizedIdempotencyKey}`,
               correlationId: `procurement.purchase_order:${confirmed.id}`,
               causationId: null,
-              idempotencyKey: decoded.idempotencyKey,
+              idempotencyKey: normalizedIdempotencyKey,
               actorPrincipalId: decoded.principal.userAccountId,
               occurredAt: confirmed.confirmedAt!,
               payload,
             })
             storedPurchaseOrders.set(order.id, confirmed)
-            confirmationKeys.set(order.id, decoded.idempotencyKey)
+            confirmationKeys.set(order.id, normalizedIdempotencyKey)
             confirmationOrderIdsByKey.set(confirmationKey, order.id)
             return confirmed
           }),
