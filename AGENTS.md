@@ -298,7 +298,7 @@ Rules for new work:
   index-visible identities MUST use UUIDv7.
 - PostgreSQL-owned IDs use the `uuidv7()` default from `db/schema/common.ts`.
   Application-created persistent IDs use the kernel-owned `uuidv7()` helper;
-  domain packages must not import the `uuid` package directly.
+  domain packages must not import `@std/uuid` directly.
 - Do not use `crypto.randomUUID()` for persistent identities or stored event IDs.
   UUIDv4 remains valid for opaque ephemeral values such as lease tokens and
   test-only fixture randomness when ordering is not part of the identity.

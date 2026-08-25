@@ -308,7 +308,7 @@ control-plane metadata, policy, workflow state, audit links, and projections.
 New persistent entity, stored event, stored line, workflow, and other index-visible identities use
 UUIDv7. PostgreSQL-owned IDs use the existing `uuidv7()` default in `db/schema/common.ts`; application
 code that must create a persistent identity before insertion uses the kernel-owned `uuidv7()` helper,
-implemented through the pinned `uuid` package. Existing UUIDv4 rows remain valid and are not migrated
+implemented through the pinned `@std/uuid` package. Existing UUIDv4 rows remain valid and are not migrated
 solely for version conversion. UUIDv4 remains acceptable for ephemeral opaque values such as lease
 tokens and test fixtures. UUIDv7 is not a replacement for `created_at`, business numbers, or secrets.
 The complete decision and evidence are owned by

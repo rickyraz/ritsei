@@ -30,8 +30,9 @@ business-number semantics into primary keys.
 RITSEI adopts **UUIDv7 as the default for new persistent identities**.
 
 - PostgreSQL-generated entity IDs continue to use the existing `uuidv7()` default.
-- Application-created persistent IDs use the kernel-owned `uuidv7()` helper, implemented with the
-  `uuid` package's `v7()` API. Domain packages do not import the third-party package directly.
+- Application-created persistent IDs use the kernel-owned `uuidv7()` helper, implemented with
+  `@std/uuid`'s `generate` API from `@std/uuid/v7`. Domain packages do not import the third-party
+  package directly.
 - New persistent entity IDs, stored event IDs, stored line IDs, and other index-visible identities
   use UUIDv7.
 - `created_at` remains the canonical audit timestamp; UUIDv7 ordering is not a substitute for it.
@@ -44,7 +45,7 @@ RITSEI adopts **UUIDv7 as the default for new persistent identities**.
 The runtime dependency is pinned in the root manifest:
 
 ```text
-uuid: 14.0.2
+@std/uuid: jsr:^1.1.1
 ```
 
 The implementation boundary is `packages/kernel/src/ids.ts`; domain code calls the exported kernel
@@ -115,4 +116,4 @@ share the same UUIDv7 policy.
   <https://www.cybertec-postgresql.com/en/unexpected-downsides-of-uuid-keys-in-postgresql/>
 - PlanetScale, “B-trees and database indexes”:
   <https://planetscale.com/blog/btrees-and-database-indexes>
-- `uuid` package documentation: <https://github.com/uuidjs/uuid>
+- `@std/uuid` documentation: <https://jsr.io/@std/uuid/doc>

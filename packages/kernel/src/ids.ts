@@ -1,4 +1,4 @@
-import { v7 } from "uuid"
+import { generate as uuidv7 } from "@std/uuid/v7"
 
 /** Generate a new UUIDv7 for an application-created persistent identity. */
-export const uuidv7 = (): string => v7()
+export { uuidv7 }
