@@ -6,6 +6,7 @@ import * as Schema from "effect/Schema"
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
 import {
   AssignPartyRoleInput,
+  AttachExternalIdentifierInput,
   Branch,
   BranchAlreadyExists,
   CreateBranchInput,
@@ -156,6 +157,18 @@ describe("party contract", () => {
       )
       assert.strictEqual(invalidRole._tag, "SchemaError")
       yield* service.assignRole({ principal, tenantId, partyId: party.id, role: "customer" })
+      const invalidIdentifier = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AttachExternalIdentifierInput)({
+          principal,
+          tenantId,
+          partyId: "not-a-uuid",
+          provider: "gs1",
+          scheme: "gln",
+          scope: "global",
+          value: "1234567890123",
+        }),
+      )
+      assert.strictEqual(invalidIdentifier._tag, "SchemaError")
       const identifier = yield* service.attachIdentifier({
         principal,
         tenantId,
@@ -480,7 +493,7 @@ describe("party contract", () => {
         yield* Effect.flip(service.attachIdentifier({
           ...identifier,
           partyId: first.id,
-          legalEntityId: "missing",
+          legalEntityId: "00000000-0000-4000-8000-000000000015",
         })),
         LegalEntityNotFound,
       )

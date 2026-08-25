@@ -129,12 +129,12 @@ export const GetPartyRelationshipInput = Schema.Struct({
 
 export const AttachExternalIdentifierInput = Schema.Struct({
   principal: Principal,
-  tenantId: Schema.String,
-  partyId: Schema.String,
+  tenantId: Uuid,
+  partyId: Uuid,
   provider: NonEmptyString,
   scheme: NonEmptyString,
   scope: NonEmptyString,
-  legalEntityId: Schema.optionalKey(Schema.String),
+  legalEntityId: Schema.optionalKey(Uuid),
   value: NonEmptyString,
 })
 
