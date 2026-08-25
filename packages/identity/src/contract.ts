@@ -2,11 +2,22 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 
+import { IdentityPrincipal } from "./events.ts"
+import type { IdentityAuthorizationDenied, UserAccountAlreadyExists } from "./errors.ts"
+
 export const UserAccountStatus = Schema.Literals(["active", "disabled"])
 export type UserAccountStatus = Schema.Schema.Type<typeof UserAccountStatus>
 
+const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+
 export const CreateUserAccountInput = Schema.Struct({
-  email: Schema.String.check(Schema.isPattern(/\S/)),
+  email: NonEmptyString,
+})
+
+export const CreateUserAccountForTenantInput = Schema.Struct({
+  principal: IdentityPrincipal,
+  tenantId: NonEmptyString,
+  email: NonEmptyString,
 })
 
 export const UpdateUserAccountInput = Schema.Struct({
@@ -37,8 +48,18 @@ export interface UserAccountService {
   ) => Effect.Effect<
     UserAccount,
     | import("effect/Schema").SchemaError
-    | import("./errors.ts").UserAccountAlreadyExists
+    | UserAccountAlreadyExists
     | import("../../kernel/mod.ts").DatabaseFailure
+  >
+  readonly createForTenant: (
+    input: unknown,
+  ) => Effect.Effect<
+    UserAccount,
+    | IdentityAuthorizationDenied
+    | import("effect/Schema").SchemaError
+    | UserAccountAlreadyExists
+    | import("../../kernel/mod.ts").DatabaseFailure
+    | import("../../messaging/mod.ts").EventIdempotencyConflict
   >
   readonly getById: (
     id: string,

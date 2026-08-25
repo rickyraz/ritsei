@@ -53,6 +53,7 @@ const coreApiErrorPolicy = {
   EventIdempotencyConflict: "conflict",
   ExternalIdentifierAlreadyAssigned: "conflict",
   FinancialCurrencyMismatch: "conflict",
+  IdentityAuthorizationDenied: "forbidden",
   FinancialEngineActivated: "conflict",
   FinancialEngineCutoverBlocked: "conflict",
   FinancialLedgerNotActivated: "conflict",
@@ -215,12 +216,11 @@ export const UserAccountHandlers = HttpApiBuilder.group(
           Effect.fn("Http.UserAccounts.create")(function* ({ headers, payload }) {
             const principal = yield* CurrentPrincipal
             return yield* coreApiEffect(Effect.gen(function* () {
-              yield* authorization.authorize({
+              const userAccount = yield* userAccounts.createForTenant({
                 principal,
                 tenantId: headers["x-tenant-id"],
-                capability: IdentityCapabilities.userAccountCreate,
+                ...payload,
               })
-              const userAccount = yield* userAccounts.create(payload)
               yield* authorization.addMember({
                 userAccountId: userAccount.id,
                 tenantId: headers["x-tenant-id"],

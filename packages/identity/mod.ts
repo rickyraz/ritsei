@@ -1,6 +1,19 @@
 export { IdentityCapabilities } from "./src/capabilities.ts"
+export {
+  IdentityCreateUserAccountAction,
+  IdentityTypedActionCatalog,
+  IdentityTypedEventCatalog,
+} from "./src/catalog.ts"
+export {
+  IdentityAccountAuthorizer,
+  IdentityEventPublisher,
+  IdentityPrincipal,
+  UserAccountCreatedEvent,
+  UserAccountCreatedEventPayload,
+} from "./src/events.ts"
 
 export {
+  CreateUserAccountForTenantInput,
   CreateUserAccountInput,
   UpdateUserAccountInput,
   UserAccount,
@@ -9,5 +22,14 @@ export {
   UserAccountStatus,
 } from "./src/contract.ts"
 export type { UserAccountService as UserAccountServiceShape } from "./src/contract.ts"
-export { UserAccountAlreadyExists, UserAccountNotFound } from "./src/errors.ts"
-export { IdentityLive, makeUserAccountService, makeUserAccountTestLayer } from "./src/layers.ts"
+export {
+  IdentityAuthorizationDenied,
+  UserAccountAlreadyExists,
+  UserAccountNotFound,
+} from "./src/errors.ts"
+export {
+  IdentityEventPublisherLive,
+  IdentityLive,
+  makeUserAccountService,
+  makeUserAccountTestLayer,
+} from "./src/layers.ts"

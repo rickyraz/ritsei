@@ -1,8 +1,17 @@
 import { assert, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 
-import { makeUserAccountService, UserAccountAlreadyExists, UserAccountNotFound } from "../mod.ts"
-import { Database, makePostgresDatabase, runMigrations } from "../../kernel/mod.ts"
+import {
+  IdentityAccountAuthorizer,
+  IdentityEventPublisher,
+  makeUserAccountService,
+  UserAccountAlreadyExists,
+  UserAccountCreatedEvent,
+  UserAccountNotFound,
+} from "../mod.ts"
+import { Database, makePostgresDatabase, runMigrations, uuidv7 } from "../../kernel/mod.ts"
+import { makeMessagingService } from "../../messaging/mod.ts"
 import { withTemporaryDatabase } from "../../../tests/support/postgres-database.ts"
 
 const databaseUrl = Deno.env.get("DATABASE_URL")
@@ -43,6 +52,62 @@ it.effect.skipIf(databaseUrl === undefined)(
         yield* service.remove(created.id)
         assert.deepStrictEqual(yield* service.list(), [])
         assert.instanceOf(yield* Effect.flip(service.getById(created.id)), UserAccountNotFound)
+      })),
+)
+
+it.effect.skipIf(databaseUrl === undefined)(
+  "publishes a tenant-scoped user-account creation event",
+  () =>
+    withTemporaryDatabase(databaseUrl!, (client) =>
+      Effect.gen(function* () {
+        yield* runMigrations(client)
+        const database = makePostgresDatabase(client)
+        const [tenant] = yield* Effect.promise(() =>
+          client<{ id: string }[]>`
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
+          `
+        )
+        const principal = { userAccountId: "identity-test", sessionId: "identity-session" }
+        const messaging = yield* makeMessagingService.pipe(
+          Effect.provideService(Database, database),
+        )
+        const service = yield* Effect.provide(
+          makeUserAccountService,
+          Layer.mergeAll(
+            Layer.succeed(Database, database),
+            Layer.succeed(IdentityAccountAuthorizer, {
+              authorize: () => Effect.void,
+            }),
+            Layer.succeed(IdentityEventPublisher, { append: messaging.append }),
+          ),
+        )
+        const created = yield* service.createForTenant({
+          principal,
+          tenantId: tenant!.id,
+          email: "identity-event@example.com",
+        })
+        const [event] = yield* Effect.promise(() =>
+          client<{
+            event_type: string
+            event_version: number
+            aggregate_type: string
+            aggregate_id: string
+            payload: { userAccountId: string; email: string }
+          }[]>`
+            select event_type, event_version, aggregate_type, aggregate_id, payload
+            from messaging.event_outbox
+            where tenant_id = ${tenant!.id}
+              and event_type = ${UserAccountCreatedEvent.id}
+              and aggregate_id = ${created.id}
+          `
+        )
+        assert.deepStrictEqual(event, {
+          event_type: UserAccountCreatedEvent.id,
+          event_version: UserAccountCreatedEvent.version,
+          aggregate_type: UserAccountCreatedEvent.aggregateType,
+          aggregate_id: created.id,
+          payload: { userAccountId: created.id, email: created.email },
+        })
       })),
 )
 

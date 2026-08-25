@@ -17,6 +17,15 @@ import {
 } from "../../accounting/mod.ts"
 import { getCapabilityDefinition, isKnownCapability } from "../../authorization/mod.ts"
 import {
+  CreateUserAccountForTenantInput,
+  IdentityCreateUserAccountAction,
+  IdentityTypedActionCatalog,
+  IdentityTypedEventCatalog,
+  UserAccount,
+  UserAccountCreatedEvent,
+  UserAccountCreatedEventPayload,
+} from "../../identity/mod.ts"
+import {
   ConfirmPurchaseOrderInput,
   ProcurementConfirmPurchaseOrderAction,
   ProcurementPurchaseOrderConfirmedEvent,
@@ -56,12 +65,14 @@ import {
 
 const actions: ReadonlyArray<DomainActionCatalogEntry> = [
   ...InventoryTypedActionCatalog,
+  ...IdentityTypedActionCatalog,
   ...AccountingTypedActionCatalog,
   ...SalesTypedActionCatalog,
   ...ProcurementTypedActionCatalog,
 ]
 const events: ReadonlyArray<DomainEventCatalogEntry> = [
   ...InventoryTypedEventCatalog,
+  ...IdentityTypedEventCatalog,
   ...AccountingTypedEventCatalog,
   ...SalesTypedEventCatalog,
   ...ProcurementTypedEventCatalog,
@@ -165,6 +176,11 @@ describe("catalog compatibility", () => {
         ConfirmPurchaseOrderInput,
       )
       assert.strictEqual(ProcurementConfirmPurchaseOrderAction.outputSchema, PurchaseOrder)
+      assert.strictEqual(
+        IdentityCreateUserAccountAction.inputSchema,
+        CreateUserAccountForTenantInput,
+      )
+      assert.strictEqual(IdentityCreateUserAccountAction.outputSchema, UserAccount)
       assert.strictEqual(InventoryStockCorrectedEvent.payloadSchema, StockCorrectedEventPayload)
       assert.strictEqual(AccountingRevenuePostedEvent.payloadSchema, RevenuePostedEventPayload)
       assert.strictEqual(SalesOrderConfirmedEvent.payloadSchema, SalesOrderConfirmedEventPayload)
@@ -172,6 +188,7 @@ describe("catalog compatibility", () => {
         ProcurementPurchaseOrderConfirmedEvent.payloadSchema,
         PurchaseOrderConfirmedEventPayload,
       )
+      assert.strictEqual(UserAccountCreatedEvent.payloadSchema, UserAccountCreatedEventPayload)
       assert.strictEqual(
         ProcessOrderConfirmationCompletedEvent.payloadSchema,
         OrderConfirmationCompletedEventPayload,
@@ -191,6 +208,7 @@ describe("catalog compatibility", () => {
         ProcurementPurchaseOrderConfirmedEvent,
         PurchaseOrderConfirmedEventPayload.fields,
       )
+      assertPayloadFields(UserAccountCreatedEvent, UserAccountCreatedEventPayload.fields)
       assertPayloadFields(
         ProcessOrderConfirmationCompletedEvent,
         ProcessOrderConfirmationCompletedEvent.payloadSchema.fields,
@@ -206,6 +224,8 @@ describe("catalog compatibility", () => {
       assert.strictEqual(AccountingRevenuePostedEvent.stability, "PUBLIC")
       assert.strictEqual(ProcurementConfirmPurchaseOrderAction.stability, "PUBLIC")
       assert.strictEqual(ProcurementPurchaseOrderConfirmedEvent.stability, "PUBLIC")
+      assert.strictEqual(IdentityCreateUserAccountAction.stability, "PUBLIC")
+      assert.strictEqual(UserAccountCreatedEvent.stability, "PUBLIC")
 
       const principal = { userAccountId: "user-1", sessionId: "session-1" }
 

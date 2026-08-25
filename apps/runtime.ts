@@ -1,3 +1,4 @@
+import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import type { Sql } from "postgres"
 
@@ -9,8 +10,19 @@ import {
   makePostgresqlFinancialLedgerLayer,
 } from "../packages/accounting/mod.ts"
 import { AuthService, makeAuthService } from "../packages/auth/mod.ts"
-import { AuthorizationService, makeAuthorizationService } from "../packages/authorization/mod.ts"
-import { makeUserAccountService, UserAccountService } from "../packages/identity/mod.ts"
+import {
+  AuthorizationDenied,
+  AuthorizationService,
+  makeAuthorizationService,
+} from "../packages/authorization/mod.ts"
+import {
+  IdentityAccountAuthorizer,
+  IdentityAuthorizationDenied,
+  IdentityCapabilities,
+  IdentityEventPublisherLive,
+  makeUserAccountService,
+  UserAccountService,
+} from "../packages/identity/mod.ts"
 import {
   DurableJobEnqueuer,
   makeTigerBeetleFinancialLedger,
@@ -53,14 +65,6 @@ export const serviceLayers = (
   const PlatformLive = Layer.mergeAll(PlatformCore, WebCryptoLive)
   const financialLedger = makeFinancialLedgerLayer(DatabaseLive, configuration)
 
-  const IdentityLive = Layer.effect(UserAccountService, makeUserAccountService).pipe(
-    Layer.provide(DatabaseLive),
-  )
-
-  const AuthLive = Layer.effect(AuthService, makeAuthService).pipe(
-    Layer.provide(Layer.mergeAll(PlatformLive, IdentityLive)),
-  )
-
   const AuthorizationLive = Layer.effect(AuthorizationService, makeAuthorizationService).pipe(
     Layer.provide(DatabaseLive),
   )
@@ -69,6 +73,45 @@ export const serviceLayers = (
 
   const MessagingLive = Layer.effect(MessagingService, makeMessagingService).pipe(
     Layer.provide(DatabaseLive),
+  )
+
+  const IdentityAccountAuthorizerLive = Layer.effect(
+    IdentityAccountAuthorizer,
+    Effect.gen(function* () {
+      const authorization = yield* AuthorizationService
+      return {
+        authorize: (input: {
+          readonly principal: { readonly userAccountId: string; readonly sessionId: string }
+          readonly tenantId: string
+        }) =>
+          authorization.authorize({
+            principal: input.principal,
+            tenantId: input.tenantId,
+            capability: IdentityCapabilities.userAccountCreate,
+          }).pipe(
+            Effect.mapError((error) =>
+              error instanceof AuthorizationDenied
+                ? new IdentityAuthorizationDenied({
+                  tenantId: error.tenantId,
+                  capability: error.capability,
+                })
+                : error
+            ),
+          ),
+      }
+    }),
+  ).pipe(Layer.provide(AuthorizationLive))
+
+  const IdentityLive = Layer.effect(UserAccountService, makeUserAccountService).pipe(
+    Layer.provide(Layer.mergeAll(
+      DatabaseLive,
+      IdentityAccountAuthorizerLive,
+      IdentityEventPublisherLive.pipe(Layer.provide(MessagingLive)),
+    )),
+  )
+
+  const AuthLive = Layer.effect(AuthService, makeAuthService).pipe(
+    Layer.provide(Layer.mergeAll(PlatformLive, IdentityLive)),
   )
 
   const PartyLive = Layer.effect(PartyService, makePartyService).pipe(
