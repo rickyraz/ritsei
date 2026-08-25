@@ -295,6 +295,12 @@ describe("accounting contract", () => {
       })
 
       assert.strictEqual(journal.status, "posted")
+      assert.strictEqual(
+        (yield* Effect.flip(
+          Schema.decodeUnknownEffect(JournalEntry)({ ...journal, reference: " SALE-1 " }),
+        ))._tag,
+        "SchemaError",
+      )
       assert.strictEqual(journal.lines.length, 2)
       const otherCash = yield* accounting.createAccount({
         principal,
