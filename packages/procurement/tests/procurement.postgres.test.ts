@@ -23,6 +23,7 @@ import { makePartyService, PartyCapabilities, PartyService } from "../../party/m
 import {
   makeProcurementService,
   ProcurementCapabilities,
+  ProcurementPurchaseOrderConfirmedEvent,
   PurchaseOrderConfirmationIdempotencyConflict,
   PurchaseOrderHasReceipts,
   PurchaseOrderInvalidState,
@@ -91,12 +92,16 @@ it.effect.skipIf(databaseUrl === undefined)(
             Effect.provideService(Database, database),
             Effect.provideService(AuthorizationService, authorization),
           )
+          const messaging = yield* makeMessagingService.pipe(
+            Effect.provideService(Database, database),
+          )
           const procurement = yield* Effect.provide(
             makeProcurementService,
             Layer.mergeAll(
               Layer.succeed(Database, database),
               Layer.succeed(AuthorizationService, authorization),
               Layer.succeed(PartyService, party),
+              Layer.succeed(MessagingService, messaging),
             ),
           )
 
@@ -260,6 +265,53 @@ it.effect.skipIf(databaseUrl === undefined)(
           assert.strictEqual(confirmed.status, "confirmed")
           assert.isNotNull(confirmed.confirmedAt)
           assert.deepStrictEqual(replayed, confirmed)
+          const [confirmationEvent] = yield* Effect.promise(() =>
+            client<{
+              event_type: string
+              event_version: number
+              aggregate_type: string
+              aggregate_id: string
+              command_id: string
+              correlation_id: string
+              causation_id: string | null
+              idempotency_key: string
+              payload: { purchaseOrderId: string; supplierAccountId: string; total: string }
+            }[]>`
+              select event_type, event_version, aggregate_type, aggregate_id,
+                command_id, correlation_id, causation_id, idempotency_key, payload
+              from messaging.event_outbox
+              where tenant_id = ${tenant.id}
+                and event_type = ${ProcurementPurchaseOrderConfirmedEvent.id}
+                and aggregate_id = ${confirmed.id}
+            `
+          )
+          assert.deepStrictEqual(confirmationEvent, {
+            event_type: ProcurementPurchaseOrderConfirmedEvent.id,
+            event_version: ProcurementPurchaseOrderConfirmedEvent.version,
+            aggregate_type: ProcurementPurchaseOrderConfirmedEvent.aggregateType,
+            aggregate_id: confirmed.id,
+            command_id: `procurement.purchase_order.confirm:${confirmationInput.idempotencyKey}`,
+            correlation_id: `procurement.purchase_order:${confirmed.id}`,
+            causation_id: null,
+            idempotency_key: confirmationInput.idempotencyKey,
+            payload: {
+              purchaseOrderId: confirmed.id,
+              supplierAccountId: confirmed.supplierAccountId,
+              total: confirmed.total,
+            },
+          })
+          assert.strictEqual(
+            (yield* Effect.promise(() =>
+              client<{ count: string }[]>`
+                select count(*)::text as count
+                from messaging.event_outbox
+                where tenant_id = ${tenant.id}
+                  and event_type = ${ProcurementPurchaseOrderConfirmedEvent.id}
+                  and aggregate_id = ${confirmed.id}
+              `
+            ))[0]!.count,
+            "1",
+          )
           assert.deepStrictEqual(
             yield* procurement.getPurchaseOrder({
               principal,
@@ -753,7 +805,11 @@ it.effect.skipIf(databaseUrl === undefined)(
           )
           const procurement = yield* Effect.provide(
             makeProcurementService,
-            Layer.merge(requirements, Layer.succeed(PartyService, party)),
+            Layer.mergeAll(
+              requirements,
+              Layer.succeed(PartyService, party),
+              Layer.succeed(MessagingService, messaging),
+            ),
           )
 
           const owner = yield* party.create({

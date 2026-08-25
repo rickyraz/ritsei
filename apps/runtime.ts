@@ -118,7 +118,9 @@ export const serviceLayers = (
   )
 
   const ProcurementLiveWithRequirements = ProcurementLive.pipe(
-    Layer.provide(Layer.mergeAll(BusinessRequirements, PartyLive, InventoryLive)),
+    Layer.provide(
+      Layer.mergeAll(BusinessRequirements, PartyLive, InventoryLive, MessagingLive),
+    ),
   )
 
   const ApplicationLive = Layer.mergeAll(

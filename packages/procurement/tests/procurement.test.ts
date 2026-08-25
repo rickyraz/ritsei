@@ -61,8 +61,9 @@ const withProcurement = <A, E>(
     ),
   )
   const party = makePartyTestLayer().pipe(Layer.provide(authorization))
+  const messaging = makeMessagingTestLayer()
   const procurement = makeProcurementTestLayer().pipe(
-    Layer.provide(Layer.merge(authorization, party)),
+    Layer.provide(Layer.mergeAll(authorization, party, messaging)),
   )
   const inventory = makeInventoryTestLayer().pipe(
     Layer.provide(Layer.merge(authorization, makeMessagingTestLayer())),

@@ -1,4 +1,13 @@
 export { ProcurementCapabilities } from "./src/capabilities.ts"
+export {
+  ProcurementConfirmPurchaseOrderAction,
+  ProcurementTypedActionCatalog,
+  ProcurementTypedEventCatalog,
+} from "./src/catalog.ts"
+export {
+  ProcurementPurchaseOrderConfirmedEvent,
+  PurchaseOrderConfirmedEventPayload,
+} from "./src/events.ts"
 
 export {
   CancelPurchaseOrderInput,
@@ -42,4 +51,7 @@ export {
   SupplierAccountNotFound,
   SupplierRelationshipNotEligible,
 } from "./src/errors.ts"
+export type {
+  PurchaseOrderConfirmedEventPayload as PurchaseOrderConfirmedEventPayloadType,
+} from "./src/events.ts"
 export { makeProcurementService, makeProcurementTestLayer, ProcurementLive } from "./src/layers.ts"

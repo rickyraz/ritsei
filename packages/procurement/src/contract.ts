@@ -6,6 +6,7 @@ import { Principal } from "../../auth/mod.ts"
 import { AuthorizationDenied } from "../../authorization/mod.ts"
 import { InventoryService } from "../../inventory/mod.ts"
 import { DatabaseFailure, FinancialMajorAmount } from "../../kernel/mod.ts"
+import { EventIdempotencyConflict } from "../../messaging/mod.ts"
 import {
   PurchaseOrderConfirmationIdempotencyConflict,
   PurchaseOrderHasReceipts,
@@ -148,7 +149,11 @@ export type ReceivePurchaseOrder = Schema.Schema.Type<typeof ReceivePurchaseOrde
 export type GoodsReceiptLine = Schema.Schema.Type<typeof GoodsReceiptLine>
 export type GoodsReceipt = Schema.Schema.Type<typeof GoodsReceipt>
 
-export type CommonFailure = AuthorizationDenied | DatabaseFailure | Schema.SchemaError
+export type CommonFailure =
+  | AuthorizationDenied
+  | DatabaseFailure
+  | EventIdempotencyConflict
+  | Schema.SchemaError
 
 export interface ProcurementService {
   readonly createSupplierAccount: (

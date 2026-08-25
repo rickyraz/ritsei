@@ -27,6 +27,7 @@ export type ActionPrecondition =
   | "accounting_period_open"
   | "sales_order_draft"
   | "sales_order_confirmed"
+  | "purchase_order_draft"
   | "accounts_exist"
 
 export type ActionEffect =
@@ -34,6 +35,7 @@ export type ActionEffect =
   | "stock_correction_recorded"
   | "revenue_journal_posted"
   | "sales_order_confirmed"
+  | "purchase_order_confirmed"
   | "financial_intent_recorded"
 
 export type EventDeliveryExpectation = "at_least_once"

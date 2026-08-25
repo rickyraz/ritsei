@@ -6,6 +6,7 @@ import * as Schema from "effect/Schema"
 import { AuthorizationService } from "../../authorization/mod.ts"
 import { InventoryService } from "../../inventory/mod.ts"
 import { FinancialMajorAmount, uuidv7 } from "../../kernel/mod.ts"
+import { MessagingService } from "../../messaging/mod.ts"
 import { PartyService } from "../../party/mod.ts"
 import { ProcurementCapabilities } from "./capabilities.ts"
 import {
@@ -21,6 +22,10 @@ import {
   ReceivePurchaseOrderInput,
   SupplierAccount,
 } from "./contract.ts"
+import {
+  ProcurementPurchaseOrderConfirmedEvent,
+  PurchaseOrderConfirmedEventPayload,
+} from "./events.ts"
 import {
   PurchaseOrderConfirmationIdempotencyConflict,
   PurchaseOrderHasReceipts,
@@ -48,6 +53,7 @@ export const makeProcurementTestLayer = () =>
     ProcurementService,
     Effect.gen(function* () {
       const authorization = yield* AuthorizationService
+      const messaging = yield* MessagingService
       const party = yield* PartyService
       const clock = yield* Clock.Clock
       const now = () => new Date(clock.currentTimeMillisUnsafe())
@@ -196,6 +202,28 @@ export const makeProcurementTestLayer = () =>
               status: "confirmed",
               confirmedAt: now().toISOString(),
             }
+            const payload = yield* Schema.decodeUnknownEffect(
+              PurchaseOrderConfirmedEventPayload,
+            )({
+              purchaseOrderId: confirmed.id,
+              supplierAccountId: confirmed.supplierAccountId,
+              total: confirmed.total,
+            })
+            yield* messaging.append({
+              eventId: uuidv7(),
+              eventType: ProcurementPurchaseOrderConfirmedEvent.id,
+              eventVersion: ProcurementPurchaseOrderConfirmedEvent.version,
+              tenantId: decoded.tenantId,
+              aggregateType: ProcurementPurchaseOrderConfirmedEvent.aggregateType,
+              aggregateId: confirmed.id,
+              commandId: `procurement.purchase_order.confirm:${decoded.idempotencyKey}`,
+              correlationId: `procurement.purchase_order:${confirmed.id}`,
+              causationId: null,
+              idempotencyKey: decoded.idempotencyKey,
+              actorPrincipalId: decoded.principal.userAccountId,
+              occurredAt: confirmed.confirmedAt!,
+              payload,
+            })
             storedPurchaseOrders.set(order.id, confirmed)
             confirmationKeys.set(order.id, decoded.idempotencyKey)
             confirmationOrderIdsByKey.set(confirmationKey, order.id)
