@@ -433,6 +433,18 @@ it.effect.skipIf(databaseUrl === undefined)(
           }
           const representation = yield* party.createPartyRepresentation(input)
           assert.strictEqual(representation.active, true)
+          const blankKind = yield* postgresFailure(() =>
+            client`
+              insert into party.party_representations
+                (tenant_id, user_account_id, party_id, kind)
+              values (${tenant.id}, ${userAccount.id}, ${representedParty.id}, '   ')
+            `
+          )
+          assert.strictEqual((blankKind as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (blankKind as { constraint_name?: string }).constraint_name,
+            "party_representations_kind_check",
+          )
           assert.instanceOf(
             yield* Effect.flip(party.createPartyRepresentation(input)),
             PartyRepresentationAlreadyExists,

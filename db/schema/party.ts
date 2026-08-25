@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm"
 import {
   boolean,
+  check,
   foreignKey,
   pgSchema,
   primaryKey,
@@ -74,6 +75,10 @@ export const partyRepresentations = partySchema.table(
       foreignColumns: [parties.tenantId, parties.id],
       name: "party_representations_party_fkey",
     }).onDelete("cascade"),
+    check(
+      "party_representations_kind_check",
+      sql`${table.kind} ~ '[^[:space:]]'`,
+    ),
   ],
 )
 
