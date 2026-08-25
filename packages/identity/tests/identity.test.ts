@@ -102,6 +102,15 @@ describe("user account contract", () => {
         )
 
         assert.strictEqual(userAccount.email, "user@example.com")
+        assert.strictEqual(
+          (yield* Effect.flip(
+            Schema.decodeUnknownEffect(UserAccount)({
+              ...userAccount,
+              email: " USER@EXAMPLE.COM ",
+            }),
+          ))._tag,
+          "SchemaError",
+        )
         assert.match(
           userAccount.id,
           /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,

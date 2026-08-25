@@ -10,6 +10,10 @@ export const UserAccountStatus = Schema.Literals(["active", "disabled"])
 export type UserAccountStatus = Schema.Schema.Type<typeof UserAccountStatus>
 
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const LowercaseTrimmedNonEmptyString = Schema.String.check(Schema.makeFilter(
+  (value) => /\S/.test(value) && value === value.trim() && value === value.toLowerCase(),
+  { expected: "a trimmed lowercase nonblank string" },
+))
 const InstantString = EventEnvelope.fields.occurredAt
 const Uuid = Schema.String.check(Schema.isUUID())
 
@@ -30,7 +34,7 @@ export const UpdateUserAccountInput = Schema.Struct({
 
 export const UserAccount = Schema.Struct({
   id: Uuid,
-  email: NonEmptyString,
+  email: LowercaseTrimmedNonEmptyString,
   status: UserAccountStatus,
 })
 
