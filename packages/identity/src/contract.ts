@@ -19,7 +19,7 @@ export const CreateUserAccountInput = Schema.Struct({
 
 export const CreateUserAccountForTenantInput = Schema.Struct({
   principal: IdentityPrincipal,
-  tenantId: NonEmptyString,
+  tenantId: Uuid,
   email: NonEmptyString,
 })
 

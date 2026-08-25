@@ -4,6 +4,7 @@ import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 
 import {
+  CreateUserAccountForTenantInput,
   IdentityAccountAuthorizer,
   IdentityAuthorizationDenied,
   IdentityEventPublisher,
@@ -28,6 +29,9 @@ import {
   type DrizzleTransaction,
 } from "../../kernel/mod.ts"
 
+const identityTenantId = "00000000-0000-4000-8000-000000000001"
+const identityDeniedTenantId = "00000000-0000-4000-8000-000000000002"
+
 const withUserAccount = <A, E>(program: Effect.Effect<A, E, UserAccountService>) =>
   Effect.provide(program, makeUserAccountTestLayer())
 
@@ -40,7 +44,7 @@ describe("user account contract", () => {
         Layer.mergeAll(
           Layer.succeed(IdentityAccountAuthorizer, {
             authorize: ({ tenantId }) =>
-              tenantId === "tenant-a" ? Effect.void : Effect.fail(
+              tenantId === identityTenantId ? Effect.void : Effect.fail(
                 new IdentityAuthorizationDenied({
                   tenantId,
                   capability: "identity.user_account.create",
@@ -56,9 +60,17 @@ describe("user account contract", () => {
         ),
       )
       const principal = { userAccountId: "actor", sessionId: "session" }
+      const invalidTenant = yield* Effect.flip(
+        Schema.decodeUnknownEffect(CreateUserAccountForTenantInput)({
+          principal,
+          tenantId: "not-a-uuid",
+          email: "invalid@example.com",
+        }),
+      )
+      assert.strictEqual(invalidTenant._tag, "SchemaError")
       const created = yield* service.createForTenant({
         principal,
-        tenantId: "tenant-a",
+        tenantId: identityTenantId,
         email: "  USER@Example.COM ",
       })
 
@@ -66,7 +78,7 @@ describe("user account contract", () => {
       assert.strictEqual(created.email, "user@example.com")
       assert.strictEqual(published.length, 1)
       assert.strictEqual(published[0].eventType, UserAccountCreatedEvent.id)
-      assert.strictEqual(published[0].tenantId, "tenant-a")
+      assert.strictEqual(published[0].tenantId, identityTenantId)
       assert.strictEqual(published[0].aggregateId, created.id)
       assert.deepStrictEqual(published[0].payload, {
         userAccountId: created.id,
@@ -75,7 +87,7 @@ describe("user account contract", () => {
 
       const denied = yield* Effect.flip(service.createForTenant({
         principal,
-        tenantId: "tenant-b",
+        tenantId: identityDeniedTenantId,
         email: "denied@example.com",
       }))
       assert.instanceOf(denied, IdentityAuthorizationDenied)
