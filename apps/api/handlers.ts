@@ -99,6 +99,7 @@ const coreApiErrorPolicy = {
   PartyRepresentationNotFound: "not_found",
   PartyRepresentationUserAccountNotFound: "not_found",
   PartyRoleAlreadyAssigned: "conflict",
+  QuotationCustomerMismatch: "conflict",
   QuotationNotFound: "not_found",
   PurchaseOrderConfirmationIdempotencyConflict: "conflict",
   PurchaseOrderHasReceipts: "conflict",

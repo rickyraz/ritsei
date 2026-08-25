@@ -18,6 +18,7 @@ import {
   CustomerAlreadyExists,
   makeSalesTestLayer,
   Quotation,
+  QuotationCustomerMismatch,
   SalesOrder,
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderConfirmedEvent,
@@ -261,6 +262,43 @@ describe("sales contract", () => {
       const sales = yield* SalesService
       assert.isFalse("cancelOrder" in sales)
       assert.isTrue("cancelConfirmedOrder" in sales)
+    })))
+
+  it.effect("rejects a quotation belonging to another customer", () =>
+    withSales(Effect.gen(function* () {
+      const sales = yield* SalesService
+      const quotedCustomer = yield* sales.createCustomer({
+        principal,
+        tenantId,
+        name: "Quoted Customer",
+        email: "quoted@example.test",
+      })
+      const orderingCustomer = yield* sales.createCustomer({
+        principal,
+        tenantId,
+        name: "Ordering Customer",
+        email: "ordering@example.test",
+      })
+      const quotation = yield* sales.createQuotation({
+        principal,
+        tenantId,
+        customerId: quotedCustomer.id,
+        total: "10.00",
+      })
+      const error = yield* Effect.flip(sales.createOrder({
+        principal,
+        tenantId,
+        customerId: orderingCustomer.id,
+        quotationId: quotation.id,
+        lines: [{
+          itemId: "00000000-0000-4000-8000-000000000041",
+          quantity: "1",
+          unitPrice: "10.00",
+        }],
+      }))
+      assert.instanceOf(error, QuotationCustomerMismatch)
+      assert.strictEqual(error.quotationId, quotation.id)
+      assert.strictEqual(error.customerId, orderingCustomer.id)
     })))
 
   it.effect("creates customer, quotation, and order", () =>

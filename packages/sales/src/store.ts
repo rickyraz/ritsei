@@ -18,6 +18,7 @@ import type {
 import {
   CustomerAlreadyExists,
   CustomerNotFound,
+  QuotationCustomerMismatch,
   QuotationNotFound,
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderInvalidState,
@@ -28,6 +29,7 @@ export type SalesStoreFailure =
   | DatabaseFailure
   | CustomerAlreadyExists
   | CustomerNotFound
+  | QuotationCustomerMismatch
   | QuotationNotFound
   | SalesOrderNotFound
   | SalesOrderInvalidState
@@ -66,7 +68,10 @@ export interface SalesStore {
   ) => Effect.Effect<Quotation, CustomerNotFound | DatabaseFailure>
   readonly createOrder: (
     input: CreateOrderCommand,
-  ) => Effect.Effect<SalesOrder, CustomerNotFound | QuotationNotFound | DatabaseFailure>
+  ) => Effect.Effect<
+    SalesOrder,
+    CustomerNotFound | QuotationCustomerMismatch | QuotationNotFound | DatabaseFailure
+  >
   readonly confirmOrder: (
     input: ConfirmOrderCommand,
     append: (

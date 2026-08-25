@@ -8,6 +8,7 @@ import { EventEnvelope, EventIdempotencyConflict } from "../../messaging/mod.ts"
 import {
   CustomerAlreadyExists,
   CustomerNotFound,
+  QuotationCustomerMismatch,
   QuotationNotFound,
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderInvalidState,
@@ -131,7 +132,10 @@ export interface SalesService {
   ) => Effect.Effect<Quotation, CustomerNotFound | CommonFailure>
   readonly createOrder: (
     input: unknown,
-  ) => Effect.Effect<SalesOrder, CustomerNotFound | QuotationNotFound | CommonFailure>
+  ) => Effect.Effect<
+    SalesOrder,
+    CustomerNotFound | QuotationCustomerMismatch | QuotationNotFound | CommonFailure
+  >
   readonly confirmOrder: (
     input: unknown,
   ) => Effect.Effect<
@@ -153,6 +157,7 @@ export interface SalesService {
 export {
   CustomerAlreadyExists,
   CustomerNotFound,
+  QuotationCustomerMismatch,
   QuotationNotFound,
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderInvalidState,

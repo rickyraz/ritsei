@@ -7,6 +7,7 @@ import { AuthorizationService, makeAuthorizationTestLayer } from "../../authoriz
 import {
   CustomerNotFound,
   makeSalesService,
+  QuotationCustomerMismatch,
   SalesCapabilities,
   SalesOrderConfirmationIdempotencyConflict,
   SalesOrderConfirmedEvent,
@@ -29,6 +30,7 @@ const postgresFailure = (effect: () => Promise<unknown>) =>
   Effect.tryPromise({ try: effect, catch: (cause) => cause }).pipe(Effect.flip)
 const capabilities = [
   SalesCapabilities.customerCreate,
+  SalesCapabilities.quotationCreate,
   SalesCapabilities.orderCreate,
   SalesCapabilities.orderConfirm,
   SalesCapabilities.orderRead,
@@ -79,6 +81,26 @@ it.effect.skipIf(databaseUrl === undefined)(
             name: "Sales Customer",
             email: "sales-postgres@example.test",
           })
+          const mismatchedCustomer = yield* sales.createCustomer({
+            principal,
+            tenantId: tenant!.id,
+            name: "Mismatched Sales Customer",
+            email: "mismatched-sales@example.test",
+          })
+          const quotation = yield* sales.createQuotation({
+            principal,
+            tenantId: tenant!.id,
+            customerId: customer.id,
+            total: "10.00",
+          })
+          const mismatch = yield* Effect.flip(sales.createOrder({
+            principal,
+            tenantId: tenant!.id,
+            customerId: mismatchedCustomer.id,
+            quotationId: quotation.id,
+            lines: [{ itemId: uuidv7(), quantity: "1", unitPrice: "10.00" }],
+          }))
+          assert.instanceOf(mismatch, QuotationCustomerMismatch)
           const order = yield* sales.createOrder({
             principal,
             tenantId: tenant!.id,

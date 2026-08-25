@@ -24,6 +24,12 @@ export class QuotationNotFound
     tenantId: Uuid,
     quotationId: Uuid,
   }) {}
+export class QuotationCustomerMismatch
+  extends Schema.TaggedError<QuotationCustomerMismatch>()("QuotationCustomerMismatch", {
+    tenantId: Uuid,
+    quotationId: Uuid,
+    customerId: Uuid,
+  }) {}
 export class SalesOrderNotFound
   extends Schema.TaggedError<SalesOrderNotFound>()("SalesOrderNotFound", {
     tenantId: Uuid,

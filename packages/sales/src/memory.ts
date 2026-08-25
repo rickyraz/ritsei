@@ -16,6 +16,7 @@ import type {
 import {
   CustomerAlreadyExists,
   CustomerNotFound,
+  QuotationCustomerMismatch,
   QuotationNotFound,
   SalesOrderConfirmationIdempotencyConflict,
 } from "./errors.ts"
@@ -64,13 +65,22 @@ export const makeSalesMemoryStore = (): SalesStore => {
           new CustomerNotFound({ tenantId: input.tenantId, customerId: input.customerId }),
         )
       }
-      if (
-        input.quotationId !== undefined &&
-        quotations.get(input.quotationId)?.tenantId !== input.tenantId
-      ) {
-        return yield* Effect.fail(
-          new QuotationNotFound({ tenantId: input.tenantId, quotationId: input.quotationId }),
-        )
+      if (input.quotationId !== undefined) {
+        const quotation = quotations.get(input.quotationId)
+        if (quotation?.tenantId !== input.tenantId) {
+          return yield* Effect.fail(
+            new QuotationNotFound({ tenantId: input.tenantId, quotationId: input.quotationId }),
+          )
+        }
+        if (quotation.customerId !== input.customerId) {
+          return yield* Effect.fail(
+            new QuotationCustomerMismatch({
+              tenantId: input.tenantId,
+              quotationId: input.quotationId,
+              customerId: input.customerId,
+            }),
+          )
+        }
       }
       const order: SalesOrder = {
         id: id(),
