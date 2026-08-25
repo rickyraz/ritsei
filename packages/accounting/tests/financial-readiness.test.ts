@@ -252,19 +252,25 @@ describe("financial readiness proofs", () => {
         legalEntityId: "00000000-0000-4000-8000-000000000002",
         kind: "cutover_rehearsal",
         completeness: "bounded",
-        scope: "test",
+        scope: " test ",
         mappingVersion: 1,
         currency: "USD",
-        sourceWatermark: "source-1",
-        targetWatermark: "target-1",
-        sourceSnapshotRef: "source-snapshot",
-        targetSnapshotRef: "target-snapshot",
+        sourceWatermark: " source-1 ",
+        targetWatermark: " target-1 ",
+        sourceSnapshotRef: " source-snapshot ",
+        targetSnapshotRef: " target-snapshot ",
         source,
         target,
         startedAt: "2026-08-18T00:00:00.000Z",
         completedAt: "2026-08-18T00:01:00.000Z",
       })
       assert.strictEqual(evidence.mismatchCount, 0)
+      assert.strictEqual(evidence.scope, "test")
+      assert.strictEqual(evidence.sourceWatermark, "source-1")
+      assert.strictEqual(evidence.targetWatermark, "target-1")
+      assert.strictEqual(evidence.sourceSnapshotRef, "source-snapshot")
+      assert.strictEqual(evidence.targetSnapshotRef, "target-snapshot")
+      yield* Schema.decodeUnknownEffect(FinancialVerificationEvidence)(evidence)
       assert.strictEqual(evidence.sourceDebitMinor, "100")
       const mismatch = compareFinancialFactSnapshots(source, {
         ...target,
