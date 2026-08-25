@@ -271,7 +271,7 @@ describe("catalog compatibility", () => {
       })
       yield* Schema.decodeUnknownEffect(InventoryAdjustStockAction.errorSchemas[2]!)({
         _tag: "StockCorrectionIdempotencyConflict",
-        tenantId: "tenant-1",
+        tenantId: "00000000-0000-4000-8000-000000000001",
         idempotencyKey: "correction-1",
       })
 
