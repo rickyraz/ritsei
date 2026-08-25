@@ -916,6 +916,30 @@ it.effect.skipIf(databaseUrl === undefined)(
             inventory,
           )
           assert.strictEqual(second.lines[0]?.quantity, "2")
+          const overReceipt = yield* postgresFailure(() =>
+            client.begin(async (transaction) => {
+              const [receipt] = await transaction<{ id: string }[]>`
+                insert into procurement.purchase_receipts
+                  (tenant_id, purchase_order_id, warehouse_id, idempotency_key)
+                values
+                  (${tenant.id}, ${confirmed.id}, ${warehouse.id}, 'direct-over-receipt')
+                returning id
+              `
+              await transaction`
+                insert into procurement.purchase_receipt_lines
+                  (tenant_id, receipt_id, purchase_order_id, purchase_order_line_id,
+                   item_id, quantity, unit_of_measure)
+                values
+                  (${tenant.id}, ${receipt!.id}, ${confirmed.id}, ${lineId},
+                   ${item.id}, 1, 'EA')
+              `
+            })
+          )
+          assert.strictEqual((overReceipt as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (overReceipt as { constraint_name?: string }).constraint_name,
+            "purchase_receipt_lines_ordered_quantity_check",
+          )
           assert.instanceOf(
             yield* Effect.flip(Effect.provideService(
               procurement.receivePurchaseOrder({
