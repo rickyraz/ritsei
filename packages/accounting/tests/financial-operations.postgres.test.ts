@@ -1268,6 +1268,26 @@ it.effect.skipIf(databaseUrl === undefined)(
               operationId: matrixInput.operationId,
             })
             assert.strictEqual(recovered.status, "reconciled")
+            if (point === "E_process_dies_after_acceptance_before_receipt") {
+              const replayed = yield* matrixService.submitFinancialOperation({
+                tenantId: tenant!.id,
+                operationId: matrixInput.operationId,
+              })
+              assert.strictEqual(replayed.status, "reconciled")
+              const [transferSummary] = yield* Effect.promise(() =>
+                client<{ total: string; accepted: string; transfer_id: string | null }[]>`
+                  select count(*)::text as total,
+                    count(*) filter (where status = 'accepted')::text as accepted,
+                    min(engine_transfer_id) as transfer_id
+                  from accounting.financial_operation_transfers
+                  where tenant_id = ${tenant!.id}
+                    and operation_id = ${replayed.id}
+                `
+              )
+              assert.strictEqual(transferSummary!.total, "1")
+              assert.strictEqual(transferSummary!.accepted, "1")
+              assert.isNotNull(transferSummary!.transfer_id)
+            }
           }
 
           const providerCases = [
