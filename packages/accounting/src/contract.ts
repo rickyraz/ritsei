@@ -81,6 +81,18 @@ export const JournalEntry = Schema.Struct({
       ? entry.reversesEntryId !== undefined
       : entry.reversesEntryId === undefined,
   { expected: "journal reversal state consistent with its status" },
+)).check(Schema.makeFilter(
+  (entry) => {
+    const totals = entry.lines.reduce(
+      (sum, line) => ({
+        debit: sum.debit + requireExactMajorToMinor(line.debit, 2),
+        credit: sum.credit + requireExactMajorToMinor(line.credit, 2),
+      }),
+      { debit: 0n, credit: 0n },
+    )
+    return totals.debit === totals.credit
+  },
+  { expected: "journal entry debits and credits must balance" },
 ))
 
 export const AccountingPeriod = Schema.Struct({

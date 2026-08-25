@@ -397,16 +397,38 @@ describe("accounting contract", () => {
         tenantId,
         reference: "journal-1",
         postedAt: "2026-08-20T00:00:00.000Z",
-        lines: [{
-          accountId: "00000000-0000-4000-8000-000000000031",
-          debit: "1",
-          credit: "0",
-        }],
+        lines: [
+          {
+            accountId: "00000000-0000-4000-8000-000000000031",
+            debit: "1",
+            credit: "0",
+          },
+          {
+            accountId: "00000000-0000-4000-8000-000000000032",
+            debit: "0",
+            credit: "1",
+          },
+        ],
       }
       const insufficientLines = yield* Effect.flip(
-        Schema.decodeUnknownEffect(JournalEntry)({ ...base, status: "posted" }),
+        Schema.decodeUnknownEffect(JournalEntry)({
+          ...base,
+          status: "posted",
+          lines: [base.lines[0]!],
+        }),
       )
       assert.strictEqual(insufficientLines._tag, "SchemaError")
+      const unbalanced = yield* Effect.flip(
+        Schema.decodeUnknownEffect(JournalEntry)({
+          ...base,
+          status: "posted",
+          lines: [
+            base.lines[0]!,
+            { ...base.lines[1]!, credit: "2" },
+          ],
+        }),
+      )
+      assert.strictEqual(unbalanced._tag, "SchemaError")
       const missingSource = yield* Effect.flip(
         Schema.decodeUnknownEffect(JournalEntry)({ ...base, status: "reversed" }),
       )
