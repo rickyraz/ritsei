@@ -31,7 +31,17 @@ import type {
 
 const Uuid = Schema.String.check(Schema.isUUID())
 const Quantity = Schema.String.check(Schema.isPattern(/^[1-9]\d*$/))
-const SignedQuantity = Schema.String.check(Schema.isPattern(/^-?[1-9]\d*$/))
+const SignedQuantity = Schema.String.check(
+  Schema.makeFilter(
+    (value) => {
+      if (!/^-?[1-9]\d*$/.test(value)) return false
+      const quantity = BigInt(value)
+      return quantity >= -9_223_372_036_854_775_808n &&
+        quantity <= 9_223_372_036_854_775_807n
+    },
+    { expected: "a non-zero PostgreSQL bigint quantity" },
+  ),
+)
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
 export const UnitOfMeasure = Schema.String.check(Schema.isPattern(/^[A-Z][A-Z0-9_-]*$/))
 const UnitOfMeasureInput = NonEmptyString

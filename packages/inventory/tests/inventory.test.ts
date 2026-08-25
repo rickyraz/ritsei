@@ -11,6 +11,7 @@ import {
   MessagingService,
 } from "../../messaging/mod.ts"
 import {
+  AdjustStockInput,
   InventoryCapabilities,
   InventoryService,
   InventoryUnitOfMeasureMismatch,
@@ -99,6 +100,24 @@ const makeFailOnceMessagingLayer = () => {
 }
 
 describe("inventory contract", () => {
+  it.effect("bounds stock adjustments to PostgreSQL bigint", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        Schema.decodeUnknownEffect(AdjustStockInput)({
+          principal,
+          tenantId,
+          warehouseId: "warehouse",
+          itemId: "item",
+          adjustment: "9223372036854775808",
+          unitOfMeasure: "EA",
+          reason: "overflow",
+          ...correctionMetadata,
+          idempotencyKey: "overflow",
+        }),
+      )
+      assert.strictEqual(error._tag, "SchemaError")
+    }))
+
   it.effect("denies inventory capability in an ungranted tenant", () =>
     withInventory(Effect.gen(function* () {
       const inventory = yield* InventoryService
