@@ -59,9 +59,9 @@ export const LegalEntity = Schema.Struct({
 })
 
 export const Branch = Schema.Struct({
-  id: Schema.String,
-  tenantId: Schema.String,
-  legalEntityId: Schema.String,
+  id: Uuid,
+  tenantId: Uuid,
+  legalEntityId: Uuid,
   name: Schema.String,
   timezone: Schema.NullOr(Schema.String),
   localTaxRegistration: Schema.NullOr(Schema.String),

@@ -5,6 +5,7 @@ import * as Schema from "effect/Schema"
 
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
 import {
+  Branch,
   BranchAlreadyExists,
   ExternalIdentifierAlreadyAssigned,
   LegalEntity,
@@ -141,6 +142,7 @@ describe("party contract", () => {
         localTaxRegistration: " TAX-JKT-001 ",
         dedicatedJournalCode: "JKT-OPS",
       })
+      yield* Schema.decodeUnknownEffect(Branch)(branch)
       const relationship = yield* service.createRelationship({
         principal,
         tenantId,
