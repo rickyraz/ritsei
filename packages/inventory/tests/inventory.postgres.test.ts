@@ -309,6 +309,47 @@ it.effect.skipIf(databaseUrl === undefined)(
             (deletedReservation as { constraint_name?: string }).constraint_name,
             "inventory_reservation_identity_immutable",
           )
+          const orphanReservationMovement = yield* postgresFailure(() =>
+            client`
+              insert into inventory.movements
+                (tenant_id, warehouse_id, item_id, quantity, kind, reference_id)
+              values
+                (${tenant.id}, ${warehouse.id}, ${item.id}, 1, 'reservation', ${uuidv7()})
+            `
+          )
+          assert.strictEqual((orphanReservationMovement as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (orphanReservationMovement as { constraint_name?: string }).constraint_name,
+            "inventory_movement_reservation_reference_check",
+          )
+          const mismatchedReservationMovement = yield* postgresFailure(() =>
+            client`
+              insert into inventory.movements
+                (tenant_id, warehouse_id, item_id, quantity, kind, reference_id)
+              values
+                (${tenant.id}, ${warehouse.id}, ${item.id}, 2, 'reservation',
+                 ${duplicateReservations[0].id})
+            `
+          )
+          assert.strictEqual((mismatchedReservationMovement as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (mismatchedReservationMovement as { constraint_name?: string }).constraint_name,
+            "inventory_movement_reservation_reference_check",
+          )
+          const issueForActiveReservation = yield* postgresFailure(() =>
+            client`
+              insert into inventory.movements
+                (tenant_id, warehouse_id, item_id, quantity, kind, reference_id)
+              values
+                (${tenant.id}, ${warehouse.id}, ${item.id}, -1, 'issue',
+                 ${duplicateReservations[0].id})
+            `
+          )
+          assert.strictEqual((issueForActiveReservation as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (issueForActiveReservation as { constraint_name?: string }).constraint_name,
+            "inventory_movement_reservation_reference_check",
+          )
           const invalidTransferInsert = yield* postgresFailure(() =>
             client`
               insert into inventory.stock_transfers
@@ -458,7 +499,7 @@ it.effect.skipIf(databaseUrl === undefined)(
             (invalidUnitOfMeasure as { constraint_name?: string }).constraint_name,
             "movements_correction_metadata_check",
           )
-          for (const [kind, quantity] of [["issue", 1], ["receipt", -1], ["release", 1]] as const) {
+          for (const [kind, quantity] of [["issue", 1], ["receipt", -1]] as const) {
             const invalidSign = yield* postgresFailure(() =>
               client`
                 insert into inventory.movements
@@ -472,6 +513,19 @@ it.effect.skipIf(databaseUrl === undefined)(
               "movements_kind_quantity_sign_check",
             )
           }
+          const invalidReleaseReference = yield* postgresFailure(() =>
+            client`
+              insert into inventory.movements
+                (tenant_id, warehouse_id, item_id, quantity, kind)
+              values
+                (${tenant.id}, ${warehouse.id}, ${item.id}, 1, 'release')
+            `
+          )
+          assert.strictEqual((invalidReleaseReference as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidReleaseReference as { constraint_name?: string }).constraint_name,
+            "inventory_movement_reservation_reference_check",
+          )
           const otherCorrection = yield* inventory.adjustStock({
             ...correctionInput,
             tenantId: otherTenant.id,
