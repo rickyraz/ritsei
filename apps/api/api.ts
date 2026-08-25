@@ -38,6 +38,13 @@ import {
   Warehouse,
 } from "../../packages/inventory/mod.ts"
 import {
+  GoodsReceipt,
+  PurchaseOrder,
+  PurchaseOrderLine,
+  PurchaseReceiptLineInput,
+  SupplierAccount,
+} from "../../packages/procurement/mod.ts"
+import {
   Account,
   AccountingConfiguration,
   FinancialCutoverControl,
@@ -81,6 +88,9 @@ export class BearerAuth extends HttpApiMiddleware.Service<BearerAuth, {
 
 const errors = [ApiUnauthorized, ApiForbidden, ApiNotFound, ApiConflict, ApiServiceUnavailable]
 const tenantHeaders = { "x-tenant-id": Schema.String }
+const CreatedSupplierAccount = SupplierAccount.pipe(HttpApiSchema.status(201))
+const CreatedPurchaseOrder = PurchaseOrder.pipe(HttpApiSchema.status(201))
+const CreatedGoodsReceipt = GoodsReceipt.pipe(HttpApiSchema.status(201))
 const CreatedUserAccount = UserAccount.pipe(HttpApiSchema.status(201))
 const CreatedParty = Party.pipe(HttpApiSchema.status(201))
 const CreatedExternalIdentifier = ExternalIdentifier.pipe(HttpApiSchema.status(201))
@@ -301,6 +311,54 @@ const Inventory = HttpApiGroup.make("Inventory").add(
   }).middleware(BearerAuth),
 )
 
+const Procurement = HttpApiGroup.make("Procurement").add(
+  HttpApiEndpoint.post("createSupplierAccount", "/procurement/supplier-accounts", {
+    headers: tenantHeaders,
+    payload: Schema.Struct({ supplierRelationshipId: Schema.String }),
+    success: CreatedSupplierAccount,
+    error: errors,
+  }).middleware(BearerAuth),
+  HttpApiEndpoint.post("createPurchaseOrder", "/procurement/purchase-orders", {
+    headers: tenantHeaders,
+    payload: Schema.Struct({
+      supplierAccountId: Schema.String,
+      lines: Schema.Array(PurchaseOrderLine).check(Schema.isMinLength(1)),
+    }),
+    success: CreatedPurchaseOrder,
+    error: errors,
+  }).middleware(BearerAuth),
+  HttpApiEndpoint.get("getPurchaseOrder", "/procurement/purchase-orders/:id", {
+    params: { id: Schema.String },
+    headers: tenantHeaders,
+    success: PurchaseOrder,
+    error: errors,
+  }).middleware(BearerAuth),
+  HttpApiEndpoint.post("confirmPurchaseOrder", "/procurement/purchase-orders/:id/confirm", {
+    params: { id: Schema.String },
+    headers: tenantHeaders,
+    payload: Schema.Struct({ idempotencyKey: Schema.String }),
+    success: PurchaseOrder,
+    error: errors,
+  }).middleware(BearerAuth),
+  HttpApiEndpoint.post("cancelPurchaseOrder", "/procurement/purchase-orders/:id/cancel", {
+    params: { id: Schema.String },
+    headers: tenantHeaders,
+    success: PurchaseOrder,
+    error: errors,
+  }).middleware(BearerAuth),
+  HttpApiEndpoint.post("receivePurchaseOrder", "/procurement/purchase-orders/:id/receipts", {
+    params: { id: Schema.String },
+    headers: tenantHeaders,
+    payload: Schema.Struct({
+      warehouseId: Schema.String,
+      idempotencyKey: Schema.String,
+      lines: Schema.Array(PurchaseReceiptLineInput).check(Schema.isMinLength(1)),
+    }),
+    success: CreatedGoodsReceipt,
+    error: errors,
+  }).middleware(BearerAuth),
+)
+
 const Process = HttpApiGroup.make("Process").add(
   HttpApiEndpoint.post("confirmOrder", "/process/order-confirmations", {
     headers: tenantHeaders,
@@ -478,7 +536,17 @@ const Accounting = HttpApiGroup.make("Accounting").add(
 )
 
 export const RitseiApi = HttpApi.make("RITSEI")
-  .add(Health, UserAccounts, Parties, Authorization, Sales, Inventory, Accounting, Process)
+  .add(
+    Health,
+    UserAccounts,
+    Parties,
+    Authorization,
+    Sales,
+    Inventory,
+    Procurement,
+    Accounting,
+    Process,
+  )
   .annotate(OpenApi.Title, "RITSEI API")
   .annotate(OpenApi.Version, "0.1.0")
   .annotate(OpenApi.Description, "Typed modular-monolith ERP API")

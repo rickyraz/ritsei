@@ -314,11 +314,11 @@ failure contract, correlation metadata, event, or compensation metadata.
 
 ## Runtime Composition Status
 
-`ProcurementLive` is a public package layer, but it is intentionally not installed in the current
-`apps/runtime.ts` `ApplicationLive` composition. The current executable has no Procurement API,
-worker, or Process Studio route that consumes it; Procurement tests compose its production-shaped and
-deterministic layers directly. When a supported application route is added, wire `ProcurementLive`
-at the composition root rather than introducing loopback HTTP or importing its persistence internals.
+`ProcurementLive` is installed in the `apps/runtime.ts` `ApplicationLive` composition with Database,
+Authorization, Party, and Inventory dependencies. The Effect HTTP API exposes the bounded
+SupplierAccount, PurchaseOrder, and GoodsReceipt operations; no worker or Process Studio route
+consumes Procurement. Keep API handlers on the public package contract rather than importing
+persistence internals.
 
 ## Implementation Map
 

@@ -21,6 +21,7 @@ import { makeMessagingService, MessagingService } from "../packages/messaging/mo
 import { makePartyService, PartyService } from "../packages/party/mod.ts"
 import { makeSalesService, SalesService } from "../packages/sales/mod.ts"
 import { InventoryService, makeInventoryService } from "../packages/inventory/mod.ts"
+import { ProcurementLive } from "../packages/procurement/mod.ts"
 import {
   makeProcessJobEnqueuer,
   makeProcessService,
@@ -116,6 +117,10 @@ export const serviceLayers = (
     ),
   )
 
+  const ProcurementLiveWithRequirements = ProcurementLive.pipe(
+    Layer.provide(Layer.mergeAll(BusinessRequirements, PartyLive, InventoryLive)),
+  )
+
   const ApplicationLive = Layer.mergeAll(
     IdentityLive,
     AuthLive,
@@ -128,6 +133,7 @@ export const serviceLayers = (
     ProcessJobEnqueuerLive,
     MessagingLive,
     ProcessLive,
+    ProcurementLiveWithRequirements,
   )
 
   return ApplicationLive

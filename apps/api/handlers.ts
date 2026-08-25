@@ -15,6 +15,7 @@ import { SalesService } from "../../packages/sales/mod.ts"
 import { InventoryService } from "../../packages/inventory/mod.ts"
 import { AccountingService, FinancialOperationService } from "../../packages/accounting/mod.ts"
 import { ProcessService } from "../../packages/process/mod.ts"
+import { ProcurementService } from "../../packages/procurement/mod.ts"
 import {
   ApiConflict,
   ApiForbidden,
@@ -98,6 +99,19 @@ const coreApiErrorPolicy = {
   PartyRepresentationUserAccountNotFound: "not_found",
   PartyRoleAlreadyAssigned: "conflict",
   QuotationNotFound: "not_found",
+  PurchaseOrderConfirmationIdempotencyConflict: "conflict",
+  PurchaseOrderHasReceipts: "conflict",
+  PurchaseOrderInvalidState: "conflict",
+  PurchaseOrderNotFound: "not_found",
+  PurchaseReceiptIdempotencyConflict: "conflict",
+  PurchaseReceiptInventoryReferenceNotFound: "not_found",
+  PurchaseReceiptLineDuplicate: "conflict",
+  PurchaseReceiptLineNotFound: "not_found",
+  PurchaseReceiptQuantityExceeded: "conflict",
+  PurchaseReceiptWarehouseLegalEntityMismatch: "conflict",
+  SupplierAccountAlreadyExists: "conflict",
+  SupplierAccountNotFound: "not_found",
+  SupplierRelationshipNotEligible: "conflict",
   RevenueJournalNotFound: "not_found",
   RevenuePostingProfileAlreadyExists: "conflict",
   RevenuePostingProfileNotFound: "not_found",
@@ -561,6 +575,88 @@ export const InventoryHandlers = HttpApiBuilder.group(
     }),
 )
 
+export const ProcurementHandlers = HttpApiBuilder.group(
+  RitseiApi,
+  "Procurement",
+  (handlers) =>
+    Effect.gen(function* () {
+      const procurement = yield* ProcurementService
+      return handlers
+        .handle(
+          "createSupplierAccount",
+          Effect.fn("Http.Procurement.createSupplierAccount")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(procurement.createSupplierAccount({
+              principal,
+              tenantId: headers["x-tenant-id"],
+              ...payload,
+            }))
+          }),
+        )
+        .handle(
+          "createPurchaseOrder",
+          Effect.fn("Http.Procurement.createPurchaseOrder")(function* ({ headers, payload }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(procurement.createPurchaseOrder({
+              principal,
+              tenantId: headers["x-tenant-id"],
+              ...payload,
+            }))
+          }),
+        )
+        .handle(
+          "getPurchaseOrder",
+          Effect.fn("Http.Procurement.getPurchaseOrder")(function* ({ headers, params }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(procurement.getPurchaseOrder({
+              principal,
+              tenantId: headers["x-tenant-id"],
+              purchaseOrderId: params.id,
+            }))
+          }),
+        )
+        .handle(
+          "confirmPurchaseOrder",
+          Effect.fn("Http.Procurement.confirmPurchaseOrder")(
+            function* ({ headers, params, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(procurement.confirmPurchaseOrder({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                purchaseOrderId: params.id,
+                ...payload,
+              }))
+            },
+          ),
+        )
+        .handle(
+          "cancelPurchaseOrder",
+          Effect.fn("Http.Procurement.cancelPurchaseOrder")(function* ({ headers, params }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(procurement.cancelPurchaseOrder({
+              principal,
+              tenantId: headers["x-tenant-id"],
+              purchaseOrderId: params.id,
+            }))
+          }),
+        )
+        .handle(
+          "receivePurchaseOrder",
+          Effect.fn("Http.Procurement.receivePurchaseOrder")(
+            function* ({ headers, params, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(procurement.receivePurchaseOrder({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                purchaseOrderId: params.id,
+                ...payload,
+              }))
+            },
+          ),
+        )
+    }),
+)
+
 export const ProcessHandlers = HttpApiBuilder.group(
   RitseiApi,
   "Process",
@@ -803,6 +899,7 @@ export const ApiHandlers = Layer.mergeAll(
   AuthorizationHandlers,
   SalesHandlers,
   InventoryHandlers,
+  ProcurementHandlers,
   AccountingHandlers,
   ProcessHandlers,
 )

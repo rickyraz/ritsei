@@ -15,6 +15,14 @@ it("maps closed-world core failures to stable HTTP errors", () => {
   assert.instanceOf(conflict, ApiConflict)
   assert.strictEqual(conflict.code, "StockUnavailable")
 
+  const procurementNotFound = toCoreApiError({ _tag: "PurchaseOrderNotFound" })
+  assert.instanceOf(procurementNotFound, ApiNotFound)
+  assert.strictEqual(procurementNotFound.code, "PurchaseOrderNotFound")
+
+  const procurementConflict = toCoreApiError({ _tag: "PurchaseReceiptQuantityExceeded" })
+  assert.instanceOf(procurementConflict, ApiConflict)
+  assert.strictEqual(procurementConflict.code, "PurchaseReceiptQuantityExceeded")
+
   const invalidRequest = toCoreApiError({ _tag: "SchemaError" })
   assert.instanceOf(invalidRequest, ApiConflict)
   assert.strictEqual(invalidRequest.code, "invalid_request")
