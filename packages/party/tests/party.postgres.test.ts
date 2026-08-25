@@ -108,6 +108,58 @@ it.effect.skipIf(databaseUrl === undefined)(
             yield* Effect.flip(party.attachIdentifier({ ...identifier, partyId: second.id })),
             ExternalIdentifierAlreadyAssigned,
           )
+          const invalidProvider = yield* postgresFailure(() =>
+            client`
+              insert into party.party_identifiers
+                (tenant_id, party_id, provider, scheme, scope, value)
+              values
+                (${tenant.id}, ${first.id}, ' gs1 ', 'GLN', 'global', ${uuidv7()})
+            `
+          )
+          assert.strictEqual((invalidProvider as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidProvider as { constraint_name?: string }).constraint_name,
+            "party_identifiers_provider_check",
+          )
+          const invalidScheme = yield* postgresFailure(() =>
+            client`
+              insert into party.party_identifiers
+                (tenant_id, party_id, provider, scheme, scope, value)
+              values
+                (${tenant.id}, ${first.id}, 'GS1', ' gln ', 'global', ${uuidv7()})
+            `
+          )
+          assert.strictEqual((invalidScheme as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidScheme as { constraint_name?: string }).constraint_name,
+            "party_identifiers_scheme_check",
+          )
+          const invalidScope = yield* postgresFailure(() =>
+            client`
+              insert into party.party_identifiers
+                (tenant_id, party_id, provider, scheme, scope, value)
+              values
+                (${tenant.id}, ${first.id}, 'GS1', 'GLN', ' ', ${uuidv7()})
+            `
+          )
+          assert.strictEqual((invalidScope as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidScope as { constraint_name?: string }).constraint_name,
+            "party_identifiers_scope_check",
+          )
+          const invalidValue = yield* postgresFailure(() =>
+            client`
+              insert into party.party_identifiers
+                (tenant_id, party_id, provider, scheme, scope, value)
+              values
+                (${tenant.id}, ${first.id}, 'GS1', 'GLN', 'global', ${` ${uuidv7()} `})
+            `
+          )
+          assert.strictEqual((invalidValue as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (invalidValue as { constraint_name?: string }).constraint_name,
+            "party_identifiers_value_check",
+          )
         }).pipe(
           Effect.provide(
             makeAuthorizationTestLayer([
