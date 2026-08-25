@@ -25,7 +25,7 @@ type DomainTarget = {
   readonly actionsExport: string
   readonly eventsExport: string
   readonly contractTests: readonly string[]
-  readonly publicationTest: { readonly path: string; readonly marker: string }
+  readonly publicationTest: { readonly path: string; readonly markers: readonly string[] }
   readonly catalogMarker: string
   readonly catalogEventMarker: string
 }
@@ -39,7 +39,7 @@ const targets: readonly DomainTarget[] = [
     contractTests: ["packages/identity/tests/identity.test.ts"],
     publicationTest: {
       path: "packages/identity/tests/identity.postgres.test.ts",
-      marker: "UserAccountCreatedEvent",
+      markers: ["UserAccountCreatedEvent", "event_outbox", "assert.deepStrictEqual"],
     },
     catalogMarker: "IdentityTypedActionCatalog",
     catalogEventMarker: "IdentityTypedEventCatalog",
@@ -52,7 +52,7 @@ const targets: readonly DomainTarget[] = [
     contractTests: ["packages/party/tests/party.test.ts"],
     publicationTest: {
       path: "packages/party/tests/party.postgres.test.ts",
-      marker: "PartyCreatedEvent",
+      markers: ["PartyCreatedEvent", "event_outbox", "assert.deepStrictEqual"],
     },
     catalogMarker: "PartyTypedActionCatalog",
     catalogEventMarker: "PartyTypedEventCatalog",
@@ -65,7 +65,7 @@ const targets: readonly DomainTarget[] = [
     contractTests: ["packages/inventory/tests/inventory.test.ts"],
     publicationTest: {
       path: "packages/inventory/tests/inventory.postgres.test.ts",
-      marker: "InventoryStockCorrectedEvent",
+      markers: ["InventoryStockCorrectedEvent", "event_outbox", "assert.deepStrictEqual"],
     },
     catalogMarker: "InventoryTypedActionCatalog",
     catalogEventMarker: "InventoryTypedEventCatalog",
@@ -78,7 +78,7 @@ const targets: readonly DomainTarget[] = [
     contractTests: ["packages/accounting/tests/accounting.test.ts"],
     publicationTest: {
       path: "packages/accounting/tests/accounting.postgres.test.ts",
-      marker: "AccountingRevenuePostedEvent",
+      markers: ["AccountingRevenuePostedEvent", "event_outbox", "assert.deepStrictEqual"],
     },
     catalogMarker: "AccountingTypedActionCatalog",
     catalogEventMarker: "AccountingTypedEventCatalog",
@@ -91,7 +91,7 @@ const targets: readonly DomainTarget[] = [
     contractTests: ["packages/sales/tests/sales.test.ts"],
     publicationTest: {
       path: "packages/sales/tests/sales.postgres.test.ts",
-      marker: "SalesOrderConfirmedEvent",
+      markers: ["SalesOrderConfirmedEvent", "event_outbox", "assert.deepStrictEqual"],
     },
     catalogMarker: "SalesTypedActionCatalog",
     catalogEventMarker: "SalesTypedEventCatalog",
@@ -104,7 +104,11 @@ const targets: readonly DomainTarget[] = [
     contractTests: ["packages/procurement/tests/procurement.test.ts"],
     publicationTest: {
       path: "packages/procurement/tests/procurement.postgres.test.ts",
-      marker: "ProcurementPurchaseOrderConfirmedEvent",
+      markers: [
+        "ProcurementPurchaseOrderConfirmedEvent",
+        "event_outbox",
+        "assert.deepStrictEqual",
+      ],
     },
     catalogMarker: "ProcurementTypedActionCatalog",
     catalogEventMarker: "ProcurementTypedEventCatalog",
@@ -197,10 +201,9 @@ for (const target of targets) {
   const tests = (await Promise.all(target.contractTests.map(exists))).every(Boolean)
   const catalogCompatibility = await contains(catalogTest, target.catalogMarker) &&
     await contains(catalogTest, target.catalogEventMarker)
-  const publicationProof = await contains(
-    target.publicationTest.path,
-    target.publicationTest.marker,
-  )
+  const publicationProof = (await Promise.all(
+    target.publicationTest.markers.map((marker) => contains(target.publicationTest.path, marker)),
+  )).every(Boolean)
   const level3 = publicAction && publicEvent && actionContract && eventContract && tests &&
     executableContractTests && catalogCompatibility && publicationProof
   results.push({
