@@ -25,6 +25,7 @@
 > - Capability-oriented plugin contribution:
 >   [`../decisions/0023-adopt-capability-oriented-plugin-contribution.md`](../decisions/0023-adopt-capability-oriented-plugin-contribution.md)
 > - Frontend architecture: [`./frontend.md`](./frontend.md)
+> - Design system architecture: [`./design-system.md`](./design-system.md)
 > - Frontend SPA decision:
 >   [`../decisions/0010-use-vite-solidjs-spa.md`](../decisions/0010-use-vite-solidjs-spa.md)
 > - Effect application architecture:
@@ -528,7 +529,9 @@ SolidJS 2.0 renderer and presentation runtime
 + TanStack Solid Virtual
 + TanStack Solid Form
 + Effect Schema
-+ Kobalte
++ RITSEI Design System
++ Ark UI behind RITSEI-owned components
++ constrained Panda CSS
 ```
 
 SolidJS owns rendering and presentation-local reactivity. Its JSX/compiler transform is a
@@ -545,7 +548,7 @@ authorize and commit the authoritative business fact.
 SolidStart and SSR are not enabled by default. Their adoption requires an explicit requirement and a
 new or superseding ADR.
 
-See [`./frontend.md`](./frontend.md) for detailed frontend rules.
+See [`./frontend.md`](./frontend.md) for detailed frontend rules and [`./design-system.md`](./design-system.md) for Product Patterns, Visual Grammar, and frontend design-system boundaries.
 
 ## External Integration Surface Contract
 

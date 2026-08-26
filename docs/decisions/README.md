@@ -79,5 +79,7 @@ current system; ADRs preserve decision history.
 | [`0053`](./0053-clarify-per-job-lease-generation-invariants.md) | Clarify per-job lease-generation invariants | Accepted |
 | [`0054`](./0054-keep-fencing-and-idempotency-identities-orthogonal.md) | Keep fencing and idempotency identities orthogonal | Accepted |
 | [`0055`](./0055-use-explicit-fence-scopes-for-shared-job-streams.md) | Use explicit fence scopes for shared job streams | Accepted |
+| [`0056`](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Adopt the RITSEI semantic frontend design system | Accepted |
+| [`0057`](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Define layered TanStack frontend engine boundaries | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

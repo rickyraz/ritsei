@@ -13,6 +13,9 @@
 > - SPA architecture decision: [`../decisions/0010-use-vite-solidjs-spa.md`](../decisions/0010-use-vite-solidjs-spa.md)
 > - Contract schema decision: [`../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md`](../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md)
 > - Effect application architecture: [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
+> - Design system and Visual Grammar: [`./design-system.md`](./design-system.md)
+> - Layered TanStack frontend engine boundaries:
+>   [`../decisions/0057-define-layered-tanstack-frontend-engine-boundaries.md`](../decisions/0057-define-layered-tanstack-frontend-engine-boundaries.md)
 > - Solid compiler boundary: [`../decisions/0049-keep-solid-compiler-at-rendering-boundary.md`](../decisions/0049-keep-solid-compiler-at-rendering-boundary.md)
 > - Authorization architecture: [`./authorization.md`](./authorization.md)
 > - Process Studio architecture: [`./process-studio.md`](./process-studio.md)
@@ -28,16 +31,21 @@ RITSEI uses an API-first frontend with a separately deployed backend:
 Vite
 └── SolidJS 2.0 SPA
     ├── Router
-    ├── TanStack Solid Query
+    ├── TanStack Solid Query (selective server-state cache)
     ├── TanStack Solid Table
     ├── TanStack Solid Virtual
     ├── TanStack Solid Form
     ├── Effect application model
     ├── Effect Schema
-    └── Kobalte and the internal UI system
+    └── RITSEI Design System (Ark UI + constrained Panda CSS)
 ```
 
 SolidStart is not the default application foundation.
+
+The RITSEI Design System owns Product Patterns, Interaction Grammar, Visual Grammar, semantic tokens,
+component contracts, density, and frontend styling boundaries. Ark UI is the single headless behavior
+primitive source behind RITSEI-owned components. Panda CSS is the constrained styling substrate. See
+[`design-system.md`](./design-system.md).
 
 It may be introduced only when server rendering, a frontend-owned BFF,
 server-session management, server functions, or unified full-stack deployment
@@ -228,7 +236,9 @@ PostgreSQL
 | Virtualization | TanStack Solid Virtual |
 | Forms | TanStack Solid Form |
 | Runtime validation | Effect Schema |
-| Accessible UI primitives | Kobalte |
+| Design system | RITSEI Product Patterns, Interaction Grammar, and Visual Grammar |
+| Accessible UI primitives | Ark UI behind RITSEI-owned components |
+| Styling foundation | Constrained Panda CSS profile |
 | Backend | Separate Effect-on-Deno API |
 | Transactional database | PostgreSQL |
 
@@ -368,27 +378,37 @@ inventory invariants
 
 ## Server-State Ownership
 
-TanStack Solid Query owns remote server state.
+SolidJS 2.0 owns reactive async composition and pending presentation. TanStack
+Solid Query owns cache policy for remote server state when the application needs
+shared snapshots, staleness, invalidation, refetch, pagination, or cross-screen
+reuse. Query is a server-cache protocol, not the domain model and not a
+requirement for every asynchronous read.
+
+Use Solid async composition for simple route or component-local reads when no
+shared cache policy is needed. Use TanStack Solid Query for cache-worthy ERP
+state such as master-data lookups, large filtered collections, aggregates,
+shared detail views, and mutations that must invalidate several query identities.
 
 An Effect application Model may coordinate a command's lifecycle, but it must
 not become a second cache or mirror of query data.
 
-Use it for:
+TanStack Solid Query may own:
 
-- loading;
-- caching;
-- invalidation;
-- background refresh;
-- pagination;
-- optimistic coordination where safe;
-- mutation lifecycle;
-- stale-state policy.
+- cache identity and lifetime;
+- invalidation and background refresh;
+- stale/fresh policy;
+- paginated or infinite server collections;
+- safe optimistic coordination;
+- mutation lifecycle and dependent-query refresh.
 
-Do not copy query results into unrelated signals or global stores merely to make
-them reactive.
+Do not copy query results into unrelated signals, global stores, or a client
+collection merely to make them reactive. Authoritative business state and
+business decisions remain in the backend domain or approved financial ledger.
 
 A feature should expose reusable query options rather than constructing ad hoc
-request behavior inside route components.
+request behavior inside route components. Query keys must be deterministic,
+tenant-aware where required, scope-aware where required, and based on validated
+input.
 
 ```ts
 export const invoiceQueries = {
@@ -428,7 +448,10 @@ Context must not become a global mutable service locator.
 
 ## Table Architecture
 
-TanStack Solid Table owns table behavior, not domain policy.
+TanStack Solid Table is the headless table model for RITSEI. It owns table
+behavior, not domain policy. RITSEI should expose an owned table boundary such
+as `RitseiTable` so feature code declares columns, capabilities, and semantic
+formatting without importing vendor APIs into domain or projection contracts.
 
 Table definitions may contain:
 
@@ -452,7 +475,20 @@ Client-side processing is limited to bounded datasets.
 
 ## Virtualization
 
-Use TanStack Solid Virtual when row or column rendering becomes expensive.
+Use TanStack Solid Virtual when row or column rendering becomes expensive or a
+large tree/list would otherwise create excessive DOM. It is a rendering-window
+primitive, not a replacement for server-side filtering, sorting, pagination, or
+cursor loading. The client must not download an unbounded dataset merely to
+virtualize its DOM.
+
+The preferred large-collection shape is:
+
+```text
+server-side filter/sort/cursor pagination
+        -> query cache or bounded client window
+        -> table/list model
+        -> virtualized DOM
+```
 
 Virtualization must preserve:
 
@@ -467,7 +503,11 @@ Do not virtualize small tables without measurement.
 
 ## Forms
 
-TanStack Solid Form manages client form state and interaction.
+TanStack Solid Form is the current default form engine for ERP interaction,
+behind RITSEI-owned form and field contracts such as `RitseiForm`, `MoneyField`,
+`QuantityField`, `PartyField`, and `LineArray`. It manages client form state,
+validation timing, async feedback, nested values, arrays, composition, and
+submission interaction; it does not own business invariants.
 
 Effect Schema remains the contract and decoding boundary. The cross-layer schema
 policy is owned by [`ADR-0024`](../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md):
@@ -492,6 +532,36 @@ The backend remains authoritative for:
 - transaction invariants.
 
 Client validation improves feedback but never replaces server validation.
+
+Formisch is not the core form engine at this stage. Its schema-first model is a
+valid future alternative, but adoption requires demonstrated SolidJS 2
+compatibility, integration with the repository's Effect Schema boundary, and a
+migration path that does not leak engine APIs into RITSEI fields. Keep that
+comparison behind the RITSEI form boundary rather than binding feature code to
+one implementation.
+
+## Optional TanStack Modules
+
+The TanStack family is selected by problem, not adopted as a complete platform:
+
+| Module | RITSEI status | Boundary |
+|---|---|---|
+| Solid Query | Selective core | Remote cache policy; never domain authority |
+| Solid Table | Core | Headless collection behavior behind RITSEI table contracts |
+| Solid Virtual | Core infrastructure | Measured rendering optimization; not server pagination |
+| Solid Form | Current default | ERP form interaction behind RITSEI field contracts |
+| Solid Pacer | Optional utility | Debounce, throttle, queue, or batch interaction work |
+| Solid DB | R&D only | Client projection/optimistic layer; never production authority |
+| Solid Devtools | Development only | Diagnostics; no application contract |
+| Solid Store | Not default | Solid signals/stores remain the local-state choice |
+| Solid Router | Optional | Evaluate only when typed URL requirements justify it |
+| TanStack Start | Not selected | No change to the separate Vite SPA/backend boundary |
+| Ranger | Feature-specific | Add only for a proven range-control need |
+
+Pacer may reduce request and interaction noise, but it must not implement
+business retry, idempotency, authorization, or transaction policy. A future
+client collection layer may sit above Query for normalized read projections, but
+it remains rebuildable and subordinate to backend authority.
 
 ## Contract Validation
 
@@ -574,10 +644,11 @@ canonical RITSEI Process IR, discovers actions and events from typed catalogs,
 and renders static validation results from the backend contract. It must not
 hard-code domain capabilities or execute process semantics in the browser.
 
-Drag-and-drop is an enhancement, not the only interaction model. Every modeling
-action requires an accessible keyboard and structured-form alternative. Detailed
-process semantics, governance, catalogs, compensation, and roadmap are owned by
-[`process-studio.md`](./process-studio.md).
+Drag-and-drop is an enhancement, not the only interaction model. The Solid dnd-kit adapter may
+implement bounded pointer, touch, and keyboard interaction behind the RITSEI interaction layer, but
+it must not become Process IR or business semantics. Every modeling action requires an accessible
+keyboard and structured-form alternative. Detailed process semantics, governance, catalogs,
+compensation, and roadmap are owned by [`process-studio.md`](./process-studio.md).
 
 ## Authorization UX
 
@@ -653,8 +724,8 @@ Core workflows must support:
 - reduced-motion preferences where relevant;
 - screen-reader-compatible tables and forms.
 
-Kobalte may provide accessible primitives, but feature composition must still be
-tested.
+Ark UI provides headless accessible behavior behind RITSEI-owned components, but feature
+composition must still be tested.
 
 ## Performance
 
@@ -693,6 +764,8 @@ internal signal or memo implementation details.
 The frontend architecture is correctly implemented when:
 
 - `apps/web/` builds as a Vite-based SolidJS 2.0 SPA;
+- shared UI uses RITSEI Product Patterns and semantic contracts;
+- vendor primitives and styling engines remain behind the internal UI layer;
 - the backend remains separately deployable;
 - no frontend code imports backend internals;
 - remote state uses TanStack Solid Query;

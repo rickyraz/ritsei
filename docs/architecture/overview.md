@@ -13,6 +13,7 @@
 > - State and consistency: [`./state-and-consistency.md`](./state-and-consistency.md)
 > - Financial ledger: [`./financial-ledger.md`](./financial-ledger.md)
 > - Frontend architecture: [`./frontend.md`](./frontend.md)
+> - Design system architecture: [`./design-system.md`](./design-system.md)
 > - Process Studio architecture: [`./process-studio.md`](./process-studio.md)
 > - External integration surface: [`./integration-architecture.md`](./integration-architecture.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
@@ -74,7 +75,9 @@ Vite
 + TanStack Solid Virtual
 + TanStack Solid Form
 + Effect Schema
-+ Kobalte
++ RITSEI Design System
++ Ark UI behind RITSEI-owned components
++ constrained Panda CSS
 ```
 
 Effect handles typed failures, dependency injection, lifecycle, concurrency,

@@ -22,6 +22,7 @@
 > - Capability-oriented plugin contribution:
 >   [`../decisions/0023-adopt-capability-oriented-plugin-contribution.md`](../decisions/0023-adopt-capability-oriented-plugin-contribution.md)
 > - Frontend architecture: [`./frontend.md`](./frontend.md)
+> - Design system and Interaction Grammar: [`./design-system.md`](./design-system.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)
 > - Process Studio decision:
 >   [`../decisions/0018-adopt-typed-process-studio.md`](../decisions/0018-adopt-typed-process-studio.md)
@@ -155,6 +156,58 @@ Owning Domain
 
 The Process Studio owns coordination state only. Domain packages remain the authoritative owners of
 inventory, accounting, sales, procurement, party, billing, authorization, and other business facts.
+
+## Process Studio as a RITSEI language surface
+
+Process Studio is a primary authoring surface for RITSEI's business language. It lets users compose
+approved process semantics using shared vocabulary; it is not a standalone visualization, a generic
+graph editor, or an adjacent workflow product.
+
+It is one of the places where the platform's one-model, many-projections thesis becomes concrete: a
+released process definition can be edited, executed, observed, and analyzed through different
+projections without turning the editor's graph representation into business truth.
+
+The designer, runtime, and projections keep three concerns separate:
+
+| Concern | Question | Owner |
+|---|---|---|
+| Process semantics | What does this node or edge mean? | Process IR and catalog contracts, with domain contracts authoritative for business meaning |
+| Process representation | How is that meaning shown and edited? | Visual Grammar, Product Patterns, and the Process Designer |
+| Process execution | How is the process run, recovered, and observed? | Workflow runtime and owning domain contracts |
+
+The process vocabulary may include `Trigger`, `Activity`, `Decision`, `Approval`, `Wait`,
+`Commitment`, `Exception`, `Escalation`, and `End`. Their representation reuses RITSEI grammar rather
+than treating every element as a generic box:
+
+```text
+Activity          -> process node
+Decision          -> branching node
+Commitment        -> milestone or timeline semantic
+Exception         -> attention or exception node
+Approval          -> decision surface
+Movement          -> flow edge
+Capacity          -> constrained state
+Dependency        -> relationship edge
+```
+
+A process definition can provide related projections for editing, execution status, history,
+operational monitoring, and analytics:
+
+```text
+Process Definition
+  -> Process Studio editing projection
+  -> Workflow runtime execution
+  -> Process status and timeline projections
+  -> Committed process facts/events for analytics
+```
+
+These are related projections, not one universal renderer. Runtime and analytics consume their owned
+contracts, committed facts, and events; Process IR does not become domain authority. Manufacturing,
+ISP, consulting, and retail may therefore write different business sentences while using the same
+RITSEI process and visual grammar.
+
+The detailed ownership and lifecycle rules remain in this document; the shared visual vocabulary and
+representation rules are owned by [`design-system.md`](./design-system.md).
 
 ## Separation of Concerns
 
@@ -995,7 +1048,8 @@ The designer provides:
 - simulation using explicit test inputs.
 
 The UI must remain usable without precision pointer input. Every drag-and-drop action requires an
-accessible keyboard and structured-form alternative.
+accessible keyboard and structured-form alternative. A Solid dnd-kit adapter may implement the
+interaction, but drag state and DOM coordinates must not become Process IR or business semantics.
 
 ## Process Monitor and Inbox
 

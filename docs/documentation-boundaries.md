@@ -42,6 +42,7 @@ create a second independent definition.
 | Canonical/runtime state classification and consistency protocol | [`./architecture/state-and-consistency.md`](./architecture/state-and-consistency.md) |
 | Financial ledger authority, execution, and reconciliation | [`./architecture/financial-ledger.md`](./architecture/financial-ledger.md) |
 | Frontend SPA, SolidJS 2.0, application state ownership, compiler boundary, routing, and TanStack UI infrastructure | [`./architecture/frontend.md`](./architecture/frontend.md) |
+| Product Patterns, Interaction Grammar, Visual Grammar, semantic tokens, and design-system governance | [`./architecture/design-system.md`](./architecture/design-system.md) |
 | PostgreSQL ownership and integrity | [`./architecture/postgresql-19-architecture.md`](./architecture/postgresql-19-architecture.md) |
 | Workload planes, non-interference, WorkloadCells, shuffle sharding, and resource admission | [`./architecture/workload-isolation.md`](./architecture/workload-isolation.md) |
 | Analytic-plane authority, fact and metric contracts, freshness, projection providers, and activation gates | [`./architecture/analytics-architecture.md`](./architecture/analytics-architecture.md) |

@@ -27,6 +27,19 @@ ADR-0015  One semantic owner per invariant
               |
               +--> ADR-0045  Procurement Purchase Order confirmation
 
+ADR-0010  Vite-based SolidJS SPA
+    |
+    +--> ADR-0056  RITSEI semantic frontend design system
+              |
+              +--> Ark UI replaces the Kobalte primitive selection only
+              +--> Panda CSS is a constrained styling substrate
+              +--> Product Patterns and Visual Grammar become canonical
+              |
+              +--> ADR-0057 layered TanStack frontend engine boundaries
+                        +--> Query is selective server-state cache policy
+                        +--> Table, Virtual, and Form are headless ERP engines
+                        +--> Pacer is optional; DB remains research-only
+
 ADR-0046  Owner-local business surface + generated structural ergonomics
     |
     +--> concrete business objects remain owner-local
@@ -39,12 +52,15 @@ ADR-0046  Owner-local business surface + generated structural ergonomics
 ```
 
 ADR-0046 amends the current architectural interpretation of ADR-0015 and ADR-0036. ADR-0047
-amends the receipt and cancellation boundary of ADR-0044 and ADR-0045. Neither ADR replaces the
-historical decisions, and ADR-0047 does not change the financial authority recorded by ADR-0040.
+amends the receipt and cancellation boundary of ADR-0044 and ADR-0045. ADR-0056 amends only the
+frontend primitive and styling selection recorded by ADR-0010; ADR-0057 clarifies the role and
+adoption scope of the TanStack frontend engines; the rest of ADR-0010 remains active. None of these
+amendments rewrite the historical decisions, and ADR-0047 does not change the financial authority
+recorded by ADR-0040.
 
 ## Relationship matrix
 
-| Decision | Relation to ADR-0046 | Current role |
+| Decision | Relation | Current role |
 |---|---|---|
 | [ADR-0015](./0015-one-semantic-owner-per-invariant.md) | Amended interpretation | One owner remains authoritative for each invariant |
 | [ADR-0036](./0036-define-p2-document-and-financial-baseline.md) | Amended interpretation | Documents remain owner-local; unresolved financial families remain gated |
@@ -53,6 +69,8 @@ historical decisions, and ADR-0047 does not change the financial authority recor
 | [ADR-0045](./0045-define-procurement-purchase-order-confirmation.md) | Compatible | Purchase Order confirmation remains an explicit owner action |
 | [ADR-0046](./0046-adopt-owner-local-business-surface-and-generated-ergonomics.md) | Current amendment | Concrete surface, explicit actions, owner facts, and structural tooling boundary |
 | [ADR-0047](./0047-define-procurement-goods-receipt-boundary.md) | Current amendment | Procurement evidence plus Inventory movement in one bounded receipt transaction |
+| [ADR-0056](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Current frontend amendment | Product Patterns, Visual Grammar, Ark UI, and constrained Panda styling boundaries |
+| [ADR-0057](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Current frontend clarification | Selective Query cache plus headless Table, Virtual, Form, and optional Pacer/DB boundaries |
 
 ## Current canonical rules
 
