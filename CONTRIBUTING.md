@@ -21,7 +21,8 @@
 ## Commit messages
 
 Use the [commit-message standard](./docs/development/commit-message-guidelines.md)
-for every commit created in this repository.
+for every commit created in this repository. Install Lefthook `v2.1.11` and run
+`lefthook install` to enable the local formatter and commit-message checks.
 
 ## Pull Request Checklist
 

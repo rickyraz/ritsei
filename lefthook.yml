@@ -1,0 +1,12 @@
+# Requires Lefthook v2.1.11+
+pre-commit:
+  commands:
+    deno-format:
+      glob: "*.{ts,tsx,js,jsx,json,jsonc}"
+      run: deno fmt {staged_files}
+      stage_fixed: true
+
+commit-msg:
+  commands:
+    conventional:
+      run: deno run --allow-read tooling/check-commit-message.ts {1}
