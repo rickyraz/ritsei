@@ -60,7 +60,9 @@ export const gates: readonly Gate[] = [
     requirements: [
       marker(
         "docs/roadmap/erp-primitives.md",
-        "**P0 baseline status: `READY`. All P0-01 through P0-10 tasks have public contracts and executable proof.",
+        "**P0 baseline status: `READY`.",
+        "All P0-01 through P0-10 tasks have public contracts and executable",
+        "proof.",
         "P0-10",
       ),
       file("docs/decisions/0021-define-p0-scope-and-identity-model.md"),
