@@ -142,6 +142,17 @@ export const gates: readonly Gate[] = [
         "docs/roadmap/process-studio.md",
         "## Pre-0.8 Gate",
         "[x] scope, organization, party, product, UOM, location, document, quantity, money,",
+        "[x] procurement and billing ownership is clear for any purchase or payment process",
+        "[x] at least two existing domains can expose stable public commands",
+        "[x] event ownership and delivery semantics are explicit",
+        "[x] compensation/manual recovery metadata has an owning-domain contract",
+        "[x] catalog versioning and compatibility rules have an ADR or canonical rule",
+        "[x] workflow authorization is separate from domain action authorization",
+        "[x] durable engine compatibility gates remain enforced",
+        "[x] external action/event profile is defined separately from domain actions/events",
+        "[x] connector authentication, idempotency, delivery, and compensation rules are explicit",
+        "[x] capability release states and compatibility ranges are defined",
+        "[x] process promotion separates release from deployment across environments",
         "[x] execution principal, delegation, SoD, and business observability are explicit",
       ),
       file("docs/decisions/0020-adopt-capability-release-and-runtime-governance.md"),
@@ -152,6 +163,7 @@ export const gates: readonly Gate[] = [
     title: "Process Studio 0.8 catalog aggregation and release gate",
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
+    dependencies: ["process.pre08"],
     requirements: [
       marker(
         "packages/process/src/catalog-registry.ts",
@@ -170,6 +182,7 @@ export const gates: readonly Gate[] = [
     title: "Process Studio 0.85 durable headless runtime",
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
+    dependencies: ["process.catalog08"],
     requirements: [
       marker(
         "packages/process/src/runtime.ts",
@@ -190,6 +203,7 @@ export const gates: readonly Gate[] = [
     title: "Process Studio 0.9 operational maturity",
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
+    dependencies: ["process.runtime085"],
     requirements: [
       marker(
         "packages/process/src/operations.ts",
@@ -209,6 +223,7 @@ export const gates: readonly Gate[] = [
     title: "Process Studio 0.95 validated designer",
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
+    dependencies: ["process.ops09"],
     requirements: [
       marker(
         "apps/web/src/features/process-studio/",
@@ -227,6 +242,7 @@ export const gates: readonly Gate[] = [
     title: "Process Studio 1.0 governed release",
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
+    dependencies: ["process.designer095"],
     requirements: [
       marker(
         "packages/process/src/release.ts",
@@ -246,6 +262,7 @@ export const gates: readonly Gate[] = [
     title: "External integration 0.8 contract profile",
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
+    dependencies: ["process.pre08"],
     requirements: [
       marker(
         "packages/integrations/src/contract.ts",
@@ -266,6 +283,7 @@ export const gates: readonly Gate[] = [
     title: "External integration 0.85 connector runtime",
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
+    dependencies: ["integration.contract08"],
     requirements: [
       marker(
         "packages/integrations/src/runtime.ts",
@@ -285,6 +303,7 @@ export const gates: readonly Gate[] = [
     title: "External integration 0.9 reliability and compatibility",
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
+    dependencies: ["integration.runtime085"],
     requirements: [
       marker(
         "packages/integrations/src/reliability.ts",
@@ -304,6 +323,7 @@ export const gates: readonly Gate[] = [
     title: "External integration 0.95 Process Studio integration",
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
+    dependencies: ["integration.reliability09"],
     requirements: [
       marker(
         "packages/integrations/src/catalog.ts",
@@ -322,6 +342,7 @@ export const gates: readonly Gate[] = [
     title: "External integration 1.0 governed surface",
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
+    dependencies: ["integration.process095"],
     requirements: [
       marker(
         "packages/integrations/src/governance.ts",
@@ -352,7 +373,17 @@ export const gates: readonly Gate[] = [
       "domain.accounting.level3",
       "domain.sales.level3",
       "domain.procurement.level3",
+      ...financialGateIds.map((id) => `financial.${id}`),
+      "process.pre08",
+      "process.catalog08",
+      "process.runtime085",
+      "process.ops09",
+      "process.designer095",
       "process.governed10",
+      "integration.contract08",
+      "integration.runtime085",
+      "integration.reliability09",
+      "integration.process095",
       "integration.governed10",
     ],
   },

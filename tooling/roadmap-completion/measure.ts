@@ -103,8 +103,10 @@ const financialResults = await readFinancialResults()
 const results = new Map<string, GateResult>()
 
 for (const gate of gates) {
+  const dependencies = gate.dependencies ?? []
+  const dependenciesPassed = dependencies.every((id) => results.get(id)?.passed === true)
   if (gate.kind === "domain") {
-    const passed = domainResults.get(gate.domain!) === true
+    const passed = dependenciesPassed && domainResults.get(gate.domain!) === true
     results.set(gate.id, {
       gate,
       passed,
@@ -113,7 +115,7 @@ for (const gate of gates) {
     continue
   }
   if (gate.kind === "financial") {
-    const passed = financialResults.get(gate.financialId!) === true
+    const passed = dependenciesPassed && financialResults.get(gate.financialId!) === true
     results.set(gate.id, {
       gate,
       passed,
@@ -122,7 +124,7 @@ for (const gate of gates) {
     continue
   }
   if (gate.kind === "markers") {
-    const passed = await markersPass(gate.requirements ?? [])
+    const passed = dependenciesPassed && await markersPass(gate.requirements ?? [])
     results.set(gate.id, {
       gate,
       passed,
@@ -130,9 +132,7 @@ for (const gate of gates) {
     })
     continue
   }
-  const dependencies = gate.dependencies ?? []
-  const passed = dependencies.length > 0 &&
-    dependencies.every((id) => results.get(id)?.passed === true)
+  const passed = dependencies.length > 0 && dependenciesPassed
   results.set(gate.id, {
     gate,
     passed,
