@@ -10,6 +10,12 @@ export type {
   ExternalActionIdempotency,
   ExternalEventCatalogEntry,
 } from "./src/contract.ts"
+export { simulateWithoutSideEffect } from "./src/catalog.ts"
+export type {
+  ExternalCatalogEntry,
+  ExternalSimulationResult,
+  SimulateExternalActionInput,
+} from "./src/catalog.ts"
 export {
   ExternalActionNotAllowlisted,
   ExternalAuthorizationDenied,
