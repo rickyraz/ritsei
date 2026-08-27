@@ -28,16 +28,19 @@ export {
   ProcessDefinitionEdge,
   ProcessDefinitionNode,
   ProcessEnvironment,
+  ProcessFailureKind,
   ProcessNodeKind,
   ProcessRuntimeStatus,
   ProcessRuntimeVersionConflict,
   ProcessStepConflict,
   ProcessStepExecution,
   ProcessStepStatus,
+  recoverCheckpoint,
 } from "./src/runtime.ts"
 export type {
   ProcessCheckpoint as ProcessCheckpointType,
   ProcessDefinition as ProcessDefinitionType,
+  ProcessFailureKind as ProcessFailureKindType,
   ProcessRuntime,
   ProcessStepExecution as ProcessStepExecutionType,
 } from "./src/runtime.ts"
@@ -48,6 +51,13 @@ export {
   ProcessOperatorActionUnavailable,
 } from "./src/operations.ts"
 export type { ProcessOperatorService, ProcessOperatorSnapshot } from "./src/operations.ts"
+export {
+  makeMemoryProcessCheckpointStore,
+  makePostgresProcessCheckpointStore,
+  ProcessCheckpointRevisionConflict,
+  ProcessCheckpointStore,
+} from "./src/runtime-store.ts"
+export type { ProcessCheckpointStore as ProcessCheckpointStoreShape } from "./src/runtime-store.ts"
 export {
   OrderCancellationCompletedEventPayload,
   OrderConfirmationCompletedEventPayload,
@@ -111,4 +121,9 @@ export type {
   ProcessService as ProcessServiceShape,
   WorkflowRun as WorkflowRunType,
 } from "./src/service.ts"
-export { ProcessLive, ProcessPostgresLive } from "./src/layers.ts"
+export {
+  ProcessLive,
+  ProcessPostgresLive,
+  ProcessRuntimeMemoryLive,
+  ProcessRuntimePostgresLive,
+} from "./src/layers.ts"

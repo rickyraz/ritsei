@@ -25,6 +25,18 @@ export const processJobStatus = processSchema.enum(
   "process_job_status",
   ["pending", "leased", "completed", "failed", "manual_recovery"],
 )
+export const processRuntimeStatus = processSchema.enum(
+  "process_runtime_status",
+  ["running", "waiting", "completed", "failed", "manual_recovery"],
+)
+export const processRuntimeFailureKind = processSchema.enum(
+  "process_runtime_failure_kind",
+  ["business_failure", "technical_retry", "unknown_external_outcome", "compensation_failure"],
+)
+export const processRuntimeEnvironment = processSchema.enum(
+  "process_runtime_environment",
+  ["DEV", "TEST", "PROD"],
+)
 
 export const jobFenceScopes = processSchema.table("job_fence_scopes", {
   tenantId: uuid("tenant_id").notNull(),
@@ -41,6 +53,41 @@ export const jobFenceScopes = processSchema.table("job_fence_scopes", {
   }).onDelete("cascade"),
   check("job_fence_scopes_scope_check", sql`${table.fenceScope} ~ '[^[:space:]]'`),
   check("job_fence_scopes_generation_check", sql`${table.generation} >= 0`),
+])
+
+// Durable checkpoint state remains Process-owned and is separate from the existing lifecycle runs.
+export const processRuntimeCheckpoints = processSchema.table("runtime_checkpoints", {
+  id: id(),
+  tenantId: uuid("tenant_id").notNull(),
+  processDefinitionId: uuid("process_definition_id").notNull(),
+  processDefinitionVersion: integer("process_definition_version").notNull(),
+  catalogVersion: integer("catalog_version").notNull(),
+  environment: processRuntimeEnvironment("environment").notNull(),
+  status: processRuntimeStatus("status").notNull(),
+  failureKind: processRuntimeFailureKind("failure_kind"),
+  currentNodeId: text("current_node_id").notNull(),
+  revision: bigint("revision", { mode: "number" }).notNull().default(0),
+  state: jsonb("state").notNull(),
+  correlationId: text("correlation_id").notNull(),
+  executionPrincipal: text("execution_principal").notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => [
+  foreignKey({
+    columns: [table.tenantId],
+    foreignColumns: [tenants.id],
+    name: "runtime_checkpoints_tenant_id_fkey",
+  }).onDelete("cascade"),
+  check("runtime_checkpoints_definition_version_check", sql`${table.processDefinitionVersion} > 0`),
+  check("runtime_checkpoints_catalog_version_check", sql`${table.catalogVersion} > 0`),
+  check("runtime_checkpoints_revision_check", sql`${table.revision} >= 0`),
+  check("runtime_checkpoints_node_check", sql`${table.currentNodeId} ~ '[^[:space:]]'`),
+  check("runtime_checkpoints_correlation_check", sql`${table.correlationId} ~ '[^[:space:]]'`),
+  check(
+    "runtime_checkpoints_principal_check",
+    sql`${table.executionPrincipal} ~ '[^[:space:]]'`,
+  ),
+  unique("runtime_checkpoints_tenant_id_id_key").on(table.tenantId, table.id),
 ])
 
 export const workflowRuns = processSchema.table("workflow_runs", {

@@ -12,6 +12,7 @@ import {
 
 const checkpointInput = {
   instanceId: "018f3f77-0c5a-7cc0-8b62-6a163d214123",
+  tenantId: "018f3f77-0c5a-7cc0-8b62-6a163d214122",
   processDefinitionId: "018f3f77-0c5a-7cc0-8b62-6a163d214124",
   processDefinitionVersion: 1,
   catalogVersion: 1,
@@ -19,6 +20,7 @@ const checkpointInput = {
   status: "running",
   failureKind: null,
   currentNodeId: "start",
+  revision: 0,
   completedStepIds: [],
   stepExecutions: [],
   consumedEventIds: [],

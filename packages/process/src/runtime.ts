@@ -4,6 +4,7 @@ import * as Schema from "effect/Schema"
 const Uuid = Schema.String.check(Schema.isUUID())
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
 const PositiveInt = Schema.Int.check(Schema.isGreaterThan(0))
+const NonNegativeInt = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0))
 
 export const ProcessNodeKind = Schema.Literals([
   "Start",
@@ -71,6 +72,7 @@ export const ProcessStepExecution = Schema.Struct({
 
 export const ProcessCheckpoint = Schema.Struct({
   instanceId: Uuid,
+  tenantId: Uuid,
   processDefinitionId: Uuid,
   processDefinitionVersion: PositiveInt,
   catalogVersion: PositiveInt,
@@ -78,6 +80,7 @@ export const ProcessCheckpoint = Schema.Struct({
   status: ProcessRuntimeStatus,
   failureKind: Schema.NullOr(ProcessFailureKind),
   currentNodeId: NonEmptyString,
+  revision: NonNegativeInt,
   completedStepIds: Schema.Array(NonEmptyString),
   stepExecutions: Schema.Array(ProcessStepExecution),
   consumedEventIds: Schema.Array(Uuid),
@@ -138,6 +141,16 @@ export type ProcessRuntime = {
 }
 
 const has = (values: readonly string[], value: string): boolean => values.includes(value)
+const nextRevision = (checkpoint: ProcessCheckpoint): number => checkpoint.revision + 1
+
+export const recoverCheckpoint = (input: unknown) =>
+  Schema.decodeUnknownEffect(ProcessCheckpoint)(input).pipe(
+    Effect.mapError(() =>
+      new ProcessCheckpointInvalid({
+        reason: "checkpoint does not match the durable runtime contract",
+      })
+    ),
+  )
 
 export const makeProcessRuntime = (): ProcessRuntime => ({
   pinCatalogVersion: (checkpoint, catalogVersion) =>
@@ -149,14 +162,7 @@ export const makeProcessRuntime = (): ProcessRuntime => ({
       }),
     ),
 
-  recoverCheckpoint: (input) =>
-    Schema.decodeUnknownEffect(ProcessCheckpoint)(input).pipe(
-      Effect.mapError(() =>
-        new ProcessCheckpointInvalid({
-          reason: "checkpoint does not match the durable runtime contract",
-        })
-      ),
-    ),
+  recoverCheckpoint,
 
   recordCommand: (checkpoint, execution) => {
     const existingByStep = checkpoint.stepExecutions.find((current) =>
@@ -181,6 +187,7 @@ export const makeProcessRuntime = (): ProcessRuntime => ({
     }
     return Effect.succeed({
       ...checkpoint,
+      revision: nextRevision(checkpoint),
       stepExecutions: [...checkpoint.stepExecutions, execution],
       completedStepIds: execution.status === "command_succeeded"
         ? [...checkpoint.completedStepIds, execution.stepId]
@@ -193,9 +200,11 @@ export const makeProcessRuntime = (): ProcessRuntime => ({
       return Effect.fail(new ProcessCheckpointInvalid({ reason: "event ID is not a UUID" }))
     }
     return Effect.succeed(
-      has(checkpoint.consumedEventIds, eventId)
-        ? checkpoint
-        : { ...checkpoint, consumedEventIds: [...checkpoint.consumedEventIds, eventId] },
+      has(checkpoint.consumedEventIds, eventId) ? checkpoint : {
+        ...checkpoint,
+        revision: nextRevision(checkpoint),
+        consumedEventIds: [...checkpoint.consumedEventIds, eventId],
+      },
     )
   },
 
@@ -204,9 +213,11 @@ export const makeProcessRuntime = (): ProcessRuntime => ({
       return Effect.fail(new ProcessCheckpointInvalid({ reason: "timer ID is blank" }))
     }
     return Effect.succeed(
-      has(checkpoint.scheduledTimerIds, timerId)
-        ? checkpoint
-        : { ...checkpoint, scheduledTimerIds: [...checkpoint.scheduledTimerIds, timerId] },
+      has(checkpoint.scheduledTimerIds, timerId) ? checkpoint : {
+        ...checkpoint,
+        revision: nextRevision(checkpoint),
+        scheduledTimerIds: [...checkpoint.scheduledTimerIds, timerId],
+      },
     )
   },
 })
