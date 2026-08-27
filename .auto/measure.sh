@@ -1,3 +1,3 @@
 #!/bin/bash
 set -euo pipefail
-rtk deno run --allow-read --allow-run tooling/domain-maturity/measure.ts
+rtk deno run --allow-read --allow-run tooling/roadmap-completion/measure.ts

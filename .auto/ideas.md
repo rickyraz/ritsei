@@ -7,3 +7,7 @@
 - Add cross-engine golden-data conformance only when a second analytic provider is activated.
 - Create a self-observation ADR only when a measured evaluator use case defines finding ownership,
   evidence, review, persistence, and bounded action policy.
+- Enforce Procurement `SupplierAccount` eligibility at the database boundary: reject same-tenant
+  customer or inactive Party relationships while preserving the existing cross-tenant foreign-key
+  path; the trigger candidate passed all checks but was deferred because the Level 3 metric is already
+  at its six-domain ceiling.
