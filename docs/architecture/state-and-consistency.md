@@ -12,6 +12,9 @@
 > - Search architecture: [`./search-architecture.md`](./search-architecture.md)
 > - Analytics architecture: [`./analytics-architecture.md`](./analytics-architecture.md)
 > - Workload isolation: [`./workload-isolation.md`](./workload-isolation.md)
+> - Authorization: [`./authorization.md`](./authorization.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
+> - HTTP API boundary: [`./api.md`](./api.md)
 > - Messaging and outbox: [`./pgque-messaging.md`](./pgque-messaging.md)
 > - Durable execution: [`./durable-execution.md`](./durable-execution.md)
 > - Historical PostgreSQL truth ADR:
@@ -23,6 +26,8 @@
 >   [`../decisions/0040-adopt-tigerbeetle-financial-ledger.md`](../decisions/0040-adopt-tigerbeetle-financial-ledger.md)
 > - Replica read-your-writes ADR:
 >   [`../decisions/0039-select-postgresql-wait-for-for-replica-read-your-writes.md`](../decisions/0039-select-postgresql-wait-for-for-replica-read-your-writes.md)
+> - RelationshipEngine ADR:
+>   [`../decisions/0059-define-replaceable-relationship-authorization-engine.md`](../decisions/0059-define-replaceable-relationship-authorization-engine.md)
 
 ## Rule
 
@@ -43,6 +48,10 @@ A stateful runtime may durably store active state without becoming the canonical
 PostgreSQL remains canonical unless a later ADR explicitly changes ownership. ADR-0040 changes the
 financial-ledger scope: TigerBeetle is authoritative for accepted transfers, balances, and transfer
 history in an activated profile; PostgreSQL remains authoritative for the surrounding control plane.
+RITSEI authorization facts remain canonical in PostgreSQL, including membership, roles, capabilities,
+grants, scopes, SoD policy, and authorization versions. Native PostgreSQL is the default
+RelationshipEngine implementation. An optional evaluator such as SpiceDB is a rebuildable,
+replaceable projection/evaluation dependency and cannot become a second authority.
 
 ## State Classes
 
@@ -137,6 +146,27 @@ Production activation remains gated on PostgreSQL 19 GA, a concrete route requir
 and failure semantics, placement and timeline validation, current authorization, no-primary-
 fallback enforcement, and executable load and failover proof. Before activation, required
 read-after-write behavior stays on the authoritative path.
+
+## External Authorization Consistency
+
+Relationship projection is post-commit and idempotent. A relationship change is not considered
+visible to a sensitive command until the selected authorization path can prove the required
+consistency/revocation boundary.
+
+The authorization boundary must distinguish:
+
+```text
+canonical RITSEI authorization state
+provider projection revision or consistency token
+revocation freshness
+unknown or unavailable evaluator result
+```
+
+A route may use a bounded authoritative RITSEI check only when that route is declared authoritative
+in its contract; it is not an outage fallback for a route that requires the relationship evaluator. A
+stale or unavailable evaluator therefore produces typed denial/unavailability for sensitive work and
+never an allow decision by fallback. Provider revisions and tuple syntax remain infrastructure details
+and do not enter domain DTOs, capability IDs, events, or Process IR.
 
 ## Command Identity
 
@@ -314,6 +344,9 @@ acceptance means no caller-visible success, not that the accepted TigerBeetle fa
 | PostgreSQL unavailable                                  | Canonical mutation unavailable          | Reject or retry; runtime-local success is forbidden                   |
 | Resource admission denied before protected work         | No mutation                             | Return typed overload failure; do not acquire the guarded connection  |
 | Projection query path unavailable or over capacity      | Canonical facts unchanged               | Return declared stale/error behavior; no hidden primary fallback      |
+| Relationship evaluator unavailable or timed out         | Canonical authz facts unchanged         | Fail closed for evaluator-dependent sensitive work; no allow fallback     |
+| Relationship projection is stale beyond its contract   | Canonical authz facts newer             | Reject evaluator-dependent sensitive work; expose no stale allow         |
+| Relationship decision is unknown                        | No authorization conclusion             | Preserve unknown evidence and deny/unavailable until reconciled        |
 | Outbox delivery fails after commit                      | Canonical fact remains committed        | Retry from durable outbox; expose lag and provider state              |
 | Duplicate event delivery                                | Canonical fact unchanged                | Consumer deduplicates or applies idempotently                         |
 | Runtime schema upgrade fails                            | Canonical facts remain valid            | Roll back adapter deployment or rebuild compatible state              |

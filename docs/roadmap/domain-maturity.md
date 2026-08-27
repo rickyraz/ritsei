@@ -15,6 +15,9 @@
 > - Financial ledger execution: [`./financial-ledger-execution.md`](./financial-ledger-execution.md)
 > - Architecture enforcement:
 >   [`../architecture/architecture-enforcement.md`](../architecture/architecture-enforcement.md)
+> - Identity and principals: [`../architecture/identity-and-principals.md`](../architecture/identity-and-principals.md)
+> - HTTP API boundary: [`../architecture/api.md`](../architecture/api.md)
+> - Authorization architecture: [`../architecture/authorization.md`](../architecture/authorization.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)
 > - Process Studio architecture:
 >   [`../architecture/process-studio.md`](../architecture/process-studio.md)
@@ -35,7 +38,8 @@ Each provider must expose, as applicable:
 public command/query contract
 Effect Schema input/output
 stable tagged failures
-capability and tenant scope
+capability, tenant, and object scope
+relationship/object authorization through the RITSEI AuthZ abstraction
 transaction and concurrency semantics
 idempotency and retry behavior
 compensation or manual recovery
@@ -50,9 +54,9 @@ contract and database tests
 | `kernel`        | database, transaction, migration, infrastructure failures         |                                                                                       `FOUNDATION` | stabilize transaction context, capability-level failures, probes, and recovery tests                                                                                                   |
 | `catalog`       | contract-only action/event declaration protocol                   |                                                                                       `FOUNDATION` | remain a dependency leaf; future Process Studio owns aggregation and release state                                                                                                     |
 | `messaging`     | event envelope, transactional outbox, completed consumer receipts |                                                                                       `FOUNDATION` | add PgQue adapter only after its activation gates; never own domain event meaning                                                                                                      |
-| `auth`          | authentication principals and sessions                            |                                                                                       `FOUNDATION` | preserve separation from authorization and expose only public identity contracts                                                                                                       |
-| `authorization` | scoped capability decisions                                       |                                                                                       `FOUNDATION` | add capabilities only with protected business actions and denial tests                                                                                                                 |
-| `identity`      | identity domain                                                   | `PARTIAL`; `identity.user_account.create` v1 is a bounded Level 3 slice | clarify global account lifecycle and tenant-context authorization boundaries                                                                                                           |
+| `auth`          | provider-neutral OIDC/OAuth2 authentication boundary and principals; ZITADEL recommended |                                                                                       `FOUNDATION` | validate selected-provider assertions, preserve principal provenance, and keep provider/session details behind the auth boundary                                                        |
+| `authorization` | canonical scoped capability and RelationshipEngine decisions        |                                                                                       `FOUNDATION` | preserve the permission matrix; use native PostgreSQL by default, add optional SpiceDB conformance, scoped grants, object checks, SoD, explainable denial, and fail-closed behavior |
+| `identity`      | internal UserAccount and external-subject mapping                  | `PARTIAL`; `identity.user_account.create` v1 is a bounded Level 3 slice | keep account lifecycle and tenant membership separate; map issuer+subject without trusting provider roles or organizations                                                               |
 | `party`         | party and party relationships                                     | `PARTIAL`; `party.create` v1 is a bounded Level 3 slice | mature customer/supplier/employee roles and relationship contracts                                                                                                                     |
 | `inventory`     | items, warehouses, balances, movements, reservations, transfers   |                                          `PARTIAL`; `inventory.stock.adjust` v1 is a Level 3 slice | Keep broader actions private until they have catalog metadata and owner-published events; traceability and valuation remain out of scope                                               |
 | `accounting`    | accounts, periods, revenue posting, and reversal                  | `PARTIAL`; `accounting.revenue.post` and `accounting.revenue.posted` v1 are bounded Level 3 slices | Keep generic journals, AP/AR, payment, tax, and settlement out of scope; migrate the bounded slice only after the financial-ledger activation gates pass |
@@ -136,7 +140,9 @@ party
 Goals:
 
 - explicit tenant and organization vocabulary;
-- stable principals and scoped capabilities;
+- stable human, service, process, and delegated principals;
+- provider-neutral authentication and RITSEI account-mapping boundary, with ZITADEL as the recommended adapter;
+- permission matrix, scoped capability, relationship, and SoD ownership;
 - party roles and external identifiers;
 - transaction and error mapping conventions;
 - audit/correlation ownership decision.

@@ -13,6 +13,9 @@
 > - Documentation governance: [`../documentation-boundaries.md`](../documentation-boundaries.md)
 > - Product vision: [`../product/vision.md`](../product/vision.md)
 > - Architecture overview: [`../architecture/overview.md`](../architecture/overview.md)
+> - Identity and principals: [`../architecture/identity-and-principals.md`](../architecture/identity-and-principals.md)
+> - HTTP API boundary: [`../architecture/api.md`](../architecture/api.md)
+> - Authorization architecture: [`../architecture/authorization.md`](../architecture/authorization.md)
 > - Process Studio architecture: [`../architecture/process-studio.md`](../architecture/process-studio.md)
 > - External integration surface: [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md)
 > - Process Studio ADR: [`../decisions/0018-adopt-typed-process-studio.md`](../decisions/0018-adopt-typed-process-studio.md)
@@ -101,6 +104,7 @@ quantity and movement semantics
 money, currency, tax, obligation, and settlement scope
 fiscal period and control semantics
 audit, correlation, and causation
+identity, authentication, principal, and authorization provider boundaries
 ```
 
 No large workflow runtime should be started while these remain material
@@ -191,6 +195,7 @@ Before Process Studio becomes a broad runtime, verify:
 [ ] catalog versions and Process IR versions are deterministic
 [ ] runtime recovery, idempotency, and unknown-outcome handling are proven
 [ ] authorization and audit are enforced outside the browser
+[ ] external authentication, tenant membership, capability, scope, relationship, SoD, and revocation boundaries are explicit
 [ ] visual design is a projection over validated runtime semantics
 ```
 

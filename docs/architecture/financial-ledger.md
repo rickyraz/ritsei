@@ -16,6 +16,8 @@
 > - Previous ledger decision:
 >   [`../decisions/0011-financial-ledger-engine.md`](../decisions/0011-financial-ledger-engine.md)
 > - State and consistency: [`./state-and-consistency.md`](./state-and-consistency.md)
+> - Authorization: [`./authorization.md`](./authorization.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
 > - PostgreSQL architecture: [`./postgresql-19-architecture.md`](./postgresql-19-architecture.md)
 > - Durable execution: [`./durable-execution.md`](./durable-execution.md)
 > - P2 financial baseline:
@@ -74,7 +76,8 @@ and fixes precision at two, so exponent-aware conversion is a generic primitive 
 | Fact or responsibility                                                    | Authority                           | Notes                                                                 |
 | ------------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------- |
 | Tenant, Legal Entity, account meaning, chart-of-accounts metadata         | PostgreSQL / Accounting             | Business identity and semantics, not TigerBeetle provider metadata    |
-| Fiscal periods, posting dates, posting policy, authorization              | PostgreSQL / Accounting             | Policy is evaluated before financial submission                       |
+| Fiscal periods, posting dates, and posting policy                        | PostgreSQL / Accounting             | Business policy is evaluated before financial submission              |
+| Capability, tenant scope, object relationship, and SoD authorization      | RITSEI Authorization                | General AuthZ is evaluated before financial submission                 |
 | Financial operation intent, command identity, retry state, workflow state | PostgreSQL                          | Durable control-plane state                                           |
 | Accepted debit-credit transfer and linked transfer chain                  | Selected `FinancialLedgerPort` authority | PostgreSQL for entry transition; TigerBeetle for an activated target profile |
 | Pending, posted, and voided transfer state                                | Selected `FinancialLedgerPort` authority | Only where a decided capability uses pending transfers                         |
@@ -102,7 +105,7 @@ proof.
 
 ## Semantic Boundary
 
-Accounting owns the business vocabulary and policy:
+Accounting owns the business vocabulary, financial policy, and current financial state:
 
 ```text
 postJournal
@@ -111,6 +114,11 @@ createExecutionAccount
 getBalance
 getBalanceHistory
 ```
+
+RITSEI Authorization owns the general capability, tenant scope, relationship, and SoD decision.
+Accounting still owns financial business validity such as fiscal-period state, amount rules,
+posting semantics, balance meaning, and correction behavior. No RelationshipEngine result can
+replace those checks, whether it comes from native PostgreSQL or the optional SpiceDB adapter.
 
 A future reservation capability may add:
 

@@ -40,6 +40,23 @@ ADR-0010  Vite-based SolidJS SPA
                         +--> Table, Virtual, and Form are headless ERP engines
                         +--> Pacer is optional; DB remains research-only
 
+ADR-0030  UserAccount lifecycle and tenant membership
+    |
+    +--> ADR-0058 provider-neutral identity and authentication boundary
+              +--> selected IdentityProvider owns provider identity, credentials, and sessions
+              +--> ZITADEL is recommended, not required
+              +--> RITSEI owns UserAccount mapping and tenant membership
+              +--> provider claims never become ERP capabilities
+
+ADR-0006  Scoped capability authorization
+    |
+    +--> ADR-0059 replaceable RelationshipEngine
+              +--> native PostgreSQL is the default implementation
+              +--> SpiceDB is an optional high-scale adapter
+              +--> RITSEI/PostgreSQL remains canonical AuthZ authority
+              +--> permission matrix remains the coarse gate
+              +--> domain policy and SoD remain outside the engine
+
 ADR-0046  Owner-local business surface + generated structural ergonomics
     |
     +--> concrete business objects remain owner-local
@@ -54,9 +71,11 @@ ADR-0046  Owner-local business surface + generated structural ergonomics
 ADR-0046 amends the current architectural interpretation of ADR-0015 and ADR-0036. ADR-0047
 amends the receipt and cancellation boundary of ADR-0044 and ADR-0045. ADR-0056 amends only the
 frontend primitive and styling selection recorded by ADR-0010; ADR-0057 clarifies the role and
-adoption scope of the TanStack frontend engines; the rest of ADR-0010 remains active. None of these
-amendments rewrite the historical decisions, and ADR-0047 does not change the financial authority
-recorded by ADR-0040.
+adoption scope of the TanStack frontend engines; ADR-0058 amends only the authentication/session
+provider boundary in ADR-0030; ADR-0059 defines the replaceable RelationshipEngine boundary in
+ADR-0006. Both providers remain optional adapters; the RITSEI contracts and authority remain active.
+The rest of those decisions remains active. None of these amendments rewrite historical decisions,
+and ADR-0047 does not change the financial authority recorded by ADR-0040.
 
 ## Relationship matrix
 
@@ -71,6 +90,8 @@ recorded by ADR-0040.
 | [ADR-0047](./0047-define-procurement-goods-receipt-boundary.md) | Current amendment | Procurement evidence plus Inventory movement in one bounded receipt transaction |
 | [ADR-0056](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Current frontend amendment | Product Patterns, Visual Grammar, Ark UI, and constrained Panda styling boundaries |
 | [ADR-0057](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Current frontend clarification | Selective Query cache plus headless Table, Virtual, Form, and optional Pacer/DB boundaries |
+| [ADR-0058](./0058-define-provider-neutral-identity-and-authentication-boundary.md) | Current identity boundary | OIDC/OAuth2 provider-neutral contract; ZITADEL recommended; RITSEI owns account mapping, membership, and ERP authority |
+| [ADR-0059](./0059-define-replaceable-relationship-authorization-engine.md) | Current authorization boundary | Native PostgreSQL RelationshipEngine default; SpiceDB optional; RITSEI/PostgreSQL remains canonical |
 
 ## Current canonical rules
 
@@ -85,6 +106,10 @@ The current architecture is summarized here for navigation; the canonical rule r
 - Generated schemas, DTOs, queries, forms, CRUD helpers, and test skeletons are tooling, not business authority.
 - Persistence models, ORM hooks, provider types, and private repositories do not become public domain contracts.
 - External standards remain behind versioned adapters.
+- The selected IdentityProvider authenticates principals; it does not grant ERP authority.
+- ZITADEL is the recommended IdentityProvider adapter, not a required dependency.
+- RITSEI Authorization owns capability, scope, relationship coordination, SoD, and decision evidence.
+- Native PostgreSQL is the default RelationshipEngine; SpiceDB is an optional adapter, not a source of truth.
 - Goods Receipt evidence belongs to Procurement; physical receipt movement belongs to Inventory.
 
 ## Historical integrity

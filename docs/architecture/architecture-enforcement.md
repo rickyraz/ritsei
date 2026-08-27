@@ -14,6 +14,9 @@
 > - Workload isolation: [`./workload-isolation.md`](./workload-isolation.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)
 > - Database roles: [`../operations/database-roles.md`](../operations/database-roles.md)
+> - Authorization: [`./authorization.md`](./authorization.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
+> - HTTP API boundary: [`./api.md`](./api.md)
 > - Documentation ownership: [`../documentation-boundaries.md`](../documentation-boundaries.md)
 
 ## Purpose
@@ -147,14 +150,13 @@ Maintain one machine-readable registry, for example:
 ```toml
 [schemas]
 identity = "packages/identity"
-auth = "packages/authorization"
+auth = "packages/auth"
 sales = "packages/sales"
 inventory = "packages/inventory"
 accounting = "packages/accounting"
 process = "packages/process"
 billing = "packages/billing"
 integration = "packages/integrations"
-audit = "packages/audit"
 ```
 
 The active registry is [`../../db/ownership.toml`](../../db/ownership.toml). It is
@@ -187,6 +189,23 @@ The linter must detect:
 - frontend imports of database types or table definitions.
 
 Public DTOs must be separate from persistence models.
+
+## External Identity and Authorization Provider Boundary
+
+Configured identity and relationship providers are infrastructure adapters, not RITSEI domains or
+sources of truth. ZITADEL is the recommended IdentityProvider adapter; SpiceDB is an optional
+RelationshipEngine adapter. Provider-specific SDKs, tokens, claims, tuple formats, revisions,
+credentials, and topology remain inside designated adapters or composition roots. Public contracts
+expose only provider-neutral RITSEI principals and authorization results.
+
+Domain packages must not call an identity or relationship provider directly. Authentication goes
+through the provider-neutral IdentityProvider boundary; relationship checks go through the
+RelationshipEngine boundary. Membership, roles, capabilities, grants, scopes, SoD, policy, and tenant
+isolation remain owned by RITSEI/PostgreSQL and the owning domains.
+
+Provider projections, when selected, must be rebuildable from canonical RITSEI facts. Missing, stale,
+or unknown selected-provider state fails closed for sensitive work and cannot silently become an allow
+decision.
 
 ## Dependency-Cycle Detection
 

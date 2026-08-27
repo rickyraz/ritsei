@@ -28,6 +28,8 @@
 - [`./architecture/analytics-architecture.md`](./architecture/analytics-architecture.md)
 - [`./architecture/search-architecture.md`](./architecture/search-architecture.md)
 - [`./architecture/authorization.md`](./architecture/authorization.md)
+- [`./architecture/identity-and-principals.md`](./architecture/identity-and-principals.md)
+- [`./architecture/api.md`](./architecture/api.md)
 - [`./architecture/procurement.md`](./architecture/procurement.md)
 - [`./architecture/durable-execution.md`](./architecture/durable-execution.md)
 - [`./architecture/process-studio.md`](./architecture/process-studio.md)

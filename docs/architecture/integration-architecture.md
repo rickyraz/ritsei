@@ -18,6 +18,9 @@
 > - Search architecture: [`./search-architecture.md`](./search-architecture.md)
 > - External standards ADR: [`../decisions/0013-version-external-standard-adapters.md`](../decisions/0013-version-external-standard-adapters.md)
 > - Integration profile ADR: [`../decisions/0019-adopt-integration-surface-profile.md`](../decisions/0019-adopt-integration-surface-profile.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
+> - HTTP API boundary: [`./api.md`](./api.md)
+> - Authorization: [`./authorization.md`](./authorization.md)
 > - Roadmap: [`../roadmap/README.md`](../roadmap/README.md)
 
 ## Purpose
@@ -368,18 +371,22 @@ shipment:create
 User-authorized applications use OAuth 2.0 Authorization Code with PKCE where
 interactive delegation is required.
 
-Connector authorization is separate from domain authorization:
+Connector authorization is separate from RITSEI identity and domain authorization:
 
 ```text
-OAuth scope
+Configured IdentityProvider OIDC/OAuth2 assertion
+  -> who is the RITSEI human or machine principal?
+
+Connector OAuth scope
   -> may this connector call the integration endpoint?
 
-Domain capability
+RITSEI capability + scope + relationship + domain policy + SoD
   -> may this tenant/principal perform the business action?
 ```
 
-The connector must not convert an OAuth scope into a domain capability. The
-owning domain still performs runtime authorization.
+External identity-provider authentication is owned by the identity/authentication boundary, not by
+the connector surface. The connector must not convert an OAuth scope, IdP organization, or provider
+ACL into a domain capability. The owning domain still performs runtime authorization.
 
 Tokens, client secrets, webhook secrets, and provider credentials must remain in
 secret storage. They never appear in Process IR, catalog payloads, logs, public

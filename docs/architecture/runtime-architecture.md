@@ -12,6 +12,9 @@
 > - Financial ledger: [`./financial-ledger.md`](./financial-ledger.md)
 > - PostgreSQL architecture: [`./postgresql-19-architecture.md`](./postgresql-19-architecture.md)
 > - Workload isolation: [`./workload-isolation.md`](./workload-isolation.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
+> - HTTP API boundary: [`./api.md`](./api.md)
+> - Authorization: [`./authorization.md`](./authorization.md)
 > - Messaging: [`./pgque-messaging.md`](./pgque-messaging.md)
 > - Durable execution: [`./durable-execution.md`](./durable-execution.md)
 > - Process Studio: [`./process-studio.md`](./process-studio.md)
@@ -70,11 +73,11 @@ WorkloadCell placement, and database placement remain separate concerns.
 ┌──────────────────────────────────────────────────────┐
 │ API / Worker / Process Runtime                       │
 └────────────────────────┬─────────────────────────────┘
-                         │ authenticated command
+                         │ provider-neutral authenticated Principal
                          v
 ┌──────────────────────────────────────────────────────┐
 │ Public Domain Contract                               │
-│ decode · authorize · scope · tagged failures         │
+│ decode · AuthZ · scope · tagged failures              │
 └────────────────────────┬─────────────────────────────┘
                          │ domain entity address
                          v
@@ -194,13 +197,13 @@ Rules:
 request
   |
   v
-authenticate principal
+provider-neutral authenticated principal
   |
   v
 decode public command
   |
   v
-authorize tenant-aware capability
+RITSEI AuthZ: tenant, capability, scope, relationship, domain policy, and SoD
   |
   v
 derive entity address in owning domain

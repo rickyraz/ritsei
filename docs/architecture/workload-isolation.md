@@ -15,6 +15,8 @@
 > - Stateful runtime: [`./runtime-architecture.md`](./runtime-architecture.md)
 > - State and consistency: [`./state-and-consistency.md`](./state-and-consistency.md)
 > - Authorization: [`./authorization.md`](./authorization.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
+> - HTTP API boundary: [`./api.md`](./api.md)
 > - Messaging: [`./pgque-messaging.md`](./pgque-messaging.md)
 > - Durable execution: [`./durable-execution.md`](./durable-execution.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
@@ -558,7 +560,10 @@ hard-isolated projection route may access:
 - query executor capacity;
 - a query-only connection pool;
 - a rebuildable projection store;
-- query-specific authorization infrastructure with its own bounded budget.
+- query-specific RelationshipEngine infrastructure with its own bounded budget. The selected engine
+  is reached through the RITSEI Authorization abstraction and does not receive command credentials or
+  command admission capacity. If the selected engine is the optional SpiceDB adapter, its provider
+  budget remains separately bounded.
 
 It must not access:
 
@@ -744,6 +749,10 @@ Workload placement never grants access.
 - Sensitive isolated queries invoke an owner-controlled authorization-check contract or use an
   owner-approved fail-closed authorization projection with explicit scope, SoD, freshness, and
   revocation behavior.
+- An external relationship evaluator is never the sole tenant boundary or business authority. Its
+  outage, timeout, stale result, unknown result, or unmet consistency requirement fails closed.
+- IdP organizations, WorkloadCells, resource leases, and projection membership are not authorization
+  evidence.
 - PostgreSQL RLS remains defense in depth for primary paths.
 
 The authorized scope and admission scope may use similar dimensions, but they are evaluated for

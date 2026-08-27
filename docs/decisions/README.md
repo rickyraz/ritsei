@@ -81,5 +81,7 @@ current system; ADRs preserve decision history.
 | [`0055`](./0055-use-explicit-fence-scopes-for-shared-job-streams.md) | Use explicit fence scopes for shared job streams | Accepted |
 | [`0056`](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Adopt the RITSEI semantic frontend design system | Accepted |
 | [`0057`](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Define layered TanStack frontend engine boundaries | Accepted |
+| [`0058`](./0058-define-provider-neutral-identity-and-authentication-boundary.md) | Define provider-neutral identity and authentication boundary; recommend ZITADEL | Accepted |
+| [`0059`](./0059-define-replaceable-relationship-authorization-engine.md) | Define replaceable relationship authorization engine; support SpiceDB | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

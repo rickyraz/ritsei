@@ -19,6 +19,9 @@
 >   [`../decisions/0039-select-postgresql-wait-for-for-replica-read-your-writes.md`](../decisions/0039-select-postgresql-wait-for-for-replica-read-your-writes.md)
 > - Database roles: [`../operations/database-roles.md`](../operations/database-roles.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
+> - Authorization: [`./authorization.md`](./authorization.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
+> - HTTP API boundary: [`./api.md`](./api.md)
 
 ## Position
 
@@ -95,7 +98,14 @@ transfers, balances, balance constraints, and immutable transfer history. Postgr
 operation intent, deterministic identity mapping, audit references, and projection state; those
 records do not become a competing financial authority.
 
-Redis, ClickHouse, search indexes, and caches are not authoritative.
+RITSEI authorization authority follows the same rule: PostgreSQL stores canonical membership,
+roles, capabilities, grants, scopes, SoD policy, and authorization versions. Native PostgreSQL is the
+default RelationshipEngine implementation. SpiceDB, when selected, is an optional replaceable
+relationship/object evaluator or projection; its tuples, revisions, and caches are not a second RITSEI
+authority. Tenant isolation remains enforced independently through tenant-aware keys, validated
+application context, and PostgreSQL RLS.
+
+Redis, ClickHouse, search indexes, external authorization evaluators, and caches are not authoritative.
 
 ## Integrity Rules
 
@@ -131,8 +141,11 @@ matching historical SQL text.
 Create projections only when measured read requirements justify them. Projections must be
 rebuildable from authoritative facts or have an explicit reconciliation process.
 
-Dashboard, search, and reporting routes may use a separate projection store to prevent degradable
-reads from consuming command resources. Analytical projections follow the domain-owned fact,
+Dashboard, search, reporting, and relationship-evaluation routes may use separate projection
+stores to prevent degradable reads from consuming command resources. A relationship projection must
+be rebuildable from canonical RITSEI facts and must carry an explicit freshness and revocation
+contract; stale or unknown relationship state fails closed for sensitive work. Analytical projections
+follow the domain-owned fact,
 versioned metric, freshness, correction, and provider gates in
 [`analytics-architecture.md`](./analytics-architecture.md). A hard-isolated projection route must not
 silently fall back to the primary when its projection path is stale, unavailable, or saturated.

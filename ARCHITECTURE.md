@@ -19,6 +19,9 @@ The authoritative architecture specification is:
 - Query layer: Drizzle ORM + postgres.js
 - Frontend renderer: Vite + SolidJS 2.0; JSX compiler isolated to `apps/web`
 - Contracts: Effect Schema
+- Identity / IAM: provider-neutral OIDC/OAuth2 `IdentityProvider`; ZITADEL is recommended
+- Application AuthZ: RITSEI Authorization Kernel with canonical PostgreSQL policy facts
+- Relationship AuthZ: native PostgreSQL `RelationshipEngine` by default; optional SpiceDB adapter
 - Stateful ownership: optional vendor-neutral Stateful Entity Runtime
 - Overload isolation: workload planes, reserved command capacity, and topology-private WorkloadCells
 - Analytics: domain-owned facts, versioned metrics, rebuildable projections, and no primary fallback
@@ -42,6 +45,12 @@ Analytic facts, metrics, freshness, semantic queries, and provider gates are def
 [`docs/architecture/analytics-architecture.md`](./docs/architecture/analytics-architecture.md).
 Search authority, projections, provider gates, and search-specific workload safety are defined in
 [`docs/architecture/search-architecture.md`](./docs/architecture/search-architecture.md).
+Identity, authentication, principal provenance, and revocation are defined in
+[`docs/architecture/identity-and-principals.md`](./docs/architecture/identity-and-principals.md).
+HTTP tenant context and API authorization order are defined in
+[`docs/architecture/api.md`](./docs/architecture/api.md).
+Authorization ownership, capability evaluation, object relationships, SoD, and decision evidence are
+defined in [`docs/architecture/authorization.md`](./docs/architecture/authorization.md).
 Procurement ownership, the Purchase Order lifecycle, and receipt activation gates are defined in
 [`docs/architecture/procurement.md`](./docs/architecture/procurement.md).
 

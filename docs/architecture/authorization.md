@@ -14,6 +14,12 @@
 > - Plugin trust model: [`./plugin-architecture.md`](./plugin-architecture.md)
 > - Process Studio: [`./process-studio.md`](./process-studio.md)
 > - Process governance ADR: [`../decisions/0020-adopt-capability-release-and-runtime-governance.md`](../decisions/0020-adopt-capability-release-and-runtime-governance.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
+> - HTTP API boundary: [`./api.md`](./api.md)
+> - IdentityProvider boundary:
+>   [`../decisions/0058-define-provider-neutral-identity-and-authentication-boundary.md`](../decisions/0058-define-provider-neutral-identity-and-authentication-boundary.md)
+> - RelationshipEngine boundary:
+>   [`../decisions/0059-define-replaceable-relationship-authorization-engine.md`](../decisions/0059-define-replaceable-relationship-authorization-engine.md)
 
 ## Goals
 
@@ -38,23 +44,79 @@ revalidated by the owning domain. Detailed search behavior is owned by
 
 ## Model
 
-RITSEI combines:
+The **RITSEI Authorization Kernel** is the application authorization boundary. It combines:
 
 ```text
-RBAC
-+ explicit tenant membership
-+ scoped grants
-+ constrained ABAC
-+ relationship context
+active tenant membership
++ roles and capability grants
++ precomputed effective permission matrix
++ explicit organizational scope
++ relationship/object evaluation through the replaceable `RelationshipEngine`
++ domain business policy
 + static and dynamic Separation of Duties
 ```
 
-Tenant membership is separate from capability grants. A membership may be
-`active` or `suspended`; only an active membership can authorize a capability.
-Removing a membership removes its tenant-scoped grants but does not delete the
-global UserAccount.
+The ownership split is:
 
-Roles bundle permissions but do not directly make the final decision.
+```text
+PostgreSQL / RITSEI
+  -> membership, roles, capabilities, grants, scopes, authorization policy,
+     SoD policy, authorization versions, and owner-domain policy facts
+
+RITSEI Authorization Kernel
+  -> orchestration, final decision, explanation, and audit evidence
+
+RelationshipEngine
+  -> selected relationship/object checks and bounded candidate-resource evaluation
+
+Native PostgreSQL implementation
+  -> default RelationshipEngine implementation
+
+SpiceDB adapter
+  -> optional high-scale RelationshipEngine implementation
+```
+
+Neither relationship implementation is authoritative for membership, roles, capabilities, grants,
+scopes, SoD, tenant isolation, domain policy, or business facts. Domains never call a provider
+directly, and public contracts never expose provider types.
+
+Tenant membership is separate from capability grants. A membership may be `active` or `suspended`;
+only an active membership can authorize a capability. Removing a membership removes its tenant-scoped
+grants but does not delete the global `UserAccount`.
+
+Roles bundle capabilities but do not make the final decision. Scope is metadata on a grant or policy,
+not part of the role or capability identifier.
+
+## Authorization decision order
+
+Every protected command or sensitive query passes the following layers:
+
+```text
+Identity
+  -> Capability
+  -> Scope
+  -> Object Relationship
+  -> Domain Policy
+  -> Separation of Duties
+  -> ALLOW / DENY
+  -> Authorization decision evidence
+```
+
+The effective permission matrix is the cheap coarse-grained gate. Role and grant changes compile
+into a versioned matrix; membership suspension, revocation, or policy changes invalidate the affected
+matrix entries. A stale matrix cannot authorize sensitive work. The matrix is necessary but does not
+prove access to a particular object. Domain policy remains the owner of business validity such as
+amount, accounting period, inventory state, credit limit, or approval limit.
+
+## Current implementation versus target architecture
+
+The current repository baseline primarily proves active tenant membership, direct capability grants,
+deny-by-default checks, and PostgreSQL-backed authorization. The target architecture documented here
+adds role compilation, scoped grants, an effective permission matrix, relationship/object evaluation,
+first-class SoD, machine/delegated principal context, and explainable decision evidence.
+
+Target documentation is not implementation evidence. Each target layer must gain its own public
+contract, failure mapping, invariant tests, and activation gate before production use.
 
 ## Permission Shape
 
@@ -93,10 +155,35 @@ A grant may be limited to:
 - a specific resource;
 - a hierarchy subtree.
 
+Tenant IDs from headers, URLs, cookies, payloads, and IdP organization claims are untrusted
+selectors. RITSEI resolves the tenant through active membership and scope before reading or mutating
+business data. PostgreSQL composite keys and RLS remain an independent tenant boundary.
+
+Scopes are never encoded into role or capability IDs. Do not create role variants such as
+`FINANCE_MANAGER_PT_A_JAKARTA`; use one role plus explicit scoped grants.
+
+## Object-level Authorization
+
+A capability and scope do not authorize every object in that scope. For a request such as
+`payment.approve(P1)`, the kernel must also prove that the principal may act on `P1`.
+
+The relationship/object layer is evaluated through the RITSEI `RelationshipEngine` abstraction.
+Native PostgreSQL is the default implementation; SpiceDB is an optional high-scale adapter for the
+same contract. A missing, stale, unknown, or unavailable relationship result is never interpreted as
+`ALLOW` for sensitive work.
+
+Search results, projection membership, entity addresses, provider ACLs, and cached permissions are
+candidate or convenience data. The owning domain revalidates current tenant, object relationship,
+domain policy, and SoD before a sensitive response or command succeeds.
+
 ## Policy Safety
 
 Tenant administrators must not provide arbitrary SQL, JavaScript, or other
 unrestricted code. Dynamic conditions use a typed, validated policy model.
+
+Business policy is evaluated by the owning domain or an explicit RITSEI policy contract. The
+relationship evaluator must not contain amount, period, inventory, balance, credit, manufacturing,
+approval-limit, or other mutable business invariants.
 
 ## Admission Is Not Authorization
 
@@ -104,14 +191,15 @@ Workload class, criticality, WorkloadCell placement, shuffle-shard membership, a
 acquisition do not grant a business capability. They control where and whether work may begin after
 trusted routing metadata is resolved.
 
-A caller must still pass tenant membership, scoped capability, domain policy, and Separation of
-Duties checks. A query projection or isolated executor must fail closed when authorization context is
-missing, stale beyond its contract, or invalid. Sensitive isolated queries invoke a bounded
-owner-controlled authorization-check contract with no access to the command reserve or use an
+A caller must still pass tenant membership, scoped capability, scope, relationship, domain policy,
+and Separation of Duties checks. A query projection or isolated executor must fail closed when
+authorization context is missing, stale beyond its contract, or invalid. Sensitive isolated queries
+invoke a bounded owner-controlled authorization-check contract with no access to the command
+reserve or use an
 owner-approved fail-closed authorization projection with explicit scope, relationship, SoD,
 revocation, and freshness behavior. If current owner state cannot be evaluated through that path,
-the query is authoritative and does not claim hard projection isolation. WorkloadCell or lease membership must
-never be accepted as proof of tenant visibility or mutation authority.
+the query is authoritative and does not claim hard projection isolation. WorkloadCell or lease
+membership must never be accepted as proof of tenant visibility or mutation authority.
 
 Capability IDs retain business ownership and verbs. They must not encode `command`, `query`,
 `priority`, pool, cell, region, or executor names.
@@ -119,15 +207,22 @@ Capability IDs retain business ownership and verbs. They must not encode `comman
 ## Enforcement Layers
 
 ```text
-Application authorization
--> business action and policy
+RITSEI AuthZ Kernel
+  -> membership, capability matrix, scope, relationship, SoD, decision
 
-PostgreSQL constraints
--> structural integrity
+Owning domain
+  -> business policy, current state, command semantics, and typed failures
+
+PostgreSQL constraints and transaction
+  -> structural and concurrency integrity
 
 PostgreSQL RLS
--> tenant isolation and defense in depth
+  -> tenant isolation and defense in depth
 ```
+
+Authorization is fail-closed. An unavailable selected engine, stale revocation, missing tenant
+context, unknown relationship result, or policy-version mismatch must deny or return typed
+unavailability; it must never silently fall through to an allow path.
 
 ## Process Execution Authority and Separation of Duties
 
@@ -156,9 +251,10 @@ ProcessPrincipal
 DelegatedPrincipal
 ```
 
-A `ProcessPrincipal` identifies durable runtime execution; it does not grant
-capabilities by itself. A process definition cannot grant, widen, or substitute
-a business capability.
+A `ServicePrincipal` receives explicit machine capabilities and is not an administrator by default.
+A `ProcessPrincipal` identifies durable runtime execution; it does not grant capabilities by itself.
+A `DelegatedPrincipal` preserves the effective actor, delegating authority, scope, expiry, and
+reason. A process definition cannot grant, widen, or substitute a business capability.
 
 Separation of Duties is a policy layer in addition to domain invariants:
 
@@ -175,19 +271,41 @@ High-risk workflows must preserve actor, initiator, delegation, capability,
 scope, and approval history. Approval completion must be conditional or
 otherwise protected against duplicate or unauthorized completion.
 
-## Audit
+## Audit and Explainability
 
-Every high-risk decision should record:
+Every high-risk authorization decision records safe, tenant-scoped evidence:
 
-- principal;
-- action;
-- resource;
-- scope;
-- policy or grant that allowed or denied access;
-- correlation identifier;
-- timestamp.
+```text
+principal and principal kind
+tenant
+capability
+resource
+scope result
+relationship result
+domain policy result
+SoD result
+decision
+reason
+policy/grant version
+provider consistency evidence
+request, correlation, and causation identifiers
+timestamp
+```
 
-## Performance
+The public response may expose a user-safe reason such as `APPROVAL_LIMIT_EXCEEDED` or
+`SEGREGATION_OF_DUTIES`. It must not expose raw SQL, credentials, provider tuples, private policy
+expressions, or sensitive resource-existence signals.
 
-Graph traversal may help build effective permissions, but the hot request path
-should use an optimized effective-grant projection or equivalent indexed model.
+Domain-owned business history remains the authority for business facts. Authorization decision
+evidence follows the audit boundary in ADR-0037 and does not replace owner-local history.
+
+## Performance and Query Safety
+
+Relationship traversal may help build projections, but the hot request path uses the precomputed
+permission matrix and bounded indexed scope/object checks. List and search queries must push tenant
+and scope restrictions into the owner-controlled query path or use a bounded candidate/batch check;
+they must not fetch all rows and filter unauthorized records in application memory.
+
+A projection-safe query path has its own authorization budget and explicit revocation/freshness
+contract. If current access cannot be proven by the selected RelationshipEngine, it fails closed or
+uses a separately declared authoritative path.

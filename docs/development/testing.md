@@ -11,6 +11,8 @@
 > - Active architecture: [`../architecture/architecture-spec-v4.md`](../architecture/architecture-spec-v4.md)
 > - Workload isolation: [`../architecture/workload-isolation.md`](../architecture/workload-isolation.md)
 > - Authorization architecture: [`../architecture/authorization.md`](../architecture/authorization.md)
+> - Identity and principals: [`../architecture/identity-and-principals.md`](../architecture/identity-and-principals.md)
+> - HTTP API boundary: [`../architecture/api.md`](../architecture/api.md)
 > - Database roles: [`../operations/database-roles.md`](../operations/database-roles.md)
 > - Agent rules: [`../../AGENTS.md`](../../AGENTS.md)
 
@@ -121,10 +123,19 @@ For every high-risk action, test:
 - explicit allow;
 - default deny;
 - scope mismatch;
+- object relationship mismatch and BOLA attempts;
 - suspended or disabled principal;
+- human, machine, process, and delegated principal provenance;
+- stale or revoked relationship state;
+- selected RelationshipEngine timeout, outage, and unknown result fail closed;
+- native PostgreSQL and optional provider implementations satisfy the same RelationshipEngine
+  conformance behavior;
+- changing the selected RelationshipEngine does not change the public decision contract;
 - static Separation of Duties;
 - dynamic Separation of Duties;
-- explanation metadata;
+- domain policy remains outside the RelationshipEngine;
+- explanation metadata and safe denial reasons;
+- tenant isolation independent of IdP claims and tenant selectors;
 - RLS defense in depth.
 
 Frontend visibility tests do not replace server authorization tests.
@@ -169,6 +180,7 @@ For query-to-command isolation, test:
 - `429`, `503`, stale, reduced, deadline, backoff, jitter, and idempotent retry behavior;
 - shuffle-shard containment so one principal cannot route to the entire executor fleet;
 - current authorization and tenant isolation while projection state is delayed or rebuilt;
+- relationship evaluator outage, timeout, stale revision, and revocation races fail closed;
 - command success rate and p95/p99 latency staying within the reviewed objective.
 
 Record the shared dependencies and excluded failure modes in the test fixture or deployment profile.

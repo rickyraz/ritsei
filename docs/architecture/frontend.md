@@ -18,6 +18,8 @@
 >   [`../decisions/0057-define-layered-tanstack-frontend-engine-boundaries.md`](../decisions/0057-define-layered-tanstack-frontend-engine-boundaries.md)
 > - Solid compiler boundary: [`../decisions/0049-keep-solid-compiler-at-rendering-boundary.md`](../decisions/0049-keep-solid-compiler-at-rendering-boundary.md)
 > - Authorization architecture: [`./authorization.md`](./authorization.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
+> - HTTP API boundary: [`./api.md`](./api.md)
 > - Process Studio architecture: [`./process-studio.md`](./process-studio.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)
@@ -652,13 +654,17 @@ compensation, and roadmap are owned by [`process-studio.md`](./process-studio.md
 
 ## Authorization UX
 
-The frontend may hide or disable controls based on capabilities returned by the
-backend.
+The frontend may hide or disable controls based on a backend-provided permission matrix or capability
+summary. This is UX only. The backend repeats current tenant, capability, scope, object relationship,
+domain-policy, and Separation-of-Duties checks for every protected command and query.
 
-This behavior is only UX.
+The UI must not treat identity-provider organization/group claims, cached permissions, route guards,
+hidden controls, or disabled buttons as security boundaries. Tenant switching invalidates tenant-scoped
+server-state caches and must not reuse authorization results across tenants.
 
-The backend must enforce every protected command and query. Hidden controls,
-route guards, and disabled buttons are not security boundaries.
+When a denial is safe to disclose, the UI may present the typed explanation returned by the backend,
+for example an approval-limit or Separation-of-Duties reason. It must not display raw provider tuples,
+policy expressions, credentials, SQL, or sensitive object-existence signals.
 
 ## Error Model
 
@@ -666,18 +672,19 @@ The UI must distinguish:
 
 ```text
 validation failure
-authorization denial
+authentication failure (401)
+authorization denial (403)
+safe not-found (404)
 business conflict
 concurrency conflict
-not found
 network or transport failure
 unexpected defect
 ```
 
-Do not reduce all failures to a generic toast.
+Do not reduce all failures to a generic toast. A stale, unavailable, or unknown relationship decision
+is not an allow result; the UI should show a retry/unavailable state rather than inventing permission.
 
-Feature modules should map public tagged errors to specific recovery actions and
-user-facing messages.
+Feature modules should map public tagged errors to specific recovery actions and user-facing messages.
 
 ## SolidStart Exception Gate
 

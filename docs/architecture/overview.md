@@ -13,6 +13,9 @@
 > - State and consistency: [`./state-and-consistency.md`](./state-and-consistency.md)
 > - Financial ledger: [`./financial-ledger.md`](./financial-ledger.md)
 > - Frontend architecture: [`./frontend.md`](./frontend.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
+> - HTTP API boundary: [`./api.md`](./api.md)
+> - Authorization: [`./authorization.md`](./authorization.md)
 > - Design system architecture: [`./design-system.md`](./design-system.md)
 > - Process Studio architecture: [`./process-studio.md`](./process-studio.md)
 > - External integration surface: [`./integration-architecture.md`](./integration-architecture.md)
@@ -23,7 +26,11 @@
 ## System Shape
 
 ```text
-Users
+Human and machine principals
+  |
+OIDC/OAuth2 IdentityProvider (ZITADEL recommended)
+  |
+RITSEI auth boundary -> validated Principal
   |
 Edge / thin workload router
   |
@@ -43,8 +50,10 @@ WorkloadCell placement (topology-private)
                               `--> projection builders, rebuilds, and financial reconciliation
 
 PostgreSQL 19 remains canonical for non-ledger transactional domain state, metadata,
-authorization, audit, outbox, and durable work. TigerBeetle is canonical for accepted
-financial transfers, balances, and transfer history in the activated ledger profile.
+RITSEI membership and authorization facts, audit, outbox, and durable work. A replaceable
+relationship evaluator may support object checks but is not a second authorization or business
+authority. TigerBeetle is canonical for accepted financial transfers, balances, and transfer history
+in the activated ledger profile.
 ```
 
 The API, worker, event relay, and migrator remain separate processes in one application family. They
@@ -98,6 +107,23 @@ interaction occurs through typed Effect services, commands, queries, and events.
 
 A Sales operation may call `InventoryService.reserveStock` in the same
 transaction, but Sales must not import or mutate Inventory tables directly.
+
+## Identity and Authorization
+
+The configured IdentityProvider answers identity and authentication for human and machine
+principals; ZITADEL is recommended but not required. RITSEI identity maps external subjects to
+internal `UserAccount` records, while RITSEI Authorization owns tenant membership, roles,
+capabilities, grants, scopes, SoD, and final decision evidence. The precomputed permission matrix is
+the coarse gate; the replaceable RelationshipEngine uses native PostgreSQL by default and may use
+SpiceDB as an optional high-scale adapter. Domain policy and tenant isolation remain RITSEI-owned.
+
+Every protected operation follows:
+
+```text
+Identity -> Capability -> Scope -> Object Relationship -> Domain Policy -> SoD -> Audit
+```
+
+Provider outage, stale revocation, missing tenant context, or unknown relationship state fails closed.
 
 ## Consistency
 

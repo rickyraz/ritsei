@@ -17,6 +17,9 @@
 >   [`../architecture/postgresql-19-architecture.md`](../architecture/postgresql-19-architecture.md)
 > - Authorization architecture:
 >   [`../architecture/authorization.md`](../architecture/authorization.md)
+> - Identity and principals:
+>   [`../architecture/identity-and-principals.md`](../architecture/identity-and-principals.md)
+> - HTTP API boundary: [`../architecture/api.md`](../architecture/api.md)
 > - Process Studio architecture:
 >   [`../architecture/process-studio.md`](../architecture/process-studio.md)
 > - Orthogonal ERP areas:
@@ -111,7 +114,7 @@ A plugin primitive is not Process Studio-ready until it satisfies the same Level
 | Money and obligation      | Fixed two-decimal Legal Entity base-currency revenue posting and reversal                                                                         | `READY` (bounded P2 baseline)       | Tax, invoices, AP/AR, payments, FX, and settlement remain explicitly out of scope                           |
 | Financial ledger execution | ADR-0040 selects TigerBeetle for accepted transfers, balances, and immutable transfer history; PostgreSQL remains control plane | `DECIDED` (migration gated) | First activation is limited to the bounded Accounting profile and requires the financial-ledger roadmap gates |
 | Fiscal period and close   | Non-overlapping open/closed periods serialize with revenue posting                                                                                | `READY` (bounded P2 baseline)       | Reopen, adjusting periods, arbitrary posting dates, and advanced close remain out of scope                  |
-| Policy and authorization  | Capability catalog and deny-by-default checks cover current actions                                                                               | `READY` for current actions         | Add approval, override, and SoD policy only with new high-risk actions                                      |
+| Policy and authorization  | Capability catalog, permission matrix, tenant/scope checks, and deny-by-default cover current actions; relationship evaluation is a target boundary | `READY` for current actions         | Add object authorization, approval, override, and SoD policy only with owner contracts and denial proofs |
 | Business surface ergonomics | Owner-local documents and explicit actions are established; generated structural tooling is not activated | `PLANNED` | Prove Product and SalesOrder slices without a universal ORM or document kernel |
 | Audit and correlation     | Messaging envelopes preserve actor, Tenant, command, correlation, causation, idempotency, and time                                                | `READY` (bounded P3 baseline)       | Deployment retention duration and external-provider audit remain gated operational decisions                |
 | Typed actions and events  | Inventory, Sales, and Accounting publish bounded PUBLIC v1 action/event contracts; Accounting derives revenue from the confirmed Sales order fact | `READY` for selected Level 3 slices | Future Process Studio owns aggregation/release; broader domain actions remain gated by their own invariants |

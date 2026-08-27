@@ -18,6 +18,8 @@
 > - Messaging and event delivery: [`./pgque-messaging.md`](./pgque-messaging.md)
 > - External integration surface: [`./integration-architecture.md`](./integration-architecture.md)
 > - Authorization: [`./authorization.md`](./authorization.md)
+> - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
+> - HTTP API boundary: [`./api.md`](./api.md)
 > - Plugin trust: [`./plugin-architecture.md`](./plugin-architecture.md)
 > - Capability-oriented plugin contribution:
 >   [`../decisions/0023-adopt-capability-oriented-plugin-contribution.md`](../decisions/0023-adopt-capability-oriented-plugin-contribution.md)
@@ -415,7 +417,10 @@ declaration supports design-time validation and UX; the owning domain must still
 runtime invocation.
 
 A process definition cannot grant a capability to its author, publisher, participant, or runtime
-principal. Definition governance and action execution are separate authorization decisions.
+principal. Definition governance and action execution are separate authorization decisions. Object
+relationship checks, when required, are requested through the RITSEI Authorization and
+RelationshipEngine abstractions; the process runtime never calls a provider directly or treats a
+provider result as domain validity.
 
 ### Idempotency and Transaction Semantics
 
@@ -867,7 +872,9 @@ restarts. Effect fibers are not durable. The runtime uses the approved primitive
 
 The runtime invokes a Typed Action Catalog entry through its owning public domain contract.
 Authorization occurs at execution time using an explicit principal or approved service identity and
-tenant/organization scope.
+tenant/organization scope. The runtime revalidates the current RITSEI capability, scope, object
+relationship, domain policy, and Separation of Duties state immediately before invoking the owner.
+Stale or unavailable relationship evidence fails closed.
 
 The runtime does not hold one database transaction across multiple durable steps. Each domain
 command owns its local atomic transaction. Cross-step consistency uses explicit state, idempotency,

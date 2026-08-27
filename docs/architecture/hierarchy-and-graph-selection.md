@@ -7,6 +7,9 @@
 > - `ltree` notes: [`./reference/ltree-notes.md`](./reference/ltree-notes.md)
 > - SQL/PGQ use cases: [`./reference/sql-pgq-use-cases.md`](./reference/sql-pgq-use-cases.md)
 > - Selection ADR: [`../decisions/0005-use-ltree-and-sql-pgq-selectively.md`](../decisions/0005-use-ltree-and-sql-pgq-selectively.md)
+> - Authorization: [`./authorization.md`](./authorization.md)
+> - RelationshipEngine ADR:
+>   [`../decisions/0059-define-replaceable-relationship-authorization-engine.md`](../decisions/0059-define-replaceable-relationship-authorization-engine.md)
 
 ## Decision Matrix
 
@@ -18,7 +21,11 @@ ltree
 -> strict hierarchy and ancestor/descendant traversal
 
 SQL/PGQ
--> multi-edge network traversal
+-> multi-edge network traversal for domain analysis and projections
+
+RelationshipEngine
+-> native PostgreSQL relationship authorization by default
+-> optional SpiceDB adapter for high-scale relationship evaluation
 
 Application graph registry
 -> package dependencies, event topology, and blast-radius analysis
@@ -45,7 +52,10 @@ Use stable machine labels in paths. Keep human-readable names separate.
 - complex relationship graphs.
 
 A property graph is a read-oriented view over relational tables. It does not
-replace the transactional model.
+replace the transactional model. A RelationshipEngine is not a general ERP graph
+authority; its relationship result is one input to the RITSEI Authorization
+decision and never replaces tenant isolation, business policy, or SoD. Native
+PostgreSQL is the default; SpiceDB is an optional adapter.
 
 ## Hot-Path Rule
 

@@ -11,6 +11,8 @@
 > - Workload isolation: [`../architecture/workload-isolation.md`](../architecture/workload-isolation.md)
 > - Architecture enforcement: [`../architecture/architecture-enforcement.md`](../architecture/architecture-enforcement.md)
 > - Authorization architecture: [`../architecture/authorization.md`](../architecture/authorization.md)
+> - Identity and principals: [`../architecture/identity-and-principals.md`](../architecture/identity-and-principals.md)
+> - HTTP API boundary: [`../architecture/api.md`](../architecture/api.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)
 
 ## Purpose
@@ -56,8 +58,10 @@ ritsei_owner_accounting
 ritsei_owner_billing
 ritsei_owner_workflow
 ritsei_owner_integration
-ritsei_owner_audit
 ```
+
+An audit owner role is added only when a concrete audit schema and package are accepted and registered
+in `db/ownership.toml`; audit evidence does not receive speculative schema ownership.
 
 ## Hard-Isolation Role Boundaries
 
@@ -76,10 +80,14 @@ must not:
 `ritsei_query_authorizer` is optional when sensitive projection reads require current
 owner-controlled authorization. It uses a separate, bounded, read-only primary pool and may invoke
 only approved owner-controlled authorization-check contracts or functions, including the current
-scope, relationship, and SoD checks those owners require. If the required owner state is unavailable
-through that bounded path, the request is authoritative rather than hard-isolated. The role must not
-use the command pool, mutate grants, or read arbitrary domain payloads. Saturation fails the query
-path closed.
+scope, relationship, and SoD checks those owners require. The selected RelationshipEngine is reached
+only through the RITSEI Authorization abstraction and its own bounded provider budget; this database
+role never exposes provider types or turns a provider result into business authority. If the required
+owner state or relationship consistency is unavailable through that bounded path, the route is
+authoritative only when it was declared that way in its contract; it is not an outage fallback for a
+selected-engine-dependent sensitive decision. Otherwise the role fails the query path closed. It must
+not use the command pool, mutate grants, or read arbitrary domain payloads.
+Saturation fails the query path closed.
 
 `ritsei_async_worker` uses an async-specific pool and only the privileges required by registered
 PgQue consumers, job lifecycle, projection builders, workflow orchestration, and integration
@@ -312,7 +320,9 @@ Privilege tests must prove that:
 - ordinary-slot saturation still permits a bounded command connection while query and async
   connection attempts fail;
 - `superuser_reserved_connections` remains unavailable to all application roles;
-- pooled tenant and principal context cannot leak across workload roles.
+- pooled tenant and principal context cannot leak across workload roles;
+- relationship-evaluator outage, timeout, stale revocation, and unknown results fail closed for
+  sensitive queries.
 
 ## Operational Review
 
