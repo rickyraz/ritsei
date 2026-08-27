@@ -1,5 +1,16 @@
 export { ProcessCapabilities } from "./src/capabilities.ts"
 export {
+  makeProcessCatalogRegistry,
+  ProcessCatalogCapabilityKind,
+  ProcessCatalogConflict,
+  ResolveProcessCatalogInput,
+} from "./src/catalog-registry.ts"
+export type {
+  ProcessCatalogEntry,
+  ProcessCatalogRegistry,
+  ResolveProcessCatalogInput as ResolveProcessCatalogInputType,
+} from "./src/catalog-registry.ts"
+export {
   OrderCancellationCompletedEventPayload,
   OrderConfirmationCompletedEventPayload,
   OrderFulfillmentCompletedEventPayload,
