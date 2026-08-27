@@ -71,3 +71,25 @@ export class ExternalPayloadLimitExceeded
     maxPayloadBytes: PositiveInt,
     actualPayloadBytes: NonNegativeInt,
   }) {}
+
+export class ExternalConnectorNotReviewed
+  extends Schema.TaggedError<ExternalConnectorNotReviewed>()("ExternalConnectorNotReviewed", {
+    connectorId: NonEmptyString,
+    version: PositiveInt,
+  }) {}
+
+export class ExternalConnectorRetired
+  extends Schema.TaggedError<ExternalConnectorRetired>()("ExternalConnectorRetired", {
+    connectorId: NonEmptyString,
+    version: PositiveInt,
+  }) {}
+
+export class ExternalConnectorVersionConflict
+  extends Schema.TaggedError<ExternalConnectorVersionConflict>()(
+    "ExternalConnectorVersionConflict",
+    {
+      connectorId: NonEmptyString,
+      connectorVersion: PositiveInt,
+      operationVersion: PositiveInt,
+    },
+  ) {}

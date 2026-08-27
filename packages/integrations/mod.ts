@@ -20,6 +20,9 @@ export {
   ExternalActionNotAllowlisted,
   ExternalAuthorizationDenied,
   ExternalCompatibilityMismatch,
+  ExternalConnectorNotReviewed,
+  ExternalConnectorRetired,
+  ExternalConnectorVersionConflict,
   ExternalIdempotencyConflict,
   ExternalPayloadInvalid,
   ExternalPayloadLimitExceeded,
@@ -39,6 +42,16 @@ export {
   redactExternalPayload,
 } from "./src/reliability.ts"
 export type { ExternalReliabilityDecision, ExternalReliabilityInput } from "./src/reliability.ts"
+export {
+  activateExternalConnector,
+  ExternalConnectorStatus,
+  ExternalDeliveryControlKind,
+  makeDeliveryControl,
+  retireExternalConnector,
+  reviewExternalConnector,
+  validateExternalOperation,
+} from "./src/governance.ts"
+export type { ExternalConnectorDefinition, ExternalDeliveryControl } from "./src/governance.ts"
 export type {
   ExternalActionInvoker,
   ExternalConnectorRuntime,
