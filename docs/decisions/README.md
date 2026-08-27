@@ -83,5 +83,6 @@ current system; ADRs preserve decision history.
 | [`0057`](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Define layered TanStack frontend engine boundaries | Accepted |
 | [`0058`](./0058-define-provider-neutral-identity-and-authentication-boundary.md) | Define provider-neutral identity and authentication boundary; recommend ZITADEL | Accepted |
 | [`0059`](./0059-define-replaceable-relationship-authorization-engine.md) | Define replaceable relationship authorization engine; support SpiceDB | Accepted |
+| [`0060`](./0060-defer-billing-and-settlement-scope.md) | Defer Billing and settlement scope until ownership is ready | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

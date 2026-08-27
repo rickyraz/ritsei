@@ -47,21 +47,25 @@ Do not expand the runtime while the lower layers are still speculative.
 Before Process Studio 0.8 work starts, resolve:
 
 ```text
-[ ] scope, organization, party, product, UOM, location, document, quantity, money,
+[x] scope, organization, party, product, UOM, location, document, quantity, money,
     period, audit, and correlation primitives are DECIDED or explicitly out of scope
-[ ] procurement and billing ownership is clear for any purchase or payment process
-[ ] at least two existing domains can expose stable public commands
-[ ] event ownership and delivery semantics are explicit
-[ ] compensation/manual recovery metadata has an owning-domain contract
-[ ] catalog versioning and compatibility rules have an ADR or canonical rule
-[ ] workflow authorization is separate from domain action authorization
-[ ] durable engine compatibility gates remain enforced
-[ ] external action/event profile is defined separately from domain actions/events
-[ ] connector authentication, idempotency, delivery, and compensation rules are explicit
-[ ] capability release states and compatibility ranges are defined
-[ ] process promotion separates release from deployment across environments
-[ ] execution principal, delegation, SoD, and business observability are explicit
+[x] procurement and billing ownership is clear for any purchase or payment process
+[x] at least two existing domains can expose stable public commands
+[x] event ownership and delivery semantics are explicit
+[x] compensation/manual recovery metadata has an owning-domain contract
+[x] catalog versioning and compatibility rules have an ADR or canonical rule
+[x] workflow authorization is separate from domain action authorization
+[x] durable engine compatibility gates remain enforced
+[x] external action/event profile is defined separately from domain actions/events
+[x] connector authentication, idempotency, delivery, and compensation rules are explicit
+[x] capability release states and compatibility ranges are defined
+[x] process promotion separates release from deployment across environments
+[x] execution principal, delegation, SoD, and business observability are explicit
 ```
+
+Billing remains explicitly outside the current Process Studio release scope under
+[ADR-0060](../decisions/0060-defer-billing-and-settlement-scope.md); this gate does not
+claim that Billing is implemented or ready.
 
 If any item is material `UNKNOWN`, remain in the primitive/domain roadmap. External
 integration details are governed by

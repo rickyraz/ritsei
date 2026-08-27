@@ -186,7 +186,7 @@ Before Process Studio becomes a broad runtime, verify:
 [ ] each mutable fact has one semantic owner
 [ ] tenant, organization, and legal scope are explicit
 [ ] product, service, UOM, location, document, quantity, and money semantics are stable
-[ ] procurement and billing are either implemented or explicitly out of scope
+[x] procurement and billing are either implemented or explicitly out of scope
 [ ] public domain contracts expose process-safe actions/events
 [ ] capability stability/release states and compatibility ranges are explicit
 [ ] process release is separate from environment deployment

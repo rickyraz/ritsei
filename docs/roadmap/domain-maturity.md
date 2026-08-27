@@ -260,7 +260,7 @@ Do not start a broad workflow runtime until:
 ```text
 [x] at least two domains reach Level 3
 [x] procurement is no longer an empty provider if purchase workflows are in scope
-[ ] billing/accounting ownership is clear for financial workflows
+[x] billing/accounting ownership is clear for financial workflows; Billing remains explicitly out of scope under ADR-0060
 [x] all catalog actions have stable failures and authorization
 [x] events have typed schemas and correlation fields
 [x] compensation/manual recovery is explicit for committed effects
