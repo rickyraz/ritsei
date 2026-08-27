@@ -11,6 +11,27 @@ export type {
   ResolveProcessCatalogInput as ResolveProcessCatalogInputType,
 } from "./src/catalog-registry.ts"
 export {
+  makeProcessRuntime,
+  ProcessCheckpoint,
+  ProcessCheckpointInvalid,
+  ProcessDefinition,
+  ProcessDefinitionEdge,
+  ProcessDefinitionNode,
+  ProcessEnvironment,
+  ProcessNodeKind,
+  ProcessRuntimeStatus,
+  ProcessRuntimeVersionConflict,
+  ProcessStepConflict,
+  ProcessStepExecution,
+  ProcessStepStatus,
+} from "./src/runtime.ts"
+export type {
+  ProcessCheckpoint as ProcessCheckpointType,
+  ProcessDefinition as ProcessDefinitionType,
+  ProcessRuntime,
+  ProcessStepExecution as ProcessStepExecutionType,
+} from "./src/runtime.ts"
+export {
   OrderCancellationCompletedEventPayload,
   OrderConfirmationCompletedEventPayload,
   OrderFulfillmentCompletedEventPayload,
