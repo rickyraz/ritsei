@@ -5,12 +5,17 @@ export type GateRequirement = {
   readonly markers?: readonly string[]
 }
 
+export type GateCommand = {
+  readonly args: readonly string[]
+}
+
 export type Gate = {
   readonly id: string
   readonly title: string
   readonly source: string
   readonly kind: GateKind
   readonly requirements?: readonly GateRequirement[]
+  readonly commands?: readonly GateCommand[]
   readonly domain?: string
   readonly financialId?: string
   readonly dependencies?: readonly string[]
@@ -18,6 +23,7 @@ export type Gate = {
 
 const marker = (path: string, ...markers: string[]): GateRequirement => ({ path, markers })
 const file = (path: string): GateRequirement => ({ path })
+const task = (...args: string[]): GateCommand => ({ args: ["task", ...args] })
 
 export const financialGateIds = [
   "controlled_activation",
@@ -44,6 +50,13 @@ export const gates: readonly Gate[] = [
     title: "P0 scope and identity baseline",
     source: "docs/roadmap/erp-primitives.md",
     kind: "markers",
+    commands: [
+      task(
+        "test",
+        "packages/identity/tests/identity.test.ts",
+        "packages/party/tests/party.test.ts",
+      ),
+    ],
     requirements: [
       marker(
         "docs/roadmap/erp-primitives.md",
@@ -60,6 +73,7 @@ export const gates: readonly Gate[] = [
     title: "P1 product, quantity, and location baseline",
     source: "docs/roadmap/erp-primitives.md",
     kind: "markers",
+    commands: [task("test", "packages/inventory/tests/inventory.test.ts")],
     requirements: [
       marker(
         "docs/roadmap/erp-primitives.md",
@@ -76,6 +90,7 @@ export const gates: readonly Gate[] = [
     title: "P2 documents and financial semantics baseline",
     source: "docs/roadmap/erp-primitives.md",
     kind: "markers",
+    commands: [task("test", "packages/accounting/tests/accounting.test.ts")],
     requirements: [
       marker(
         "docs/roadmap/erp-primitives.md",
@@ -96,6 +111,7 @@ export const gates: readonly Gate[] = [
     title: "P3 audit, events, and integration baseline",
     source: "docs/roadmap/erp-primitives.md",
     kind: "markers",
+    commands: [task("test", "packages/catalog/tests/catalog.test.ts")],
     requirements: [
       marker(
         "docs/roadmap/erp-primitives.md",
@@ -137,6 +153,7 @@ export const gates: readonly Gate[] = [
     title: "Process Studio pre-0.8 prerequisites",
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
+    commands: [task("test:contract")],
     requirements: [
       marker(
         "docs/roadmap/process-studio.md",
@@ -156,6 +173,7 @@ export const gates: readonly Gate[] = [
         "[x] execution principal, delegation, SoD, and business observability are explicit",
       ),
       file("docs/decisions/0020-adopt-capability-release-and-runtime-governance.md"),
+      file("docs/decisions/0060-defer-billing-and-settlement-scope.md"),
     ],
   },
   {
@@ -166,13 +184,15 @@ export const gates: readonly Gate[] = [
     dependencies: ["process.pre08"],
     requirements: [
       marker(
-        "packages/process/src/catalog-registry.ts",
-        "ProcessCatalogRegistry",
+        "packages/process/src/catalog-release.ts",
+        "ProcessReleaseValidation",
         "resolveReleasedCapability",
+        "unregistered capability",
       ),
       marker(
-        "packages/process/tests/catalog-registry.test.ts",
+        "packages/process/tests/catalog-release.test.ts",
         "rejects unregistered actions",
+        "released process",
         "catalog compatibility",
       ),
     ],
@@ -185,16 +205,17 @@ export const gates: readonly Gate[] = [
     dependencies: ["process.catalog08"],
     requirements: [
       marker(
-        "packages/process/src/runtime.ts",
-        "ProcessRuntime",
-        "pinCatalogVersion",
+        "packages/process/src/runtime-store.ts",
+        "ProcessCheckpointStore",
+        "durable checkpoint",
         "recoverCheckpoint",
       ),
       marker(
-        "packages/process/tests/runtime.test.ts",
+        "packages/process/tests/runtime-postgres.test.ts",
         "crash recovery",
         "duplicate event",
         "exact catalog version",
+        "restart",
       ),
     ],
   },
@@ -206,15 +227,17 @@ export const gates: readonly Gate[] = [
     dependencies: ["process.runtime085"],
     requirements: [
       marker(
-        "packages/process/src/operations.ts",
-        "ProcessOperatorService",
+        "packages/process/src/operations-store.ts",
+        "ProcessOperatorStore",
         "manual recovery",
         "compensation",
+        "authorized operator",
       ),
       marker(
-        "packages/process/tests/operations.test.ts",
+        "packages/process/tests/operations-postgres.test.ts",
         "unknown external outcome",
         "operator control",
+        "crash recovery",
       ),
     ],
   },
@@ -229,9 +252,6 @@ export const gates: readonly Gate[] = [
         "apps/web/src/features/process-studio/",
         "process designer",
         "typed mapping",
-      ),
-      marker(
-        "apps/web/src/features/process-studio/",
         "keyboard",
         "deterministic Process IR",
       ),
@@ -245,15 +265,17 @@ export const gates: readonly Gate[] = [
     dependencies: ["process.designer095"],
     requirements: [
       marker(
-        "packages/process/src/release.ts",
+        "packages/process/src/release-store.ts",
         "immutable release",
         "deployment binding",
         "approval",
+        "audit",
       ),
       marker(
-        "packages/process/tests/release.test.ts",
+        "packages/process/tests/release-postgres.test.ts",
         "release immutability",
         "promotion audit",
+        "environment",
       ),
     ],
   },
@@ -265,16 +287,21 @@ export const gates: readonly Gate[] = [
     dependencies: ["process.pre08"],
     requirements: [
       marker(
-        "packages/integrations/src/contract.ts",
+        "packages/integrations/src/openapi.ts",
+        "OpenAPI 3.2.0",
+        "allowlist",
         "ExternalAction",
-        "ExternalEvent",
-        "CloudEvents",
-        "OpenAPI",
       ),
       marker(
-        "packages/integrations/tests/contract.test.ts",
-        "allowlisted operation",
+        "packages/integrations/src/cloudevents.ts",
+        "CloudEvents 1.0.x",
+        "ExternalEvent",
         "separate envelope",
+      ),
+      marker(
+        "packages/integrations/tests/openapi.test.ts",
+        "allowlisted operation",
+        "provider credentials",
       ),
     ],
   },
@@ -286,15 +313,23 @@ export const gates: readonly Gate[] = [
     dependencies: ["integration.contract08"],
     requirements: [
       marker(
-        "packages/integrations/src/runtime.ts",
+        "packages/integrations/src/https-runtime.ts",
+        "HTTPS",
+        "verify signature",
         "WebhookIngestion",
         "deduplicate",
-        "bounded retry",
       ),
       marker(
-        "packages/integrations/tests/runtime.test.ts",
+        "packages/integrations/src/delivery-store.ts",
+        "delivery log",
         "unknown outcome",
         "manual recovery",
+      ),
+      marker(
+        "packages/integrations/tests/https-runtime.test.ts",
+        "duplicate delivery",
+        "timeout",
+        "unknown outcome",
       ),
     ],
   },
@@ -306,15 +341,17 @@ export const gates: readonly Gate[] = [
     dependencies: ["integration.runtime085"],
     requirements: [
       marker(
-        "packages/integrations/src/reliability.ts",
+        "packages/integrations/src/reliability-store.ts",
         "dead letter",
-        "redaction",
+        "replay protection",
         "provider status",
+        "redaction",
       ),
       marker(
-        "packages/integrations/tests/reliability.test.ts",
+        "packages/integrations/tests/reliability-postgres.test.ts",
         "compatibility",
         "payload limit",
+        "health metric",
       ),
     ],
   },
@@ -326,14 +363,16 @@ export const gates: readonly Gate[] = [
     dependencies: ["integration.reliability09"],
     requirements: [
       marker(
-        "packages/integrations/src/catalog.ts",
+        "packages/integrations/src/process-bridge.ts",
         "ExternalCatalogEntry",
         "simulateWithoutSideEffect",
+        "transport absent from Process IR",
       ),
       marker(
-        "packages/integrations/tests/catalog.test.ts",
-        "transport absent from Process IR",
+        "packages/integrations/tests/process-bridge.test.ts",
         "separate OAuth scope",
+        "typed mapping",
+        "no provider side effect",
       ),
     ],
   },
@@ -345,15 +384,17 @@ export const gates: readonly Gate[] = [
     dependencies: ["integration.process095"],
     requirements: [
       marker(
-        "packages/integrations/src/governance.ts",
+        "packages/integrations/src/governance-store.ts",
         "reviewed connector",
         "connector retirement",
         "delivery controls",
+        "audit",
       ),
       marker(
-        "packages/integrations/tests/governance.test.ts",
+        "packages/integrations/tests/governance-postgres.test.ts",
         "unreviewed operation",
         "connector version",
+        "retention",
       ),
     ],
   },

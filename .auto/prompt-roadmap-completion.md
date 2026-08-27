@@ -153,3 +153,5 @@ to reduce the discard count.
   not improve the six-domain metric.
 - The current domain-maturity objective is saturated; this prompt intentionally uses a new,
   gate-based roadmap objective rather than altering that benchmark.
+- ADR-0061 corrected the gate harness after marker-only checks overclaimed Process Studio and
+  integration phases; contract kernels remain partial until durable/operational exit evidence exists.

@@ -1,4 +1,4 @@
-import { type Gate, type GateRequirement, gates } from "./registry.ts"
+import { type Gate, type GateCommand, type GateRequirement, gates } from "./registry.ts"
 
 type FinancialManifest = {
   readonly gates?: ReadonlyArray<{
@@ -52,6 +52,18 @@ const markersPass = async (requirements: readonly GateRequirement[]): Promise<bo
     const text = await readRequirement(requirement)
     if (text === undefined) return false
     if (!(requirement.markers ?? []).every((marker) => text.includes(marker))) return false
+  }
+  return true
+}
+
+const commandsPass = async (commands: readonly GateCommand[]): Promise<boolean> => {
+  for (const command of commands) {
+    const result = await new Deno.Command("deno", {
+      args: [...command.args],
+      stdout: "null",
+      stderr: "piped",
+    }).output()
+    if (result.code !== 0) return false
   }
   return true
 }
@@ -124,11 +136,19 @@ for (const gate of gates) {
     continue
   }
   if (gate.kind === "markers") {
-    const passed = dependenciesPassed && await markersPass(gate.requirements ?? [])
+    const markers = dependenciesPassed && await markersPass(gate.requirements ?? [])
+    const commands = markers && await commandsPass(gate.commands ?? [])
+    const passed = markers && commands
     results.set(gate.id, {
       gate,
       passed,
-      reason: passed ? "required evidence markers are present" : "required evidence is missing",
+      reason: !dependenciesPassed
+        ? "dependent gates remain incomplete"
+        : !markers
+        ? "required evidence is missing"
+        : !commands
+        ? "required executable checks failed"
+        : "required evidence and executable checks passed",
     })
     continue
   }
