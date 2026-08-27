@@ -49,3 +49,25 @@ export class ExternalUnknownOutcome extends Schema.TaggedError<ExternalUnknownOu
     idempotencyKey: NonEmptyString,
   },
 ) {}
+
+const PositiveInt = Schema.Int.check(Schema.isGreaterThan(0))
+const NonNegativeInt = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0))
+
+export class ExternalCompatibilityMismatch
+  extends Schema.TaggedError<ExternalCompatibilityMismatch>()(
+    "ExternalCompatibilityMismatch",
+    {
+      connectorId: NonEmptyString,
+      connectorVersion: PositiveInt,
+      minimumVersion: PositiveInt,
+      maximumVersion: PositiveInt,
+    },
+  ) {}
+
+export class ExternalPayloadLimitExceeded
+  extends Schema.TaggedError<ExternalPayloadLimitExceeded>()("ExternalPayloadLimitExceeded", {
+    connectorId: NonEmptyString,
+    operationId: NonEmptyString,
+    maxPayloadBytes: PositiveInt,
+    actualPayloadBytes: NonNegativeInt,
+  }) {}

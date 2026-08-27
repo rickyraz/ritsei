@@ -13,8 +13,10 @@ export type {
 export {
   ExternalActionNotAllowlisted,
   ExternalAuthorizationDenied,
+  ExternalCompatibilityMismatch,
   ExternalIdempotencyConflict,
   ExternalPayloadInvalid,
+  ExternalPayloadLimitExceeded,
   ExternalProviderFailure,
   ExternalUnknownOutcome,
 } from "./src/errors.ts"
@@ -24,6 +26,13 @@ export {
   makeMemoryExternalConnectorStore,
   WebhookIngestion,
 } from "./src/runtime.ts"
+export {
+  assessExternalDelivery,
+  ExternalDeliveryState,
+  ExternalProviderStatus,
+  redactExternalPayload,
+} from "./src/reliability.ts"
+export type { ExternalReliabilityDecision, ExternalReliabilityInput } from "./src/reliability.ts"
 export type {
   ExternalActionInvoker,
   ExternalConnectorRuntime,
