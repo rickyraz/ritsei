@@ -112,13 +112,13 @@ export const gates: readonly Gate[] = [
     ],
   },
   ...[
-    ["identity", "identity.user_account.create"],
-    ["party", "party.create"],
-    ["inventory", "inventory.stock.adjust"],
-    ["accounting", "accounting.revenue.post"],
-    ["sales", "sales.order.confirm"],
-    ["procurement", "procurement.purchase_order.confirm"],
-  ].map(([domain, capability]) => ({
+    "identity",
+    "party",
+    "inventory",
+    "accounting",
+    "sales",
+    "procurement",
+  ].map((domain) => ({
     id: `domain.${domain}.level3`,
     title: `${domain} bounded Level 3 provider slice`,
     source: "tooling/domain-maturity/measure.ts",
