@@ -11,6 +11,16 @@ export type {
   ResolveProcessCatalogInput as ResolveProcessCatalogInputType,
 } from "./src/catalog-registry.ts"
 export {
+  ProcessReleaseRequest,
+  ProcessReleaseValidation,
+  ProcessReleaseValidationFailed,
+  validateProcessRelease,
+} from "./src/catalog-release.ts"
+export type {
+  ProcessReleaseRequest as ProcessReleaseRequestType,
+  ProcessReleaseValidation as ProcessReleaseValidationType,
+} from "./src/catalog-release.ts"
+export {
   makeProcessRuntime,
   ProcessCheckpoint,
   ProcessCheckpointInvalid,
