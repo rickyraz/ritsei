@@ -32,6 +32,13 @@ export type {
   ProcessStepExecution as ProcessStepExecutionType,
 } from "./src/runtime.ts"
 export {
+  makeProcessOperatorService,
+  ProcessCompensationStatus,
+  ProcessOperatorAction,
+  ProcessOperatorActionUnavailable,
+} from "./src/operations.ts"
+export type { ProcessOperatorService, ProcessOperatorSnapshot } from "./src/operations.ts"
+export {
   OrderCancellationCompletedEventPayload,
   OrderConfirmationCompletedEventPayload,
   OrderFulfillmentCompletedEventPayload,

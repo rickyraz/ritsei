@@ -17,6 +17,7 @@ const checkpointInput = {
   catalogVersion: 1,
   environment: "TEST",
   status: "running",
+  failureKind: null,
   currentNodeId: "start",
   completedStepIds: [],
   stepExecutions: [],

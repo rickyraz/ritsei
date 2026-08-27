@@ -24,6 +24,13 @@ export const ProcessRuntimeStatus = Schema.Literals([
   "failed",
   "manual_recovery",
 ])
+export const ProcessFailureKind = Schema.Literals([
+  "business_failure",
+  "technical_retry",
+  "unknown_external_outcome",
+  "compensation_failure",
+])
+
 export const ProcessStepStatus = Schema.Literals([
   "command_requested",
   "command_started",
@@ -69,6 +76,7 @@ export const ProcessCheckpoint = Schema.Struct({
   catalogVersion: PositiveInt,
   environment: ProcessEnvironment,
   status: ProcessRuntimeStatus,
+  failureKind: Schema.NullOr(ProcessFailureKind),
   currentNodeId: NonEmptyString,
   completedStepIds: Schema.Array(NonEmptyString),
   stepExecutions: Schema.Array(ProcessStepExecution),
@@ -82,6 +90,7 @@ export const ProcessCheckpoint = Schema.Struct({
 export type ProcessDefinition = Schema.Schema.Type<typeof ProcessDefinition>
 export type ProcessCheckpoint = Schema.Schema.Type<typeof ProcessCheckpoint>
 export type ProcessStepExecution = Schema.Schema.Type<typeof ProcessStepExecution>
+export type ProcessFailureKind = Schema.Schema.Type<typeof ProcessFailureKind>
 
 export class ProcessCheckpointInvalid
   extends Schema.TaggedError<ProcessCheckpointInvalid>()("ProcessCheckpointInvalid", {
