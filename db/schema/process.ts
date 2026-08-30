@@ -37,6 +37,10 @@ export const processRuntimeEnvironment = processSchema.enum(
   "process_runtime_environment",
   ["DEV", "TEST", "PROD"],
 )
+export const processOperatorAction = processSchema.enum(
+  "process_operator_action",
+  ["retry", "compensate", "manual_recovery"],
+)
 
 export const jobFenceScopes = processSchema.table("job_fence_scopes", {
   tenantId: uuid("tenant_id").notNull(),
@@ -88,6 +92,32 @@ export const processRuntimeCheckpoints = processSchema.table("runtime_checkpoint
     sql`${table.executionPrincipal} ~ '[^[:space:]]'`,
   ),
   unique("runtime_checkpoints_tenant_id_id_key").on(table.tenantId, table.id),
+])
+
+export const processOperatorControls = processSchema.table("operator_controls", {
+  id: id(),
+  tenantId: uuid("tenant_id").notNull(),
+  instanceId: uuid("instance_id").notNull(),
+  action: processOperatorAction("action").notNull(),
+  idempotencyKey: text("idempotency_key").notNull(),
+  actorPrincipalId: text("actor_principal_id").notNull(),
+  reason: text("reason").notNull(),
+  createdAt: createdAt(),
+}, (table) => [
+  foreignKey({
+    columns: [table.tenantId],
+    foreignColumns: [tenants.id],
+    name: "operator_controls_tenant_id_fkey",
+  }).onDelete("cascade"),
+  foreignKey({
+    columns: [table.tenantId, table.instanceId],
+    foreignColumns: [processRuntimeCheckpoints.tenantId, processRuntimeCheckpoints.id],
+    name: "operator_controls_checkpoint_fkey",
+  }).onDelete("cascade"),
+  check("operator_controls_idempotency_key_check", sql`${table.idempotencyKey} ~ '[^[:space:]]'`),
+  check("operator_controls_actor_check", sql`${table.actorPrincipalId} ~ '[^[:space:]]'`),
+  check("operator_controls_reason_check", sql`${table.reason} ~ '[^[:space:]]'`),
+  unique("operator_controls_tenant_id_key").on(table.tenantId, table.idempotencyKey),
 ])
 
 export const workflowRuns = processSchema.table("workflow_runs", {

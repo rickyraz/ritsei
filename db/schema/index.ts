@@ -73,6 +73,8 @@ export {
   jobFenceScopes,
   processJobs,
   processJobStatus,
+  processOperatorAction,
+  processOperatorControls,
   processRuntimeCheckpoints,
   processRuntimeEnvironment,
   processRuntimeFailureKind,

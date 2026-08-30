@@ -18,6 +18,26 @@ export const ProcessCompensationStatus = Schema.Literals([
   "manual_recovery",
 ])
 
+export const ProcessOperatorControlInput = Schema.Struct({
+  tenantId: Uuid,
+  instanceId: Uuid,
+  action: ProcessOperatorAction,
+  actorPrincipalId: NonEmptyString,
+  idempotencyKey: NonEmptyString,
+  reason: NonEmptyString,
+})
+
+export type ProcessOperatorControlInput = Schema.Schema.Type<typeof ProcessOperatorControlInput>
+
+export class ProcessOperatorConflict extends Schema.TaggedError<ProcessOperatorConflict>()(
+  "ProcessOperatorConflict",
+  {
+    tenantId: Uuid,
+    instanceId: Uuid,
+    idempotencyKey: NonEmptyString,
+  },
+) {}
+
 export type ProcessOperatorSnapshot = {
   readonly instanceId: string
   readonly status: ProcessCheckpoint["status"]

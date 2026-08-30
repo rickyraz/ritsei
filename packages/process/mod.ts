@@ -49,8 +49,14 @@ export {
   ProcessCompensationStatus,
   ProcessOperatorAction,
   ProcessOperatorActionUnavailable,
+  ProcessOperatorConflict,
+  ProcessOperatorControlInput,
 } from "./src/operations.ts"
-export type { ProcessOperatorService, ProcessOperatorSnapshot } from "./src/operations.ts"
+export type {
+  ProcessOperatorControlInput as ProcessOperatorControlInputType,
+  ProcessOperatorService,
+  ProcessOperatorSnapshot,
+} from "./src/operations.ts"
 export {
   makeMemoryProcessCheckpointStore,
   makePostgresProcessCheckpointStore,
@@ -58,6 +64,15 @@ export {
   ProcessCheckpointStore,
 } from "./src/runtime-store.ts"
 export type { ProcessCheckpointStore as ProcessCheckpointStoreShape } from "./src/runtime-store.ts"
+export {
+  makeMemoryProcessOperatorStore,
+  makePostgresProcessOperatorStore,
+  ProcessOperatorStore,
+} from "./src/operations-store.ts"
+export type {
+  ProcessOperatorControl,
+  ProcessOperatorStore as ProcessOperatorStoreShape,
+} from "./src/operations-store.ts"
 export {
   OrderCancellationCompletedEventPayload,
   OrderConfirmationCompletedEventPayload,
@@ -123,6 +138,8 @@ export type {
 } from "./src/service.ts"
 export {
   ProcessLive,
+  ProcessOperatorMemoryLive,
+  ProcessOperatorPostgresLive,
   ProcessPostgresLive,
   ProcessRuntimeMemoryLive,
   ProcessRuntimePostgresLive,
