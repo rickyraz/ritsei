@@ -1,0 +1,257 @@
+{
+  "finding_counts": {
+    "apps/api/mod.test.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      }
+    },
+    "apps/runtime-config.ts": {
+      "crap_moderate": {
+        "count": 2
+      }
+    },
+    "apps/web/src/features/process-studio/designer-model.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      }
+    },
+    "apps/web/src/features/process-studio/designer.ts": {
+      "crap_moderate": {
+        "count": 3
+      }
+    },
+    "apps/worker/runner.ts": {
+      "crap_high": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/accounting/src/contract.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/accounting/src/financial-ledger.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      }
+    },
+    "packages/accounting/src/financial-operations.ts": {
+      "complexity_critical": {
+        "count": 6
+      },
+      "crap_critical": {
+        "count": 6
+      },
+      "crap_high": {
+        "count": 3
+      },
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/accounting/src/financial-readiness.ts": {
+      "complexity_high": {
+        "count": 1
+      },
+      "complexity_moderate": {
+        "count": 1
+      }
+    },
+    "packages/accounting/src/memory.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      }
+    },
+    "packages/accounting/src/postgres.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/accounting/src/postgresql-ledger.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "complexity_high": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      },
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "packages/accounting/tests/accounting.postgres.test.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/accounting/tests/financial-operations.postgres.test.ts": {
+      "crap_critical": {
+        "count": 1
+      }
+    },
+    "packages/inventory/src/contract.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/inventory/src/memory.ts": {
+      "crap_high": {
+        "count": 2
+      },
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/inventory/src/postgres.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/kernel/src/migrations.ts": {
+      "complexity_high": {
+        "count": 1
+      }
+    },
+    "packages/kernel/src/tigerbeetle.ts": {
+      "crap_high": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 5
+      }
+    },
+    "packages/kernel/tests/tigerbeetle.test.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/process/src/postgres.ts": {
+      "crap_high": {
+        "count": 4
+      },
+      "crap_moderate": {
+        "count": 4
+      }
+    },
+    "packages/process/src/runtime-store.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/process/tests/order-confirmation.postgres.test.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "packages/procurement/src/memory.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "packages/procurement/src/postgres.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/procurement/tests/procurement.postgres.test.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "packages/sales/tests/sales.postgres.test.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "tooling/affected-check.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "tooling/boundary-linter/check-ownership.ts": {
+      "complexity_high": {
+        "count": 1
+      },
+      "complexity_moderate": {
+        "count": 1
+      },
+      "crap_high": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "tooling/call-graph/check.ts": {
+      "complexity_high": {
+        "count": 1
+      },
+      "complexity_moderate": {
+        "count": 1
+      }
+    },
+    "tooling/capabilities/check.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "tooling/domain-maturity/measure.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "tooling/roadmap-completion/measure.ts": {
+      "crap_critical": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 2
+      }
+    },
+    "tooling/uuid-policy/check.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    }
+  },
+  "runtime_coverage_findings": [],
+  "target_keys": [
+    "apps/runtime-config.ts:dead code",
+    "apps/api/bootstrap.ts:dead code",
+    "apps/api/handlers.ts:dead code",
+    "packages/accounting/src/financial-operations.ts:complexity",
+    "apps/web/src/features/process-studio/designer-model.ts:complexity",
+    "tooling/boundary-linter/check-ownership.ts:untested risk",
+    "packages/kernel/src/migrations.ts:complexity",
+    "packages/accounting/src/financial-readiness.ts:complexity"
+  ]
+}

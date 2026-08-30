@@ -1,3 +1,4 @@
+import { collectSourceFiles } from "../source-files.ts"
 import { type Gate, type GateCommand, type GateRequirement, gates } from "./registry.ts"
 
 type FinancialManifest = {
@@ -29,19 +30,8 @@ const readRequirement = async (requirement: GateRequirement): Promise<string | u
     if (info.isFile) return await Deno.readTextFile(requirement.path)
     if (!info.isDirectory) return undefined
 
-    const chunks: string[] = []
-    const visit = async (path: string): Promise<void> => {
-      for await (const entry of Deno.readDir(path)) {
-        const child = `${path}/${entry.name}`
-        if (entry.isDirectory) await visit(child)
-        else if (entry.isFile) {
-          const text = await readText(child)
-          if (text !== undefined) chunks.push(text)
-        }
-      }
-    }
-    await visit(requirement.path)
-    return chunks.join("\n")
+    const files = await collectSourceFiles(requirement.path)
+    return files.map(({ source }) => source).join("\n")
   } catch {
     return undefined
   }

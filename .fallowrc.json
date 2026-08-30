@@ -1,0 +1,141 @@
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  "entry": [
+    "apps/api/mod.ts",
+    "apps/migrate/mod.ts",
+    "apps/migrate/p0-backfill.ts",
+    "apps/worker/mod.ts",
+    "apps/web/src/features/process-studio/index.ts",
+    "apps/**/*.test.ts",
+    "apps/**/*.test.tsx",
+    "packages/*/mod.ts",
+    "packages/**/*.test.ts",
+    "packages/**/*.test.tsx",
+    "tests/**/*.test.ts",
+    "tests/**/*.test.tsx",
+    "tooling/**/*.ts",
+    "db/schema/index.ts",
+    "drizzle.config.ts"
+  ],
+  "ignorePatterns": [
+    "vendor/**",
+    "db/migrations/**",
+    "**/*.d.ts",
+    ".auto/**"
+  ],
+  "ignoreDependencies": [
+    "@effect/platform-node-shared",
+    "@effect/sql-pg",
+    "@std/fs",
+    "@std/media-types",
+    "@std/streams"
+  ],
+  "rulePacks": ["./rule-packs/ritsei-static-policy.json"],
+  "rules": {
+    "policy-violation": "error"
+  },
+  "audit": {
+    "gate": "all",
+    "css": false,
+    "cssDeep": false,
+    "deadCodeBaseline": "fallow-baselines/dead-code.json",
+    "healthBaseline": "fallow-baselines/health.json",
+    "dupesBaseline": "fallow-baselines/dupes.json"
+  },
+  "boundaries": {
+    "zones": [
+      {
+        "name": "tests",
+        "patterns": [
+          "tests/**",
+          "apps/**/*.test.ts",
+          "apps/**/*.test.tsx",
+          "packages/**/*.test.ts",
+          "packages/**/*.test.tsx"
+        ]
+      },
+      {
+        "name": "configs",
+        "patterns": ["*.config.ts"]
+      },
+      {
+        "name": "apps-web",
+        "patterns": ["apps/web/**"]
+      },
+      {
+        "name": "apps-adapters",
+        "patterns": ["apps/adapters/**"]
+      },
+      {
+        "name": "apps",
+        "patterns": ["apps/**"]
+      },
+      {
+        "name": "packages-kernel",
+        "patterns": ["packages/kernel/**"]
+      },
+      {
+        "name": "packages",
+        "patterns": ["packages/**"]
+      },
+      {
+        "name": "database",
+        "patterns": ["db/**"]
+      },
+      {
+        "name": "tooling",
+        "patterns": ["tooling/**"]
+      }
+    ],
+    "rules": [
+      {
+        "from": "tests",
+        "allow": [
+          "apps",
+          "apps-web",
+          "apps-adapters",
+          "packages-kernel",
+          "packages",
+          "database",
+          "tooling",
+          "configs"
+        ]
+      },
+      {
+        "from": "configs",
+        "allow": ["tooling"]
+      },
+      {
+        "from": "apps-web",
+        "allow": ["packages-kernel", "packages"]
+      },
+      {
+        "from": "apps-adapters",
+        "allow": ["apps", "packages-kernel", "packages"]
+      },
+      {
+        "from": "apps",
+        "allow": ["apps-adapters", "packages-kernel", "packages", "tooling"]
+      },
+      {
+        "from": "packages-kernel",
+        "allow": ["packages-kernel"]
+      },
+      {
+        "from": "packages",
+        "allow": ["packages-kernel", "packages", "database"]
+      },
+      {
+        "from": "database",
+        "allow": ["database"]
+      },
+      {
+        "from": "tooling",
+        "allow": ["tooling", "packages-kernel", "packages", "database"]
+      }
+    ],
+    "coverage": {
+      "requireAllFiles": true
+    }
+  }
+}

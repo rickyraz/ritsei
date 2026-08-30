@@ -75,6 +75,8 @@ When `domain_level3_capabilities` equals the six eligible targets and `remaining
 - Preserve existing public HTTP behavior unless an endpoint is explicitly needed for the selected
   bounded capability.
 - Do not use benchmark-only branches, hard-coded metric overrides, or documentation-only claims.
+- Run `deno task fallow:audit` through the repository checks and treat Fallow as a validation signal,
+  not as a metric or a reason to weaken domain boundaries.
 
 ## What's Been Tried
 

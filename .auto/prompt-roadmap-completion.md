@@ -128,6 +128,9 @@ and request a new approved objective instead.
 - Do not add dependencies without a documented reason and the required manifest/lockfile update.
 - TypeScript tests use `@effect/vitest`; use `it.effect` for Effects; never use direct Vitest APIs,
   `Deno.test`, `Effect.runPromise`, or `Effect.runSync` in tests.
+- Run `deno task fallow:audit` through the repository checks. Use the full or focused Fallow tasks
+  to review dead code, duplication, complexity, and generic boundaries; do not weaken Fallow or
+  count its findings as roadmap progress.
 - Do not expose raw SQL, driver errors, credentials, provider topology, or infrastructure failures
   through public domain contracts or API responses.
 - Do not start Process Studio runtime/designer work before its documented dependency gates pass.

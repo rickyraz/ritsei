@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "name": "ritsei-static",
+  "description": "RITSEI static rules that are independent of schema and financial ownership.",
+  "rules": [
+    {
+      "id": "no-effect-v3-api",
+      "kind": "banned-call",
+      "callees": [
+        "Context.Tag",
+        "Context.GenericTag",
+        "Effect.Tag",
+        "Effect.Service",
+        "Effect.catchAll",
+        "Effect.catchAllCause",
+        "Effect.catchSome",
+        "Effect.fork",
+        "Runtime.runFork",
+        "Scope.extend",
+        "Schema.transform",
+        "Either.*",
+        "Mailbox.*"
+      ],
+      "files": [
+        "apps/**/*.ts",
+        "apps/**/*.tsx",
+        "packages/**/*.ts",
+        "packages/**/*.tsx",
+        "tests/**/*.ts",
+        "tests/**/*.tsx",
+        "tooling/**/*.ts",
+        "tooling/**/*.tsx"
+      ],
+      "message": "Use the Effect v4 API documented by the vendored Effect reference.",
+      "severity": "error"
+    },
+    {
+      "id": "no-direct-vitest-import",
+      "kind": "banned-import",
+      "specifiers": ["vitest"],
+      "files": [
+        "apps/**/*.test.ts",
+        "apps/**/*.test.tsx",
+        "packages/**/*.test.ts",
+        "packages/**/*.test.tsx",
+        "tests/**/*.test.ts",
+        "tests/**/*.test.tsx"
+      ],
+      "message": "Import test APIs from @effect/vitest, not vitest directly.",
+      "severity": "error"
+    },
+    {
+      "id": "no-deno-test",
+      "kind": "banned-call",
+      "callees": ["Deno.test"],
+      "files": [
+        "apps/**/*.test.ts",
+        "apps/**/*.test.tsx",
+        "packages/**/*.test.ts",
+        "packages/**/*.test.tsx",
+        "tests/**/*.test.ts",
+        "tests/**/*.test.tsx"
+      ],
+      "message": "Use @effect/vitest instead of Deno.test.",
+      "severity": "error"
+    },
+    {
+      "id": "no-effect-runtime-runner-in-tests",
+      "kind": "banned-call",
+      "callees": ["Effect.runPromise", "Effect.runSync"],
+      "files": [
+        "apps/**/*.test.ts",
+        "apps/**/*.test.tsx",
+        "packages/**/*.test.ts",
+        "packages/**/*.test.tsx",
+        "tests/**/*.test.ts",
+        "tests/**/*.test.tsx"
+      ],
+      "message": "Return Effects to @effect/vitest instead of running them inside tests.",
+      "severity": "error"
+    },
+    {
+      "id": "no-frontend-backend-dependency",
+      "kind": "banned-import",
+      "specifiers": [
+        "../db",
+        "../../db",
+        "../../../db",
+        "../../../../db",
+        "../../../../../db",
+        "apps/api",
+        "apps/event-relay",
+        "apps/migrate",
+        "apps/worker",
+        "db",
+        "drizzle-orm",
+        "postgres"
+      ],
+      "files": ["apps/web/**"],
+      "message": "Frontend code must use public application contracts, not backend persistence dependencies.",
+      "severity": "error"
+    }
+  ]
+}

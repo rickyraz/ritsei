@@ -513,6 +513,27 @@ compensation, static validation, designer, monitor, or inbox behavior, read
 - Do not activate `pg_durable` before the existing compatibility and production
   gates pass.
 
+## Fallow Static Analysis
+
+Fallow is the generic repository-wide graph and entropy check. It complements, rather than
+replaces, RITSEI-specific ownership, financial, authorization, Effect, migration, and workload
+checks.
+
+- Use `deno task fallow` for a full dead-code, duplication, and health scan.
+- Use `deno task fallow:dead-code`, `deno task fallow:dupes`, `deno task fallow:health`, and
+  `deno task fallow:boundaries` for focused analysis.
+- Use `deno task fallow:audit` as the baseline-backed changed-set gate before commit; it intentionally
+  uses Fallow's `all` gate, and its committed baselines are a temporary migration ledger, not permission
+  to add more debt.
+- Agents should request `--format json --quiet` when parsing Fallow output and run
+  `deno task fallow:fix:dry-run` before considering any automatic cleanup.
+- Never apply Fallow fixes blindly to Accounting, the financial ledger, Process Runtime,
+  authorization, migrations, or other invariant-sensitive code. Trace and review the finding first.
+- Keep exceptions narrow and reasoned. Do not weaken boundaries, thresholds, entry points, or
+  baselines just to make a run green.
+- `vendor/`, migration artifacts, generated declarations, and `.auto/` remain outside Fallow's
+  application analysis; do not add them as entries or zones.
+
 ## Authorization and Security
 
 - Deny by default.
@@ -610,6 +631,7 @@ deno task check
 deno task check:affected
 deno task boundary:test
 deno task boundary:lint
+deno task fallow:audit
 ```
 
 There is no build command yet because the application executables and frontend

@@ -6,3 +6,4 @@ rtk deno task check >/dev/null
 rtk deno task boundary:test >/dev/null
 rtk deno task boundary:lint >/dev/null
 rtk deno task check:affected >/dev/null
+rtk deno task fallow:audit >/dev/null

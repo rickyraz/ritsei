@@ -85,5 +85,6 @@ current system; ADRs preserve decision history.
 | [`0059`](./0059-define-replaceable-relationship-authorization-engine.md) | Define replaceable relationship authorization engine; support SpiceDB | Accepted |
 | [`0060`](./0060-defer-billing-and-settlement-scope.md) | Defer Billing and settlement scope until ownership is ready | Accepted |
 | [`0061`](./0061-correct-roadmap-gate-granularity.md) | Require executable evidence for roadmap gate completion | Accepted |
+| [`0062`](./0062-adopt-fallow-for-generic-static-analysis.md) | Adopt Fallow for generic static analysis | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

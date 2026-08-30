@@ -89,10 +89,15 @@ deno task migrate
 deno task check:affected
 deno task boundary:test
 deno task boundary:lint
+deno task fallow:audit
 ```
 
 `deno task check:affected` runs only checks and tests affected by the current
 worktree diff. Use `deno task test` for the full suite in CI or before release.
+
+Fallow supplies generic dead-code, duplication, health, and boundary analysis:
+use `deno task fallow` for the full scan, focused `deno task fallow:*` tasks for
+review, and `deno task fallow:audit` for the baseline-backed changed-set gate.
 
 `deno task db:generate`, `deno task db:check`, and `deno task migrate` use the
 pinned Drizzle migration workflow and require `DATABASE_URL`, either directly

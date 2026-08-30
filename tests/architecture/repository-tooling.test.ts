@@ -6,7 +6,7 @@ import {
   extractImportedBindings,
 } from "../../tooling/call-graph/check.ts"
 import { validateSkillDocument } from "../../tooling/check-agent-skills.ts"
-import { analyzePackageDependencies } from "../../tooling/dependency-graph/check.ts"
+import { analyzePublicPackageImports } from "../../tooling/public-contract/check.ts"
 
 const skillHeadings = [
   "# Purpose",
@@ -50,22 +50,17 @@ describe("repository tooling", () => {
     )
   })
 
-  it("rejects cross-package internals and dependency cycles", () => {
-    const failures = analyzePackageDependencies([
+  it("rejects cross-package imports outside public entry points", () => {
+    const failures = analyzePublicPackageImports([
       { path: "packages/a/mod.ts", source: 'export { A } from "./src/service.ts"' },
       {
         path: "packages/a/src/service.ts",
         source: 'import { B } from "../../b/src/service.ts"',
       },
       { path: "packages/b/mod.ts", source: 'export { B } from "./src/service.ts"' },
-      {
-        path: "packages/b/src/service.ts",
-        source: 'import { A } from "../../a/mod.ts"',
-      },
     ], ["a", "b"])
 
     assert.isTrue(failures.some((failure) => failure.includes("must use packages/b/mod.ts")))
-    assert.isTrue(failures.some((failure) => failure.includes("a -> b -> a")))
   })
 
   it("tracks direct local and public calls", () => {

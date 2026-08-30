@@ -1,11 +1,8 @@
+import { collectSourceFiles, type SourceFile } from "../source-files.ts"
+
 export interface ByteRange {
   readonly start: number
   readonly end: number
-}
-
-export interface SourceFile {
-  readonly path: string
-  readonly source: string
 }
 
 export interface OutlineItem {
@@ -269,21 +266,6 @@ export const buildCallGraph = (
   }
 }
 
-const collectSourceFiles = async (directory: string): Promise<SourceFile[]> => {
-  const files: SourceFile[] = []
-  const visit = async (path: string): Promise<void> => {
-    for await (const entry of Deno.readDir(path)) {
-      const child = `${path}/${entry.name}`
-      if (entry.isDirectory) await visit(child)
-      else if (entry.isFile && /\.tsx?$/.test(entry.name)) {
-        files.push({ path: normalizePath(child), source: await Deno.readTextFile(child) })
-      }
-    }
-  }
-  await visit(directory)
-  return files
-}
-
 const runAstGrep = async (args: readonly string[]) => {
   const result = await new Deno.Command("ast-grep", {
     args: [...args, "--color=never"],
@@ -314,7 +296,9 @@ const loadPublicExports = async (packages: readonly string[]) => {
 }
 
 export const checkCallGraph = async (): Promise<CallGraphResult> => {
-  const sources = (await Promise.all(sourceRoots.map(collectSourceFiles))).flat()
+  const sources = (await Promise.all(
+    sourceRoots.map((root) => collectSourceFiles(root, [".ts", ".tsx"])),
+  )).flat()
   const paths = [...sourceRoots]
   const outlineOutput = await runAstGrep([
     "outline",

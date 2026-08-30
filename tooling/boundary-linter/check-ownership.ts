@@ -1,3 +1,5 @@
+import { collectSourceFiles } from "../source-files.ts"
+
 const ownershipFile = "db/ownership.toml"
 
 const parseOwnership = (content: string) => {
@@ -87,23 +89,6 @@ export const checkOwnership = async (): Promise<readonly string[]> => {
 
   await checkMigrations("db/migrations")
 
-  const readTypeScriptFiles = async (directory: string): Promise<readonly string[]> => {
-    const files: string[] = []
-    const visit = async (path: string): Promise<void> => {
-      for await (const entry of Deno.readDir(path)) {
-        const child = `${path}/${entry.name}`
-        if (entry.isDirectory) await visit(child)
-        else if (entry.isFile && entry.name.endsWith(".ts")) files.push(child)
-      }
-    }
-    try {
-      await visit(directory)
-    } catch (cause) {
-      if (!(cause instanceof Deno.errors.NotFound)) throw cause
-    }
-    return files
-  }
-
   const sourceOwner = (path: string): string | undefined => {
     const packageName = path.match(/^packages\/([^/]+)\/src\//)?.[1]
     return packageName === undefined ? undefined : `packages/${packageName}`
@@ -112,8 +97,7 @@ export const checkOwnership = async (): Promise<readonly string[]> => {
   const isKernelSchemaTest = (path: string) => path.startsWith("packages/kernel/tests/")
 
   for (const root of ["apps", "packages", "tests", "tooling"] as const) {
-    for (const path of await readTypeScriptFiles(root)) {
-      const source = await Deno.readTextFile(path)
+    for (const { path, source } of await collectSourceFiles(root, [".ts"])) {
       for (const match of source.matchAll(/db\/schema\/([A-Za-z_][A-Za-z0-9_-]*)\.ts/g)) {
         const importedSchema = match[1]!
         const importedOwner = schemas.get(importedSchema)

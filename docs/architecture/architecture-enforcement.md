@@ -117,13 +117,24 @@ import { InventoryService } from "@ritsei/inventory"
 
 The current scaffold enforces these checks with:
 
-- `ast-grep` project config: [`../../sgconfig.yml`](../../sgconfig.yml);
-- structural rules: [`../../tooling/boundary-linter/rules/`](../../tooling/boundary-linter/rules/);
-- rule tests: [`../../tooling/boundary-linter/rule-tests/`](../../tooling/boundary-linter/rule-tests/);
-- package-entrypoint and cycle validation:
-  [`../../tooling/dependency-graph/check.ts`](../../tooling/dependency-graph/check.ts);
+- generic repository graph analysis in Fallow, configured by
+  [`../../.fallowrc.json`](../../.fallowrc.json) and its
+  [`../../rule-packs/ritsei-static-policy.json`](../../rule-packs/ritsei-static-policy.json);
+- Fallow boundary, circular-dependency, dead-code, duplication, and health tasks through
+  `deno task fallow:*`;
+- the remaining `ast-grep` structural rule and tests in
+  [`../../sgconfig.yml`](../../sgconfig.yml) and
+  [`../../tooling/boundary-linter/`](../../tooling/boundary-linter/);
+- RITSEI-specific schema ownership and migration validation:
+  [`../../tooling/boundary-linter/check-ownership.ts`](../../tooling/boundary-linter/check-ownership.ts);
+- RITSEI-specific public package-entrypoint validation:
+  [`../../tooling/public-contract/check.ts`](../../tooling/public-contract/check.ts);
 - conservative public call-graph validation:
   [`../../tooling/call-graph/check.ts`](../../tooling/call-graph/check.ts).
+
+Fallow is a generic static-analysis engine, not an authority for schema ownership, SQL and
+migration semantics, financial-ledger behavior, authorization policy, Effect-specific contracts, or
+workload isolation. Those RITSEI checks remain owner-controlled.
 
 ## Schema Ownership
 
@@ -209,28 +220,20 @@ decision.
 
 ## Dependency-Cycle Detection
 
-The package dependency graph must remain acyclic unless a documented framework
-edge is explicitly exempted.
+The package and module graphs must remain acyclic unless a documented framework edge is explicitly
+exempted. Fallow owns generic circular-dependency and re-export-cycle detection and reports the
+files and import paths involved.
 
-The checker must report:
+Run it with:
 
-- the full cycle;
-- the import path creating each edge;
-- the public contract that should replace the internal dependency.
-
-Example invalid cycle:
-
-```text
-sales
-  -> inventory
-  -> accounting
-  -> sales
+```sh
+deno task fallow:dead-code
+deno task fallow:boundaries
 ```
 
-A typical correction is to extract a stable contract or invert one dependency
-through an Effect service interface. The active checker is
-[`../../tooling/dependency-graph/check.ts`](../../tooling/dependency-graph/check.ts)
-and runs through `deno task boundary:lint` locally and in CI.
+`deno task boundary:lint` includes the focused Fallow boundary check. RITSEI's public package
+entrypoint rule remains separate because it proves the stronger requirement that cross-package
+imports resolve through `mod.ts`, not merely that their zones are allowed.
 
 ## Public Call Graph
 
@@ -296,10 +299,9 @@ Permanent undocumented allowlists are forbidden.
 The default branch must reject changes when any of these fail:
 
 ```text
-package-boundary validation
-forbidden-import detection
-public call-graph validation
-dependency-cycle detection
+Fallow generic graph, boundary, dead-code, and policy validation
+RITSEI public package-entrypoint validation
+conservative public call-graph validation
 schema-ownership validation
 Drizzle migration-graph validation
 Effect-native HTTP validation
@@ -314,7 +316,7 @@ workload-metadata and topology-leak validation when implemented
 tooling/
 ├── boundary-linter/
 ├── call-graph/
-├── dependency-graph/
+├── public-contract/
 └── schema-ownership-check/
 
 tests/
