@@ -1,3 +1,8 @@
+import type {
+  ProcessPackCapabilityReferenceType,
+  ProcessPackCapabilityResolutionType,
+  ProcessPackType,
+} from "../../../../../packages/process/mod.ts"
 import {
   applyDesignerAction,
   type DesignerModel,
@@ -23,7 +28,7 @@ export const ProcessStudioLaneLabels: Readonly<Record<ProcessStudioLane, string>
 export const ProcessStudioLaneDescriptions: Readonly<Record<ProcessStudioLane, string>> = {
   copilot_draft: "Draft-only assistance; no provider execution.",
   bounded_execution: "Allowlisted actions with review and runtime gates.",
-  templates: "Curated business patterns remain editable drafts.",
+  templates: "Curated packs and business patterns remain editable drafts.",
 }
 
 export const ProcessDraftSources = ["human", "copilot", "template"] as const
@@ -52,6 +57,9 @@ export type ProcessStudioTemplate = {
   readonly description: string
   readonly model: DesignerModel
 }
+
+export type ProcessStudioPack = ProcessPackType
+export type ProcessStudioPackResolution = ProcessPackCapabilityResolutionType
 
 const withCapability = (
   model: DesignerModel,
@@ -102,6 +110,56 @@ export const ProcessStudioTemplates: readonly ProcessStudioTemplate[] = [
 
 export const getProcessStudioTemplate = (id: string): DesignerModel | undefined =>
   ProcessStudioTemplates.find((template) => template.id === id)?.model
+
+export const ProcessStudioPacks: readonly ProcessStudioPack[] = [{
+  id: "distribution.starter",
+  version: 1,
+  stability: "EXPERIMENTAL",
+  profileId: "distribution",
+  name: "Distribution starter pack",
+  description: "Curated process drafts for a distribution company.",
+  processTemplateIds: ["order-confirmation", "stock-correction", "revenue-posting"],
+  requiredCapabilities: [
+    { kind: "DomainAction", id: "sales.order.confirm", version: 1 },
+    { kind: "DomainAction", id: "inventory.stock.adjust", version: 1 },
+    { kind: "DomainAction", id: "accounting.revenue.post", version: 1 },
+  ],
+  optionalCapabilities: [],
+  decisions: [],
+  forms: [],
+  configuration: [],
+  recommendedPolicies: [],
+  projections: [],
+  documentation: [{
+    id: "distribution.starter.overview",
+    version: 1,
+    title: "Distribution starter guide",
+    description: "Configure, validate, approve, and release the included drafts.",
+  }],
+}]
+
+export const getProcessStudioPack = (id: string): ProcessStudioPack | undefined =>
+  ProcessStudioPacks.find((pack) => pack.id === id)
+
+const sameCapability = (
+  left: ProcessPackCapabilityReferenceType,
+  right: ProcessPackCapabilityReferenceType,
+): boolean => left.kind === right.kind && left.id === right.id && left.version === right.version
+
+export const resolveProcessStudioPackCapabilities = (
+  pack: ProcessStudioPack,
+  available: readonly ProcessPackCapabilityReferenceType[],
+): ProcessStudioPackResolution => {
+  const missingRequiredCapabilities = pack.requiredCapabilities.filter(
+    (required) => !available.some((candidate) => sameCapability(required, candidate)),
+  )
+  return {
+    packId: pack.id,
+    packVersion: pack.version,
+    status: missingRequiredCapabilities.length === 0 ? "ready" : "missing_required_capabilities",
+    missingRequiredCapabilities,
+  }
+}
 
 export const makeProcessStudioDraft = (
   model: DesignerModel,

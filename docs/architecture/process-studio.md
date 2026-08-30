@@ -8,7 +8,8 @@
 >
 > **Implementation status:** The contract-only catalog protocol, bounded Level 3 Inventory and Sales
 > action slices, an Accounting PUBLIC event contributor, deterministic Process IR, release/runtime
-> governance slices, and an accessible structured designer are implemented. Broad catalog-driven
+> governance slices, an accessible structured designer, and an experimental Process Pack
+> manifest/resolver are implemented. Broad catalog-driven
 > execution and operational scale remain staged behind the roadmap gates. AI-assisted modeling and
 > recommendations remain non-authoritative and are governed by
 > [ADR-0063](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md).
@@ -363,6 +364,39 @@ These are product modes, not principals or capabilities. A template or AI origin
 it cannot elevate authorization. A bounded action that becomes high risk still requires explicit
 human approval, and every accepted proposal re-enters the normal deterministic runtime and owning
 public command.
+
+### Process Packs
+
+A **Process Pack** is the distribution unit for governed business knowledge. It is not a semantic
+owner or a snapshot of private implementation. A pack may carry references to:
+
+- versioned process templates;
+- typed decisions, forms, and configuration contracts;
+- recommended policies;
+- analytic projections or dashboards; and
+- user-facing documentation.
+
+It also declares required and optional exact catalog capability references. Pack installation is a
+resolution step, not a mutation step:
+
+```text
+Process Pack
+    -> exact capability resolution
+    -> explain missing required capabilities
+    -> create ordinary DRAFT definitions
+    -> configure and statically validate
+    -> normal approval, release, and deployment
+```
+
+Resolution checks exact `kind`, `id`, and `version` references. Release validation still enforces
+catalog stability, compatibility, tenant scope, authorization, and the owning domain contracts.
+Packs never carry tables, repositories, SQL, UI-specific business semantics, capability grants, or
+authority to approve or execute. A business profile may recommend packs, but it does not change
+those rules.
+
+The current product slice contains an experimental Distribution starter pack with three editable
+process drafts and a guide. Its non-process asset collections remain empty until owner contracts
+exist; no pack persistence, installation mutation, or automatic release is implied.
 
 ## Typed Action Catalog
 

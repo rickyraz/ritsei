@@ -1,5 +1,20 @@
 export { ProcessCapabilities } from "./src/capabilities.ts"
 export {
+  ProcessPack,
+  ProcessPackAsset,
+  ProcessPackCapabilityReference,
+  ProcessPackCapabilityResolution,
+  ProcessPackStability,
+  resolveProcessPackCapabilities,
+} from "./src/packs.ts"
+export type {
+  ProcessPack as ProcessPackType,
+  ProcessPackAsset as ProcessPackAssetType,
+  ProcessPackCapabilityReference as ProcessPackCapabilityReferenceType,
+  ProcessPackCapabilityResolution as ProcessPackCapabilityResolutionType,
+  ProcessPackStability as ProcessPackStabilityType,
+} from "./src/packs.ts"
+export {
   makeProcessCatalogRegistry,
   ProcessCatalogCapabilityKind,
   ProcessCatalogConflict,

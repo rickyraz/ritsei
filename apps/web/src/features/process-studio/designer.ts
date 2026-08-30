@@ -23,6 +23,7 @@ import {
   ProcessStudioLaneDescriptions,
   ProcessStudioLaneLabels,
   ProcessStudioLanes,
+  ProcessStudioPacks,
   ProcessStudioTemplates,
   serializeProcessStudioDraft,
 } from "./product-surface.ts"
@@ -59,7 +60,7 @@ const ensureStyle = (): void => {
 .ritsei-process-designer .eyebrow{color:#d8f34f;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.ritsei-process-designer .subtitle{color:#cad3df;margin-top:5px}
 .ritsei-process-designer .badge{background:#d8f34f;border-radius:999px;color:#172033;font-size:11px;font-weight:800;padding:5px 9px}.ritsei-process-designer .grid{display:grid;grid-template-columns:190px minmax(280px,1fr) 280px;min-height:450px}
 .ritsei-process-designer aside,.ritsei-process-designer main{padding:20px}.ritsei-process-designer aside{border-right:1px solid #d6cfc1}.ritsei-process-designer aside:last-child{border-left:1px solid #d6cfc1;border-right:0}.ritsei-process-designer .palette,.ritsei-process-designer .nodes,.ritsei-process-designer .inspector,.ritsei-process-designer .inspector-fields{display:grid;gap:9px}.ritsei-process-designer .palette{margin-top:14px}.ritsei-process-designer .palette button{border-left:4px solid #5b3cc4}
-.ritsei-process-designer nav{background:#fffdf8;border-bottom:1px solid #d6cfc1;display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px}.ritsei-process-designer nav button[aria-pressed="true"]{background:#172033;color:#fffdf8}.ritsei-process-designer .lane-status{color:#596273;font-size:13px;padding:0 20px 12px}.ritsei-process-designer .template-list{display:grid;gap:8px;margin:0 20px 16px}.ritsei-process-designer .template-option{background:#fffdf8;border:1px solid #d6cfc1;border-radius:8px;padding:8px}.ritsei-process-designer .template-option button{border-left:4px solid #d8f34f;width:100%}.ritsei-process-designer .template-option p{color:#596273;font-size:13px;margin:6px 4px 0}.ritsei-process-designer .toolbar{align-items:center;display:flex;gap:10px;justify-content:space-between;margin-bottom:16px}.ritsei-process-designer .toolbar p{color:#596273;font-size:13px}.ritsei-process-designer .validate{background:#5b3cc4;border-color:#5b3cc4;color:#fff;font-weight:700}
+.ritsei-process-designer nav{background:#fffdf8;border-bottom:1px solid #d6cfc1;display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px}.ritsei-process-designer nav button[aria-pressed="true"]{background:#172033;color:#fffdf8}.ritsei-process-designer .lane-status{color:#596273;font-size:13px;padding:0 20px 12px}.ritsei-process-designer .pack-list,.ritsei-process-designer .template-list{display:grid;gap:8px;margin:0 20px 16px}.ritsei-process-designer .pack-card,.ritsei-process-designer .template-option{background:#fffdf8;border:1px solid #d6cfc1;border-radius:8px;padding:10px}.ritsei-process-designer .pack-card h2,.ritsei-process-designer .pack-card h3{margin:0}.ritsei-process-designer .pack-card h3{font-size:17px}.ritsei-process-designer .pack-card p{color:#596273;font-size:13px;margin:6px 0 0}.ritsei-process-designer .pack-meta{font:12px ui-monospace,SFMono-Regular,monospace}.ritsei-process-designer .template-option button{border-left:4px solid #d8f34f;width:100%}.ritsei-process-designer .template-option p{color:#596273;font-size:13px;margin:6px 4px 0}.ritsei-process-designer .toolbar{align-items:center;display:flex;gap:10px;justify-content:space-between;margin-bottom:16px}.ritsei-process-designer .toolbar p{color:#596273;font-size:13px}.ritsei-process-designer .validate{background:#5b3cc4;border-color:#5b3cc4;color:#fff;font-weight:700}
 .ritsei-process-designer .nodes{list-style:none;margin:0;padding:0}.ritsei-process-designer .node{background:#fffdf8;border:1px solid #c9c2b5;border-radius:10px;box-shadow:4px 4px 0 #ded6c8;padding:12px}.ritsei-process-designer .node.selected{border-color:#5b3cc4;box-shadow:4px 4px 0 #d8f34f}.ritsei-process-designer .node button{border:0;padding:0;width:100%}.ritsei-process-designer .meta,.ritsei-process-designer .capability{display:block;font-size:12px;margin-top:5px}.ritsei-process-designer .meta{color:#697181}.ritsei-process-designer .capability{color:#5b3cc4;overflow-wrap:anywhere}.ritsei-process-designer .arrow{color:#8d8578;text-align:center}.ritsei-process-designer label{display:grid;font-size:12px;font-weight:700;gap:5px}.ritsei-process-designer .move{display:flex;gap:8px}.ritsei-process-designer .move button{flex:1;text-align:center}.ritsei-process-designer .mapping{border-top:1px solid #d6cfc1;font:11px ui-monospace,SFMono-Regular,monospace;padding-top:10px;overflow-wrap:anywhere}.ritsei-process-designer .validation{background:#fff6d7;border-left:4px solid #d58c13;color:#5b461c;margin-top:18px;padding:10px 12px}.ritsei-process-designer .valid{background:#eaf6d6;border-left-color:#4d8d45;color:#285124}.ritsei-process-designer .validation ul{margin:5px 0 0;padding-left:20px}
 @media(max-width:900px){.ritsei-process-designer .grid{grid-template-columns:150px minmax(220px,1fr)}.ritsei-process-designer aside:last-child{border-top:1px solid #d6cfc1;grid-column:1/-1}}@media(max-width:620px){.ritsei-process-designer header{align-items:start;flex-direction:column;gap:14px}.ritsei-process-designer .grid{display:block}.ritsei-process-designer aside{border-bottom:1px solid #d6cfc1;border-right:0}}
 @media(prefers-reduced-motion:reduce){.ritsei-process-designer *{scroll-behavior:auto!important;transition:none!important}}
@@ -233,6 +234,39 @@ const laneNavigation = (draft: ProcessStudioDraft, handlers: Handlers): HTMLElem
   return lanes
 }
 
+const packList = (): HTMLElement => {
+  const section = tag("section")
+  section.className = "pack-list"
+  section.setAttribute("aria-label", "Process packs")
+  for (const pack of ProcessStudioPacks) {
+    const card = tag("article")
+    card.className = "pack-card"
+    const heading = tag("h3")
+    heading.textContent = `${pack.name} · v${pack.version}`
+    card.append(heading)
+    const profile = tag("p")
+    profile.className = "pack-meta"
+    profile.textContent = `Profile: ${pack.profileId} · ${pack.stability}`
+    card.append(profile)
+    const description = tag("p")
+    description.textContent = pack.description
+    card.append(description)
+    const contents = tag("p")
+    contents.textContent = `Includes ${pack.processTemplateIds.length} process drafts; requires ${
+      pack.requiredCapabilities.map((capability) => `${capability.id} v${capability.version}`).join(
+        ", ",
+      )
+    }.`
+    card.append(contents)
+    const resolution = tag("p")
+    resolution.textContent =
+      "Required capabilities resolve against the backend catalog before release."
+    card.append(resolution)
+    section.append(card)
+  }
+  return section
+}
+
 const templateList = (handlers: Handlers): HTMLElement => {
   const templates = tag("div")
   templates.className = "template-list"
@@ -352,7 +386,9 @@ const view = (
   status.setAttribute("role", "status")
   status.setAttribute("aria-live", "polite")
   shell.append(status)
-  if (draft.lane === "templates") shell.append(templateList(handlers))
+  if (draft.lane === "templates") {
+    shell.append(packList(), templateList(handlers))
+  }
   const grid = tag("div")
   grid.className = "grid"
   grid.append(nodePalette(handlers))

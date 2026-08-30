@@ -1,9 +1,12 @@
 import { assert, describe, it } from "@effect/vitest"
 
 import {
+  getProcessStudioPack,
   getProcessStudioTemplate,
   makeProcessStudioDraft,
+  ProcessStudioPacks,
   ProcessStudioTemplates,
+  resolveProcessStudioPackCapabilities,
   serializeProcessStudioDraft,
 } from "./product-surface.ts"
 import { toProcessIr, validateDesignerModel } from "./designer-model.ts"
@@ -26,6 +29,24 @@ describe("Process Studio product surface", () => {
         .map((node) => node.capability?.id),
       ["sales.order.confirm", "accounting.revenue.post"],
     )
+  })
+
+  it("exposes a semantic pack manifest and exact capability resolution", () => {
+    assert.strictEqual(ProcessStudioPacks.length, 1)
+    const pack = getProcessStudioPack("distribution.starter")!
+    assert.isTrue(pack.processTemplateIds.every((id) => getProcessStudioTemplate(id) !== undefined))
+
+    const ready = resolveProcessStudioPackCapabilities(pack, pack.requiredCapabilities)
+    assert.strictEqual(ready.status, "ready")
+    assert.deepStrictEqual(ready.missingRequiredCapabilities, [])
+
+    const missing = resolveProcessStudioPackCapabilities(
+      pack,
+      pack.requiredCapabilities.slice(0, -1),
+    )
+    assert.strictEqual(missing.status, "missing_required_capabilities")
+    assert.strictEqual(missing.missingRequiredCapabilities.length, 1)
+    assert.strictEqual(pack.documentation.length, 1)
   })
 
   it("preserves draft lane and source metadata", () => {

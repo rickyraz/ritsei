@@ -23,13 +23,16 @@ export type {
   TypedMapping,
 } from "./designer-model.ts"
 export {
+  getProcessStudioPack,
   getProcessStudioTemplate,
   makeProcessStudioDraft,
   ProcessDraftSources,
   ProcessStudioLaneDescriptions,
   ProcessStudioLaneLabels,
   ProcessStudioLanes,
+  ProcessStudioPacks,
   ProcessStudioTemplates,
+  resolveProcessStudioPackCapabilities,
   serializeProcessStudioDraft,
 } from "./product-surface.ts"
 export type {
@@ -38,5 +41,7 @@ export type {
   ProcessStudioCapabilityId,
   ProcessStudioDraft,
   ProcessStudioLane,
+  ProcessStudioPack,
+  ProcessStudioPackResolution,
   ProcessStudioTemplate,
 } from "./product-surface.ts"

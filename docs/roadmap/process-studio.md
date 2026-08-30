@@ -192,7 +192,7 @@ The current designer exposes the three lanes without activating autonomous autho
 |---|---|---|
 | Copilot draft | typed draft-only surface; no provider execution | provider isolation, schema decoding, provenance, redaction, and prompt-injection tests |
 | Authorized bounded execution | visible but gated; the designer never runs commands | a later backend contract proving current AuthZ/SoD, idempotency, audit, admission, recovery, reconciliation, and failure injection |
-| Curated templates | static curated starter drafts using canonical action IDs | catalog-backed versioning, release review, and template compatibility tests |
+| Curated templates | experimental Process Pack manifest, exact capability resolution, and editable drafts using canonical action IDs | backend catalog-backed installation, pack versioning, release review, and asset compatibility tests |
 
 The lane labels are product modes, not principals or capabilities. Detailed authority and activation
 rules remain in the [Process Studio architecture](../architecture/process-studio.md) and
