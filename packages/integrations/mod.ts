@@ -39,6 +39,19 @@ export type {
   ExternalEventCatalogEntry,
 } from "./src/contract.ts"
 export { simulateWithoutSideEffect } from "./src/catalog.ts"
+export {
+  makeExternalProcessActionMapping,
+  simulateProcessExternalAction,
+  toProcessExternalCatalogEntry,
+} from "./src/process-bridge.ts"
+export type {
+  ExternalCatalogEntry as ExternalCatalogEntryForProcess,
+  ExternalProcessActionMapping,
+  ProcessExternalAction,
+  ProcessExternalCatalogEntry,
+  ProcessExternalEvent,
+  ProcessExternalSimulationResult,
+} from "./src/process-bridge.ts"
 export type {
   ExternalCatalogEntry,
   ExternalSimulationResult,

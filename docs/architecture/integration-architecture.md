@@ -522,6 +522,11 @@ The canvas composes typed actions and events. Connector runtime owns protocol
 translation, credentials, delivery, provider retries, and transport failures.
 Domain packages own business meaning and invariants.
 
+The current Process Studio bridge projects only PUBLIC, allowlisted external catalog entries into a
+transport-free typed reference. It validates action input through side-effect-free simulation and
+keeps the connector OAuth scope separate from RITSEI domain authorization; the bridge never calls a
+provider or executes a domain command.
+
 ## Security and Trust
 
 - deny connector access by default;

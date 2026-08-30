@@ -135,6 +135,11 @@ Exit criteria:
   compensation metadata;
 - connector operations can be simulated without real provider side effects.
 
+The bounded Process Studio bridge now exposes only PUBLIC, allowlisted catalog references, strips
+transport metadata from Process IR, validates typed action mappings, keeps OAuth scope separate from
+domain authorization, and supports side-effect-free simulation. It does not execute providers or
+own domain mutations.
+
 ## 1.0 — Governed Integration Surface
 
 Deliver:
