@@ -163,6 +163,11 @@ Exit criteria:
 - external effects support safe retry, compensation, or manual recovery;
 - public documentation can be generated from the approved contracts.
 
+The bounded governance proof now persists reviewed/active/retired connector versions, rejects
+unreviewed activation and controls after retirement, records idempotent delivery controls, and
+retains append-only audit entries under an explicit retention horizon. Provider-specific runbooks and
+production adapter activation remain separate follow-up work.
+
 ## Hard Stops
 
 Do not expose an external connector to Process Studio when:

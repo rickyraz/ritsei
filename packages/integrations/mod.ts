@@ -108,6 +108,25 @@ export {
   validateExternalOperation,
 } from "./src/governance.ts"
 export type { ExternalConnectorDefinition, ExternalDeliveryControl } from "./src/governance.ts"
+export {
+  ExternalConnectorGovernanceRecord,
+  ExternalConnectorTransitionInput,
+  ExternalDeliveryControlInput,
+  ExternalGovernanceAuditAction,
+  ExternalGovernanceAuditRecord,
+  makePostgresExternalGovernanceStore,
+  RegisterExternalConnectorInput,
+} from "./src/governance-store.ts"
+export type {
+  ExternalConnectorGovernanceRecord as ExternalConnectorGovernanceRecordType,
+  ExternalConnectorTransitionInput as ExternalConnectorTransitionInputType,
+  ExternalDeliveryControlInput as ExternalDeliveryControlInputType,
+  ExternalGovernanceAuditMutation,
+  ExternalGovernanceAuditRecord as ExternalGovernanceAuditRecordType,
+  ExternalGovernanceMutation,
+  ExternalGovernanceStore,
+  RegisterExternalConnectorInput as RegisterExternalConnectorInputType,
+} from "./src/governance-store.ts"
 export type {
   ExternalActionInvoker,
   ExternalConnectorRuntime,

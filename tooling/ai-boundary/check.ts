@@ -28,9 +28,10 @@ const directMutation =
 const normalizePath = (path: string) => path.replaceAll("\\", "/")
 const isProviderImport = (specifier: string) =>
   providerSpecifiers.some((pattern) => pattern.test(specifier))
-// The reliability store is an explicit persistence adapter, not provider/model code.
+// These explicit persistence adapters are not provider/model code.
 const isPersistenceBoundary = (path: string) =>
-  path === "packages/integrations/src/reliability-store.ts"
+  path === "packages/integrations/src/reliability-store.ts" ||
+  path === "packages/integrations/src/governance-store.ts"
 const isAiSurface = (path: string) =>
   path.startsWith("packages/integrations/") ||
   /(?:^|\/)(?:ai|agent|agents|recommendation|recommendations)(?:\/|[-_.]|$)/i.test(path)

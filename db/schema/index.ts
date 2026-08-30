@@ -31,7 +31,11 @@ export { authorizationSchema, memberships, tenantMemberships } from "./authoriza
 export { createdAt, id, money, updatedAt, uuidv7 } from "./common.ts"
 export { identitySchema, userAccounts } from "./identity.ts"
 export {
+  externalConnectorGovernance,
+  externalConnectorStatus,
   externalDeliveryState,
+  externalGovernanceAction,
+  externalGovernanceAudit,
   externalProviderStatus,
   externalReliabilityKind,
   externalReliabilityRecords,

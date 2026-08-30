@@ -489,6 +489,11 @@ Connectors may be implemented by:
 
 Arbitrary tenant code is not a connector implementation.
 
+The current governance store durably records reviewed connector lifecycle, connector retirement,
+delivery controls, and append-only audit entries with tenant scope, idempotency keys, and retention
+horizons. It governs connector metadata only; it does not make a provider operation executable without
+the existing action allowlist and runtime authorization.
+
 ## Process Studio Boundary
 
 Process Studio may display:
