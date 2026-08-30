@@ -17,6 +17,8 @@
 > - Authorization: [`./authorization.md`](./authorization.md)
 > - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
 > - HTTP API boundary: [`./api.md`](./api.md)
+> - Governed AI recommendation and agent boundary:
+>   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
 > - Documentation ownership: [`../documentation-boundaries.md`](../documentation-boundaries.md)
 
 ## Purpose
@@ -218,6 +220,29 @@ Provider projections, when selected, must be rebuildable from canonical RITSEI f
 or unknown selected-provider state fails closed for sensitive work and cannot silently become an allow
 decision.
 
+## AI and Recommendation Boundary
+
+When AI or model-provider code is introduced, static and deployment checks must preserve ADR-0063:
+
+- provider SDK imports are confined to approved adapters under `packages/integrations/`;
+- AI/provider code cannot import `db/schema`, migrations, database clients, repositories, private
+  domain modules, or private process services;
+- cross-domain access, when justified, resolves through a public package entry point and typed
+  read/draft contract, never a persistence implementation;
+- proposal and recommendation code cannot issue direct business-fact writes or expose a generic
+  command/tool executor;
+- released Process IR rejects model calls, prompts, provider topology, dynamic capability
+  references, arbitrary tools, and nondeterministic binding inputs; and
+- AI workers and provider adapters receive no command-plane database credential or hidden primary
+  fallback.
+
+The executable evidence is intentionally layered: `tooling/ai-boundary/check.ts` catches provider and
+private-persistence import violations; Process IR and public-contract tests reject untyped or dynamic
+proposals; authorization and owner-domain tests prove current capability, scope, relationship, SoD,
+idempotency, transaction, and reconciliation checks; deployment tests prove credential and network
+separation; and redaction/tenant tests prove safe context and disclosure. Static checks do not claim
+to prove runtime mutation safety by themselves.
+
 ## Dependency-Cycle Detection
 
 The package and module graphs must remain acyclic unless a documented framework edge is explicitly
@@ -308,12 +333,14 @@ Effect-native HTTP validation
 architecture tests
 relative-link validation for documentation
 workload-metadata and topology-leak validation when implemented
+AI/provider import and mutation-boundary validation
 ```
 
 ## Suggested Repository Layout
 
 ```text
 tooling/
+├── ai-boundary/
 ├── boundary-linter/
 ├── call-graph/
 ├── public-contract/
@@ -338,4 +365,7 @@ Architecture enforcement is complete only when:
 - architecture exceptions are explicit and reviewable;
 - database privileges reinforce the same ownership model;
 - query, async, and command composition roots cannot acquire one another's protected credentials;
-- every published hard-isolation claim has executable overload evidence and explicit exclusions.
+- every published hard-isolation claim has executable overload evidence and explicit exclusions;
+- AI/provider code has no private persistence or command-plane path, and every recommendation/action
+  boundary has typed, authorization, redaction, idempotency, and reconciliation evidence before
+  activation.

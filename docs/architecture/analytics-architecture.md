@@ -20,6 +20,8 @@
 > - Deployment notes: [`../deployment/README.md`](../deployment/README.md)
 > - Analytic Plane ADR:
 >   [`../decisions/0043-adopt-rebuildable-analytic-plane.md`](../decisions/0043-adopt-rebuildable-analytic-plane.md)
+> - Governed AI recommendation and agent boundary:
+>   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
 > - Comparative reference:
 >   [`./reference/analytical-isolation-and-semantic-projection-patterns.md`](./reference/analytical-isolation-and-semantic-projection-patterns.md)
 
@@ -472,7 +474,27 @@ derived, freshness-qualified observation carrying source and semantic versions, 
 A future evaluator may combine analytic observations with process, graph, search, policy, or other
 owner-approved context. Any root-cause hypothesis, finding, or recommendation remains derived and
 non-authoritative. It must not write domain tables, edit process definitions or policy, invoke a
-private repository, or treat confidence as proof of current business state.
+private repository, or treat confidence as proof of current business state. AI evaluators follow the
+same boundary: they consume public fact contracts or approved observations, not private tables, and
+model output is untrusted data rather than a principal, policy decision, or command.
+
+### Recommendation provenance
+
+An AI-backed finding or recommendation records enough provenance to decide whether it is still
+interpretable and actionable:
+
+- evaluator, adapter, model, prompt/template, and policy versions;
+- recommendation and output-schema versions;
+- source fact and metric versions, tenant/query scope, and authorization scope;
+- `dataAsOf`, fixed completeness frontier, and time semantics;
+- confidence value plus its calibration/meaning version;
+- creation time, expiry/actionability boundary, and supersession status; and
+- immutable evidence and citation digests.
+
+Provider credentials, transport topology, private context, and raw model payloads remain outside
+public contracts. Confidence and freshness are explanatory evidence only; neither grants access,
+proves current state, or authorizes a command. Changing any bound input creates a new recommendation
+version rather than mutating the old record.
 
 ### Immutable evidence binding
 

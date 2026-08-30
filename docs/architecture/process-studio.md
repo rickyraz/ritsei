@@ -7,8 +7,11 @@
 > Studio roadmap.
 >
 > **Implementation status:** The contract-only catalog protocol, bounded Level 3 Inventory and Sales
-> action slices, and an Accounting PUBLIC event contributor are implemented. Process IR,
-> aggregation/release persistence, runtime, and designer remain planned behind the roadmap gates.
+> action slices, an Accounting PUBLIC event contributor, deterministic Process IR, release/runtime
+> governance slices, and an accessible structured designer are implemented. Broad catalog-driven
+> execution and operational scale remain staged behind the roadmap gates. AI-assisted modeling and
+> recommendations remain non-authoritative and are governed by
+> [ADR-0063](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md).
 >
 > **Related documents**
 >
@@ -30,6 +33,8 @@
 >   [`../decisions/0018-adopt-typed-process-studio.md`](../decisions/0018-adopt-typed-process-studio.md)
 > - Capability release and runtime governance:
 >   [`../decisions/0020-adopt-capability-release-and-runtime-governance.md`](../decisions/0020-adopt-capability-release-and-runtime-governance.md)
+> - Governed AI recommendation and agent boundary:
+>   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
 > - Roadmap and readiness gates: [`../roadmap/process-studio.md`](../roadmap/process-studio.md)
 > - Blueprint review method: [orthogonal-blueprint](https://github.com/rickyraz/skills/tree/main/skills/orthogonal-blueprint)
 
@@ -307,6 +312,57 @@ transport failures, and secrets. Process Studio sees only the typed normalized
 contract. External actions may trigger domain commands, but they never become
 owners of domain invariants. Detailed protocol rules are owned by
 [`integration-architecture.md`](./integration-architecture.md).
+
+## AI-Assisted Modeling and Recommendations
+
+AI is an advisory input to Process Studio, not a new runtime authority. Provider SDKs and model
+clients remain behind the integrations boundary; they are not catalog contributors and do not
+receive domain database credentials or private service bindings.
+
+AI may produce only bounded, typed artifacts such as:
+
+- an intent draft;
+- a draft Process IR or typed mapping;
+- a freshness-qualified observation summary; or
+- an evidence-bound recommendation for a typed action.
+
+Model output is untrusted. Effect Schema decoding, tenant and scope validation, catalog lookup,
+static process validation, and normal review govern every artifact. An AI-generated process remains
+`DRAFT`; it cannot publish, release, deploy, alter a released definition, register a capability, or
+choose a dynamic action. The released IR contains only exact catalog references, typed mappings,
+pure decisions, and deterministic inputs. It contains no prompt, provider topology, live model call,
+agent loop, embedding, or confidence-based authority.
+
+A proposed action is not an execution. If a future coordinator accepts one, it binds the exact
+recommendation and evidence version, action and catalog version, canonical validated input, and
+owner-visible idempotency identity. Dispatch re-enters the owning public command with current
+authorization, object relationship, domain policy, Separation of Duties, admission, audit, and
+reconciliation checks. A retry reuses that bound intent; it must not ask a model to reinterpret it.
+
+There is no `AgentPrincipal`, autonomous-agent node, model-controlled approver, or model-granted
+capability in the 1.0 Process IR. Human or policy review remains the default. Autonomous action
+requires a later accepted decision and the safety evidence in
+[ADR-0063](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md).
+
+### Three governed product lanes
+
+The design-time product surface exposes three lanes without adding lane semantics to Process IR:
+
+- **Copilot draft:** a human request may produce a typed intent, mapping, recommendation, or draft
+  IR. The result remains `DRAFT`; no provider call or business command runs in the designer.
+- **Bounded execution:** a future execution surface may present only explicitly allowlisted PUBLIC
+  catalog actions. It is a gate, not a generic `execute` button: current authorization, object
+  relationship, policy, Separation of Duties, idempotency, admission, audit, and owner recovery
+  must pass before a domain command runs. The current designer intentionally does not execute
+  commands.
+- **Curated templates:** versioned, owner-reviewed starter definitions use the same editable
+  DesignerModel and catalog references as hand-built drafts. Selecting a template never releases,
+  approves, or executes it.
+
+These are product modes, not principals or capabilities. A template or AI origin is draft provenance;
+it cannot elevate authorization. A bounded action that becomes high risk still requires explicit
+human approval, and every accepted proposal re-enters the normal deterministic runtime and owning
+public command.
 
 ## Typed Action Catalog
 
@@ -718,6 +774,7 @@ The validator checks at least:
 - financial-ledger outcome, reconciliation, and projection-read metadata for TigerBeetle-backed actions;
 - deprecated or incompatible catalog versions;
 - decisions remain pure;
+- AI/provider/agent nodes, dynamic action references, and nondeterministic runtime inputs are forbidden;
 - forbidden arbitrary code, SQL, network, and cross-domain mutation.
 
 Examples:
@@ -1132,6 +1189,8 @@ A process author or tenant administrator cannot:
 - mark a non-idempotent action idempotent;
 - fabricate compensation for a domain that exposes none;
 - publish a definition with static validation errors;
+- use model output as an approval, capability grant, dynamic action, or current-state proof;
+- expose prompts, provider credentials, private rows, or model topology through Process IR or monitoring;
 - activate a new architectural primitive through tenant configuration.
 
 Definitions, instances, tasks, events, and monitoring queries are tenant-aware. RLS may provide
@@ -1156,6 +1215,9 @@ implementation must prove the applicable contracts, including:
 - cancellation after committed non-reversible actions;
 - tenant and organization isolation;
 - monitor redaction and operator permissions;
+- AI-generated drafts remain draft-only and pass the same IR/static-validation pipeline;
+- recommendations bind exact evidence, action versions, canonical input, authorization, and idempotency;
+- stale evidence, changed intent, prompt-injection fixtures, and unknown outcomes fail closed;
 - accessible designer and inbox interaction.
 
 ## Orthogonal Blueprint Conformance

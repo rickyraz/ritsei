@@ -22,3 +22,21 @@ export type {
   ProcessDesignIr,
   TypedMapping,
 } from "./designer-model.ts"
+export {
+  getProcessStudioTemplate,
+  makeProcessStudioDraft,
+  ProcessDraftSources,
+  ProcessStudioLaneDescriptions,
+  ProcessStudioLaneLabels,
+  ProcessStudioLanes,
+  ProcessStudioTemplates,
+  serializeProcessStudioDraft,
+} from "./product-surface.ts"
+export type {
+  ProcessDraftMetadata,
+  ProcessDraftSource,
+  ProcessStudioCapabilityId,
+  ProcessStudioDraft,
+  ProcessStudioLane,
+  ProcessStudioTemplate,
+} from "./product-surface.ts"

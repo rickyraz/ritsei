@@ -86,5 +86,6 @@ current system; ADRs preserve decision history.
 | [`0060`](./0060-defer-billing-and-settlement-scope.md) | Defer Billing and settlement scope until ownership is ready | Accepted |
 | [`0061`](./0061-correct-roadmap-gate-granularity.md) | Require executable evidence for roadmap gate completion | Accepted |
 | [`0062`](./0062-adopt-fallow-for-generic-static-analysis.md) | Adopt Fallow for generic static analysis | Accepted |
+| [`0063`](./0063-define-governed-ai-recommendation-and-agent-boundary.md) | Define governed AI recommendation and agent boundary | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

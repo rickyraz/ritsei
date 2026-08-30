@@ -1,5 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 
+import { analyzeAiBoundary } from "../../tooling/ai-boundary/check.ts"
 import {
   buildCallGraph,
   extractExportedNames,
@@ -61,6 +62,34 @@ describe("repository tooling", () => {
     ], ["a", "b"])
 
     assert.isTrue(failures.some((failure) => failure.includes("must use packages/b/mod.ts")))
+  })
+
+  it("keeps AI/provider code behind the integration and persistence boundaries", () => {
+    const providerImport = (name: string, binding: string) =>
+      [`import ${binding} from \"`, name, `\"`].join("")
+
+    assert.deepStrictEqual(
+      analyzeAiBoundary([{
+        path: "packages/integrations/src/model-adapter.ts",
+        source: providerImport("effect/unstable/ai", "{ LanguageModel }"),
+      }]),
+      [],
+    )
+
+    const failures = analyzeAiBoundary([{
+      path: "packages/sales/src/recommendations/model.ts",
+      source: [
+        providerImport("openai", "OpenAI"),
+        ['import { orders } from "../../db/', "schema/sales.ts", '"'].join(""),
+        "database.update(orders)",
+      ].join("\n"),
+    }])
+
+    assert.isTrue(
+      failures.some((failure) => failure.includes("must stay under packages/integrations")),
+    )
+    assert.isTrue(failures.some((failure) => failure.includes("private persistence")))
+    assert.isTrue(failures.some((failure) => failure.includes("direct business-fact mutations")))
   })
 
   it("tracks direct local and public calls", () => {

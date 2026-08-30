@@ -17,6 +17,8 @@
 > - Process Studio ADR: [`../decisions/0018-adopt-typed-process-studio.md`](../decisions/0018-adopt-typed-process-studio.md)
 > - Capability release and runtime governance:
 >   [`../decisions/0020-adopt-capability-release-and-runtime-governance.md`](../decisions/0020-adopt-capability-release-and-runtime-governance.md)
+> - Governed AI recommendation and agent boundary:
+>   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
 > - Durable execution: [`../architecture/durable-execution.md`](../architecture/durable-execution.md)
 > - Messaging: [`../architecture/pgque-messaging.md`](../architecture/pgque-messaging.md)
 
@@ -61,6 +63,7 @@ Before Process Studio 0.8 work starts, resolve:
 [x] capability release states and compatibility ranges are defined
 [x] process promotion separates release from deployment across environments
 [x] execution principal, delegation, SoD, and business observability are explicit
+[x] AI output is non-authoritative; no AgentPrincipal, agent node, or autonomous mutation is in scope
 ```
 
 Billing remains explicitly outside the current Process Studio release scope under
@@ -74,8 +77,9 @@ integration details are governed by
 Current evidence closes the bounded internal primitive and action-provider prerequisites:
 `inventory.stock.adjust` v1, `sales.order.confirm` v1, and `accounting.revenue.post` v1 are PUBLIC
 Level 3 action slices with owner-published events. Accounting derives the revenue amount from a
-d 0.8 caSales-owned confirmed-order fact. This permits boundetalog work, but PgQue, external
-connectors, Process IR, event waits, and the broad workflow runtime remain gated.
+Sales-owned confirmed-order fact. This permits bounded catalog, deterministic Process IR, and
+structured-designer work, but PgQue, external connectors, event waits, and the broad workflow runtime
+remain gated.
 
 ## 0.8 — Capability Metadata
 
@@ -101,7 +105,9 @@ Exit gate:
 - entries are versioned and tenant-aware;
 - entries are verified against public contracts;
 - compensation distinguishes explicit command from manual recovery;
-- unregistered actions/events cannot execute in a process.
+- unregistered actions/events cannot execute in a process;
+- AI/provider code cannot register capabilities, access private persistence, or create an executable
+  agent path.
 
 ## 0.85 — Minimal Headless Runtime
 
@@ -125,7 +131,8 @@ Exit gate:
 - restart and crash recovery work at every checkpoint;
 - duplicate commands/events do not duplicate domain effects;
 - instances pin exact definition and catalog versions;
-- task, timer, event-wait, and compensation state is observable.
+- task, timer, event-wait, and compensation state is observable;
+- Process IR contains no model call, prompt, dynamic action, or nondeterministic AI binding.
 
 ## 0.9 — Operational Maturity
 
@@ -149,7 +156,9 @@ Exit gate:
 - compensation is independently authorized and idempotent;
 - no runtime path bypasses a domain public contract;
 - load, crash recovery, migration, and upgrade tests pass;
-- `pg_durable` gates are satisfied before it becomes authoritative.
+- `pg_durable` gates are satisfied before it becomes authoritative;
+- any recommendation-originated action revalidates current authorization and SoD and binds the exact
+  recommendation, evidence, action version, input, and idempotency identity.
 
 ## 0.95 — Visual Designer
 
@@ -171,7 +180,23 @@ Exit gate:
 - visual and structured editing produce identical deterministic Process IR;
 - invalid action ordering, mappings, scope, retry, and compensation are rejected;
 - no process semantics execute in the browser;
-- accessibility tests cover keyboard alternatives to drag-and-drop.
+- accessibility tests cover keyboard alternatives to drag-and-drop;
+- AI-assisted modeling can produce drafts only; normal static validation and human governance remain
+  mandatory.
+
+## Product-surface lane sequence
+
+The current designer exposes the three lanes without activating autonomous authority:
+
+| Lane | Current slice | Required next proof |
+|---|---|---|
+| Copilot draft | typed draft-only surface; no provider execution | provider isolation, schema decoding, provenance, redaction, and prompt-injection tests |
+| Authorized bounded execution | visible but gated; the designer never runs commands | a later backend contract proving current AuthZ/SoD, idempotency, audit, admission, recovery, reconciliation, and failure injection |
+| Curated templates | static curated starter drafts using canonical action IDs | catalog-backed versioning, release review, and template compatibility tests |
+
+The lane labels are product modes, not principals or capabilities. Detailed authority and activation
+rules remain in the [Process Studio architecture](../architecture/process-studio.md) and
+[ADR-0063](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md).
 
 ## 1.0 — Governed Process Studio
 
@@ -197,7 +222,9 @@ Exit gate:
 - running instances remain pinned to their released and deployed versions;
 - operators can recover committed non-reversible effects safely;
 - tenant, audit, accessibility, and redaction requirements pass;
-- BPMN interoperability rejects unsupported executable semantics.
+- BPMN interoperability rejects unsupported executable semantics;
+- autonomous mutation remains disabled, and no model or recommendation can satisfy approval, grant a
+  capability, or bypass an owning domain command.
 
 ## Hard Stops
 

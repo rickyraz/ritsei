@@ -14,6 +14,8 @@
 > - Plugin trust model: [`./plugin-architecture.md`](./plugin-architecture.md)
 > - Process Studio: [`./process-studio.md`](./process-studio.md)
 > - Process governance ADR: [`../decisions/0020-adopt-capability-release-and-runtime-governance.md`](../decisions/0020-adopt-capability-release-and-runtime-governance.md)
+> - Governed AI recommendation and agent boundary:
+>   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
 > - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
 > - HTTP API boundary: [`./api.md`](./api.md)
 > - IdentityProvider boundary:
@@ -270,6 +272,33 @@ Organization policy:
 High-risk workflows must preserve actor, initiator, delegation, capability,
 scope, and approval history. Approval completion must be conditional or
 otherwise protected against duplicate or unauthorized completion.
+
+### AI recommendations are not principals or approvals
+
+A model, provider, prompt, embedding, confidence value, or recommendation is not a RITSEI
+principal and cannot receive an implicit `AgentPrincipal` identity. An AI adapter may use an
+explicit least-privileged service principal to read approved context or create a draft, but that
+identity does not acquire domain mutation, approval, delegation, or Separation-of-Duties authority.
+
+Authorization distinguishes three decisions:
+
+```text
+observation
+  -> may this principal read the scoped evidence now?
+review
+  -> may this reviewer assess and accept this exact recommendation?
+execution
+  -> may this execution principal invoke this exact owner command now?
+```
+
+Each stage revalidates current tenant membership, scope, object relationship, domain policy,
+Separation of Duties, actionability/expiry, and any required admission. A process definition or
+model output cannot grant a capability, widen scope, choose an approver, satisfy SoD, or replace the
+current actor. A proposed action reaches the owning public command, which remains authoritative for
+business validation, idempotency, transaction, audit, and typed failure behavior. Detailed evidence
+binding and unknown-outcome handling are owned by
+[`analytics-architecture.md`](./analytics-architecture.md) and
+[`process-studio.md`](./process-studio.md).
 
 ## Audit and Explainability
 

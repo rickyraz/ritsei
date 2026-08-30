@@ -72,6 +72,8 @@
 >   [`../decisions/0034-adopt-non-interference-overload-isolation.md`](../decisions/0034-adopt-non-interference-overload-isolation.md)
 > - Rebuildable Analytic Plane:
 >   [`../decisions/0043-adopt-rebuildable-analytic-plane.md`](../decisions/0043-adopt-rebuildable-analytic-plane.md)
+> - Governed AI recommendation and agent boundary:
+>   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
 
 ## Decision
 
@@ -521,6 +523,23 @@ transition ordering, idempotency, waits, parallel effects, and compensation befo
 
 The detailed target architecture and staged 0.8–1.0 delivery gates are owned by
 [`./process-studio.md`](./process-studio.md).
+
+## AI and Recommendation Boundary
+
+AI is an untrusted advisory boundary over federated domain semantics. It may interpret intent,
+summarize authorized observations, or propose typed Process IR and domain actions, but it cannot
+become a semantic owner, authorization authority, approval authority, or source of business facts.
+Only an authorized owner command, optionally coordinated by a released deterministic process, may
+mutate business state. There is no `AgentPrincipal`; model output never grants capability, scope,
+delegation, or Separation-of-Duties approval.
+
+Provider and model adapters remain behind the integrations boundary. AI context is tenant-scoped,
+minimized, and sourced through public contracts or approved analytic observations. Released Process
+IR contains typed catalog references and deterministic inputs, not prompts, provider topology, live
+model calls, arbitrary tools, or dynamic actions. Autonomous actuation remains outside the 1.0 core
+and requires a later accepted ADR with bounded safety evidence. Detailed AI recommendation,
+authorization, Process Studio, analytics, and enforcement rules are owned by their respective
+subsystem documents and ADR-0063.
 
 ## Asynchronous Contract
 

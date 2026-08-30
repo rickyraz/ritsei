@@ -40,6 +40,22 @@ describe("Process Designer", () => {
     assert.isTrue(
       validateDesignerModel(withCommand()).some((issue) => issue.code === "missing_capability"),
     )
+    const invalidCapability = setNodeCapability(withCommand(), "node-1", {
+      kind: "DomainEvent",
+      id: "sales.order.confirmed",
+      version: 1,
+    })
+    assert.isTrue(
+      validateDesignerModel(invalidCapability).some((issue) => issue.code === "invalid_capability"),
+    )
+    const invalidVersion = setNodeCapability(withCommand(), "node-1", {
+      kind: "DomainAction",
+      id: "sales.order.confirm",
+      version: Number.NaN,
+    })
+    assert.isTrue(
+      validateDesignerModel(invalidVersion).some((issue) => issue.code === "missing_capability"),
+    )
     const invalid = applyDesignerAction(configured(), {
       _tag: "add_mapping",
       nodeId: "node-1",
@@ -51,6 +67,55 @@ describe("Process Designer", () => {
       },
     })
     assert.isTrue(validateDesignerModel(invalid).some((issue) => issue.code === "invalid_mapping"))
+  })
+
+  it("binds wait nodes to event catalog entries", () => {
+    const wait = applyDesignerAction(makeInitialDesignerModel(), {
+      _tag: "add_node",
+      kind: "WaitForEvent",
+    })
+    assert.isTrue(
+      validateDesignerModel(wait).some((issue) => issue.code === "missing_capability"),
+    )
+    const configuredWait = setNodeCapability(wait, "node-1", {
+      kind: "DomainEvent",
+      id: "sales.order.confirmed",
+      version: 1,
+    })
+    assert.deepStrictEqual(validateDesignerModel(configuredWait), [])
+  })
+
+  it("keeps structural endpoints unique", () => {
+    const initial = makeInitialDesignerModel()
+
+    assert.deepStrictEqual(
+      applyDesignerAction(initial, { _tag: "add_node", kind: "Start" }),
+      initial,
+    )
+    assert.deepStrictEqual(
+      applyDesignerAction(initial, { _tag: "add_node", kind: "End" }),
+      initial,
+    )
+  })
+
+  it("moves dragged nodes to the selected target", () => {
+    let model = makeInitialDesignerModel()
+    model = applyDesignerAction(model, { _tag: "add_node", kind: "DomainCommand" })
+    model = applyDesignerAction(model, { _tag: "add_node", kind: "DomainCommand" })
+    model = applyDesignerAction(model, { _tag: "add_node", kind: "DomainCommand" })
+    const moved = applyDesignerAction(model, {
+      _tag: "move_node",
+      sourceId: "node-1",
+      targetId: "node-3",
+    })
+
+    assert.deepStrictEqual(moved.nodes.map((node) => node.id), [
+      "start",
+      "node-2",
+      "node-1",
+      "node-3",
+      "end",
+    ])
   })
 
   it("accepts a configured linear draft", () => {
