@@ -13,6 +13,9 @@
 > - ERP primitive decisions: [`./erp-primitives.md`](./erp-primitives.md)
 > - Domain maturity: [`./domain-maturity.md`](./domain-maturity.md)
 > - Process Studio architecture: [`../architecture/process-studio.md`](../architecture/process-studio.md)
+> - Process Pack Library: [`./process-pack-library.md`](./process-pack-library.md)
+> - Process Pack positioning:
+>   [`../architecture/reference/process-pack-positioning.md`](../architecture/reference/process-pack-positioning.md)
 > - External integration surface: [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md)
 > - Process Studio ADR: [`../decisions/0018-adopt-typed-process-studio.md`](../decisions/0018-adopt-typed-process-studio.md)
 > - Capability release and runtime governance:

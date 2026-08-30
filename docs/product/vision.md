@@ -96,6 +96,36 @@ right tool.
 The runtime executes the same typed contracts that the designer represents.
 Audit history can explain why a process took a particular branch.
 
+### Business Pack Library
+
+RITSEI distributes governed business knowledge through **Business Packs**, not
+only isolated templates. A pack combines references to process drafts,
+capability requirements, typed decisions, forms/configuration, recommended
+projections, and documentation while keeping domain ownership intact.
+
+A pack resolves against PUBLIC typed capabilities and produces editable `DRAFT`
+processes. It does not grant authorization, approve or release definitions,
+execute commands, or carry private tables, repositories, SQL, or arbitrary
+scripts. The intended experience is:
+
+```text
+Choose a business profile
+        ↓
+Select a Business Pack
+        ↓
+Resolve capabilities and show missing requirements
+        ↓
+Customize an editable DRAFT
+        ↓
+Compile, validate, review, release, and run
+```
+
+This is a product direction, not a claim of current parity with mature ERP
+content libraries. Sequencing and exit gates are owned by the
+[Business Pack Library roadmap](../roadmap/process-pack-library.md); comparative
+positioning is recorded in the
+[Process Pack positioning reference](../architecture/reference/process-pack-positioning.md).
+
 ### Platform and plugins
 
 RITSEI follows a stable-core, extensible-edges model. Core packages expose
@@ -234,6 +264,7 @@ RITSEI
 ├── Commerce
 ├── Projects
 ├── Process Studio
+├── Business Pack Library
 ├── Automation
 ├── Connect
 └── Platform

@@ -36,6 +36,10 @@
 >   [`../decisions/0020-adopt-capability-release-and-runtime-governance.md`](../decisions/0020-adopt-capability-release-and-runtime-governance.md)
 > - Governed AI recommendation and agent boundary:
 >   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
+> - Process Pack positioning:
+>   [`./reference/process-pack-positioning.md`](./reference/process-pack-positioning.md)
+> - Process Pack Library roadmap:
+>   [`../roadmap/process-pack-library.md`](../roadmap/process-pack-library.md)
 > - Roadmap and readiness gates: [`../roadmap/process-studio.md`](../roadmap/process-studio.md)
 > - Blueprint review method: [orthogonal-blueprint](https://github.com/rickyraz/skills/tree/main/skills/orthogonal-blueprint)
 

@@ -51,6 +51,7 @@
 - [`./architecture/reference/sql-pgq-use-cases.md`](./architecture/reference/sql-pgq-use-cases.md)
 - [`./architecture/reference/ltree-notes.md`](./architecture/reference/ltree-notes.md)
 - [`./architecture/reference/erp-runtime-comparison.md`](./architecture/reference/erp-runtime-comparison.md)
+- [`./architecture/reference/process-pack-positioning.md`](./architecture/reference/process-pack-positioning.md)
 - [`./architecture/reference/hard-isolation-patterns.md`](./architecture/reference/hard-isolation-patterns.md)
 - [`./architecture/reference/analytical-isolation-and-semantic-projection-patterns.md`](./architecture/reference/analytical-isolation-and-semantic-projection-patterns.md)
 
@@ -62,6 +63,7 @@
 - [`./roadmap/domain-maturity.md`](./roadmap/domain-maturity.md)
 - [`./roadmap/integration-surface.md`](./roadmap/integration-surface.md)
 - [`./roadmap/process-studio.md`](./roadmap/process-studio.md)
+- [`./roadmap/process-pack-library.md`](./roadmap/process-pack-library.md)
 
 ## Deployment Notes
 

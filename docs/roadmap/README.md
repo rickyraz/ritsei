@@ -86,6 +86,7 @@ required maturity. PgQue, external connectors, and the broad workflow runtime re
 | Financial ledger execution | Migrate the bounded Accounting profile to the required TigerBeetle execution boundary | [`financial-ledger-execution.md`](./financial-ledger-execution.md) |
 | Domain maturity | Turn existing packages into stable action/event providers and identify missing domains | [`domain-maturity.md`](./domain-maturity.md) |
 | Process Studio readiness | Gate catalogs, runtime, recovery, and designer work | [`process-studio.md`](./process-studio.md) |
+| Business Pack Library | Turn typed capabilities into curated, profile-aware, editable process distributions | [`process-pack-library.md`](./process-pack-library.md) |
 | External integration surface | Gate connector protocols, auth, delivery, and external action/event normalization | [`integration-surface.md`](./integration-surface.md) |
 
 ## Dependency Stages
