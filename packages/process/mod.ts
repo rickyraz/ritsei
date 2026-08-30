@@ -21,6 +21,25 @@ export type {
   ProcessReleaseValidation as ProcessReleaseValidationType,
 } from "./src/catalog-release.ts"
 export {
+  makeMemoryProcessReleaseStore,
+  makePostgresProcessReleaseStore,
+  ProcessDeployment,
+  ProcessDeploymentConflict,
+  ProcessDeploymentInput,
+  ProcessReleaseArtifact,
+  ProcessReleaseConflict,
+  ProcessReleaseInput,
+  ProcessReleaseNotFound,
+  ProcessReleaseStore,
+} from "./src/release-store.ts"
+export type {
+  ProcessDeployment as ProcessDeploymentType,
+  ProcessDeploymentInput as ProcessDeploymentInputType,
+  ProcessReleaseArtifact as ProcessReleaseArtifactType,
+  ProcessReleaseInput as ProcessReleaseInputType,
+  ProcessReleaseStore as ProcessReleaseStoreShape,
+} from "./src/release-store.ts"
+export {
   makeProcessRuntime,
   ProcessCheckpoint,
   ProcessCheckpointInvalid,
@@ -141,6 +160,8 @@ export {
   ProcessOperatorMemoryLive,
   ProcessOperatorPostgresLive,
   ProcessPostgresLive,
+  ProcessReleaseMemoryLive,
+  ProcessReleasePostgresLive,
   ProcessRuntimeMemoryLive,
   ProcessRuntimePostgresLive,
 } from "./src/layers.ts"

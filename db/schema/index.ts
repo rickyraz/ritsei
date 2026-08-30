@@ -71,10 +71,14 @@ export {
 } from "./sales.ts"
 export {
   jobFenceScopes,
+  processDeployments,
   processJobs,
   processJobStatus,
   processOperatorAction,
   processOperatorControls,
+  processReleaseAuditEvent,
+  processReleaseAudits,
+  processReleases,
   processRuntimeCheckpoints,
   processRuntimeEnvironment,
   processRuntimeFailureKind,

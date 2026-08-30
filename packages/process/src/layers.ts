@@ -12,6 +12,11 @@ import {
   makePostgresProcessOperatorStore,
   ProcessOperatorStore,
 } from "./operations-store.ts"
+import {
+  makeMemoryProcessReleaseStore,
+  makePostgresProcessReleaseStore,
+  ProcessReleaseStore,
+} from "./release-store.ts"
 
 export const ProcessLive = Layer.effect(ProcessService, makeProcessService)
 export const ProcessPostgresLive = ProcessLive
@@ -30,6 +35,14 @@ export const ProcessOperatorMemoryLive = Layer.succeed(
 export const ProcessOperatorPostgresLive = Layer.effect(
   ProcessOperatorStore,
   makePostgresProcessOperatorStore,
+)
+export const ProcessReleaseMemoryLive = Layer.succeed(
+  ProcessReleaseStore,
+  makeMemoryProcessReleaseStore(),
+)
+export const ProcessReleasePostgresLive = Layer.effect(
+  ProcessReleaseStore,
+  makePostgresProcessReleaseStore,
 )
 
 export { makeProcessService }

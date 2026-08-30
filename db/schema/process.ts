@@ -41,6 +41,10 @@ export const processOperatorAction = processSchema.enum(
   "process_operator_action",
   ["retry", "compensate", "manual_recovery"],
 )
+export const processReleaseAuditEvent = processSchema.enum(
+  "process_release_audit_event",
+  ["approval", "release", "deployment"],
+)
 
 export const jobFenceScopes = processSchema.table("job_fence_scopes", {
   tenantId: uuid("tenant_id").notNull(),
@@ -118,6 +122,90 @@ export const processOperatorControls = processSchema.table("operator_controls", 
   check("operator_controls_actor_check", sql`${table.actorPrincipalId} ~ '[^[:space:]]'`),
   check("operator_controls_reason_check", sql`${table.reason} ~ '[^[:space:]]'`),
   unique("operator_controls_tenant_id_key").on(table.tenantId, table.idempotencyKey),
+])
+
+export const processReleases = processSchema.table("releases", {
+  id: id(),
+  tenantId: uuid("tenant_id").notNull(),
+  definitionId: uuid("definition_id").notNull(),
+  definitionVersion: integer("definition_version").notNull(),
+  catalogVersion: integer("catalog_version").notNull(),
+  checksum: text("checksum").notNull(),
+  references: jsonb("references").notNull(),
+  approvedBy: text("approved_by").notNull(),
+  approvalReason: text("approval_reason").notNull(),
+  releasedBy: text("released_by").notNull(),
+  createdAt: createdAt(),
+}, (table) => [
+  foreignKey({
+    columns: [table.tenantId],
+    foreignColumns: [tenants.id],
+    name: "process_releases_tenant_id_fkey",
+  }).onDelete("cascade"),
+  check("process_releases_definition_version_check", sql`${table.definitionVersion} > 0`),
+  check("process_releases_catalog_version_check", sql`${table.catalogVersion} > 0`),
+  check("process_releases_checksum_check", sql`${table.checksum} ~ '[^[:space:]]'`),
+  check("process_releases_approved_by_check", sql`${table.approvedBy} ~ '[^[:space:]]'`),
+  check("process_releases_approval_reason_check", sql`${table.approvalReason} ~ '[^[:space:]]'`),
+  check("process_releases_released_by_check", sql`${table.releasedBy} ~ '[^[:space:]]'`),
+  unique("process_releases_tenant_id_id_key").on(table.tenantId, table.id),
+  unique("process_releases_tenant_definition_key").on(
+    table.tenantId,
+    table.definitionId,
+    table.definitionVersion,
+  ),
+])
+
+export const processDeployments = processSchema.table("deployments", {
+  id: id(),
+  tenantId: uuid("tenant_id").notNull(),
+  releaseId: uuid("release_id").notNull(),
+  environment: processRuntimeEnvironment("environment").notNull(),
+  deployedBy: text("deployed_by").notNull(),
+  promotionReason: text("promotion_reason").notNull(),
+  createdAt: createdAt(),
+}, (table) => [
+  foreignKey({
+    columns: [table.tenantId],
+    foreignColumns: [tenants.id],
+    name: "process_deployments_tenant_id_fkey",
+  }).onDelete("cascade"),
+  foreignKey({
+    columns: [table.tenantId, table.releaseId],
+    foreignColumns: [processReleases.tenantId, processReleases.id],
+    name: "process_deployments_release_fkey",
+  }).onDelete("cascade"),
+  check("process_deployments_deployed_by_check", sql`${table.deployedBy} ~ '[^[:space:]]'`),
+  check("process_deployments_reason_check", sql`${table.promotionReason} ~ '[^[:space:]]'`),
+  unique("process_deployments_tenant_release_environment_key").on(
+    table.tenantId,
+    table.releaseId,
+    table.environment,
+  ),
+])
+
+export const processReleaseAudits = processSchema.table("release_audits", {
+  id: id(),
+  tenantId: uuid("tenant_id").notNull(),
+  releaseId: uuid("release_id").notNull(),
+  event: processReleaseAuditEvent("event").notNull(),
+  actorPrincipalId: text("actor_principal_id").notNull(),
+  environment: processRuntimeEnvironment("environment"),
+  reason: text("reason").notNull(),
+  createdAt: createdAt(),
+}, (table) => [
+  foreignKey({
+    columns: [table.tenantId],
+    foreignColumns: [tenants.id],
+    name: "process_release_audits_tenant_id_fkey",
+  }).onDelete("cascade"),
+  foreignKey({
+    columns: [table.tenantId, table.releaseId],
+    foreignColumns: [processReleases.tenantId, processReleases.id],
+    name: "process_release_audits_release_fkey",
+  }).onDelete("cascade"),
+  check("process_release_audits_actor_check", sql`${table.actorPrincipalId} ~ '[^[:space:]]'`),
+  check("process_release_audits_reason_check", sql`${table.reason} ~ '[^[:space:]]'`),
 ])
 
 export const workflowRuns = processSchema.table("workflow_runs", {
