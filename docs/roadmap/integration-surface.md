@@ -107,6 +107,11 @@ Exit criteria:
 - provider-specific retries and acknowledgments do not leak into domain code;
 - connector plugin trust and secret handling pass review.
 
+The bounded provider-neutral persistence proof now covers tenant-scoped replay protection, normalized
+provider status, retry/dead-letter outcomes, redaction, compatibility and payload-limit checks, and
+connector health/lag metrics across a PostgreSQL restart. It does not activate a provider adapter or
+claim production readiness for the broader 0.9 profile.
+
 ## 0.95 — Process Studio Integration
 
 Expose approved connector capabilities to Process Studio:

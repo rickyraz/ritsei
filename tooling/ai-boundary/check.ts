@@ -28,6 +28,9 @@ const directMutation =
 const normalizePath = (path: string) => path.replaceAll("\\", "/")
 const isProviderImport = (specifier: string) =>
   providerSpecifiers.some((pattern) => pattern.test(specifier))
+// The reliability store is an explicit persistence adapter, not provider/model code.
+const isPersistenceBoundary = (path: string) =>
+  path === "packages/integrations/src/reliability-store.ts"
 const isAiSurface = (path: string) =>
   path.startsWith("packages/integrations/") ||
   /(?:^|\/)(?:ai|agent|agents|recommendation|recommendations)(?:\/|[-_.]|$)/i.test(path)
@@ -47,6 +50,12 @@ const providerBoundaryFailures = (path: string, providerImports: readonly string
       } must stay under packages/integrations/`,
   )
 
+const persistenceBoundaryFailures = (path: string, providerImports: readonly string[]) =>
+  providerImports.map(
+    (specifier) =>
+      `${path}: persistence adapter cannot import provider SDK ${JSON.stringify(specifier)}`,
+  )
+
 const privateBoundaryFailures = (path: string, specifiers: readonly string[]) =>
   specifiers.filter(isPrivateSpecifier).map(
     (specifier) =>
@@ -57,6 +66,7 @@ const analyzeAiFile = (file: SourceFile): readonly string[] => {
   const path = normalizePath(file.path)
   const specifiers = extractModuleSpecifiers(file.source)
   const providerImports = specifiers.filter(isProviderImport)
+  if (isPersistenceBoundary(path)) return persistenceBoundaryFailures(path, providerImports)
   const aiSurface = isAiSurface(path) || providerImports.length > 0
   if (!aiSurface) return providerBoundaryFailures(path, providerImports)
 

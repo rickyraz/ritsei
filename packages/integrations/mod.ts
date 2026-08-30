@@ -71,6 +71,21 @@ export {
 } from "./src/reliability.ts"
 export type { ExternalReliabilityDecision, ExternalReliabilityInput } from "./src/reliability.ts"
 export {
+  ExternalReliabilityHealth,
+  ExternalReliabilityKind,
+  ExternalReliabilityRecord,
+  ExternalReliabilityRecordInput,
+  makeMemoryExternalReliabilityStore,
+  makePostgresExternalReliabilityStore,
+} from "./src/reliability-store.ts"
+export type {
+  ExternalReliabilityHealth as ExternalReliabilityHealthType,
+  ExternalReliabilityRecord as ExternalReliabilityRecordType,
+  ExternalReliabilityRecordInput as ExternalReliabilityRecordInputType,
+  ExternalReliabilityRecordResult,
+  ExternalReliabilityStore,
+} from "./src/reliability-store.ts"
+export {
   activateExternalConnector,
   ExternalConnectorStatus,
   ExternalDeliveryControlKind,

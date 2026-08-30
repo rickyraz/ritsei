@@ -6,8 +6,9 @@
 > profiles, protocol normalization, integration authentication, delivery
 > reliability, and Process Studio integration awareness.
 >
-> **Implementation status:** Planned. The profile is a compatibility target; it
-> does not imply that every adapter or protocol is implemented today.
+> **Implementation status:** Partial. The repository has a provider-neutral 0.9
+> reliability persistence proof; provider adapters and production readiness remain
+> gated by the evidence below.
 >
 > **Related documents**
 >
@@ -36,6 +37,13 @@ External embedding, reranking, and model APIs are connector providers. Their cre
 handling, timeouts, retries, and failures remain in the integration boundary. Domain transactions do
 not wait on them, and their output remains a rebuildable search projection governed by
 [`search-architecture.md`](./search-architecture.md).
+
+Provider/model adapters and persistence adapters are separate responsibilities. The current
+provider-neutral reliability proof is owned by the dedicated integration persistence adapter at
+`packages/integrations/src/reliability-store.ts`; it may use the kernel database capability and
+integration-owned tables, but it must not import provider SDKs or execute provider calls. The
+AI/provider boundary check allowlists only this explicit persistence seam; other provider/model
+files remain unable to access private persistence.
 
 ```text
 External Developer / Third Party
@@ -447,6 +455,12 @@ or manual recovery
 The connector never reports success merely because a request was sent. It must
 represent accepted, committed, unknown, failed, and compensated states according
 to the provider contract.
+
+The bounded 0.9 reliability slice persists tenant-scoped replay records with normalized provider
+status, retry/dead-letter state, redacted payloads, compatibility checks, payload limits, and
+connector lag metrics. PostgreSQL writes use the kernel transaction boundary; the slice does not
+claim a live provider adapter, cross-system exactly-once delivery, or production connector
+activation.
 
 ## Connector Lifecycle
 

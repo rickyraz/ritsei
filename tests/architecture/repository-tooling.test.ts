@@ -75,6 +75,24 @@ describe("repository tooling", () => {
       }]),
       [],
     )
+    const integrationSchemaPath = ["../../../db/schema", "integration.ts"].join("/")
+    assert.deepStrictEqual(
+      analyzeAiBoundary([{
+        path: "packages/integrations/src/reliability-store.ts",
+        source: [
+          `import { externalReliabilityRecords } from "${integrationSchemaPath}"`,
+          'import { Database } from "../../kernel/mod.ts"',
+          "database.transaction(() => undefined)",
+        ].join("\n"),
+      }]),
+      [],
+    )
+    assert.isTrue(
+      analyzeAiBoundary([{
+        path: "packages/integrations/src/reliability-store.ts",
+        source: providerImport("openai", "OpenAI"),
+      }]).some((failure) => failure.includes("persistence adapter cannot import provider SDK")),
+    )
 
     const failures = analyzeAiBoundary([{
       path: "packages/sales/src/recommendations/model.ts",

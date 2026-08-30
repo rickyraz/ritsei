@@ -24,6 +24,7 @@ export default defineConfig({
     "party",
     "auth",
     "authorization",
+    "integration",
     "sales",
     "procurement",
     "inventory",
