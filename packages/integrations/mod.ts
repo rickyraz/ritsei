@@ -5,6 +5,22 @@ export {
   ExternalProblemDetails,
   isAllowlistedExternalAction,
 } from "./src/contract.ts"
+export { CloudEventsEnvelope, normalizeCloudEvent } from "./src/cloudevents.ts"
+export type {
+  CloudEventsEnvelope as CloudEventsEnvelopeType,
+  NormalizedExternalEvent,
+  NormalizeExternalEventInput,
+} from "./src/cloudevents.ts"
+export {
+  OpenApiDocument,
+  OpenApiImportRequest,
+  OpenApiOperation,
+  validateOpenApiImport,
+} from "./src/openapi.ts"
+export type {
+  OpenApiImportRequest as OpenApiImportRequestType,
+  OpenApiOperationSelection,
+} from "./src/openapi.ts"
 export type {
   ExternalActionCatalogEntry,
   ExternalActionIdempotency,
