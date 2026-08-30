@@ -10,6 +10,7 @@
     "@effect/platform-node-shared": "4.0.0-rc.111",
     "@effect/sql-pg": "4.0.0-rc.111",
     "@std/fs": "jsr:^1.0.24",
+    "solid-js": "2.0.0-rc.1",
     "@std/media-types": "jsr:^1.1.0",
     "@std/path": "jsr:^1.1.6",
     "@std/streams": "jsr:^1.1.1",
