@@ -6,6 +6,18 @@ export {
   isAllowlistedExternalAction,
 } from "./src/contract.ts"
 export { CloudEventsEnvelope, normalizeCloudEvent } from "./src/cloudevents.ts"
+export { makeMemoryExternalDeliveryStore } from "./src/delivery-store.ts"
+export type {
+  ExternalDeliveryLog,
+  ExternalDeliveryStatus,
+  ExternalDeliveryStore,
+} from "./src/delivery-store.ts"
+export { makeHttpsConnectorRuntime } from "./src/https-runtime.ts"
+export type {
+  HttpsConnectorRuntime,
+  HttpsSignatureVerifier,
+  HttpsWebhookInput,
+} from "./src/https-runtime.ts"
 export type {
   CloudEventsEnvelope as CloudEventsEnvelopeType,
   NormalizedExternalEvent,
