@@ -2,180 +2,115 @@
 
 > **Status:** Canonical roadmap subdocument
 >
-> **Owns:** sequencing and readiness gates for the connector and external
-> action/event surface.
+> **Track ID:** `integration`
 >
-> **Detailed semantics belong to:** [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md).
-
+> **Owns:** sequencing and readiness gates for the connector and external action/event surface.
+>
+> **Measured by:** `integration.*` gates through `deno task roadmap:measure`.
+>
+> **Detailed semantics belong to:**
+> [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md).
+>
 > **Related documents**
 >
 > - Roadmap index: [`./README.md`](./README.md)
 > - Domain maturity: [`./domain-maturity.md`](./domain-maturity.md)
-> - Integration architecture: [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md)
+> - Integration architecture:
+>   [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md)
 > - Process Studio: [`../architecture/process-studio.md`](../architecture/process-studio.md)
-> - Plugin architecture: [`../architecture/plugin-architecture.md`](../architecture/plugin-architecture.md)
-> - Integration profile ADR: [`../decisions/0019-adopt-integration-surface-profile.md`](../decisions/0019-adopt-integration-surface-profile.md)
+> - Plugin architecture:
+>   [`../architecture/plugin-architecture.md`](../architecture/plugin-architecture.md)
+> - Integration profile ADR:
+>   [`../decisions/0019-adopt-integration-surface-profile.md`](../decisions/0019-adopt-integration-surface-profile.md)
 
-## Rule
+## Scope
 
-External integration must be a typed, versioned, observable boundary. It must
-not become a shortcut around domain ownership or a reason to expose transport
-internals to Process Studio.
+External integration is a typed, versioned, observable boundary—not a shortcut around domain
+ownership and not transport metadata in Process IR.
 
 ```text
-external protocol
-        ↓
-connector adapter
-        ↓
-ExternalAction / ExternalEvent
-        ↓
-public domain contract or Process Studio
+external protocol → connector adapter → ExternalAction / ExternalEvent
+                  → public domain contract or Process Studio
 ```
 
-## 0.8 — Contract Profile
+## Sequence
 
-Establish the golden profile:
+### 0.8 — Contract profile
+
+Use the approved baseline:
 
 ```text
 HTTPS + JSON + OpenAPI 3.2.0
 CloudEvents 1.0.x over HTTPS/Webhook
-AsyncAPI 3.1.0 event catalog
-OAuth 2.0 + RFC 9700 security practices
+AsyncAPI 3.1.0 catalog
+OAuth 2.0 with RFC 9700 security practices
 RFC 9457 Problem Details
 ```
 
-Exit criteria:
+**Exit:** Domain/External actions and events are distinct; IDs, versions, schemas, scopes, and
+tenant boundaries are typed; OpenAPI operations are allowlisted; CloudEvents envelopes and payloads
+are separately validated; credentials do not enter Process IR or domain contracts.
 
-- `DomainAction`/`ExternalAction` and `DomainEvent`/`ExternalEvent` are distinct;
-- connector IDs, versions, schemas, scopes, and tenant boundaries are typed;
-- OpenAPI operations are allowlisted before import;
-- CloudEvents envelope and external payload are separately validated;
-- provider credentials never enter Process IR or domain contracts.
+### 0.85 — Connector runtime
 
-## 0.85 — Connector Runtime
+Implement the minimum headless path: OpenAPI action invocation, HTTPS webhook ingestion, CloudEvents
+validation, OAuth scope enforcement, idempotency/deduplication, timeout/bounded retry, and delivery
+log.
 
-Implement the minimum headless connector path:
+**Exit:** duplicate provider requests/events are safe; timeout and unknown outcome are observable;
+errors normalize to stable integration failures; network calls do not extend PostgreSQL
+transactions; side effects have compensation or manual recovery.
 
-```text
-OpenAPI action invocation
-HTTPS webhook ingestion
-CloudEvents validation
-OAuth scope enforcement
-idempotency and deduplication
-timeout and bounded retry
-delivery log
-```
+### 0.9 — Reliability and compatibility
 
-Exit criteria:
+Add dead-letter handling, replay protection, rate/payload limits, redaction/retention, provider
+status, contract compatibility, health, and lag measures. gRPC, Kafka, AMQP, NATS, SQS/Pub/Sub,
+EventBridge, SOAP, and OData remain optional adapters behind the same boundary.
 
-- duplicate provider requests/events are safe;
-- provider timeout and unknown outcome are observable;
-- external errors normalize to stable integration failures;
-- connector calls do not extend PostgreSQL transactions across the network;
-- compensation or manual recovery is explicit for every side-effecting action.
+**Exit:** advanced protocols are invisible to Process IR; every adapter has an owner, version,
+compatibility range, tests, provider-specific retry policy, and secret-handling review.
 
-## 0.9 — Reliability and Compatibility
+### 0.95 — Process Studio integration
 
-Add operational maturity:
+Expose only approved connector capabilities through catalog references. The canvas sees typed
+inputs/outputs, scope, idempotency, timeout, retry, and compensation—not transport details.
 
-```text
-dead-letter handling
-replay protection
-rate and payload limits
-redaction and retention
-provider status tracking
-contract compatibility checks
-connector health and lag metrics
-```
+**Exit:** external actions/events are versioned and catalog-driven; OAuth scopes remain separate
+from domain capabilities; static validation and side-effect-free simulation pass.
 
-Advanced adapters may be added behind the same normalized boundary:
+### 1.0 — Governed integration surface
 
-```text
-gRPC
-Kafka
-AMQP
-NATS
-SQS / Pub/Sub / EventBridge
-SOAP
-OData
-```
+Deliver connector registration/review, OpenAPI import governance, webhook verification, publication,
+versioning/retirement, operator delivery controls, provider runbooks, audit, and redaction.
 
-Exit criteria:
+**Exit:** no unreviewed operation is executable; connector and domain lifecycles are separate;
+published processes remain compatible; external effects support retry, compensation, or manual
+recovery; approved contracts can generate public documentation.
 
-- advanced protocols are invisible to Process IR;
-- each adapter has an owner, version, compatibility range, and test suite;
-- provider-specific retries and acknowledgments do not leak into domain code;
-- connector plugin trust and secret handling pass review.
+## Current evidence
 
-The bounded provider-neutral persistence proof now covers tenant-scoped replay protection, normalized
-provider status, retry/dead-letter outcomes, redaction, compatibility and payload-limit checks, and
-connector health/lag metrics across a PostgreSQL restart. It does not activate a provider adapter or
-claim production readiness for the broader 0.9 profile.
+The bounded provider-neutral proof covers tenant-scoped replay protection, normalized status,
+retry/dead-letter outcomes, redaction, compatibility/payload checks, health/lag metrics, and the
+Process Studio bridge. It does not activate a provider or claim production readiness.
 
-## 0.95 — Process Studio Integration
+## Measures
 
-Expose approved connector capabilities to Process Studio:
+| Measure                                                   | Target for governed-surface proof |
+| --------------------------------------------------------- | --------------------------------- |
+| `integration.*` mechanical gates                          | all five pass                     |
+| unreviewed executable connector operations                | `0`                               |
+| duplicate side effects after retry                        | `0`                               |
+| external operations without idempotency/recovery metadata | `0`                               |
+| credentials or raw provider payloads in Process IR        | `0`                               |
+| provider-specific transport types in domain packages      | `0`                               |
 
-```text
-Integrations
-└── Midtrans
-    ├── CreatePayment
-    └── RefundPayment
+A passing surface gate does not activate a provider. Provider activation additionally requires a
+selected owner, credentials, production endpoint, recovery rehearsal, and reviewed runbook. These
+are mechanical readiness gates, not proof that every provider is production-ready.
 
-External Events
-└── Midtrans.PaymentSettled
-```
+## Stop conditions
 
-Exit criteria:
-
-- external actions/events are catalog-driven and versioned;
-- transport details are absent from the canvas;
-- OAuth scopes and domain capabilities remain separate;
-- static validation understands schemas, scope, idempotency, timeout, retry, and
-  compensation metadata;
-- connector operations can be simulated without real provider side effects.
-
-The bounded Process Studio bridge now exposes only PUBLIC, allowlisted catalog references, strips
-transport metadata from Process IR, validates typed action mappings, keeps OAuth scope separate from
-domain authorization, and supports side-effect-free simulation. It does not execute providers or
-own domain mutations.
-
-## 1.0 — Governed Integration Surface
-
-Deliver:
-
-```text
-connector registration and review
-OpenAPI import governance
-webhook registration and verification
-external action/event publication
-connector versioning and retirement
-operator delivery/retry controls
-provider-specific runbooks
-integration audit and redaction
-```
-
-Exit criteria:
-
-- no unreviewed connector operation is executable;
-- connector lifecycle is independent from domain lifecycle;
-- published process versions remain compatible with connector versions;
-- external effects support safe retry, compensation, or manual recovery;
-- public documentation can be generated from the approved contracts.
-
-The bounded governance proof now persists reviewed/active/retired connector versions, rejects
-unreviewed activation and controls after retirement, records idempotent delivery controls, and
-retains append-only audit entries under an explicit retention horizon. Provider-specific runbooks and
-production adapter activation remain separate follow-up work.
-
-## Hard Stops
-
-Do not expose an external connector to Process Studio when:
-
-- the provider operation has no idempotency or unknown-outcome strategy;
-- OAuth scope is being used as a substitute for domain authorization;
-- the operation requires arbitrary script, SQL, or unrestricted HTTP;
-- its error/timeout/retry semantics are undocumented;
-- credentials or raw provider payloads would enter Process IR;
-- no owner exists for the connector adapter;
-- compensation/manual recovery is undefined for a committed side effect.
+Stop exposure when a provider operation lacks idempotency or unknown-outcome handling, OAuth scope
+is used as domain authorization, arbitrary script/SQL/unrestricted HTTP is required, retry semantics
+are undocumented, credentials enter Process IR, no adapter owner exists, or compensation/manual
+recovery is undefined.

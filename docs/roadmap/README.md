@@ -2,222 +2,147 @@
 
 > **Status:** Canonical roadmap index
 >
-> **Owns:** sequencing, dependency gates, readiness, decision backlog, and
-> milestone exit criteria.
+> **Owns:** sequencing, dependencies, readiness gates, measures, and milestone exit criteria.
 >
-> **Must not own:** detailed domain invariants, runtime semantics, or historical
-> decision rationale. Those belong to the relevant architecture document or ADR.
+> **Does not own:** domain invariants, runtime semantics, or historical decision rationale. Those
+> belong to the owning architecture document or ADR.
 >
 > **Related documents**
 >
 > - Documentation governance: [`../documentation-boundaries.md`](../documentation-boundaries.md)
 > - Product vision: [`../product/vision.md`](../product/vision.md)
 > - Architecture overview: [`../architecture/overview.md`](../architecture/overview.md)
-> - Identity and principals: [`../architecture/identity-and-principals.md`](../architecture/identity-and-principals.md)
-> - HTTP API boundary: [`../architecture/api.md`](../architecture/api.md)
-> - Authorization architecture: [`../architecture/authorization.md`](../architecture/authorization.md)
-> - Process Studio architecture: [`../architecture/process-studio.md`](../architecture/process-studio.md)
-> - External integration surface: [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md)
-> - Process Studio ADR: [`../decisions/0018-adopt-typed-process-studio.md`](../decisions/0018-adopt-typed-process-studio.md)
+> - Process Studio architecture:
+>   [`../architecture/process-studio.md`](../architecture/process-studio.md)
+> - Identity and principals:
+>   [`../architecture/identity-and-principals.md`](../architecture/identity-and-principals.md)
+> - Integration architecture:
+>   [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md)
 > - Product release workflow: [`../development/releasing.md`](../development/releasing.md)
-> - Product SemVer authority ADR: [`../decisions/0066-adopt-single-product-semver-authority.md`](../decisions/0066-adopt-single-product-semver-authority.md)
+> - Product SemVer ADR:
+>   [`../decisions/0066-adopt-single-product-semver-authority.md`](../decisions/0066-adopt-single-product-semver-authority.md)
 
-## Purpose
+## How to read this folder
 
-RITSEI must decide and stabilize its ERP primitives before Process Studio
-becomes a large durable runtime. The roadmap is therefore dependency-first, not
-feature-count-first.
+- This index owns the dependency graph and global exit conditions.
+- Each subroadmap owns one delivery track and its phase gates.
+- Architecture documents own current semantics; ADRs own difficult-to-reverse decisions.
+- `tooling/roadmap-completion/registry.ts` and `deno task roadmap:measure` are the mechanical status
+  source. They distinguish implementation markers, executable checks, and validated operational
+  evidence; prose status must not contradict their output.
 
-```text
-primitive decisions
-        ↓
-domain contracts and invariants
-        ↓
-typed actions and events
-        ↓
-headless process runtime
-        ↓
-recovery, compensation, and monitoring
-        ↓
-visual designer and governed 1.0
-```
+Every track uses the same small contract: scope, ordered phases, measurable exit evidence, measures,
+and stop conditions. Implementation inventories belong in code, tests, or operational evidence—not
+in this folder.
 
-A roadmap item is not complete because a table or screen exists. It is complete
-when its owner, public contract, invariant proof, authorization, failure model,
-and operational behavior are clear enough to become a safe Process Studio
-capability.
+## Current position
 
-## Current Posture
+| Area                | Measured position                                                  | Next decision                                                            |
+| ------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| ERP primitives      | P0–P3 pass; open unknown decisions: `0`                            | Expand only when a requested capability needs a new primitive            |
+| Domain providers    | Six bounded Level 3 provider slices; seven packages remain partial | Mature only requested actions, not whole packages                        |
+| Financial execution | `2/16` activation gates pass; production decision is **NO-GO**     | Close outage, restore, replay, and bounded-cutover evidence              |
+| Process Studio      | Pre-0.8 through governed 1.0 mechanical gates pass                 | Keep production activation behind global and operational gates           |
+| Integrations        | Contract through governed-surface mechanical gates pass            | Activate providers only with owner, credentials, recovery, and runbooks  |
+| Business Packs      | Contract-only Distribution slice passes                            | Add catalog-backed resolution before installation or onboarding mutation |
 
-The repository currently has these package families:
+The current product releases are pre-release, source-only snapshots. Release status and upgrade
+caveats are owned by [`../development/releasing.md`](../development/releasing.md).
 
-```text
-Foundation:
-  kernel, auth, authorization, identity, party, catalog, messaging, integrations
+## Tracks
 
-Business domains:
-  inventory, accounting, sales
+| ID            | Track                 | Owns                                                                              | Gate set          | Source                                                             |
+| ------------- | --------------------- | --------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------ |
+| `erp`         | ERP primitives        | reusable scope, product, document, quantity, money, audit, and event decisions    | `erp.p0`–`erp.p3` | [`erp-primitives.md`](./erp-primitives.md)                         |
+| `domain`      | Domain maturity       | package/provider readiness and Level 3 action/event evidence                      | `domain.*`        | [`domain-maturity.md`](./domain-maturity.md)                       |
+| `financial`   | Financial execution   | TigerBeetle transition, reconciliation, rehearsal, and activation                 | `financial.*`     | [`financial-ledger-execution.md`](./financial-ledger-execution.md) |
+| `process`     | Process Studio        | catalog, runtime, operations, designer, and governed release gates                | `process.*`       | [`process-studio.md`](./process-studio.md)                         |
+| `integration` | External integration  | connector contracts, delivery, reliability, Process Studio bridge, and governance | `integration.*`   | [`integration-surface.md`](./integration-surface.md)               |
+| `packs`       | Business Pack Library | pack resolution, draft materialization, onboarding, and governed upgrades         | `packs.contract`  | [`process-pack-library.md`](./process-pack-library.md)             |
 
-Scaffolds or partial domains:
-  procurement (SupplierAccount + Level 2 PurchaseOrder lifecycle), billing
+There are six subdocuments and six measured tracks. `README.md` is the index, not a seventh track. A
+new track requires a registry entry, a measured gate, and a documented owner.
 
-Application coordinator only:
-  process (bounded order lifecycle; not Process Studio)
-
-Not yet implemented as a runtime package:
-  workflow / Process Studio
-```
-
-The P0-P3 bounded primitive baseline is ready for the selected internal slices. Inventory
-`stock.adjust` v1 and Sales `order.confirm` v1 are Level 3 action slices with owner-published events.
-Accounting publishes the PUBLIC `revenue.posted` v1 event and the PUBLIC `revenue.post` v1 action;
-its amount is derived and verified from a Sales-owned confirmed-order fact rather than supplied as
-an accounting fact by the caller. Accounting’s separate financial-operation intent slice follows
-ADR-0040’s non-activated TigerBeetle execution boundary. Procurement now has `SupplierAccount`,
-a bounded Level 2 draft/read/confirm/cancel `PurchaseOrder` lifecycle, and a bounded Level 2
-`GoodsReceipt` action that commits Procurement evidence with Inventory movement under the canonical
-[`../architecture/procurement.md`](../architecture/procurement.md) specification. Procurement and
-Billing must not be advertised as Process Studio providers until their selected actions reach the
-required maturity. PgQue, external connectors, and the broad workflow runtime remain gated.
-
-## Release Plan
-
-Product release identity is an annotated `vX.Y.Z` Git tag. `v0.1.0` is the historical P0–P3 baseline
-at `7befeb495567e926e32ab85a926c96d20c92ec37` from August 13, 2026. `v0.2.0` is the current
-release-preparation snapshot and must be tagged only after the release checks pass. Both are
-pre-release, source-only snapshots without a build-artifact or automatic migration/upgrade guarantee.
-
-See [`../development/releasing.md`](../development/releasing.md) and
-[`../decisions/0066-adopt-single-product-semver-authority.md`](../decisions/0066-adopt-single-product-semver-authority.md).
-
-## Roadmap Tracks
-
-| Track | Purpose | Canonical subroadmap |
-|---|---|---|
-| ERP primitives | Resolve scope, master data, document, quantity, money, control, and integration semantics | [`erp-primitives.md`](./erp-primitives.md) |
-| Financial ledger execution | Migrate the bounded Accounting profile to the required TigerBeetle execution boundary | [`financial-ledger-execution.md`](./financial-ledger-execution.md) |
-| Domain maturity | Turn existing packages into stable action/event providers and identify missing domains | [`domain-maturity.md`](./domain-maturity.md) |
-| Process Studio readiness | Gate catalogs, runtime, recovery, and designer work | [`process-studio.md`](./process-studio.md) |
-| Business Pack Library | Turn typed capabilities into curated, profile-aware, editable process distributions | [`process-pack-library.md`](./process-pack-library.md) |
-| External integration surface | Gate connector protocols, auth, delivery, and external action/event normalization | [`integration-surface.md`](./integration-surface.md) |
-
-## Dependency Stages
-
-### Foundation Gate — before Process Studio 0.8
-
-Decide and document the primitives that affect cross-domain contracts:
+## Dependency graph
 
 ```text
-scope and organization
-party roles and relationships
-product/service and unit of measure
-location and resource identity
-document identity, references, and lifecycle
-quantity and movement semantics
-money, currency, tax, obligation, and settlement scope
-fiscal period and control semantics
-audit, correlation, and causation
-identity, authentication, principal, and authorization provider boundaries
+ERP primitive decisions
+        ↓
+Domain contracts and Level 3 providers
+        ↓
+Typed Action/Event Catalog
+        ↓
+Headless Process IR runtime
+        ↓
+Recovery, compensation, and operations
+        ↓
+Validated designer
+        ↓
+Governed Process Studio release
 ```
 
-No large workflow runtime should be started while these remain material
-`UNKNOWN` decisions. Financial actions must also pass the authority and recovery gates in
-[`financial-ledger-execution.md`](./financial-ledger-execution.md) before depending on TigerBeetle.
+Parallel tracks attach at explicit boundaries:
 
-### Domain Contract Gate — before catalog registration
+| Track                | Entry condition                                      | Exit evidence                                                                |
+| -------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Financial execution  | bounded Accounting profile and provider-neutral port | accepted transfers, projections, restore, replay, and cutover evidence       |
+| External integration | separate Domain/External contracts                   | idempotent delivery, normalized failures, recovery, and connector governance |
+| Business Packs       | public catalog and deterministic Process IR          | actionable resolution, editable drafts, and version-safe upgrades            |
 
-A domain capability must have:
+## Global exit
 
-- one semantic owner;
-- a public Effect contract;
-- Effect Schema input/output and stable tagged failures;
-- authorization and tenant scope;
-- transaction, idempotency, and concurrency semantics where relevant;
-- database constraints and invariant tests;
-- typed event behavior when a committed fact is process-visible;
-- compensation or explicit manual-recovery semantics for committed effects.
-
-### Integration Surface Gate
-
-Before external actions or events become Process Studio capabilities:
-
-- `DomainAction`/`DomainEvent` and `ExternalAction`/`ExternalEvent` are separate;
-- OpenAPI operations are allowlisted and versioned;
-- CloudEvents are authenticated, schema-validated, and deduplicated;
-- AsyncAPI remains a message contract/catalog, not a required broker;
-- OAuth scopes remain separate from domain capabilities;
-- external side effects declare idempotency, retry, provider status, and
-  compensation/manual recovery;
-- connector protocols do not leak into Process IR or domain contracts.
-
-The canonical profile is owned by
-[`../architecture/integration-architecture.md`](../architecture/integration-architecture.md).
-
-### Catalog Gate — Process Studio 0.8
-
-At least two mature domains publish versioned Typed Action and Event Catalog
-entries. Catalog metadata must be derived from or tested against public contracts,
-not copied into an unverified UI registry.
-
-### Headless Runtime Gate — Process Studio 0.85
-
-A small Process IR runtime must survive restart, duplicate delivery, lost command
-responses, timers, event waits, human tasks, and version pinning before a visual
-designer is prioritized.
-
-### Operational Gate — Process Studio 0.9
-
-Recovery, retry, cancellation, audit correlation, monitoring, and compensation
-must be observable and operator-safe. `pg_durable` remains subject to its
-compatibility and production gates.
-
-### Designer Gate — Process Studio 0.95
-
-Only after the headless runtime and static validator are stable:
-
-```text
-drag-and-drop editor
-keyboard/structured editor
-catalog-driven palette
-typed mappings
-simulation
-version comparison
-```
-
-### Governed Release Gate — Process Studio 1.0
-
-Publishing, approvals, immutable versions, task inbox, process monitor,
-compensation controls, basic analysis, and BPMN interoperability may ship only
-when all prior gates pass.
-
-## Global Exit Criteria
-
-Before Process Studio becomes a broad runtime, verify:
+The broad Process Studio/runtime milestone is open until all of these are true:
 
 ```text
 [ ] no material primitive decision is UNKNOWN
 [ ] each mutable fact has one semantic owner
-[ ] tenant, organization, and legal scope are explicit
-[ ] product, service, UOM, location, document, quantity, and money semantics are stable
-[x] procurement and billing are either implemented or explicitly out of scope
-[ ] public domain contracts expose process-safe actions/events
-[ ] capability stability/release states and compatibility ranges are explicit
-[ ] process release is separate from environment deployment
-[ ] execution principal, delegation, SoD, and business observability are explicit
-[ ] committed effects declare compensation or manual recovery
-[ ] catalog versions and Process IR versions are deterministic
-[ ] runtime recovery, idempotency, and unknown-outcome handling are proven
+[ ] tenant, organization, legal, product, quantity, document, and money scopes are explicit
+[ ] public domain actions/events have stable failures, authorization, and compatibility
+[ ] committed effects have compensation or manual recovery
+[ ] Process IR and catalog versions are deterministic and pinned
+[ ] restart, duplicate, unknown-outcome, and recovery behavior is proven
+[ ] authentication, current tenant membership, scope, relationship/SoD, and revocation fail closed
 [ ] authorization and audit are enforced outside the browser
-[ ] external authentication, tenant membership, capability, scope, relationship, SoD, and revocation boundaries are explicit
-[ ] visual design is a projection over validated runtime semantics
+[ ] visual behavior is only a projection over validated runtime semantics
+[ ] financial activation, integration activation, and deployment gates are separately approved
 ```
 
-## Change Control
+The global gate is composite: an open financial activation gate keeps the global result open even
+when the Process Studio or integration track has passed its own mechanical gates.
 
-A roadmap change that changes ownership, transaction semantics, trust, durability,
-public contracts, or the Process Studio execution model requires an ADR. A
-milestone may be reordered only when its dependency and exit criteria are
-updated here and in the affected subroadmap.
+## Measures
 
-Do not create a new package solely because it appears on a product roadmap. Add a
-package only when it owns a distinct invariant or public capability.
+Run:
+
+```sh
+deno task roadmap:measure
+```
+
+The command reports the following stable measures:
+
+| Metric                                      | Desired condition                                                    |
+| ------------------------------------------- | -------------------------------------------------------------------- |
+| `roadmap_tracks`                            | equals the six registered tracks                                     |
+| `unregistered_roadmap_tracks`               | `0`                                                                  |
+| `unassigned_roadmap_gates`                  | `0`                                                                  |
+| `roadmap_global_exit`                       | `PASS` before broad production activation                            |
+| `registered_gates_remaining`                | visible count, including non-global tracks                           |
+| `roadmap_exit_gates_completed`              | completed dependencies of the global composite gate                  |
+| `remaining_roadmap_exit_gates`              | `0` before broad production activation                               |
+| `level3_capabilities`                       | at least two before catalog/runtime work; more only by evidence      |
+| `open_unknown_decisions`                    | `0` for the selected scope                                           |
+| `financial_activation_gates_remaining`      | `0` before financial activation                                      |
+| `process_studio_mechanical_gates_remaining` | `0` before governed-release review                                   |
+| `integration_surface_gates_remaining`       | `0` means the governed surface proof passes, not provider activation |
+| `business_pack_contract_gates_remaining`    | `0` means the contract slice passes, not installation readiness      |
+
+The command may report open gates without failing; open gates are the roadmap status. Missing files,
+unknown dependencies, invalid financial evidence, or unregistered roadmap tracks fail the command.
+
+## Change control
+
+- Change ownership, trust, durability, transaction semantics, or public contracts through an ADR.
+- Add a track only with one owner, stable gate IDs, measured evidence, and measurable exit criteria.
+- Remove duplicated architecture detail; link to the canonical owner instead.
+- Do not create a package merely because a roadmap item names a functional area.
+- Update this index only when sequencing, dependencies, or global exit conditions change.

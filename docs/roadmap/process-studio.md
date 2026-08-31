@@ -2,50 +2,41 @@
 
 > **Status:** Canonical roadmap subdocument
 >
-> **Owns:** prerequisites, dependency gates, and release readiness for the
-> Process Studio roadmap.
+> **Track ID:** `process`
 >
-> **Detailed semantics belong to:** [`../architecture/process-studio.md`](../architecture/process-studio.md).
-
+> **Owns:** prerequisites, dependency gates, and release readiness for Process Studio.
+>
+> **Measured by:** `process.*` gates through `deno task roadmap:measure`.
+>
+> **Detailed semantics belong to:**
+> [`../architecture/process-studio.md`](../architecture/process-studio.md).
+>
 > **Related documents**
 >
 > - Roadmap index: [`./README.md`](./README.md)
-> - ERP primitive decisions: [`./erp-primitives.md`](./erp-primitives.md)
+> - ERP primitives: [`./erp-primitives.md`](./erp-primitives.md)
 > - Domain maturity: [`./domain-maturity.md`](./domain-maturity.md)
-> - Process Studio architecture: [`../architecture/process-studio.md`](../architecture/process-studio.md)
 > - Process Pack Library: [`./process-pack-library.md`](./process-pack-library.md)
-> - Process Pack positioning:
->   [`../architecture/reference/process-pack-positioning.md`](../architecture/reference/process-pack-positioning.md)
-> - External integration surface: [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md)
-> - Process Studio ADR: [`../decisions/0018-adopt-typed-process-studio.md`](../decisions/0018-adopt-typed-process-studio.md)
-> - Capability release and runtime governance:
+> - Capability governance:
 >   [`../decisions/0020-adopt-capability-release-and-runtime-governance.md`](../decisions/0020-adopt-capability-release-and-runtime-governance.md)
-> - Governed AI recommendation and agent boundary:
+> - AI boundary:
 >   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
-> - Durable execution: [`../architecture/durable-execution.md`](../architecture/durable-execution.md)
+> - Durable execution:
+>   [`../architecture/durable-execution.md`](../architecture/durable-execution.md)
 > - Messaging: [`../architecture/pgque-messaging.md`](../architecture/pgque-messaging.md)
 
-## Rule
+## Scope
 
-The visual designer is not the beginning of Process Studio. The order is:
+Process Studio is built from stable domain contracts, not from a visual editor. The dependency order
+is:
 
 ```text
-primitive decisions
-        ↓
-mature domain contracts
-        ↓
-Typed Action/Event Catalogs
-        ↓
-headless Process IR runtime
-        ↓
-recovery, compensation, monitoring
-        ↓
-visual designer
-        ↓
-governed 1.0
+primitive decisions → mature providers → typed catalogs → headless Process IR
+→ recovery/operations → validated designer → governed release
 ```
 
-Do not expand the runtime while the lower layers are still speculative.
+The designer is a projection over validated runtime semantics. It does not execute commands, provide
+authorization, or create an autonomous agent path.
 
 ## Pre-0.8 Gate
 
@@ -66,193 +57,91 @@ Before Process Studio 0.8 work starts, resolve:
 [x] capability release states and compatibility ranges are defined
 [x] process promotion separates release from deployment across environments
 [x] execution principal, delegation, SoD, and business observability are explicit
+[x] authentication, current tenant membership, relationship scope, and revocation fail closed
 [x] AI output is non-authoritative; no AgentPrincipal, agent node, or autonomous mutation is in scope
 ```
 
-Billing remains explicitly outside the current Process Studio release scope under
-[ADR-0060](../decisions/0060-defer-billing-and-settlement-scope.md); this gate does not
-claim that Billing is implemented or ready.
+Billing remains outside the current release scope under
+[ADR-0060](../decisions/0060-defer-billing-and-settlement-scope.md). This gate means the boundary is
+explicit, not that Billing is implemented.
 
-If any item is material `UNKNOWN`, remain in the primitive/domain roadmap. External
-integration details are governed by
-[`../architecture/integration-architecture.md`](../architecture/integration-architecture.md).
+## Sequence
 
-Current evidence closes the bounded internal primitive and action-provider prerequisites:
-`inventory.stock.adjust` v1, `sales.order.confirm` v1, and `accounting.revenue.post` v1 are PUBLIC
-Level 3 action slices with owner-published events. Accounting derives the revenue amount from a
-Sales-owned confirmed-order fact. This permits bounded catalog, deterministic Process IR, and
-structured-designer work, but PgQue, external connectors, event waits, and the broad workflow runtime
-remain gated.
+### 0.8 — Capability metadata
 
-## 0.8 — Capability Metadata
+Register versioned Typed Action and Event Catalog entries from public contracts. Include tenant and
+capability scope, stability/release state, idempotency, correlation, causation, compensation, and a
+bounded precondition/effect vocabulary. External actions/events remain separate.
 
-Source of truth for the semantic contents is
-[`../architecture/process-studio.md`](../architecture/process-studio.md). The
-readiness work is:
+**Exit:** two domains publish catalog entries; metadata matches public contracts; unregistered
+actions/events cannot execute; AI/provider code cannot register capabilities or access private
+persistence.
 
-```text
-domain capability metadata
-Typed Domain Action/Event Catalog
-Typed External Action/Event Catalog boundary
-capability stability and release contract
-idempotency contracts
-correlation and causation contracts
-compensation metadata
-bounded precondition/effect vocabulary
-one typed source of truth for catalog/API/SDK/process metadata
-```
+### 0.85 — Minimal headless runtime
 
-Exit gate:
+Implement the smallest deterministic Process IR for definitions, instances, domain commands, pure
+decisions, timers, typed event waits, human tasks, execution context, and persisted step state.
 
-- two domains publish catalog entries;
-- entries are versioned and tenant-aware;
-- entries are verified against public contracts;
-- compensation distinguishes explicit command from manual recovery;
-- unregistered actions/events cannot execute in a process;
-- AI/provider code cannot register capabilities, access private persistence, or create an executable
-  agent path.
+**Exit:** restart/crash recovery, duplicate command/event safety, exact definition/catalog version
+pinning, and observable task/timer/event/compensation state pass. Process IR contains no model call,
+prompt, dynamic action, or nondeterministic AI binding.
 
-## 0.85 — Minimal Headless Runtime
+### 0.9 — Operational maturity
 
-Only after the 0.8 catalog gate:
+Add bounded retry, cancellation, recovery, compensation, audit correlation, SoD context, monitoring,
+operator controls, release/deployment promotion, and capability retirement.
 
-```text
-RITSEI Process IR
-process definitions and instances
-domain command execution
-pure decisions
-timers
-wait for typed events
-human tasks
-explicit execution context
-persisted step state
-business and technical correlation
-```
+**Exit:** operators distinguish business failure, technical retry, unknown external outcome,
+compensation, and manual recovery; compensation is authorized and idempotent; load, crash,
+migration, and upgrade proofs pass; `pg_durable` gates remain enforced.
 
-Exit gate:
+### 0.95 — Validated designer
 
-- restart and crash recovery work at every checkpoint;
-- duplicate commands/events do not duplicate domain effects;
-- instances pin exact definition and catalog versions;
-- task, timer, event-wait, and compensation state is observable;
-- Process IR contains no model call, prompt, dynamic action, or nondeterministic AI binding.
+Provide a catalog-driven palette, drag-and-drop and keyboard/structured editing, typed mappings,
+static validation, pure decision tables, simulation, and version comparison.
 
-## 0.9 — Operational Maturity
+**Exit:** visual and structured editors produce identical deterministic Process IR; invalid scope,
+mapping, ordering, retry, and compensation are rejected; keyboard alternatives and AI draft-only
+behavior are tested.
 
-```text
-capability deprecation and retirement
-process definition release/deployment promotion
-bounded retry
-recovery
-cancellation
-execution context and SoD policy
-audit and business correlation
-compensation execution
-monitoring APIs
-operator controls
-```
+### 1.0 — Governed Process Studio
 
-Exit gate:
+Preserve the simple user flow (`Draft → Test → Publish`) while the backend keeps immutable release
+versions, DEV/TEST/PROD deployment bindings, approvals, retirement, Task Inbox, Process Monitor,
+recovery/compensation controls, documentation, and bounded BPMN interoperability.
 
-- operators can distinguish business failure, technical retry, unknown external outcome,
-  compensation, and manual recovery;
-- compensation is independently authorized and idempotent;
-- no runtime path bypasses a domain public contract;
-- load, crash recovery, migration, and upgrade tests pass;
-- `pg_durable` gates are satisfied before it becomes authoritative;
-- any recommendation-originated action revalidates current authorization and SoD and binds the exact
-  recommendation, evidence, action version, input, and idempotency identity.
+**Exit:** running instances remain pinned, release and execution authorization are separate,
+operator recovery is safe, audit/redaction/accessibility pass, and unsupported BPMN executable
+semantics are rejected.
 
-## 0.95 — Visual Designer
+## Product lanes
 
-Only after the headless runtime is stable:
+| Lane                 | Current position                                | Activation proof                                                                          |
+| -------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Copilot draft        | typed draft-only surface; no provider execution | isolation, decoding, provenance, redaction, prompt-injection tests                        |
+| Authorized execution | visible but gated; browser never runs commands  | backend authorization, SoD, idempotency, admission, recovery, reconciliation, fault tests |
+| Curated templates    | experimental pack manifest and editable drafts  | catalog-backed installation, pack versioning, release review, asset compatibility         |
 
-```text
-catalog-driven palette
-drag-and-drop editor
-keyboard and structured editor
-typed mappings
-static validation
-pure decision tables
-simulation
-version comparison
-```
+Lane labels are product modes, not principals or capabilities. Detailed authority remains in the
+Process Studio architecture and ADR-0063.
 
-Exit gate:
+## Measures
 
-- visual and structured editing produce identical deterministic Process IR;
-- invalid action ordering, mappings, scope, retry, and compensation are rejected;
-- no process semantics execute in the browser;
-- accessibility tests cover keyboard alternatives to drag-and-drop;
-- AI-assisted modeling can produce drafts only; normal static validation and human governance remain
-  mandatory.
+| Measure                                         | Target                                       |
+| ----------------------------------------------- | -------------------------------------------- |
+| `process.*` mechanical gates                    | all six pass before governed-release review  |
+| deterministic IR equivalence                    | `100%` between visual and structured editors |
+| browser-side business mutation                  | `0`                                          |
+| unregistered or unauthorized executable actions | `0`                                          |
+| running instances with floating versions        | `0`                                          |
+| unresolved recovery/compensation paths          | `0` for released processes                   |
 
-## Product-surface lane sequence
+These are mechanical readiness gates plus targeted tests; they do not replace production rehearsal
+or financial activation approval.
 
-The current designer exposes the three lanes without activating autonomous authority:
+## Stop conditions
 
-| Lane | Current slice | Required next proof |
-|---|---|---|
-| Copilot draft | typed draft-only surface; no provider execution | provider isolation, schema decoding, provenance, redaction, and prompt-injection tests |
-| Authorized bounded execution | visible but gated; the designer never runs commands | a later backend contract proving current AuthZ/SoD, idempotency, audit, admission, recovery, reconciliation, and failure injection |
-| Curated templates | experimental Process Pack manifest, exact capability resolution, and editable drafts using canonical action IDs | backend catalog-backed installation, pack versioning, release review, and asset compatibility tests |
-
-The lane labels are product modes, not principals or capabilities. Detailed authority and activation
-rules remain in the [Process Studio architecture](../architecture/process-studio.md) and
-[ADR-0063](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md).
-
-## 1.0 — Governed Process Studio
-
-The user experience may remain simple (`Draft -> Test -> Publish`), but the
-backend preserves DEV/TEST/PROD promotion, release immutability, deployment
-bindings, capability compatibility, approval authority, and audit history.
-
-```text
-review and approval
-immutable release and deployment
-retirement
-Task Inbox
-Process Monitor
-recovery and compensation controls
-basic process documentation
-basic duration/bottleneck reporting
-BPMN import/export through Process IR
-```
-
-Exit gate:
-
-- definition governance and action execution authorization are separate;
-- running instances remain pinned to their released and deployed versions;
-- operators can recover committed non-reversible effects safely;
-- tenant, audit, accessibility, and redaction requirements pass;
-- BPMN interoperability rejects unsupported executable semantics;
-- autonomous mutation remains disabled, and no model or recommendation can satisfy approval, grant a
-  capability, or bypass an owning domain command.
-
-## Hard Stops
-
-Do not proceed to the next phase when:
-
-- the phase depends on a primitive marked `UNKNOWN`;
-- the next phase would create a new package without an invariant owner;
-- catalog metadata would be hand-maintained separately from domain contracts;
-- compensation is inferred rather than explicitly declared;
-- a workflow transaction would span durable checkpoints;
-- a visual feature would conceal missing runtime semantics;
-- `pg_durable` is used before its compatibility and production gates pass.
-
-## Validation Portfolio
-
-Use the smallest proof that matches the phase:
-
-| Phase | Required proof |
-|---|---|
-| Pre-0.8 | ADR/canonical decisions, ownership checks, contract vocabulary |
-| 0.8 | catalog schema, version, scope, authorization, compatibility tests |
-| 0.85 | Process IR determinism, restart, duplicate command/event, timer/task tests |
-| 0.9 | crash recovery, retry exhaustion, cancellation, compensation, audit, load tests |
-| 0.95 | static validation, simulation, keyboard/accessibility, IR equivalence tests |
-| 1.0 | governance, version pinning, operator recovery, redaction, interoperability tests |
-
-A feature-specific invariant still needs its own domain proof. Process Studio
-tests cannot replace inventory, accounting, procurement, or sales invariant tests.
+Stop the next phase when a primitive is `UNKNOWN`, a provider lacks executable proof, catalog
+metadata is hand-maintained, compensation is inferred, a workflow transaction spans durable
+checkpoints, a visual feature hides missing runtime semantics, or `pg_durable` lacks its
+compatibility and production gates.

@@ -2,273 +2,150 @@
 
 > **Status:** Canonical roadmap subdocument
 >
-> **Owns:** readiness sequencing for RITSEI packages that may publish process-facing commands
-> and events.
+> **Track ID:** `domain`
 >
-> **Detailed domain rules belong to:** each package’s public contract, schema, tests, and canonical
-> subsystem architecture.
-
+> **Owns:** readiness sequencing for packages that may publish Process Studio commands and events.
+>
+> **Measured by:** `domain.*` gates through `deno task roadmap:measure`.
+>
+> **Detailed rules belong to:** each package’s public contract, schema, tests, and subsystem
+> architecture.
+>
 > **Related documents**
 >
 > - Roadmap index: [`./README.md`](./README.md)
-> - ERP primitive decisions: [`./erp-primitives.md`](./erp-primitives.md)
-> - Financial ledger execution: [`./financial-ledger-execution.md`](./financial-ledger-execution.md)
+> - ERP primitives: [`./erp-primitives.md`](./erp-primitives.md)
+> - Financial execution: [`./financial-ledger-execution.md`](./financial-ledger-execution.md)
 > - Architecture enforcement:
 >   [`../architecture/architecture-enforcement.md`](../architecture/architecture-enforcement.md)
-> - Identity and principals: [`../architecture/identity-and-principals.md`](../architecture/identity-and-principals.md)
-> - HTTP API boundary: [`../architecture/api.md`](../architecture/api.md)
-> - Authorization architecture: [`../architecture/authorization.md`](../architecture/authorization.md)
+> - Authorization: [`../architecture/authorization.md`](../architecture/authorization.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)
 > - Process Studio architecture:
 >   [`../architecture/process-studio.md`](../architecture/process-studio.md)
-> - External integration surface:
+> - Integration architecture:
 >   [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md)
-> - Plugin architecture:
->   [`../architecture/plugin-architecture.md`](../architecture/plugin-architecture.md)
 
-## Readiness Rule
+## Scope
 
-A package is a Process Studio capability provider only when a requested action has a stable public
-contract and executable invariant proof. A package directory or table is not evidence of domain
-maturity.
+A package is a Process Studio provider only when the requested action has a stable public contract
+and executable invariant proof. A directory, table, or scaffold is not maturity evidence.
 
-Each provider must expose, as applicable:
+## Provider contract
+
+Each Level 3 action must have, as applicable:
 
 ```text
-public command/query contract
-Effect Schema input/output
+public Effect contract and Effect Schema DTOs
 stable tagged failures
 capability, tenant, and object scope
-relationship/object authorization through the RITSEI AuthZ abstraction
-transaction and concurrency semantics
-idempotency and retry behavior
+relationship/object authorization
+transaction, concurrency, idempotency, and retry semantics
 compensation or manual recovery
-versioned event contract
-contract and database tests
+versioned action and event catalog entries
+contract, database, and compatibility tests
 ```
 
-## Current Package Posture
+Maturity is action-level. A package may remain `PARTIAL` while one narrow action is a Level 3
+provider; sibling commands do not inherit that status.
 
-| Package         | Current role                                                      |                                                                                          Readiness | Roadmap action                                                                                                                                                                         |
-| --------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kernel`        | database, transaction, migration, infrastructure failures         |                                                                                       `FOUNDATION` | stabilize transaction context, capability-level failures, probes, and recovery tests                                                                                                   |
-| `catalog`       | contract-only action/event declaration protocol                   |                                                                                       `FOUNDATION` | remain a dependency leaf; future Process Studio owns aggregation and release state                                                                                                     |
-| `messaging`     | event envelope, transactional outbox, completed consumer receipts |                                                                                       `FOUNDATION` | add PgQue adapter only after its activation gates; never own domain event meaning                                                                                                      |
-| `auth`          | provider-neutral OIDC/OAuth2 authentication boundary and principals; ZITADEL recommended |                                                                                       `FOUNDATION` | validate selected-provider assertions, preserve principal provenance, and keep provider/session details behind the auth boundary                                                        |
-| `authorization` | canonical scoped capability and RelationshipEngine decisions        |                                                                                       `FOUNDATION` | preserve the permission matrix; use native PostgreSQL by default, add optional SpiceDB conformance, scoped grants, object checks, SoD, explainable denial, and fail-closed behavior |
-| `identity`      | internal UserAccount and external-subject mapping                  | `PARTIAL`; `identity.user_account.create` v1 is a bounded Level 3 slice | keep account lifecycle and tenant membership separate; map issuer+subject without trusting provider roles or organizations                                                               |
-| `party`         | party and party relationships                                     | `PARTIAL`; `party.create` v1 is a bounded Level 3 slice | mature customer/supplier/employee roles and relationship contracts                                                                                                                     |
-| `inventory`     | items, warehouses, balances, movements, reservations, transfers   |                                          `PARTIAL`; `inventory.stock.adjust` v1 is a Level 3 slice | Keep broader actions private until they have catalog metadata and owner-published events; traceability and valuation remain out of scope                                               |
-| `accounting`    | accounts, periods, revenue posting, and reversal                  | `PARTIAL`; `accounting.revenue.post` and `accounting.revenue.posted` v1 are bounded Level 3 slices | Keep generic journals, AP/AR, payment, tax, and settlement out of scope; migrate the bounded slice only after the financial-ledger activation gates pass |
-| `sales`         | customers, quotations, sales orders                               |                                             `PARTIAL`; `sales.order.confirm` v1 is a Level 3 slice | Sales owns draft/confirmed/cancelled order state and publishes confirmation; Process coordinates fulfillment through Inventory; invoicing, returns, and credit policy remain undecided |
-| `procurement`   | supplier accounts, immutable purchase orders, and bounded goods receipts | `PARTIAL`; `procurement.purchase_order.confirm` v1 is a bounded Level 3 slice | mature receipt correction/return and its catalog/publication proof; sourcing, invoice match, payables, and settlement remain gated |
-| `billing`       | package scaffold                                                  |                                                                                        `NOT READY` | decide invoice, payment, receivable, settlement, and accounting integration ownership                                                                                                  |
-| `integrations`  | external adapter and connector boundary                           |                                                                                    `BOUNDARY ONLY` | implement versioned standards, OpenAPI/CloudEvents adapters, OAuth scopes, delivery reliability, and external action/event normalization; do not become an internal domain owner       |
-| `process`       | bounded order-lifecycle application coordinator                   |                                                                                          `PARTIAL` | keep orchestration behind public domain contracts; do not treat it as Process Studio or a new domain owner                                                                             |
-| `workflow`      | no implemented Process Studio runtime package                     |                                                                                          `PLANNED` | create only after Process Studio primitive and runtime gates are approved                                                                                                              |
+## Package matrix
 
-## Maturity Levels
+| Package         | Current posture                                         | Next measurable gate                                                              |
+| --------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `kernel`        | `FOUNDATION`                                            | stable transaction boundary, probes, and capability-level failures                |
+| `catalog`       | `FOUNDATION`                                            | remain a dependency leaf; aggregation belongs to Process Studio                   |
+| `messaging`     | `FOUNDATION`                                            | PgQue only after its activation gates pass                                        |
+| `auth`          | `FOUNDATION`                                            | provider assertion and principal-provenance tests                                 |
+| `authorization` | `FOUNDATION`                                            | scoped grants, relationship checks, SoD, explainable denial, fail-closed behavior |
+| `identity`      | `PARTIAL`; `identity.user_account.create` v1 is Level 3 | keep account lifecycle separate from provider roles                               |
+| `party`         | `PARTIAL`; `party.create` v1 is Level 3                 | mature customer/supplier/employee relationship contracts                          |
+| `inventory`     | `PARTIAL`; `inventory.stock.adjust` v1 is Level 3       | keep broader actions private until catalog/event proof exists                     |
+| `accounting`    | `PARTIAL`; revenue post/event v1 are Level 3            | migrate only the bounded slice after financial gates                              |
+| `sales`         | `PARTIAL`; `sales.order.confirm` v1 is Level 3          | keep invoicing, returns, and credit policy gated                                  |
+| `procurement`   | `PARTIAL`; purchase-order confirm v1 is Level 3         | mature receipt correction/return and publication proof                            |
+| `billing`       | `NOT READY`; scaffold only                              | decide invoice, payment, receivable, settlement, and ownership                    |
+| `integrations`  | `BOUNDARY ONLY`                                         | implement versioned adapters and delivery reliability                             |
+| `process`       | `PARTIAL`; bounded order coordinator                    | stay behind public contracts; not a new domain owner                              |
+| `workflow`      | `PLANNED`                                               | create only after Process Studio gates are approved                               |
 
-### Level 0 — Scaffold
+## Maturity levels
 
-A package exists or owns a schema, but it must not be registered as a Process Studio action
-provider.
+| Level                        | Required evidence                                                                               | Process Studio use            |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------- |
+| `0` Scaffold                 | package/schema exists                                                                           | not a provider                |
+| `1` Domain Contract          | public contract, DTOs, failures, scope, authorization, schema checks                            | internal use only             |
+| `2` Transactional Capability | atomicity, constraints, concurrency, retry, idempotency, correction/recovery                    | internal use only             |
+| `3` Process Provider         | versioned catalog action/event, compatibility, process-safe failures, correlation, compensation | eligible bounded action/event |
 
-Required next step:
+Plugins follow the same levels plus their trust-level rules. Installation never makes a capability
+Process Studio-ready.
 
-```text
-owner -> public contract -> schema/invariants -> tests -> authorization
-```
+## Sequence
 
-### Level 1 — Domain Contract
+### D0 — Stabilize foundations
 
-The package has:
+`kernel`, `identity`, `auth`, `authorization`, and `party` establish scope, principals, permission
+ownership, party roles, identifiers, transactions, failure mapping, and audit/correlation.
 
-- public commands and queries through `mod.ts`;
-- Effect Schema DTOs;
-- tagged business failures;
-- tenant-aware ownership;
-- authorization tests;
-- schema and migration checks;
-- package boundary compliance.
+**Exit:** owner-local contracts, scope constraints, authorization proofs, and boundary checks pass.
 
-### Level 2 — Transactional Capability
+### D1 — Complete the economic core
 
-The package additionally proves:
+`inventory`, `accounting`, `sales`, `procurement`, and `billing` are developed only for requested
+end-to-end paths. Purchase-to-pay and order-to-cash ownership must cover the needed supplier,
+customer, order, receipt/fulfillment, invoice, payment, and correction facts without creating a
+universal document owner.
 
-- local atomic transaction boundaries;
-- database constraints;
-- concurrency behavior;
-- retry and idempotency behavior;
-- rollback after intermediate failure;
-- correction/reversal or explicit manual recovery.
+Procurement currently owns the bounded SupplierAccount, PurchaseOrder, and GoodsReceipt slices
+specified by [`../architecture/procurement.md`](../architecture/procurement.md). Receipt correction,
+returns, invoice match, payables, and settlement remain gated.
 
-### Level 3 — Process Provider
+**Exit:** every selected action passes the primitive readiness test and has a narrow public
+contract.
 
-The package additionally publishes:
+### D2 — Publish catalog providers
 
-- versioned Typed Action Catalog entries;
-- capability stability and release state;
-- versioned Typed Event Catalog entries;
-- precondition/effect metadata with a bounded vocabulary;
-- process-visible failures;
-- correlation and causation behavior;
-- compensation metadata;
-- catalog compatibility tests against public contracts.
+For each selected action:
 
-Only Level 3 capabilities may appear as production Process Studio actions/events. A package may
-remain `PARTIAL` while one narrow capability satisfies Level 3; maturity is not inherited by sibling
-commands.
-
-A plugin follows the same maturity levels, with additional requirements from its trust level: owned
-schema and migration isolation for trusted extensions, contributor-contract compatibility for
-catalog entries, and no core-invariant access for declarative or sandboxed extensions. Plugin
-installation alone never makes a capability Process Studio-ready.
-
-## Delivery Sequence
-
-### D0 — Stabilize Existing Foundations
-
-```text
-kernel
-identity
-auth
-authorization
-party
-```
-
-Goals:
-
-- explicit tenant and organization vocabulary;
-- stable human, service, process, and delegated principals;
-- provider-neutral authentication and RITSEI account-mapping boundary, with ZITADEL as the recommended adapter;
-- permission matrix, scoped capability, relationship, and SoD ownership;
-- party roles and external identifiers;
-- transaction and error mapping conventions;
-- audit/correlation ownership decision.
-
-### D1 — Complete the Economic Core
-
-```text
-inventory
-accounting
-sales
-procurement
-billing
-```
-
-Goals:
-
-- purchase-to-pay path has supplier, purchase, receipt, return, invoice, and settlement ownership;
-- order-to-cash path has customer, order, fulfillment, invoice, payment, and credit-policy
-  ownership;
-- inventory movement and accounting correction semantics are explicit;
-- period and close controls exist before workflow actions depend on them.
-
-Do not implement every subfeature in one phase. Each command must pass the primitive readiness test
-and have a narrow public contract.
-
-Procurement now owns `SupplierAccount` and the atomic draft, read, idempotent confirmation, and
-terminal cancellation lifecycle defined by the canonical
-[`../architecture/procurement.md`](../architecture/procurement.md) specification. Confirmed and
-cancelled snapshots are immutable and have no supplier-acceptance, stock, invoice, accounting, event,
-or Process Studio effect. Receipt ownership and its concurrency with cancellation are the next gates.
-
-### D2 — Publish Catalog Providers
-
-Select a small cross-domain set, for example:
-
-```text
-inventory.stock.reserve
-inventory.stock.transfer.confirm
-inventory.stock.transfer.complete
-accounting.journal.post
-sales.order.confirm
-procurement.purchase_receipt.receive
-```
-
-For every selected action:
-
-- register a versioned catalog entry;
-- register its output and failure schema;
-- declare capability and tenant scope;
-- declare idempotency and transaction semantics;
-- declare compensation or manual recovery;
-- publish a typed event when a committed fact is process-visible;
+- register a versioned catalog entry and schemas;
+- declare capability, tenant scope, idempotency, transaction, and recovery semantics;
+- publish a typed event for process-visible committed facts; and
 - prove catalog metadata matches the public contract.
 
-### D3 — Add Missing Operational Domains Only by Evidence
+**Exit:** at least two domains have Level 3 actions and no provider leaks private persistence or
+infrastructure errors.
 
-Potential domains:
+### D3 — Add operational domains only by evidence
 
-```text
-manufacturing
-quality
-asset management
-maintenance
-projects
-field service
-HR/payroll
-```
+Manufacturing, quality, assets, maintenance, projects, field service, and HR/payroll remain
+optional. Create a package only when a requested capability has an invariant that cannot remain in
+an existing owner.
 
-They remain `OPTIONAL` until a concrete product capability requires them. A package is created only
-when it owns an invariant that cannot remain in an existing domain.
+## Measured Level 3 slices
 
-## Current Level 3 Evidence
+| Domain        | Action/event evidence                                                         |
+| ------------- | ----------------------------------------------------------------------------- |
+| `identity`    | `identity.user_account.create` → `identity.user_account.created`              |
+| `party`       | `party.create` → `party.created`                                              |
+| `inventory`   | `inventory.stock.adjust` → `inventory.stock.corrected`                        |
+| `accounting`  | `accounting.revenue.post` → `accounting.revenue.posted`                       |
+| `sales`       | `sales.order.confirm` → `sales.order.confirmed`                               |
+| `procurement` | `procurement.purchase_order.confirm` → `procurement.purchase_order.confirmed` |
 
-The bounded internal catalog currently has six eligible Level 3 action/event slices:
+These six slices do not make all package commands process-safe, activate PgQue, or activate the
+external connector or workflow runtime.
 
-```text
-inventory.stock.adjust v1
-  -> PUBLIC action + inventory.stock.corrected v1
-  -> owner-controlled atomic publication
-  -> idempotent correction and rollback proofs
+## Measures
 
-sales.order.confirm v1
-  -> PUBLIC action + sales.order.confirmed v1
-  -> Sales-owned line total and atomic publication
-  -> authorization, idempotency, invalid-state, and rollback proofs
+| Measure                                | Target                                              |
+| -------------------------------------- | --------------------------------------------------- |
+| `level3_capabilities`                  | `>= 2` before Process Studio catalog work           |
+| selected action contract/test coverage | `100%`                                              |
+| provider boundary violations           | `0`                                                 |
+| `partial_committed_packages`           | visible and reviewed, not silently treated as ready |
 
-accounting.revenue.posted v1
-  -> PUBLIC event from the owner-controlled revenue transaction
-  -> accounting.revenue.post v1 is PUBLIC and uses the confirmed Sales order total as the server-derived amount
+## Stop conditions
 
-procurement.purchase_order.confirm v1
-  -> PUBLIC action + procurement.purchase_order.confirmed v1
-  -> owner-transactional confirmation and Messaging publication
-  -> idempotent replay and catalog compatibility proofs
-
-party.create v1
-  -> PUBLIC action + party.created v1
-  -> tenant-scoped authorization and owner event publication
-  -> catalog compatibility and PostgreSQL persistence proof
-
-identity.user_account.create v1
-  -> PUBLIC action + identity.user_account.created v1
-  -> global account storage with tenant-context authorization
-  -> dependency-safe publisher composition and PostgreSQL persistence proof
-```
-
-This satisfies the bounded Level 3 action-provider gate for Sales, Inventory, and Accounting for
-bounded catalog work. It does not make all Inventory, Sales, or Accounting commands process-safe,
-activate PgQue, implement external connectors, or authorize the broad workflow runtime.
-
-## Domain Gate Before Workflow Runtime
-
-Do not start a broad workflow runtime until:
-
-```text
-[x] at least two domains reach Level 3
-[x] procurement is no longer an empty provider if purchase workflows are in scope
-[x] billing/accounting ownership is clear for financial workflows; Billing remains explicitly out of scope under ADR-0060
-[x] all catalog actions have stable failures and authorization
-[x] events have typed schemas and correlation fields
-[x] compensation/manual recovery is explicit for committed effects
-[x] catalog version compatibility is tested
-[x] no provider leaks tables, repositories, or infrastructure errors
-```
-
-## Deliberate Non-Goals
-
-This roadmap does not promise that every SAP or Odoo functional area becomes a package. It
-prioritizes coherent domain ownership and end-to-end ERP correctness over menu completeness.
+Stop provider registration when the action lacks an owner, public failure model, authorization,
+transaction/idempotency proof, typed event, correction/recovery path, or compatibility test. Do not
+turn the package table into a promise to implement every ERP functional area.

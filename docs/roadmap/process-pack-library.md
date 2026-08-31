@@ -2,264 +2,131 @@
 
 > **Status:** Canonical roadmap subdocument
 >
-> **Owns:** Sequencing, dependencies, readiness, and exit criteria for the
-> Business Pack Library.
+> **Track ID:** `packs`
 >
-> **Detailed semantics belong to:** [`../architecture/process-studio.md`](../architecture/process-studio.md).
+> **Owns:** sequencing, dependencies, readiness, measures, and exit criteria for the Business Pack
+> Library.
 >
-> **Product positioning belongs to:** [`../architecture/reference/process-pack-positioning.md`](../architecture/reference/process-pack-positioning.md).
+> **Measured by:** `packs.contract` through `deno task roadmap:measure`.
 >
-> **Snapshot date:** August 30, 2026
+> **Detailed semantics belong to:**
+> [`../architecture/process-studio.md`](../architecture/process-studio.md).
+>
+> **Product positioning belongs to:**
+> [`../architecture/reference/process-pack-positioning.md`](../architecture/reference/process-pack-positioning.md).
+>
+> **Review date:** August 31, 2026
 >
 > **Related documents**
 >
 > - Roadmap index: [`./README.md`](./README.md)
 > - Product vision: [`../product/vision.md`](../product/vision.md)
-> - Process Studio architecture: [`../architecture/process-studio.md`](../architecture/process-studio.md)
-> - Process Studio readiness: [`./process-studio.md`](./process-studio.md)
+> - Process Studio: [`./process-studio.md`](./process-studio.md)
 > - Domain maturity: [`./domain-maturity.md`](./domain-maturity.md)
 > - Authorization: [`../architecture/authorization.md`](../architecture/authorization.md)
-> - Analytics architecture: [`../architecture/analytics-architecture.md`](../architecture/analytics-architecture.md)
-> - Capability release governance:
+> - Analytics:
+>   [`../architecture/analytics-architecture.md`](../architecture/analytics-architecture.md)
+> - Capability governance:
 >   [`../decisions/0020-adopt-capability-release-and-runtime-governance.md`](../decisions/0020-adopt-capability-release-and-runtime-governance.md)
-> - Governed AI boundary:
+> - AI boundary:
 >   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
-
-## Goal
-
-Make the first-use path feel like a modern ERP product without turning Process
-Packs into a second domain model:
-
-```text
-Choose business profile
-        ↓
-Select or accept a curated Business Pack
-        ↓
-Resolve PUBLIC typed capabilities
-        ↓
-Explain readiness and missing requirements
-        ↓
-Create editable DRAFT processes
-        ↓
-Customize and statically validate
-        ↓
-Review, authorize, release, and deploy
-        ↓
-Run through deterministic Process Studio and domain commands
-```
-
-A pack is a distribution artifact. It is not an approval, capability grant,
-transaction, deployment, or runtime principal.
-
-## Current baseline
-
-The current repository slice provides:
-
-- public Effect Schema contracts for pack identity, stability, asset references,
-  required/optional capability references, and resolution results;
-- exact capability resolution by `(kind, id, version)` with missing-required
-  diagnostics;
-- an experimental Distribution starter pack;
-- three editable starter drafts: order confirmation, stock correction, and
-  revenue posting;
-- a frontend Templates lane that displays the pack and preserves ordinary
-  `DRAFT` provenance; and
-- tests proving pack decoding, version mismatch behavior, template references,
-  draft provenance, and Process IR isolation.
-
-This baseline deliberately does **not** provide pack persistence, installation
-mutation, backend onboarding, automatic approval, release, deployment, or
-execution. The current pack asset collections are empty except for a guide
-reference because owner contracts for those assets do not yet exist.
 
 ## Scope
 
-The library will eventually distribute references to:
+A pack is a distribution artifact for public, typed capabilities and editable Process IR drafts. It
+is not a domain model, approval, capability grant, transaction, deployment, or runtime principal.
 
-- versioned process templates;
-- typed decisions;
-- forms and configuration contracts;
-- recommended policies;
-- analytic projections and KPIs;
-- user-facing documentation; and
-- compatibility and upgrade instructions.
+```text
+profile → curated pack → exact public capabilities → readiness diagnostics
+        → editable DRAFT → static validation → ordinary review/release/deployment
+```
 
-Every process reference must resolve to a valid editable Process IR draft. Every
-capability reference must resolve through the public catalog. Every released
-process must continue through the existing Process Studio governance and runtime
-gates.
+Do not add arbitrary pack JavaScript, SQL, prompts, private service calls, automatic grants,
+approvals, deployments, migrations, autonomous actions, or a marketplace before trust and curation
+are proven.
 
-## Non-goals
+## Current baseline
 
-Do not build these as part of the first library increments:
+The repository has public pack schemas, exact `(kind, id, version)` resolution, an experimental
+Distribution starter pack, three editable starter drafts, a Templates lane, and tests for decoding,
+version mismatches, draft provenance, and Process IR isolation. It does not have pack persistence,
+installation mutation, onboarding authority, automatic approval/release/deployment, or execution.
 
-- a global semantic layer that owns domain meaning;
-- arbitrary pack-provided JavaScript, SQL, prompts, or private service calls;
-- automatic capability grants, approvals, releases, deployments, or migrations;
-- a model-controlled agent or autonomous action loop;
-- a marketplace before pack trust and curation are proven; or
-- a large template count without domain-contract maturity and compatibility tests.
+## Sequence
 
-## Delivery plan
+### Phase 0 — Contract slice (current)
 
-### Phase 0 — Contract and product slice (current)
+Show and resolve a safe in-memory pack. Required proof: public schemas, required-capability
+diagnostics, canonical action IDs, editable drafts, ordinary `DRAFT` provenance, and no browser-side
+command execution.
 
-**Outcome:** A safe, inspectable pack can be shown in the designer and resolved
-against an in-memory set of exact capability references.
-
-**Evidence already present:**
-
-- public pack schemas and resolver;
-- experimental Distribution pack;
-- editable templates using canonical action IDs;
-- required-capability failure diagnostics;
-- no pack metadata in serialized Process IR; and
-- no browser-side command execution.
-
-**Exit status:** Complete for the contract-only slice. It is not a production
-installation feature.
+**Exit:** `packs.contract` passes. This is complete for the contract-only slice, not for production
+installation.
 
 ### Phase 1 — Catalog-backed resolution
 
-**Outcome:** A pack can be checked against the versioned Process Catalog without
-copying catalog metadata into a second unverified registry.
+Resolve required/optional references through the versioned Process Catalog. Report owner, stability,
+scope, compatibility, missing, retired, and tenant-availability reasons without granting authority.
 
-**Deliverables:**
+**Dependency:** Process Studio 0.8, public domain contracts, authorization metadata, and release
+governance.
 
-- resolver integration with the public catalog registry;
-- exact required capability diagnostics including owner, stability, scope, and
-  compatibility reason;
-- optional capability reporting that never blocks installation;
-- explicit rejection of missing, retired, incompatible, or non-production
-  capabilities;
-- a distinction between “available in this tenant” and “present in the
-  catalog”; and
-- tests for catalog version drift and stability transitions.
-
-**Dependencies:** Process Studio 0.8 catalog gate, public domain contracts,
-authorization metadata, and capability release governance.
-
-**Exit gate:** A pack cannot be marked ready unless every required reference is
-resolved to an allowed public catalog entry. Resolution never grants authority.
+**Exit:** every required reference resolves to an allowed public catalog entry or returns an
+actionable failure.
 
 ### Phase 2 — Draft materialization
 
-**Outcome:** A user can select a resolved pack and receive ordinary editable
-`DRAFT` definitions, without release or execution side effects.
+Load a pack and its templates into tenant/actor-scoped editable `DRAFT` definitions using typed
+configuration/form references, deterministic compatibility checks, persistence, and idempotent
+selection.
 
-**Deliverables:**
+**Dependencies:** stable Process IR, definition storage, tenant/actor authorization, and exact
+version pinning.
 
-- backend operation to load a pack and its template references;
-- deterministic template/version compatibility checks;
-- draft materialization with tenant and actor context;
-- configuration/form references decoded through typed schemas;
-- missing-asset and unsupported-version diagnostics;
-- persistence using the existing process definition ownership and ID policy; and
-- idempotent repeated selection behavior for the same draft intent.
+**Exit:** repeated selection does not create uncontrolled duplicates and cannot alter released
+definitions or business facts.
 
-**Dependencies:** stable Process IR, definition storage, tenant scope, draft
-authorization, and the headless runtime's version-pinning rules.
+### Phase 3 — Distribution vertical pack
 
-**Exit gate:** Repeating the same selection cannot create an uncontrolled set of
-duplicates, and materialization cannot alter released definitions or business
-facts.
+Deliver one owner-reviewed profile with Order-to-Cash, Stock Correction, Revenue Posting, required
+capabilities, configuration guidance, static validation, and an operator guide. Use a representative
+tenant fixture, not only frontend data.
 
-### Phase 3 — First vertical pack: Distribution
+**Exit:** a new tenant reaches a valid editable `DRAFT`; every missing prerequisite has an
+actionable explanation.
 
-**Outcome:** One profile has a complete, useful, measured onboarding path rather
-than a collection of disconnected templates.
+### Phase 4 — Profile onboarding
 
-**Initial pack boundary:**
+Add typed profile facts, deterministic profile-to-pack matching, explicit user confirmation,
+measured readiness coverage, accessible keyboard-complete interaction, and advisory-only AI if later
+approved.
 
-```text
-Distribution
-├── Order-to-Cash
-├── Stock Correction
-├── Revenue Posting
-├── required capability references
-├── configuration/form references when owner contracts exist
-├── recommended projections/KPIs when analytics contracts exist
-└── operator documentation
-```
+**Dependencies:** identity and tenant scope, authorization, frontend routing, pack catalog, and
+provider isolation under ADR-0063.
 
-**Deliverables:**
-
-- one owner-reviewed Distribution pack version;
-- clear profile assumptions and configuration checklist;
-- draft review for every included process;
-- static validation and catalog compatibility report;
-- a short operator guide for missing capabilities and failed validation; and
-- evidence from a representative tenant fixture, not only static frontend data.
-
-**Exit gate:** A new tenant can move from profile selection to a valid editable
-DRAFT without private implementation knowledge, and every missing prerequisite
-has an actionable explanation.
-
-### Phase 4 — Profile onboarding and recommendations
-
-**Outcome:** The system helps a user choose a pack without confusing
-recommendation with authorization.
-
-**Deliverables:**
-
-- typed business-profile questionnaire or profile facts;
-- deterministic profile-to-pack matching rules;
-- explicit user confirmation before pack selection;
-- readiness percentage only when backed by measured required/optional coverage;
-- accessible onboarding and keyboard-complete interaction; and
-- advisory AI integration, if later approved, that can suggest but cannot select
-  authority, approve, release, or execute.
-
-**Dependencies:** identity and tenant scope, authorization, frontend routing,
-pack catalog, and a later provider-isolation implementation under the AI ADR.
-
-**Exit gate:** Profile data can recommend a pack but cannot grant capabilities,
-change domain policy, or bypass normal authorization and review.
+**Exit:** recommendation cannot grant capabilities, alter policy, approve, release, or execute.
 
 ### Phase 5 — Governed versions and upgrades
 
-**Outcome:** Pack evolution is safe for installed drafts and released/running
-processes.
+Add immutable pack versions, owner provenance, compatibility ranges, reviewed upgrade proposals,
+diffs/impact reports, version-pinned process definitions, and rollback/manual recovery guidance.
 
-**Deliverables:**
+**Dependencies:** capability retirement, release/deployment separation, Process Studio 0.9, audit
+correlation, and recovery proof.
 
-- immutable pack versions and owner provenance;
-- compatibility ranges at the installation boundary;
-- explicit migration/upgrade proposals for changed assets;
-- diff and impact reports for templates, capability versions, and configuration;
-- process definitions pinned to their selected pack/template versions;
-- no silent rewrite of released definitions or running instances; and
-- rollback or manual recovery guidance for failed upgrades.
+**Exit:** upgrades are authorized, idempotent, reviewable, and reversible or explicitly manual
+recovery-only; running instances remain pinned.
 
-**Dependencies:** capability retirement policy, release/deployment separation,
-Process Studio 0.9 operational maturity, audit correlation, and recovery proof.
+### Phase 6 — Curated scale
 
-**Exit gate:** An upgrade is reviewable, idempotent, authorized, and reversible
-or explicitly manual-recovery-only. Running instances remain pinned to their
-released versions.
+Add contribution/review workflow, conformance tests, provenance, compatibility matrix,
+deprecation/retirement, safe discovery, and partner distribution only after plugin/integration trust
+gates pass.
 
-### Phase 6 — Curated library scale
+**Exit:** a new pack needs no private imports, cross-domain table writes, second catalog, or
+authorization/runtime exception.
 
-**Outcome:** More packs can be added without weakening trust or multiplying
-unowned semantics.
-
-**Deliverables:**
-
-- pack contribution and owner-review workflow;
-- pack conformance tests and source provenance;
-- compatibility matrix across supported domain/capability versions;
-- deprecation and retirement handling;
-- searchable pack discovery backed by safe metadata; and
-- marketplace or partner distribution only after plugin and integration trust
-  gates are satisfied.
-
-**Exit gate:** Adding a pack does not require private imports, cross-domain table
-writes, a second catalog source of truth, or an exception to authorization and
-runtime governance.
-
-## MVP acceptance criteria
-
-The first production-oriented milestone is deliberately narrow:
+## MVP gate
 
 ```text
 [ ] one owner-reviewed Distribution pack
@@ -274,78 +141,37 @@ The first production-oriented milestone is deliberately narrow:
 [ ] representative contract and accessibility tests
 ```
 
-The MVP is complete when it improves first-use time-to-value without creating a
-new authority boundary.
-
-## Dependency map
-
-```text
-mature domain contracts
-        ↓
-versioned public capability catalog
-        ↓
-pack resolution and compatibility
-        ↓
-editable draft materialization
-        ↓
-static Process IR validation
-        ↓
-normal approval/release/deployment
-        ↓
-deterministic runtime and authorized domain commands
-```
-
-The following dependencies remain hard gates:
-
-| Dependency | Why it blocks the pack library |
-|---|---|
-| Domain maturity | A pack cannot promise a process around an unstable or unowned capability. |
-| Catalog governance | A pack must resolve public, versioned capabilities rather than private implementations. |
-| Authorization and SoD | Pack selection is not authorization evidence. |
-| Process IR/runtime | Templates must have deterministic meaning beyond a visual graph. |
-| Analytics contracts | Pack-recommended KPIs must remain derived projections, not new business authority. |
-| Integration governance | External actions need normalized contracts, idempotency, retry, and recovery. |
-| AI boundary | Recommendations cannot mutate facts or satisfy approval. |
+The MVP is complete when first-use time-to-value improves without creating a new authority boundary.
 
 ## Measures
 
-Track these measures for the Distribution vertical slice before expanding the
-library:
+| Measure                        | Definition                                         | Target                                       |
+| ------------------------------ | -------------------------------------------------- | -------------------------------------------- |
+| first valid DRAFT time         | profile selection to first valid editable draft    | baseline, then reduce without lowering proof |
+| required capability resolution | required references resolved on first attempt      | `100%` for a released pack                   |
+| draft validation pass rate     | drafts passing static validation without repair    | `100%` for curated assets                    |
+| unresolved required references | count and age by pack/version                      | `0` for release                              |
+| duplicate materialization rate | repeated same intent creating extra drafts         | `0`                                          |
+| upgrade compatibility          | reviewed upgrade proposals that pass compatibility | `100%` or explicit manual recovery           |
+| pack support incidents         | incidents caused by missing/misleading assumptions | trend to `0`                                 |
 
-- profile selection to first valid DRAFT;
-- percentage of required capabilities resolved on first attempt;
-- percentage of pack drafts passing static validation without manual repair;
-- number and age of unresolved required references;
-- time from DRAFT to first approved release;
-- upgrade compatibility success rate;
-- duplicate draft/materialization rate; and
-- support incidents caused by missing or misleading pack assumptions.
+The mechanical contract gate is `packs.contract`; operational measures become executable when the
+corresponding installation and onboarding services exist.
 
-Do not optimize for pack count until these measures show that the pack is useful,
-understandable, and safe.
+## Stop conditions
 
-## Risks and stop conditions
+Stop pack expansion when a pack hides immature domain semantics, versions drift without diagnostics,
+selection implies authority, upgrades rewrite released/running behavior, asset descriptors become a
+second semantic layer, or distribution introduces untrusted code/providers.
 
-| Risk | Stop or mitigation |
-|---|---|
-| The library is empty while competitors feel ready-made. | Ship one deep vertical pack and improve onboarding before broadening count. |
-| A pack hides immature domain semantics. | Remove the capability from production packs until its domain gate passes. |
-| Version drift makes drafts unreleasable. | Require catalog-backed resolution and explicit compatibility diagnostics. |
-| Recommendations become authority by UX implication. | Keep selection, approval, release, and execution as separate authorized actions. |
-| Upgrade rewrites live behavior unexpectedly. | Pin versions and require reviewed migration proposals. |
-| Asset descriptors become an ungoverned second semantic layer. | Add owner contracts and typed asset catalogs before populating non-process assets. |
-| Marketplace growth introduces untrusted code or providers. | Keep distribution references-only; apply plugin/integration trust gates first. |
+## Decisions for later review
 
-## Decisions still requiring explicit review
-
-The following choices are intentionally not silently decided by this roadmap:
-
-- whether pack artifacts require signing or another provenance mechanism;
-- whether compatibility ranges belong in the pack manifest or only in the catalog;
-- the canonical profile taxonomy and who owns profile facts;
+- signing and provenance requirements for pack artifacts;
+- compatibility ranges in the pack manifest versus the catalog;
+- profile taxonomy and ownership of profile facts;
 - typed catalogs for forms, decisions, policies, and projections;
 - pack persistence and tenant installation ownership; and
-- marketplace/partner publication and review authority.
+- marketplace/partner publication authority.
 
-Any choice that changes trust, ownership, authorization, durability, or release
-semantics requires an ADR before activation.
+Any choice that changes trust, ownership, authorization, durability, or release semantics requires
+an ADR before activation.
