@@ -1,6 +1,8 @@
 node_modules/
 .fallow/
 .auto/
+.pi/
+.claude/
 .tigerbeetle/
 .env
 .env.*
