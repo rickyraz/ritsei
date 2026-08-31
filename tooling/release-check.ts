@@ -25,7 +25,7 @@ if ((await runGit("cat-file", "-t", target)) !== "commit") {
   throw new Error(`${tag} must target a commit`)
 }
 
-const expectedTarget = Deno.env.get("GITHUB_SHA")
+const expectedTarget = Deno.env.get("RELEASE_EXPECTED_TARGET")
 if (expectedTarget && target !== expectedTarget) {
   throw new Error(`${tag} targets ${target}, expected ${expectedTarget}`)
 }
