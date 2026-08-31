@@ -1,6 +1,7 @@
 import { assert, it } from "@effect/vitest"
 
 import { ApiConflict, ApiForbidden, ApiNotFound, ApiServiceUnavailable } from "./api.ts"
+import { ReplicaConsistencyFailure } from "../../packages/kernel/mod.ts"
 import { toCoreApiError } from "./handlers.ts"
 
 it("maps closed-world core failures to stable HTTP errors", () => {
@@ -37,4 +38,13 @@ it("maps closed-world core failures to stable HTTP errors", () => {
 
   const unavailable = toCoreApiError({ _tag: "DatabaseFailure" })
   assert.instanceOf(unavailable, ApiServiceUnavailable)
+
+  const replicaUnavailable = toCoreApiError(new ReplicaConsistencyFailure({ reason: "timeout" }))
+  assert.instanceOf(replicaUnavailable, ApiServiceUnavailable)
+
+  const invalidReplicaToken = toCoreApiError(
+    new ReplicaConsistencyFailure({ reason: "tenant_mismatch" }),
+  )
+  assert.instanceOf(invalidReplicaToken, ApiConflict)
+  assert.strictEqual(invalidReplicaToken.code, "invalid_consistency_token")
 })

@@ -2,6 +2,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Redacted from "effect/Redacted"
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder"
+import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema"
 
 import { AuthService } from "../../packages/auth/mod.ts"
 import {
@@ -9,7 +10,12 @@ import {
   AuthorizationService,
 } from "../../packages/authorization/mod.ts"
 import { IdentityCapabilities, UserAccountService } from "../../packages/identity/mod.ts"
-import { DatabaseFailure } from "../../packages/kernel/mod.ts"
+import {
+  CurrentConsistencyToken,
+  DatabaseFailure,
+  PostgresReadYourWrites,
+  ReplicaConsistencyFailure,
+} from "../../packages/kernel/mod.ts"
 import { PartyService } from "../../packages/party/mod.ts"
 import { SalesService } from "../../packages/sales/mod.ts"
 import { InventoryService } from "../../packages/inventory/mod.ts"
@@ -104,6 +110,7 @@ const coreApiErrorPolicy = {
   PartyRoleAlreadyAssigned: "conflict",
   QuotationCustomerMismatch: "conflict",
   QuotationNotFound: "not_found",
+  ReplicaConsistencyFailure: "service_unavailable",
   PurchaseOrderConfirmationIdempotencyConflict: "conflict",
   PurchaseOrderHasReceipts: "conflict",
   PurchaseOrderInvalidState: "conflict",
@@ -157,11 +164,22 @@ const coreApiErrorPolicy = {
   WorkflowRunNotFound: "not_found",
 } as const satisfies Record<string, ApiErrorKind>
 
-export type CoreApiFailure = {
-  readonly _tag: keyof typeof coreApiErrorPolicy
-}
+export type CoreApiFailure =
+  | ReplicaConsistencyFailure
+  | { readonly _tag: Exclude<keyof typeof coreApiErrorPolicy, "ReplicaConsistencyFailure"> }
 
 export const toCoreApiError = (error: CoreApiFailure) => {
+  if (error instanceof ReplicaConsistencyFailure) {
+    switch (error.reason) {
+      case "invalid_token":
+      case "expired_token":
+      case "tenant_mismatch":
+      case "placement_mismatch":
+        return new ApiConflict({ code: "invalid_consistency_token" })
+      default:
+        return new ApiServiceUnavailable({ code: "service_unavailable" })
+    }
+  }
   const tag = error._tag
   switch (coreApiErrorPolicy[tag]) {
     case "forbidden":
@@ -336,6 +354,18 @@ export const PartyHandlers = HttpApiBuilder.group(
               tenantId: headers["x-tenant-id"],
               partyId: params.id,
               ...payload,
+            }))
+          }),
+        )
+        .handle(
+          "findRelatedPartyPaths",
+          Effect.fn("Http.Parties.findRelatedPartyPaths")(function* ({ headers, params, query }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(party.findRelatedPartyPaths({
+              principal,
+              tenantId: headers["x-tenant-id"],
+              sourcePartyId: params.id,
+              limit: query.limit,
             }))
           }),
         )
@@ -585,6 +615,7 @@ export const ProcurementHandlers = HttpApiBuilder.group(
   (handlers) =>
     Effect.gen(function* () {
       const procurement = yield* ProcurementService
+      const readYourWrites = yield* Effect.serviceOption(PostgresReadYourWrites)
       return handlers
         .handle(
           "createSupplierAccount",
@@ -601,11 +632,22 @@ export const ProcurementHandlers = HttpApiBuilder.group(
           "createPurchaseOrder",
           Effect.fn("Http.Procurement.createPurchaseOrder")(function* ({ headers, payload }) {
             const principal = yield* CurrentPrincipal
-            return yield* coreApiEffect(procurement.createPurchaseOrder({
+            const order = yield* coreApiEffect(procurement.createPurchaseOrder({
               principal,
               tenantId: headers["x-tenant-id"],
               ...payload,
             }))
+            // ponytail: best-effort post-commit token capture; create has no idempotency key, so a
+            // capture outage must not turn a committed success into a retryable failure.
+            const token = readYourWrites._tag === "Some"
+              ? yield* readYourWrites.value.capture(headers["x-tenant-id"]).pipe(
+                Effect.catch(() => Effect.succeed(undefined)),
+              )
+              : undefined
+            return HttpApiSchema.withHeaders({
+              body: order,
+              headers: { "x-ritsei-consistency-token": token },
+            })
           }),
         )
         .handle(
@@ -616,7 +658,12 @@ export const ProcurementHandlers = HttpApiBuilder.group(
               principal,
               tenantId: headers["x-tenant-id"],
               purchaseOrderId: params.id,
-            }))
+            })).pipe(
+              Effect.provideService(
+                CurrentConsistencyToken,
+                headers["x-ritsei-consistency-token"],
+              ),
+            )
           }),
         )
         .handle(

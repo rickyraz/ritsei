@@ -6,8 +6,8 @@
 > resolution, request authorization order, transport failures, and API-side
 > security boundaries.
 >
-> **Implementation status:** Target boundary. This documentation change does not
-> activate provider adapters or alter the current API implementation.
+> **Implementation status:** The baseline boundary is implemented. The PostgreSQL 19 procurement
+> read-your-writes route is opt-in and remains non-GA.
 >
 > **Related documents**
 >
@@ -101,6 +101,18 @@ and owner-domain checks to the requested object.
 Queries use owner-controlled server-side filters, candidate-resource lookup, batch relationship
 checks, or an approved authorization projection. They must not fetch all records and filter them in
 the application after unauthorized rows have crossed the data boundary.
+
+## Procurement read-your-writes transport
+
+The procurement purchase-order create route may return an opaque `x-ritsei-consistency-token`
+response header when the opt-in PostgreSQL 19 pilot is configured. The purchase-order read route
+accepts the same header as an optional request header. The token is transport metadata, not an
+authorization credential or domain data.
+
+Create-side capture is best effort because the create command is not idempotent. A read with a token
+waits on the approved replica before opening its read transaction; invalid, expired, mismatched, or
+unavailable consistency state fails closed and never falls back to the primary. A read without a
+token remains on the approved primary path.
 
 ## Transport failures
 

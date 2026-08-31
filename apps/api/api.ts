@@ -10,6 +10,7 @@ import * as OpenApi from "effect/unstable/httpapi/OpenApi"
 
 import { Principal } from "../../packages/auth/mod.ts"
 import {
+  ConsistencyToken,
   FINANCIAL_STAGING_EVIDENCE_CANONICALIZATION_VERSION,
   FinancialStagingEvidence,
 } from "../../packages/kernel/mod.ts"
@@ -22,6 +23,7 @@ import {
   PartyRelationship,
   PartyRelationshipKind,
   PartyRole,
+  RelatedPartyPath,
 } from "../../packages/party/mod.ts"
 import { Customer, Quotation, SalesOrder, SalesOrderLine } from "../../packages/sales/mod.ts"
 import {
@@ -93,8 +95,15 @@ export class BearerAuth extends HttpApiMiddleware.Service<BearerAuth, {
 
 const errors = [ApiUnauthorized, ApiForbidden, ApiNotFound, ApiConflict, ApiServiceUnavailable]
 const tenantHeaders = { "x-tenant-id": Schema.String }
+const consistencyHeaders = {
+  ...tenantHeaders,
+  "x-ritsei-consistency-token": Schema.optionalKey(ConsistencyToken),
+}
 const CreatedSupplierAccount = SupplierAccount.pipe(HttpApiSchema.status(201))
-const CreatedPurchaseOrder = PurchaseOrder.pipe(HttpApiSchema.status(201))
+const CreatedPurchaseOrder = HttpApiSchema.WithHeaders(
+  PurchaseOrder.pipe(HttpApiSchema.status(201)),
+  { "x-ritsei-consistency-token": Schema.optionalKey(ConsistencyToken) },
+)
 const CreatedGoodsReceipt = GoodsReceipt.pipe(HttpApiSchema.status(201))
 const CreatedUserAccount = UserAccount.pipe(HttpApiSchema.status(201))
 const CreatedParty = Party.pipe(HttpApiSchema.status(201))
@@ -206,6 +215,18 @@ const Parties = HttpApiGroup.make("Parties").add(
       kind: PartyRelationshipKind,
     }),
     success: CreatedPartyRelationship,
+    error: errors,
+  }).middleware(BearerAuth),
+  HttpApiEndpoint.get("findRelatedPartyPaths", "/parties/:id/related-paths", {
+    params: { id: Schema.String },
+    headers: tenantHeaders,
+    query: {
+      limit: Schema.optionalKey(Schema.NumberFromString.pipe(
+        Schema.check(Schema.isInt()),
+        Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
+      )),
+    },
+    success: Schema.Array(RelatedPartyPath),
     error: errors,
   }).middleware(BearerAuth),
 )
@@ -354,7 +375,7 @@ const Procurement = HttpApiGroup.make("Procurement").add(
   }).middleware(BearerAuth),
   HttpApiEndpoint.get("getPurchaseOrder", "/procurement/purchase-orders/:id", {
     params: { id: Schema.String },
-    headers: tenantHeaders,
+    headers: consistencyHeaders,
     success: PurchaseOrder,
     error: errors,
   }).middleware(BearerAuth),
