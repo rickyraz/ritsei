@@ -16,6 +16,7 @@ export {
   CreatePartyRelationshipInput,
   CreatePartyRepresentationInput,
   ExternalIdentifier,
+  FindRelatedPartyPathsInput,
   GetPartyRelationshipInput,
   LegalEntity,
   Party,
@@ -26,6 +27,7 @@ export {
   PartyRepresentationKind,
   PartyRole,
   PartyService,
+  RelatedPartyPath,
   SetPartyRepresentationActiveInput,
 } from "./src/contract.ts"
 export type { PartyService as PartyServiceShape } from "./src/contract.ts"

@@ -14,6 +14,7 @@ import {
   CreatePartyInput,
   CreatePartyRelationshipInput,
   CreatePartyRepresentationInput,
+  FindRelatedPartyPathsInput,
   GetPartyRelationshipInput,
   PartyService,
   SetPartyRepresentationActiveInput,
@@ -162,6 +163,21 @@ export const makePartyServiceFromStore = <R>(
       })
       return yield* partyStore.getRelationship(decoded.tenantId, decoded.relationshipId)
     })
+    const findRelatedPartyPaths = Effect.fn("PartyService.findRelatedPartyPaths")(
+      function* (input: unknown) {
+        const decoded = yield* Schema.decodeUnknownEffect(FindRelatedPartyPathsInput)(input)
+        yield* authorization.authorize({
+          principal: decoded.principal,
+          tenantId: decoded.tenantId,
+          capability: PartyCapabilities.partyRelationshipRead,
+        })
+        return yield* partyStore.findRelatedPartyPaths(
+          decoded.tenantId,
+          decoded.sourcePartyId,
+          decoded.limit ?? 100,
+        )
+      },
+    )
     const attachIdentifier = Effect.fn("PartyService.attachIdentifier")(function* (input: unknown) {
       const decoded = yield* Schema.decodeUnknownEffect(AttachExternalIdentifierInput)(input)
       yield* authorization.authorize({
@@ -189,6 +205,7 @@ export const makePartyServiceFromStore = <R>(
       assignRole,
       createRelationship,
       getRelationship,
+      findRelatedPartyPaths,
       attachIdentifier,
     } satisfies PartyService
   })

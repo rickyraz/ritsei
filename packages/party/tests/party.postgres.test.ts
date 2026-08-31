@@ -331,7 +331,114 @@ it.effect.skipIf(databaseUrl === undefined)(
             legalEntityId: legalEntity.id,
             kind: "customer",
           })
+          const relatedRelationship = yield* party.createRelationship({
+            principal,
+            tenantId: tenant.id,
+            partyId: organization.id,
+            legalEntityId: secondLegalEntity.id,
+            kind: "customer",
+          })
           assert.strictEqual(relationship.active, true)
+          const graphPaths = yield* party.findRelatedPartyPaths({
+            principal,
+            tenantId: tenant.id,
+            sourcePartyId: organization.id,
+            limit: 10,
+          })
+          const baseline = yield* Effect.promise(() =>
+            client<{
+              tenant_id: string
+              source_party_id: string
+              target_party_id: string
+              legal_entity_id: string
+              relationship_id: string
+              relationship_kind: "customer" | "supplier" | "employee" | "partner"
+              depth: number
+            }[]>`
+              select
+                relationship.tenant_id,
+                relationship.party_id as source_party_id,
+                entity.organization_party_id as target_party_id,
+                relationship.legal_entity_id,
+                relationship.id as relationship_id,
+                relationship.kind as relationship_kind,
+                2 as depth
+              from party.party_relationships as relationship
+              join party.legal_entities as entity
+                on entity.tenant_id = relationship.tenant_id
+               and entity.id = relationship.legal_entity_id
+              where relationship.tenant_id = ${tenant.id}
+                and relationship.party_id = ${organization.id}
+                and relationship.active
+                and entity.organization_party_id <> ${organization.id}
+              order by relationship.legal_entity_id, relationship.id
+              limit 10
+            `
+          )
+          assert.deepStrictEqual(
+            graphPaths,
+            baseline.map((row) => ({
+              tenantId: row.tenant_id,
+              sourcePartyId: row.source_party_id,
+              targetPartyId: row.target_party_id,
+              legalEntityId: row.legal_entity_id,
+              relationshipId: row.relationship_id,
+              relationshipKind: row.relationship_kind,
+              depth: 2 as const,
+            })),
+          )
+          const limitedGraphPaths = yield* party.findRelatedPartyPaths({
+            principal,
+            tenantId: tenant.id,
+            sourcePartyId: organization.id,
+            limit: 1,
+          })
+          assert.strictEqual(limitedGraphPaths.length, 1)
+          assert.isFalse(graphPaths.some((path) => path.targetPartyId === organization.id))
+          assert.deepStrictEqual(
+            yield* party.findRelatedPartyPaths({
+              principal,
+              tenantId: otherTenant.id,
+              sourcePartyId: organization.id,
+              limit: 10,
+            }),
+            [],
+          )
+          const explain = yield* Effect.promise(() =>
+            client<{ "QUERY PLAN": unknown }[]>`
+              explain (analyze, buffers, format json)
+              select
+                tenant_id,
+                source_party_id,
+                target_party_id,
+                legal_entity_id,
+                relationship_id,
+                relationship_kind,
+                depth
+              from party.related_party_paths
+              where tenant_id = ${tenant.id}
+                and source_party_id = ${organization.id}
+                and target_party_id <> ${organization.id}
+              order by depth, legal_entity_id, relationship_id
+              limit 10
+            `
+          )
+          const explainPlan = explain[0]?.["QUERY PLAN"]
+          const explainRoot = Array.isArray(explainPlan)
+            ? explainPlan[0] as { Plan?: { "Actual Rows"?: number; "Node Type"?: string } }
+            : undefined
+          assert.strictEqual(explainRoot?.Plan?.["Node Type"], "Limit")
+          assert.isAtMost(explainRoot?.Plan?.["Actual Rows"] ?? Number.POSITIVE_INFINITY, 10)
+          assert.isTrue(JSON.stringify(explainPlan).includes("Execution Time"))
+          assert.deepStrictEqual(graphPaths, [{
+            tenantId: tenant.id,
+            sourcePartyId: organization.id,
+            targetPartyId: secondOrganization.id,
+            legalEntityId: secondLegalEntity.id,
+            relationshipId: relatedRelationship.id,
+            relationshipKind: "customer",
+            depth: 2,
+          }])
           assert.deepStrictEqual(
             yield* party.getRelationship({
               principal,

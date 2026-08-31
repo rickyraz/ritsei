@@ -599,6 +599,54 @@ describe("party contract", () => {
       )
     })))
 
+  it.effect("returns bounded active related-party paths", () =>
+    withParty(Effect.gen(function* () {
+      const service = yield* PartyService
+      const source = yield* service.create({
+        principal,
+        tenantId,
+        kind: "person",
+        name: "Source Party",
+      })
+      const target = yield* service.create({
+        principal,
+        tenantId,
+        kind: "organization",
+        name: "Target Organization",
+      })
+      const legalEntity = yield* service.createLegalEntity({
+        principal,
+        tenantId,
+        organizationId: target.id,
+      })
+      yield* service.assignRole({ principal, tenantId, partyId: source.id, role: "supplier" })
+      const relationship = yield* service.createRelationship({
+        principal,
+        tenantId,
+        partyId: source.id,
+        legalEntityId: legalEntity.id,
+        kind: "supplier",
+      })
+
+      assert.deepStrictEqual(
+        yield* service.findRelatedPartyPaths({
+          principal,
+          tenantId,
+          sourcePartyId: source.id,
+          limit: 1,
+        }),
+        [{
+          tenantId,
+          sourcePartyId: source.id,
+          targetPartyId: target.id,
+          legalEntityId: legalEntity.id,
+          relationshipId: relationship.id,
+          relationshipKind: "supplier",
+          depth: 2,
+        }],
+      )
+    })))
+
   it.effect("denies relationship reads without their capability", () => {
     const authorization = makeAuthorizationTestLayer([
       ...capabilities.filter((capability) => capability !== PartyCapabilities.partyRelationshipRead)

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm"
+import { and, asc, eq, ne } from "drizzle-orm"
 import * as Effect from "effect/Effect"
 
 import {
@@ -9,6 +9,7 @@ import {
   partyRelationships,
   partyRepresentations,
   partyRoles,
+  relatedPartyPaths,
 } from "../../../db/schema/party.ts"
 import { Database, isDatabaseConstraint } from "../../kernel/mod.ts"
 import type { PartyStore } from "./store.ts"
@@ -79,6 +80,15 @@ const relationshipSelection = {
   legalEntityId: partyRelationships.legalEntityId,
   kind: partyRelationships.kind,
   active: partyRelationships.active,
+}
+const relatedPartyPathSelection = {
+  tenantId: relatedPartyPaths.tenantId,
+  sourcePartyId: relatedPartyPaths.sourcePartyId,
+  targetPartyId: relatedPartyPaths.targetPartyId,
+  legalEntityId: relatedPartyPaths.legalEntityId,
+  relationshipId: relatedPartyPaths.relationshipId,
+  relationshipKind: relatedPartyPaths.relationshipKind,
+  depth: relatedPartyPaths.depth,
 }
 
 export const makePartyPostgresStore = Effect.gen(function* () {
@@ -291,6 +301,26 @@ export const makePartyPostgresStore = Effect.gen(function* () {
       return relationship
     },
   )
+  const findRelatedPartyPaths = Effect.fn("PartyStore.findRelatedPartyPaths")(
+    function* (tenantId: string, sourcePartyId: string, limit: number) {
+      const rows = yield* database.query(
+        (db) =>
+          db.select(relatedPartyPathSelection).from(relatedPartyPaths).where(
+            and(
+              eq(relatedPartyPaths.tenantId, tenantId),
+              eq(relatedPartyPaths.sourcePartyId, sourcePartyId),
+              ne(relatedPartyPaths.targetPartyId, sourcePartyId),
+            ),
+          ).orderBy(
+            asc(relatedPartyPaths.depth),
+            asc(relatedPartyPaths.legalEntityId),
+            asc(relatedPartyPaths.relationshipId),
+          ).limit(limit),
+        "party.related-party-paths.find",
+      )
+      return rows.map((row) => ({ ...row, depth: 2 as const }))
+    },
+  )
   const attachIdentifier = Effect.fn("PartyStore.attachIdentifier")(
     function* (
       tenantId: string,
@@ -349,6 +379,7 @@ export const makePartyPostgresStore = Effect.gen(function* () {
     assignRole,
     createRelationship,
     getRelationship,
+    findRelatedPartyPaths,
     attachIdentifier,
   } satisfies PartyStore
 })

@@ -188,6 +188,31 @@ export const makePartyMemoryStore = (validUserAccountIds?: ReadonlySet<string>):
       return result
     },
   )
+  const findRelatedPartyPaths = Effect.fn("PartyStore.memory.findRelatedPartyPaths")(
+    (tenantId: string, sourcePartyId: string, limit: number) =>
+      Effect.sync(() =>
+        [...relationships.values()]
+          .filter((relationship) =>
+            relationship.tenantId === tenantId && relationship.partyId === sourcePartyId &&
+            relationship.active
+          )
+          .map((relationship) => ({
+            tenantId,
+            sourcePartyId,
+            targetPartyId: legalEntities.get(relationship.legalEntityId)!.organizationId,
+            legalEntityId: relationship.legalEntityId,
+            relationshipId: relationship.id,
+            relationshipKind: relationship.kind,
+            depth: 2 as const,
+          }))
+          .filter((path) => path.targetPartyId !== sourcePartyId)
+          .sort((left, right) =>
+            left.legalEntityId.localeCompare(right.legalEntityId) ||
+            left.relationshipId.localeCompare(right.relationshipId)
+          )
+          .slice(0, limit)
+      ),
+  )
   const attachIdentifier = Effect.fn("PartyStore.memory.attachIdentifier")(
     function* (
       tenantId: string,
@@ -240,6 +265,7 @@ export const makePartyMemoryStore = (validUserAccountIds?: ReadonlySet<string>):
     assignRole,
     createRelationship,
     getRelationship,
+    findRelatedPartyPaths,
     attachIdentifier,
   }
 }

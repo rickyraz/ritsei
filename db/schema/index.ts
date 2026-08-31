@@ -58,6 +58,7 @@ export {
   partyRole,
   partyRoles,
   partySchema,
+  relatedPartyPaths,
 } from "./party.ts"
 export {
   inventorySchema,

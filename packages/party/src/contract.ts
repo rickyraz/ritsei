@@ -95,12 +95,23 @@ export const PartyRelationship = Schema.Struct({
   active: Schema.Boolean,
 })
 
+export const RelatedPartyPath = Schema.Struct({
+  tenantId: Uuid,
+  sourcePartyId: Uuid,
+  targetPartyId: Uuid,
+  legalEntityId: Uuid,
+  relationshipId: Uuid,
+  relationshipKind: PartyRelationshipKind,
+  depth: Schema.Literal(2),
+})
+
 export type Party = Schema.Schema.Type<typeof Party>
 export type ExternalIdentifier = Schema.Schema.Type<typeof ExternalIdentifier>
 export type LegalEntity = Schema.Schema.Type<typeof LegalEntity>
 export type Branch = Schema.Schema.Type<typeof Branch>
 export type PartyRepresentation = Schema.Schema.Type<typeof PartyRepresentation>
 export type PartyRelationship = Schema.Schema.Type<typeof PartyRelationship>
+export type RelatedPartyPath = Schema.Schema.Type<typeof RelatedPartyPath>
 export type PartyRepresentationKind = Schema.Schema.Type<typeof PartyRepresentationKind>
 export type PartyRole = Schema.Schema.Type<typeof PartyRole>
 export type PartyKind = Schema.Schema.Type<typeof PartyKind>
@@ -132,6 +143,13 @@ export const GetPartyRelationshipInput = Schema.Struct({
   principal: Principal,
   tenantId: Uuid,
   relationshipId: Uuid,
+})
+
+export const FindRelatedPartyPathsInput = Schema.Struct({
+  principal: Principal,
+  tenantId: Uuid,
+  sourcePartyId: Uuid,
+  limit: Schema.optionalKey(Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 100 }))),
 })
 
 export const AttachExternalIdentifierInput = Schema.Struct({
@@ -251,6 +269,12 @@ export interface PartyService {
   ) => Effect.Effect<
     PartyRelationship,
     PartyRelationshipNotFound | AuthorizationDenied | DatabaseFailure | Schema.SchemaError
+  >
+  readonly findRelatedPartyPaths: (
+    input: unknown,
+  ) => Effect.Effect<
+    ReadonlyArray<RelatedPartyPath>,
+    AuthorizationDenied | DatabaseFailure | Schema.SchemaError
   >
   readonly attachIdentifier: (
     input: unknown,

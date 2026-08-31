@@ -11,6 +11,7 @@ import type {
   PartyRepresentation,
   PartyRepresentationKind,
   PartyRole,
+  RelatedPartyPath,
 } from "./contract.ts"
 import type {
   BranchAlreadyExists,
@@ -90,6 +91,11 @@ export interface PartyStore {
     tenantId: string,
     relationshipId: string,
   ) => Effect.Effect<PartyRelationship, PartyRelationshipNotFound | Failure>
+  readonly findRelatedPartyPaths: (
+    tenantId: string,
+    sourcePartyId: string,
+    limit: number,
+  ) => Effect.Effect<ReadonlyArray<RelatedPartyPath>, Failure>
   readonly attachIdentifier: (
     tenantId: string,
     partyId: string,

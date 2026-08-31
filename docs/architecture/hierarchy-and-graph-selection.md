@@ -55,7 +55,9 @@ A property graph is a read-oriented view over relational tables. It does not
 replace the transactional model. A RelationshipEngine is not a general ERP graph
 authority; its relationship result is one input to the RITSEI Authorization
 decision and never replaces tenant isolation, business policy, or SoD. Native
-PostgreSQL is the default; SpiceDB is an optional adapter.
+PostgreSQL is the default; SpiceDB is an optional adapter. The current Party pilot
+is a fixed two-edge, bounded related-path projection and is not an authorization
+or mutation authority.
 
 ## Hot-Path Rule
 

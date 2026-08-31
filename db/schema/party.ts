@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   foreignKey,
+  integer,
   pgSchema,
   primaryKey,
   text,
@@ -177,6 +178,16 @@ export const partyRelationships = partySchema.table("party_relationships", {
     name: "party_relationships_tenant_party_role_fkey",
   }).onDelete("cascade"),
 ])
+
+export const relatedPartyPaths = partySchema.view("related_party_paths", {
+  tenantId: uuid("tenant_id").notNull(),
+  sourcePartyId: uuid("source_party_id").notNull(),
+  targetPartyId: uuid("target_party_id").notNull(),
+  legalEntityId: uuid("legal_entity_id").notNull(),
+  relationshipId: uuid("relationship_id").notNull(),
+  relationshipKind: partyRole("relationship_kind").notNull(),
+  depth: integer("depth").notNull(),
+}).existing()
 
 export const partyIdentifiers = partySchema.table("party_identifiers", {
   id: id(),
