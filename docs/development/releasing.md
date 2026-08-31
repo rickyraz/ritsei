@@ -27,10 +27,10 @@ and publication. Each notes file is committed before its tag is created.
 
 Published release records:
 
-| Release  | Source target                                                               | Status                         |
-| -------- | --------------------------------------------------------------------------- | ------------------------------ |
-| `v0.1.0` | `7befeb495567e926e32ab85a926c96d20c92ec37`, August 13, 2026 01:35:28 +07:00 | Published pre-release          |
-| `v0.2.0` | `72d233e006faaadee30a57b194b9752b32f79d68`, August 31, 2026               | Published pre-release          |
+| Release  | Source target                                                               | Status                |
+| -------- | --------------------------------------------------------------------------- | --------------------- |
+| `v0.1.0` | `7befeb495567e926e32ab85a926c96d20c92ec37`, August 13, 2026 01:35:28 +07:00 | Published pre-release |
+| `v0.2.0` | `72d233e006faaadee30a57b194b9752b32f79d68`, August 31, 2026                 | Published pre-release |
 
 Both releases were published on August 31, 2026 as pre-release, source-only snapshots. They do not
 promise a build artifact, package distribution, production deployment, or supported upgrade path.
@@ -78,9 +78,11 @@ After creating the annotated tag, validate its metadata locally:
 deno task release:metadata vX.Y.Z
 ```
 
-The gate covers formatting, linting, type checking, migration graph validation, skill validation,
-boundaries, tests, and Fallow. The metadata check verifies the annotated tag, target commit, curated
-notes, and required pre-release/migration caveats.
+The gate covers formatting, linting, type checking, migration graph validation, roadmap measurement,
+skill validation, boundaries, tests, and Fallow. Open roadmap gates report product/activation
+readiness without blocking a source-only release; malformed or contradictory roadmap evidence fails
+the gate. The metadata check verifies the annotated tag, target commit, curated notes, and required
+pre-release/migration caveats.
 
 ## Migration and upgrade caveats
 

@@ -60,6 +60,9 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/ritsei
         run: deno task db:check
 
+      - name: Roadmap measurement
+        run: deno task roadmap:measure
+
       - name: Agent skills
         run: deno task skills:check
 
