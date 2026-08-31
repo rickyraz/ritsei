@@ -1,3 +1,5 @@
+import { requiredFinancialGateIds } from "../financial-readiness/evaluate.ts"
+
 export type GateKind = "markers" | "domain" | "financial" | "composite"
 
 export type GateRequirement = {
@@ -21,28 +23,18 @@ export type Gate = {
   readonly dependencies?: readonly string[]
 }
 
+export type RoadmapTrack = {
+  readonly id: string
+  readonly title: string
+  readonly path: string
+  readonly gateIds: readonly string[]
+}
+
 const marker = (path: string, ...markers: string[]): GateRequirement => ({ path, markers })
 const file = (path: string): GateRequirement => ({ path })
 const task = (...args: string[]): GateCommand => ({ args: ["task", ...args] })
 
-export const financialGateIds = [
-  "controlled_activation",
-  "process_kill_no_double_posting",
-  "worker_adapter_restart",
-  "tigerbeetle_outage_fail_closed",
-  "replica_quorum_failure",
-  "postgresql_not_financial_authority",
-  "independent_backup_restore",
-  "recovery_watermark",
-  "global_reconciliation",
-  "projection_rebuild",
-  "artifact_integrity",
-  "production_signing_custody",
-  "key_rotation_recovery",
-  "operator_alerts",
-  "bounded_cohort",
-  "no_unresolved_p0",
-] as const
+export const financialGateIds = requiredFinancialGateIds
 
 export const gates: readonly Gate[] = [
   {
@@ -155,7 +147,15 @@ export const gates: readonly Gate[] = [
     title: "Process Studio pre-0.8 prerequisites",
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
-    commands: [task("test:contract")],
+    dependencies: [
+      "erp.p0",
+      "erp.p1",
+      "erp.p2",
+      "erp.p3",
+      "domain.inventory.level3",
+      "domain.sales.level3",
+    ],
+    commands: [task("test", "packages/process/tests/process.test.ts")],
     requirements: [
       marker(
         "docs/roadmap/process-studio.md",
@@ -173,6 +173,13 @@ export const gates: readonly Gate[] = [
         "[x] capability release states and compatibility ranges are defined",
         "[x] process promotion separates release from deployment across environments",
         "[x] execution principal, delegation, SoD, and business observability are explicit",
+        "[x] authentication, current tenant membership, relationship scope, and revocation fail closed",
+      ),
+      marker(
+        "docs/architecture/identity-and-principals.md",
+        "tenant membership",
+        "revocation",
+        "fails closed",
       ),
       file("docs/decisions/0020-adopt-capability-release-and-runtime-governance.md"),
       file("docs/decisions/0060-defer-billing-and-settlement-scope.md"),
@@ -184,6 +191,7 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.pre08"],
+    commands: [task("test", "packages/process/tests/catalog-release.test.ts")],
     requirements: [
       marker(
         "packages/process/src/catalog-release.ts",
@@ -205,6 +213,7 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.catalog08"],
+    commands: [task("test", "packages/process/tests/runtime.test.ts")],
     requirements: [
       marker(
         "packages/process/src/runtime-store.ts",
@@ -227,6 +236,7 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.runtime085"],
+    commands: [task("test", "packages/process/tests/operations.test.ts")],
     requirements: [
       marker(
         "packages/process/src/operations-store.ts",
@@ -249,6 +259,13 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.ops09"],
+    commands: [
+      task(
+        "test",
+        "apps/web/src/features/process-studio/designer.test.ts",
+        "apps/web/src/features/process-studio/product-surface.test.ts",
+      ),
+    ],
     requirements: [
       marker(
         "apps/web/src/features/process-studio/",
@@ -265,6 +282,7 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.designer095"],
+    commands: [task("test", "packages/process/tests/release-postgres.test.ts")],
     requirements: [
       marker(
         "packages/process/src/release-store.ts",
@@ -287,6 +305,13 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["process.pre08"],
+    commands: [
+      task(
+        "test",
+        "packages/integrations/tests/openapi.test.ts",
+        "packages/integrations/tests/cloudevents.test.ts",
+      ),
+    ],
     requirements: [
       marker(
         "packages/integrations/src/openapi.ts",
@@ -313,6 +338,7 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["integration.contract08"],
+    commands: [task("test", "packages/integrations/tests/https-runtime.test.ts")],
     requirements: [
       marker(
         "packages/integrations/src/https-runtime.ts",
@@ -341,6 +367,7 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["integration.runtime085"],
+    commands: [task("test", "packages/integrations/tests/reliability.test.ts")],
     requirements: [
       marker(
         "packages/integrations/src/reliability-store.ts",
@@ -363,6 +390,7 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["integration.reliability09"],
+    commands: [task("test", "packages/integrations/tests/process-bridge.test.ts")],
     requirements: [
       marker(
         "packages/integrations/src/process-bridge.ts",
@@ -384,6 +412,7 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["integration.process095"],
+    commands: [task("test", "packages/integrations/tests/governance.test.ts")],
     requirements: [
       marker(
         "packages/integrations/src/governance-store.ts",
@@ -397,6 +426,27 @@ export const gates: readonly Gate[] = [
         "unreviewed operation",
         "connector version",
         "retention",
+      ),
+    ],
+  },
+  {
+    id: "packs.contract",
+    title: "Business Pack contract slice",
+    source: "docs/roadmap/process-pack-library.md",
+    kind: "markers",
+    dependencies: ["process.pre08"],
+    commands: [task("test", "packages/process/tests/packs.test.ts")],
+    requirements: [
+      marker(
+        "docs/roadmap/process-pack-library.md",
+        "**Track ID:** `packs`",
+        "## Measures",
+        "## Stop conditions",
+      ),
+      marker(
+        "packages/process/tests/packs.test.ts",
+        "Distribution starter pack",
+        "missing_required_capabilities",
       ),
     ],
   },
@@ -434,6 +484,86 @@ export const gates: readonly Gate[] = [
 
 export const gateIds = gates.map((gate) => gate.id)
 
-if (new Set(gateIds).size !== gateIds.length) {
-  throw new Error("Roadmap completion gate IDs must be unique")
+export const validateGateGraph = (input: readonly Gate[]): string[] => {
+  const ids = input.map((gate) => gate.id)
+  const knownIds = new Set(ids)
+  const failures = ids
+    .filter((id, index) => ids.indexOf(id) !== index)
+    .map((id) => `duplicate roadmap gate ID: ${id}`)
+
+  for (const [index, gate] of input.entries()) {
+    for (const dependency of gate.dependencies ?? []) {
+      if (!knownIds.has(dependency)) {
+        failures.push(`${gate.id} has unknown dependency ${dependency}`)
+      } else if (dependency === gate.id) {
+        failures.push(`${gate.id} cannot depend on itself`)
+      } else if (ids.indexOf(dependency) > index) {
+        failures.push(`${gate.id} dependency ${dependency} must be declared first`)
+      }
+    }
+  }
+
+  return failures
 }
+
+export const roadmapTracks: readonly RoadmapTrack[] = [
+  {
+    id: "erp",
+    title: "ERP primitives",
+    path: "docs/roadmap/erp-primitives.md",
+    gateIds: ["erp.p0", "erp.p1", "erp.p2", "erp.p3"],
+  },
+  {
+    id: "domain",
+    title: "Domain maturity",
+    path: "docs/roadmap/domain-maturity.md",
+    gateIds: [
+      "domain.identity.level3",
+      "domain.party.level3",
+      "domain.inventory.level3",
+      "domain.accounting.level3",
+      "domain.sales.level3",
+      "domain.procurement.level3",
+    ],
+  },
+  {
+    id: "financial",
+    title: "Financial ledger execution",
+    path: "docs/roadmap/financial-ledger-execution.md",
+    gateIds: financialGateIds.map((id) => `financial.${id}`),
+  },
+  {
+    id: "process",
+    title: "Process Studio",
+    path: "docs/roadmap/process-studio.md",
+    gateIds: [
+      "process.pre08",
+      "process.catalog08",
+      "process.runtime085",
+      "process.ops09",
+      "process.designer095",
+      "process.governed10",
+    ],
+  },
+  {
+    id: "integration",
+    title: "External integration",
+    path: "docs/roadmap/integration-surface.md",
+    gateIds: [
+      "integration.contract08",
+      "integration.runtime085",
+      "integration.reliability09",
+      "integration.process095",
+      "integration.governed10",
+    ],
+  },
+  {
+    id: "packs",
+    title: "Business Pack Library",
+    path: "docs/roadmap/process-pack-library.md",
+    gateIds: ["packs.contract"],
+  },
+]
+
+const gateGraphFailures = validateGateGraph(gates)
+if (gateGraphFailures.length > 0) throw new Error(gateGraphFailures.join("\n"))

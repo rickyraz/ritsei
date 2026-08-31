@@ -1,14 +1,13 @@
+import { evaluateFinancialManifest } from "../financial-readiness/evaluate.ts"
 import { collectSourceFiles } from "../source-files.ts"
-import { type Gate, type GateCommand, type GateRequirement, gates } from "./registry.ts"
-
-type FinancialManifest = {
-  readonly gates?: ReadonlyArray<{
-    readonly id?: string
-    readonly observed?: string
-    readonly evidenceClass?: string
-    readonly acceptedEvidenceClasses?: readonly string[]
-  }>
-}
+import {
+  type Gate,
+  type GateCommand,
+  gateIds,
+  type GateRequirement,
+  gates,
+  roadmapTracks,
+} from "./registry.ts"
 
 type GateResult = {
   readonly gate: Gate
@@ -46,17 +45,138 @@ const markersPass = async (requirements: readonly GateRequirement[]): Promise<bo
   return true
 }
 
-const commandsPass = async (commands: readonly GateCommand[]): Promise<boolean> => {
-  for (const command of commands) {
-    const result = await new Deno.Command("deno", {
-      args: [...command.args],
-      stdout: "null",
-      stderr: "piped",
-    }).output()
-    if (result.code !== 0) return false
+const gateTestFiles = (gate: Gate): readonly string[] => {
+  if (
+    (gate.commands ?? []).some((command) =>
+      command.args[0] !== "task" || command.args[1] !== "test"
+    )
+  ) {
+    throw new Error(`${gate.id} must use targeted deno task test commands`)
   }
-  return true
+  return (gate.commands ?? []).flatMap((command: GateCommand) => command.args.slice(2))
 }
+
+const collectTestFiles = (gates: readonly Gate[]) => {
+  const filesByGate = new Map<string, readonly string[]>()
+  const files = new Set<string>()
+  for (const gate of gates) {
+    const testFiles = gateTestFiles(gate)
+    if (testFiles.length === 0) continue
+    filesByGate.set(gate.id, testFiles)
+    for (const file of testFiles) files.add(file)
+  }
+  return { filesByGate, files }
+}
+
+type VitestReport = {
+  readonly testResults?: readonly { readonly name: string; readonly status: string }[]
+}
+
+const readPassedTestFiles = (
+  result: Deno.CommandOutput,
+): ReadonlySet<string> => {
+  if (!result.success) return new Set()
+  const report = JSON.parse(new TextDecoder().decode(result.stdout)) as VitestReport
+  return new Set(
+    (report.testResults ?? [])
+      .filter(({ status }) => status === "passed")
+      .map(({ name }) => name.replaceAll("\\\\", "/")),
+  )
+}
+
+const testFilePassed = (passedFiles: ReadonlySet<string>, file: string) =>
+  [...passedFiles].some((name) => name === file || name.endsWith(`/${file}`))
+
+// ponytail: batch targeted Vitest gates; add per-command adapters if roadmap gates need other executables.
+const testGateResults = async (gates: readonly Gate[]): Promise<Map<string, boolean>> => {
+  const { filesByGate, files } = collectTestFiles(gates)
+  if (files.size === 0) return new Map()
+
+  const result = await new Deno.Command("deno", {
+    args: ["task", "test", "--reporter=json", ...files],
+    stdout: "piped",
+    stderr: "piped",
+  }).output()
+  const passedFiles = readPassedTestFiles(result)
+  return new Map(
+    [...filesByGate].map(([id, testFiles]) => [
+      id,
+      result.success && testFiles.every((file) => testFilePassed(passedFiles, file)),
+    ]),
+  )
+}
+
+const readRoadmapFiles = async (): Promise<readonly string[]> => {
+  const files: string[] = []
+  for await (const entry of Deno.readDir("docs/roadmap")) {
+    if (entry.isFile && entry.name.endsWith(".md") && entry.name !== "README.md") {
+      files.push(`docs/roadmap/${entry.name}`)
+    }
+  }
+  return files
+}
+
+const buildGateOwners = () => {
+  const owners = new Map<string, string[]>()
+  for (const track of roadmapTracks) {
+    for (const gateId of track.gateIds) {
+      owners.set(gateId, [...(owners.get(gateId) ?? []), track.id])
+    }
+  }
+  return owners
+}
+
+const duplicateValues = (values: readonly string[]) =>
+  values.filter((value, index) => values.indexOf(value) !== index)
+
+const invalidRoadmapDocuments = async (): Promise<readonly string[]> => {
+  const invalid: string[] = []
+  for (const track of roadmapTracks) {
+    const text = await readText(track.path)
+    const markers = [`> **Track ID:** \`${track.id}\``, "## Measures", "## Stop conditions"]
+    if (text !== undefined && markers.some((marker) => !text.includes(marker))) {
+      invalid.push(track.path)
+    }
+  }
+  return invalid
+}
+
+const validateRoadmapTracks = async () => {
+  const roadmapFiles = await readRoadmapFiles()
+  const registeredPaths = new Set(roadmapTracks.map((track) => track.path))
+  const registeredGateIds = new Set(gateIds)
+  const gateOwners = buildGateOwners()
+  const duplicateGateOwners = [...gateOwners].filter(([, owners]) => owners.length > 1)
+  const duplicateTrackIds = duplicateValues(roadmapTracks.map(({ id }) => id))
+  const duplicateTrackPaths = duplicateValues(roadmapTracks.map(({ path }) => path))
+  const failures = [
+    ...roadmapFiles.filter((path) => !registeredPaths.has(path)).map((path) =>
+      `unregistered roadmap file: ${path}`
+    ),
+    ...roadmapTracks.filter((track) => !roadmapFiles.includes(track.path)).map((track) =>
+      `missing roadmap file: ${track.path}`
+    ),
+    ...roadmapTracks.flatMap((track) =>
+      track.gateIds.filter((id) => !registeredGateIds.has(id)).map((id) =>
+        `unknown roadmap gate: ${track.id}:${id}`
+      )
+    ),
+    ...gateIds.filter((id) => id !== "roadmap.global-exit" && !gateOwners.has(id)).map((id) =>
+      `unassigned roadmap gate: ${id}`
+    ),
+    ...duplicateGateOwners.map(([id, owners]) =>
+      `roadmap gate ${id} has multiple owners: ${owners.join(", ")}`
+    ),
+    ...duplicateTrackIds.map((id) => `duplicate roadmap track ID: ${id}`),
+    ...duplicateTrackPaths.map((path) => `duplicate roadmap track path: ${path}`),
+    ...(await invalidRoadmapDocuments()).map((path) =>
+      `roadmap document missing required metadata: ${path}`
+    ),
+  ]
+  if (failures.length > 0) throw new Error(failures.join("\n"))
+}
+
+await validateRoadmapTracks()
 
 const runDomainMeasure = async (): Promise<Map<string, boolean>> => {
   const output = await new Deno.Command("deno", {
@@ -82,26 +202,15 @@ const readFinancialResults = async (): Promise<Map<string, boolean>> => {
   const manifestText = await readText(
     "docs/operations/financial-readiness-evidence-2026-08-18.json",
   )
-  const manifest = manifestText === undefined
-    ? undefined
-    : JSON.parse(manifestText) as FinancialManifest
-  const byId = new Map((manifest?.gates ?? []).map((gate) => [gate.id, gate]))
-  const results = new Map<string, boolean>()
-  for (const gate of gates) {
-    if (gate.kind !== "financial" || gate.financialId === undefined) continue
-    const evidence = byId.get(gate.financialId)
-    results.set(
-      gate.financialId,
-      evidence?.observed === "PASS" &&
-        evidence.evidenceClass !== undefined &&
-        evidence.acceptedEvidenceClasses?.includes(evidence.evidenceClass) === true,
-    )
-  }
-  return results
+  if (manifestText === undefined) throw new Error("Financial readiness evidence is missing")
+
+  const evaluation = evaluateFinancialManifest(JSON.parse(manifestText))
+  return new Map(evaluation.gates.map(({ gate, passes }) => [gate.id, passes]))
 }
 
 const domainResults = await runDomainMeasure()
 const financialResults = await readFinancialResults()
+const executableGateResults = await testGateResults(gates)
 const results = new Map<string, GateResult>()
 
 for (const gate of gates) {
@@ -127,7 +236,9 @@ for (const gate of gates) {
   }
   if (gate.kind === "markers") {
     const markers = dependenciesPassed && await markersPass(gate.requirements ?? [])
-    const commands = markers && await commandsPass(gate.commands ?? [])
+    const commands = markers &&
+      (gate.commands === undefined || gate.commands.length === 0 ||
+        executableGateResults.get(gate.id) === true)
     const passed = markers && commands
     results.set(gate.id, {
       gate,
@@ -138,7 +249,9 @@ for (const gate of gates) {
         ? "required evidence is missing"
         : !commands
         ? "required executable checks failed"
-        : "required evidence and executable checks passed",
+        : (gate.commands?.length ?? 0) > 0
+        ? "required evidence and executable checks passed"
+        : "required implementation evidence is present",
     })
     continue
   }
@@ -155,8 +268,12 @@ for (const result of results.values()) {
   if (!result.passed) console.log(`  ${result.reason}`)
 }
 
-const completed = [...results.values()].filter((result) => result.passed).length
-const remaining = gates.length - completed
+const registeredCompleted = [...results.values()].filter((result) => result.passed).length
+const globalGate = gates.find((gate) => gate.id === "roadmap.global-exit")!
+const globalCompleted =
+  globalGate.dependencies?.filter((id) => results.get(id)?.passed === true).length ?? 0
+const globalRemaining = (globalGate.dependencies?.length ?? 0) - globalCompleted
+const globalPassed = results.get(globalGate.id)?.passed === true
 const level3 = gates.filter((gate) => gate.kind === "domain" && results.get(gate.id)?.passed).length
 const processGates = gates.filter((gate) => gate.id.startsWith("process."))
 const integrationGates = gates.filter((gate) => gate.id.startsWith("integration."))
@@ -169,12 +286,27 @@ const financialRemaining =
 const processRemaining = processGates.filter((gate) => results.get(gate.id)?.passed !== true).length
 const integrationRemaining =
   integrationGates.filter((gate) => results.get(gate.id)?.passed !== true).length
+const businessPackRemaining = roadmapTracks.find((track) => track.id === "packs")?.gateIds.filter(
+  (id) => results.get(id)?.passed !== true,
+).length ?? 0
 
-console.log(`METRIC roadmap_exit_gates_completed=${completed}`)
-console.log(`METRIC remaining_roadmap_exit_gates=${remaining}`)
+console.log(`METRIC roadmap_tracks=${roadmapTracks.length}`)
+console.log("METRIC unregistered_roadmap_tracks=0")
+console.log("METRIC unassigned_roadmap_gates=0")
+for (const track of roadmapTracks) {
+  const trackCompleted = track.gateIds.filter((id) => results.get(id)?.passed === true).length
+  console.log(`METRIC ${track.id}_gates_completed=${trackCompleted}`)
+  console.log(`METRIC ${track.id}_gates_remaining=${track.gateIds.length - trackCompleted}`)
+}
+console.log(`METRIC registered_gates_completed=${registeredCompleted}`)
+console.log(`METRIC registered_gates_remaining=${gates.length - registeredCompleted}`)
+console.log(`METRIC roadmap_global_exit=${globalPassed ? "PASS" : "OPEN"}`)
+console.log(`METRIC roadmap_exit_gates_completed=${globalCompleted}`)
+console.log(`METRIC remaining_roadmap_exit_gates=${globalRemaining}`)
 console.log(`METRIC level3_capabilities=${level3}`)
 console.log(`METRIC partial_committed_packages=${partialCommittedPackages}`)
 console.log(`METRIC open_unknown_decisions=${openUnknownDecisions}`)
 console.log(`METRIC financial_activation_gates_remaining=${financialRemaining}`)
-console.log(`METRIC process_studio_gates_remaining=${processRemaining}`)
-console.log(`METRIC integration_gates_remaining=${integrationRemaining}`)
+console.log(`METRIC process_studio_mechanical_gates_remaining=${processRemaining}`)
+console.log(`METRIC integration_surface_gates_remaining=${integrationRemaining}`)
+console.log(`METRIC business_pack_contract_gates_remaining=${businessPackRemaining}`)

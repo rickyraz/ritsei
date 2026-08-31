@@ -343,8 +343,10 @@ tooling/
 ├── ai-boundary/
 ├── boundary-linter/
 ├── call-graph/
+├── financial-readiness/
 ├── public-contract/
-└── schema-ownership-check/
+├── roadmap-completion/
+└── focused check scripts
 
 tests/
 └── architecture/

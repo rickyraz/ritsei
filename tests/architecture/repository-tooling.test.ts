@@ -7,7 +7,12 @@ import {
   extractImportedBindings,
 } from "../../tooling/call-graph/check.ts"
 import { validateSkillDocument } from "../../tooling/check-agent-skills.ts"
+import {
+  evaluateFinancialManifest,
+  requiredFinancialGateIds,
+} from "../../tooling/financial-readiness/evaluate.ts"
 import { analyzePublicPackageImports } from "../../tooling/public-contract/check.ts"
+import { type Gate, validateGateGraph } from "../../tooling/roadmap-completion/registry.ts"
 
 const skillHeadings = [
   "# Purpose",
@@ -48,6 +53,59 @@ describe("repository tooling", () => {
         validSkill.replace("# Completion Criteria\n", ""),
         false,
       ).some((failure) => failure.includes("# Completion Criteria")),
+    )
+  })
+
+  it("uses one fail-closed financial evidence evaluator", () => {
+    const gates = requiredFinancialGateIds.map((id) => ({
+      id,
+      title: id,
+      observed: "FAIL" as const,
+      evidenceClass: "missing" as const,
+      acceptedEvidenceClasses: ["production-real" as const],
+      evidence: [],
+      reason: "missing proof",
+      failureCategory: "evidence" as const,
+      requiredEvidence: "production proof",
+      remediation: "run the rehearsal",
+    }))
+    const manifest = {
+      schemaVersion: 1,
+      reviewedAt: "2026-08-31",
+      baselineCommit: "056828250526",
+      summary: { passed: 0, failed: gates.length, total: gates.length },
+      gates,
+    }
+
+    assert.strictEqual(evaluateFinancialManifest(manifest).failed, 16)
+    assert.throws(() =>
+      evaluateFinancialManifest({
+        ...manifest,
+        summary: { passed: 1, failed: 15, total: 16 },
+      })
+    )
+    assert.throws(() => evaluateFinancialManifest({ ...manifest, gates: [null] }))
+  })
+
+  it("rejects invalid roadmap gate dependencies", () => {
+    const gate = (id: string, dependencies: readonly string[] = []): Gate => ({
+      id,
+      title: id,
+      source: "test",
+      kind: "composite",
+      dependencies,
+    })
+
+    assert.deepStrictEqual(validateGateGraph([gate("first"), gate("second", ["first"])]), [])
+    assert.isTrue(
+      validateGateGraph([gate("first", ["missing"])]).some((failure) =>
+        failure.includes("unknown dependency")
+      ),
+    )
+    assert.isTrue(
+      validateGateGraph([gate("first", ["second"]), gate("second")]).some((failure) =>
+        failure.includes("must be declared first")
+      ),
     )
   })
 
