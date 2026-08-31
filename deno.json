@@ -22,6 +22,7 @@
     "test:coverage": "vitest run --coverage --coverage.provider=v8",
     "test:identity-coverage": "vitest run --coverage --coverage.provider=v8 --coverage.include=packages/identity/src/**/*.ts --coverage.thresholds.100 packages/identity/tests",
     "test:contract": "vitest run --config vitest.contract.config.ts",
+    "lefthook:install": "lefthook install",
     "fallow": "npx --no-install fallow",
     "fallow:audit": "npx --no-install fallow audit --format json --quiet",
     "fallow:dead-code": "npx --no-install fallow dead-code",

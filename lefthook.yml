@@ -1,4 +1,6 @@
 # Requires Lefthook v2.1.11+
+assert_lefthook_installed: true
+
 pre-commit:
   commands:
     deno-format:
