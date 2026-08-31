@@ -28,6 +28,47 @@ describe("runtime configuration", () => {
       assert.strictEqual(configuration.tigerBeetle, undefined)
     }))
 
+  it.effect("requires complete PostgreSQL read-your-writes settings when enabled", () =>
+    Effect.gen(function* () {
+      const failure = yield* parseRuntimeConfiguration(environment({
+        RITSEI_POSTGRES_RYW_ENABLED: "true",
+      })).pipe(Effect.flip)
+      assert.strictEqual(failure._tag, "RuntimeConfigurationFailure")
+      assert.strictEqual(failure.reason, "missing_postgres_read_your_writes_configuration")
+    }))
+
+  it.effect("decodes bounded PostgreSQL read-your-writes settings", () =>
+    Effect.gen(function* () {
+      const configuration = yield* parseRuntimeConfiguration(environment({
+        RITSEI_POSTGRES_RYW_ENABLED: "true",
+        POSTGRES_REPLICA_URL: "postgresql://replica/ritsei",
+        RITSEI_POSTGRES_PLACEMENT_ID: "local-cluster",
+        RITSEI_POSTGRES_CONSISTENCY_SECRET: "01234567890123456789012345678901",
+        RITSEI_POSTGRES_RYW_MAX_WAIT_MS: "750",
+        RITSEI_POSTGRES_CONSISTENCY_TTL_MS: "120000",
+      }))
+      assert.deepStrictEqual(configuration.postgresReadYourWrites, {
+        replicaUrl: "postgresql://replica/ritsei",
+        placementId: "local-cluster",
+        secret: "01234567890123456789012345678901",
+        maxWaitMs: 750,
+        tokenTtlMs: 120000,
+      })
+    }))
+
+  it.effect("rejects unsafe PostgreSQL read-your-writes bounds", () =>
+    Effect.gen(function* () {
+      const failure = yield* parseRuntimeConfiguration(environment({
+        RITSEI_POSTGRES_RYW_ENABLED: "true",
+        POSTGRES_REPLICA_URL: "postgresql://replica/ritsei",
+        RITSEI_POSTGRES_PLACEMENT_ID: "local-cluster",
+        RITSEI_POSTGRES_CONSISTENCY_SECRET: "too-short",
+        RITSEI_POSTGRES_RYW_MAX_WAIT_MS: "0",
+      })).pipe(Effect.flip)
+      assert.strictEqual(failure._tag, "RuntimeConfigurationFailure")
+      assert.strictEqual(failure.reason, "invalid_postgres_read_your_writes_configuration")
+    }))
+
   it.effect("requires complete TigerBeetle settings only when selected", () =>
     Effect.gen(function* () {
       const failure = yield* parseRuntimeConfiguration(environment({

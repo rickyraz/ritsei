@@ -13,7 +13,12 @@ import {
   makeUserAccountService,
   UserAccountService,
 } from "../packages/identity/mod.ts"
-import { DurableJobEnqueuer, PostgresDatabaseLive, WebCryptoLive } from "../packages/kernel/mod.ts"
+import {
+  DurableJobEnqueuer,
+  PostgresDatabaseLive,
+  PostgresReadYourWritesLive,
+  WebCryptoLive,
+} from "../packages/kernel/mod.ts"
 import { makeMessagingService, MessagingService } from "../packages/messaging/mod.ts"
 import { makePartyService, PartyEventPublisherLive, PartyService } from "../packages/party/mod.ts"
 import { makeSalesService, SalesService } from "../packages/sales/mod.ts"
@@ -36,9 +41,14 @@ export const serviceLayers = (
   client: Sql,
   configuration: RitseiRuntimeConfiguration,
   financialSigner?: Layer.Layer<FinancialVerificationSignerService>,
+  replicaClient?: Sql,
 ) => {
   const DatabaseLive = PostgresDatabaseLive(client)
-  const PlatformCore = DatabaseLive
+  const readYourWrites = configuration.postgresReadYourWrites !== undefined &&
+      replicaClient !== undefined
+    ? PostgresReadYourWritesLive(client, replicaClient, configuration.postgresReadYourWrites)
+    : Layer.empty
+  const PlatformCore = Layer.merge(DatabaseLive, readYourWrites)
   const PlatformLive = Layer.mergeAll(PlatformCore, WebCryptoLive)
   const financialLedger = makeFinancialLedgerLayer(DatabaseLive, configuration)
   const financialObservation = makeFinancialStoreObservationLayer(DatabaseLive, configuration)

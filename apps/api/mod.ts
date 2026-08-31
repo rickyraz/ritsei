@@ -20,8 +20,12 @@ export const makeApiLayer = (
   client: Sql,
   configuration: RitseiRuntimeConfiguration,
   port = 8000,
+  replicaClient?: Sql,
 ) => {
-  const services = serviceLayers(client, configuration)
+  if (configuration.postgresReadYourWrites !== undefined && replicaClient === undefined) {
+    throw new Error("PostgreSQL read-your-writes requires a replica client")
+  }
+  const services = serviceLayers(client, configuration, undefined, replicaClient)
   const authMiddleware = BearerAuthLive.pipe(Layer.provide(services))
   const handlers = ApiHandlers.pipe(
     Layer.provide(authMiddleware),
@@ -44,7 +48,14 @@ export const startApi = (url: string, port = 8000) =>
       const client = postgres(url)
       yield* Effect.addFinalizer(() => Effect.promise(() => client.end()))
       yield* validatePostgresVersion(client as unknown as PostgresClient)
-      yield* Layer.launch(makeApiLayer(client, configuration, port))
+      const replicaClient = configuration.postgresReadYourWrites === undefined
+        ? undefined
+        : postgres(configuration.postgresReadYourWrites.replicaUrl)
+      if (replicaClient !== undefined) {
+        yield* Effect.addFinalizer(() => Effect.promise(() => replicaClient.end()))
+        yield* validatePostgresVersion(replicaClient as unknown as PostgresClient)
+      }
+      yield* Layer.launch(makeApiLayer(client, configuration, port, replicaClient))
     }),
   )
 
