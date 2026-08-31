@@ -105,10 +105,10 @@ const validateLinks = async (path: string, content: string): Promise<readonly st
 }
 
 export const checkAgentSkills = async (): Promise<readonly string[]> => {
-  const lock = JSON.parse(await Deno.readTextFile("skills-lock.json")) as {
-    readonly skills?: Readonly<Record<string, unknown>>
-  }
-  const externalSkills = new Set(Object.keys(lock.skills ?? {}))
+  const externalSkills = new Set([
+    "constraint-validation-strategy",
+    "solidjs-2",
+  ])
   const skillFiles = await collectSkillFiles(".agents/skills")
   const failures: string[] = []
   let repositoryNativeCount = 0
