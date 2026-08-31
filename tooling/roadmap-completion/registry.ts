@@ -451,6 +451,165 @@ export const gates: readonly Gate[] = [
     ],
   },
   {
+    id: "postgres19.minimum-version",
+    title: "PostgreSQL 19 minimum version enforcement",
+    source: "docs/roadmap/postgresql-19.md",
+    kind: "markers",
+    commands: [task("test", "packages/kernel/tests/database.test.ts")],
+    requirements: [
+      marker(
+        "packages/kernel/src/database/postgres.ts",
+        "server_version_num",
+        "version < 190000",
+        "UnsupportedPostgresVersion",
+      ),
+      marker(
+        "packages/kernel/tests/database.test.ts",
+        "rejects PostgreSQL versions below 19",
+        "UnsupportedPostgresVersion",
+      ),
+      file("docs/roadmap/postgresql-19.md"),
+    ],
+  },
+  {
+    id: "postgres19.wait-for-pilot",
+    title: "PostgreSQL 19 route-scoped WAIT FOR pilot",
+    source: "docs/roadmap/postgresql-19.md",
+    kind: "markers",
+    dependencies: ["postgres19.minimum-version"],
+    commands: [
+      task(
+        "test",
+        "packages/kernel/tests/database.test.ts",
+        "apps/api/handlers.test.ts",
+        "apps/api/procurement.integration.test.ts",
+      ),
+    ],
+    requirements: [
+      marker(
+        "packages/kernel/src/consistency/contract.ts",
+        "ConsistencyToken",
+        "tenant_mismatch",
+        "timeline_mismatch",
+      ),
+      marker(
+        "packages/kernel/src/consistency/postgres.ts",
+        "pg_current_wal_insert_lsn",
+        "WAIT FOR LSN",
+        "standby_replay",
+        "NO_THROW",
+      ),
+      marker(
+        "apps/api/handlers.ts",
+        "x-ritsei-consistency-token",
+        "PostgresReadYourWrites",
+        "createPurchaseOrder",
+        "getPurchaseOrder",
+      ),
+      marker(
+        "packages/kernel/tests/database.test.ts",
+        "captures and waits for an opaque PostgreSQL consistency token",
+        "rejects promotion and timeline mismatches",
+        "maps bounded replica wait timeouts",
+      ),
+      marker(
+        "packages/kernel/tests/postgresql-19.postgres.test.ts",
+        "proves non-superuser PostgreSQL 19 control and WAIT FOR privileges",
+      ),
+    ],
+  },
+  {
+    id: "postgres19.property-graph-pilot",
+    title: "PostgreSQL 19 Party SQL/PGQ pilot",
+    source: "docs/roadmap/postgresql-19.md",
+    kind: "markers",
+    dependencies: ["postgres19.minimum-version"],
+    commands: [
+      task(
+        "test",
+        "packages/party/tests/party.test.ts",
+        "tests/architecture/postgresql-19.test.ts",
+      ),
+    ],
+    requirements: [
+      marker(
+        "db/migrations/20260831124952_add_party_property_graph/migration.sql",
+        "CREATE PROPERTY GRAPH",
+        "GRAPH_TABLE",
+        "legal_entity_organization_edges",
+        'WHERE graph_path."active"',
+      ),
+      marker(
+        "packages/party/src/contract.ts",
+        "RelatedPartyPath",
+        "FindRelatedPartyPathsInput",
+      ),
+      marker(
+        "packages/party/src/postgres.ts",
+        "party.related-party-paths.find",
+        "relatedPartyPaths",
+      ),
+      marker(
+        "packages/party/tests/party.postgres.test.ts",
+        "findRelatedPartyPaths",
+        "baseline",
+        "targetPartyId",
+        "explain (analyze, buffers, format json)",
+        "Execution Time",
+        "Limit",
+      ),
+    ],
+  },
+  {
+    id: "postgres19.repack-rehearsal",
+    title: "PostgreSQL 19 REPACK and operations rehearsal",
+    source: "docs/roadmap/postgresql-19.md",
+    kind: "markers",
+    dependencies: ["postgres19.minimum-version"],
+    commands: [task("test", "tests/architecture/postgresql-19.test.ts")],
+    requirements: [
+      marker(
+        "tooling/postgresql-19/rehearse.ts",
+        "REPACK (CONCURRENTLY true, ANALYZE true)",
+        "pg_stat_io",
+        "data_checksums",
+        "reserved_connections",
+      ),
+      marker(
+        "docs/operations/postgresql-19.md",
+        "RITSEI_DISPOSABLE_DATABASE_URL",
+        "production-eligible",
+        "not eligible",
+      ),
+      file("docs/operations/postgresql-19-evidence-2026-08-31.json"),
+      marker(
+        "docs/operations/postgresql-19-evidence-2026-08-31.json",
+        '"productionEligible": false',
+        '"indexValidAfter": true',
+        '"checksum":',
+      ),
+    ],
+  },
+  {
+    id: "postgres19.production-ga",
+    title: "PostgreSQL 19 production GA activation",
+    source: "docs/roadmap/postgresql-19.md",
+    kind: "markers",
+    dependencies: [
+      "postgres19.wait-for-pilot",
+      "postgres19.property-graph-pilot",
+      "postgres19.repack-rehearsal",
+    ],
+    requirements: [
+      file("docs/operations/postgresql-19-production-evidence.json"),
+      marker(
+        "docs/roadmap/postgresql-19.md",
+        "production review explicitly approves activation",
+        "PostgreSQL 19 GA",
+      ),
+    ],
+  },
+  {
     id: "roadmap.global-exit",
     title: "Global roadmap exit criteria",
     source: "docs/roadmap/README.md",
@@ -478,6 +637,7 @@ export const gates: readonly Gate[] = [
       "integration.reliability09",
       "integration.process095",
       "integration.governed10",
+      "postgres19.production-ga",
     ],
   },
 ]
@@ -503,7 +663,26 @@ export const validateGateGraph = (input: readonly Gate[]): string[] => {
     }
   }
 
-  return failures
+  const dependenciesById = new Map(input.map((gate) => [gate.id, gate]))
+  const visiting = new Set<string>()
+  const visited = new Set<string>()
+  const visit = (id: string, path: readonly string[]): void => {
+    if (visiting.has(id)) {
+      const start = path.indexOf(id)
+      failures.push(`roadmap gate dependency cycle: ${[...path.slice(start), id].join(" -> ")}`)
+      return
+    }
+    if (visited.has(id)) return
+    visiting.add(id)
+    for (const dependency of dependenciesById.get(id)?.dependencies ?? []) {
+      if (dependency !== id && dependenciesById.has(dependency)) visit(dependency, [...path, id])
+    }
+    visiting.delete(id)
+    visited.add(id)
+  }
+  for (const id of new Set(ids)) visit(id, [])
+
+  return [...new Set(failures)]
 }
 
 export const roadmapTracks: readonly RoadmapTrack[] = [
@@ -562,6 +741,18 @@ export const roadmapTracks: readonly RoadmapTrack[] = [
     title: "Business Pack Library",
     path: "docs/roadmap/process-pack-library.md",
     gateIds: ["packs.contract"],
+  },
+  {
+    id: "postgres19",
+    title: "PostgreSQL 19",
+    path: "docs/roadmap/postgresql-19.md",
+    gateIds: [
+      "postgres19.minimum-version",
+      "postgres19.wait-for-pilot",
+      "postgres19.property-graph-pilot",
+      "postgres19.repack-rehearsal",
+      "postgres19.production-ga",
+    ],
   },
 ]
 

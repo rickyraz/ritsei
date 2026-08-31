@@ -107,6 +107,12 @@ describe("repository tooling", () => {
         failure.includes("must be declared first")
       ),
     )
+    assert.isTrue(
+      validateGateGraph([
+        gate("first", ["second"]),
+        gate("second", ["first"]),
+      ]).some((failure) => failure.includes("dependency cycle")),
+    )
   })
 
   it("rejects cross-package imports outside public entry points", () => {

@@ -64,6 +64,7 @@
 - [`./roadmap/integration-surface.md`](./roadmap/integration-surface.md)
 - [`./roadmap/process-studio.md`](./roadmap/process-studio.md)
 - [`./roadmap/process-pack-library.md`](./roadmap/process-pack-library.md)
+- [`./roadmap/postgresql-19.md`](./roadmap/postgresql-19.md)
 
 ## Deployment Notes
 
@@ -86,5 +87,6 @@
 - [`./development/releasing.md`](./development/releasing.md)
 - [`./development/testing.md`](./development/testing.md)
 - [`./operations/database-roles.md`](./operations/database-roles.md)
+- [`./operations/postgresql-19.md`](./operations/postgresql-19.md)
 - [`./operations/tigerbeetle-recovery.md`](./operations/tigerbeetle-recovery.md)
 - [`./product/vision.md`](./product/vision.md)

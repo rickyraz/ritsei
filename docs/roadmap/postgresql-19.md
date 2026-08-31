@@ -1,0 +1,108 @@
+# PostgreSQL 19 Capability Roadmap
+
+> **Status:** Canonical roadmap subdocument
+>
+> **Track ID:** `postgres19`
+>
+> **Owns:** sequencing and readiness gates for PostgreSQL 19-specific capabilities.
+>
+> **Measured by:** `postgres19.*` gates through `deno task roadmap:measure`.
+>
+> **Detailed semantics belong to:**
+> [`../architecture/postgresql-19-architecture.md`](../architecture/postgresql-19-architecture.md),
+> [`../architecture/state-and-consistency.md`](../architecture/state-and-consistency.md), and
+> [`../architecture/hierarchy-and-graph-selection.md`](../architecture/hierarchy-and-graph-selection.md).
+>
+> **Related documents**
+>
+> - Roadmap index: [`./README.md`](./README.md)
+> - PostgreSQL architecture:
+>   [`../architecture/postgresql-19-architecture.md`](../architecture/postgresql-19-architecture.md)
+> - State and consistency:
+>   [`../architecture/state-and-consistency.md`](../architecture/state-and-consistency.md)
+> - Database roles: [`../operations/database-roles.md`](../operations/database-roles.md)
+> - PostgreSQL 19 rehearsal: [`../operations/postgresql-19.md`](../operations/postgresql-19.md)
+> - `WAIT FOR` ADR:
+>   [`../decisions/0039-select-postgresql-wait-for-for-replica-read-your-writes.md`](../decisions/0039-select-postgresql-wait-for-for-replica-read-your-writes.md)
+> - Selective graph ADR:
+>   [`../decisions/0005-use-ltree-and-sql-pgq-selectively.md`](../decisions/0005-use-ltree-and-sql-pgq-selectively.md)
+
+## Scope
+
+Turn the PostgreSQL 19 development floor into a small set of executable, reversible capability
+slices without moving business authority out of relational tables or activating beta features in
+production.
+
+## Sequence
+
+### Minimum version
+
+Keep the kernel version floor at PostgreSQL 19 (`server_version_num >= 190000`) and verify it before
+application work or migration execution.
+
+**Exit:** the version check and regression test pass.
+
+### Replica read-your-writes pilot
+
+Pilot route-scoped `WAIT FOR ... MODE 'standby_replay'` for procurement purchase-order create/read.
+The command captures an opaque, tenant-bound token after commit; the read validates placement and
+timeline context, waits on the configured replica, and then queries only that replica. Token capture
+is best effort for this non-idempotent create; without a token, the route remains on its previously
+approved primary path.
+
+**Exit:** token integrity, tenant binding, bounded wait, malformed/expired handling, promotion and
+timeline rejection, no-primary-fallback behavior, and route response semantics are tested.
+
+### Party property-graph pilot
+
+Expose a bounded Party related-party path query over `party.parties`, `party.legal_entities`, and
+`party.party_relationships`. SQL/PGQ is a read projection; relational foreign keys, tenant scope,
+authorization, and mutation paths remain authoritative.
+
+**Exit:** the custom migration applies on a fresh PostgreSQL 19 database, the query is tenant-scoped
+and active-only, its result matches the relational baseline, and its bounded result is covered by a
+public Party contract test.
+
+### Operational rehearsal
+
+Run the disposable-database rehearsal for native `REPACK (CONCURRENTLY true, ANALYZE true)`,
+checksums, autovacuum, reserved connections, `max_repack_replication_slots`, and `pg_stat_io`.
+
+**Exit:** row/checksum preservation and index validity are recorded in reviewable evidence; beta/RC
+runs remain development-only.
+
+### Production GA gate
+
+Keep PostgreSQL 19 production activation closed until GA, backup/PITR, migration, failover,
+replication, workload-isolation, observability, and route-specific evidence are accepted.
+
+**Exit:** all preceding gates pass and the production review explicitly approves activation. A
+passing mechanical gate is not production approval.
+
+## Current evidence
+
+The repository proves the minimum version, a route-scoped consistency adapter and tests, a
+non-superuser control/`WAIT FOR` privilege test, a Party SQL/PGQ migration with a relational baseline
+and `EXPLAIN ANALYZE` test, and a disposable operational rehearsal. The local
+development database is PostgreSQL 19 Beta 3 on August 31, 2026; production eligibility is therefore
+**OPEN**.
+
+## Measures
+
+| Measure                                                | Target                                 |
+| ------------------------------------------------------ | -------------------------------------- |
+| `postgres19.*` mechanical gates                        | all five pass before activation review |
+| PostgreSQL server version floor                        | `server_version_num >= 190000`         |
+| opaque token leakage into domain contracts             | `0`                                    |
+| primary fallback after a selected replica wait failure | `0`                                    |
+| graph query tenant-boundary failures                   | `0`                                    |
+| graph result mismatch against relational baseline      | `0`                                    |
+| rehearsal checksum/index failures                      | `0`                                    |
+| production eligibility on beta/RC                      | `OPEN`                                 |
+
+## Stop conditions
+
+Stop activation when the configured replica is not a reviewed standby, wait failure can reach the
+primary through fallback, tokens expose raw WAL details in business contracts, the graph is used for
+mutation or authorization hot paths, the graph result cannot be rebuilt from relational facts,
+rehearsal evidence is missing, or the deployed PostgreSQL version is not PostgreSQL 19 GA.

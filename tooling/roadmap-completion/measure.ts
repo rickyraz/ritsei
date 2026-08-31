@@ -289,6 +289,10 @@ const integrationRemaining =
 const businessPackRemaining = roadmapTracks.find((track) => track.id === "packs")?.gateIds.filter(
   (id) => results.get(id)?.passed !== true,
 ).length ?? 0
+const postgres19Remaining =
+  roadmapTracks.find((track) => track.id === "postgres19")?.gateIds.filter(
+    (id) => results.get(id)?.passed !== true,
+  ).length ?? 0
 
 console.log(`METRIC roadmap_tracks=${roadmapTracks.length}`)
 console.log("METRIC unregistered_roadmap_tracks=0")
@@ -310,3 +314,4 @@ console.log(`METRIC financial_activation_gates_remaining=${financialRemaining}`)
 console.log(`METRIC process_studio_mechanical_gates_remaining=${processRemaining}`)
 console.log(`METRIC integration_surface_gates_remaining=${integrationRemaining}`)
 console.log(`METRIC business_pack_contract_gates_remaining=${businessPackRemaining}`)
+console.log(`METRIC postgres19_capability_gates_remaining=${postgres19Remaining}`)

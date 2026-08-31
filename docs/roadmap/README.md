@@ -45,6 +45,7 @@ in this folder.
 | Process Studio      | Pre-0.8 through governed 1.0 mechanical gates pass                 | Keep production activation behind global and operational gates           |
 | Integrations        | Contract through governed-surface mechanical gates pass            | Activate providers only with owner, credentials, recovery, and runbooks  |
 | Business Packs      | Contract-only Distribution slice passes                            | Add catalog-backed resolution before installation or onboarding mutation |
+| PostgreSQL 19      | Minimum version and bounded capability pilots implemented; GA is open | Finish GA, failover, workload, and production evidence                 |
 
 The current product releases are pre-release, source-only snapshots. Release status and upgrade
 caveats are owned by [`../development/releasing.md`](../development/releasing.md).
@@ -59,8 +60,9 @@ caveats are owned by [`../development/releasing.md`](../development/releasing.md
 | `process`     | Process Studio        | catalog, runtime, operations, designer, and governed release gates                | `process.*`       | [`process-studio.md`](./process-studio.md)                         |
 | `integration` | External integration  | connector contracts, delivery, reliability, Process Studio bridge, and governance | `integration.*`   | [`integration-surface.md`](./integration-surface.md)               |
 | `packs`       | Business Pack Library | pack resolution, draft materialization, onboarding, and governed upgrades         | `packs.contract`  | [`process-pack-library.md`](./process-pack-library.md)             |
+| `postgres19`  | PostgreSQL 19         | version floor, consistency, SQL/PGQ, and operational capability evidence          | `postgres19.*`    | [`postgresql-19.md`](./postgresql-19.md)                           |
 
-There are six subdocuments and six measured tracks. `README.md` is the index, not a seventh track. A
+There are seven subdocuments and seven measured tracks. `README.md` is the index, not an eighth track. A
 new track requires a registry entry, a measured gate, and a documented owner.
 
 ## Dependency graph
@@ -88,6 +90,7 @@ Parallel tracks attach at explicit boundaries:
 | Financial execution  | bounded Accounting profile and provider-neutral port | accepted transfers, projections, restore, replay, and cutover evidence       |
 | External integration | separate Domain/External contracts                   | idempotent delivery, normalized failures, recovery, and connector governance |
 | Business Packs       | public catalog and deterministic Process IR          | actionable resolution, editable drafts, and version-safe upgrades            |
+| PostgreSQL 19        | PostgreSQL 19 development floor                    | route/query/operational evidence without production activation             |
 
 ## Global exit
 
@@ -107,8 +110,9 @@ The broad Process Studio/runtime milestone is open until all of these are true:
 [ ] financial activation, integration activation, and deployment gates are separately approved
 ```
 
-The global gate is composite: an open financial activation gate keeps the global result open even
-when the Process Studio or integration track has passed its own mechanical gates.
+The global gate is composite: an open financial activation or PostgreSQL 19 production gate keeps
+the global result open even when the Process Studio or integration track has passed its own
+mechanical gates.
 
 ## Measures
 
@@ -122,7 +126,7 @@ The command reports the following stable measures:
 
 | Metric                                      | Desired condition                                                    |
 | ------------------------------------------- | -------------------------------------------------------------------- |
-| `roadmap_tracks`                            | equals the six registered tracks                                     |
+| `roadmap_tracks`                            | equals the seven registered tracks                                   |
 | `unregistered_roadmap_tracks`               | `0`                                                                  |
 | `unassigned_roadmap_gates`                  | `0`                                                                  |
 | `roadmap_global_exit`                       | `PASS` before broad production activation                            |
@@ -135,6 +139,7 @@ The command reports the following stable measures:
 | `process_studio_mechanical_gates_remaining` | `0` before governed-release review                                   |
 | `integration_surface_gates_remaining`       | `0` means the governed surface proof passes, not provider activation |
 | `business_pack_contract_gates_remaining`    | `0` means the contract slice passes, not installation readiness      |
+| `postgres19_capability_gates_remaining`     | `0` before PostgreSQL 19 production activation review                 |
 
 The command may report open gates without failing; open gates are the roadmap status. Missing files,
 unknown dependencies, invalid financial evidence, or unregistered roadmap tracks fail the command.
