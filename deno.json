@@ -41,6 +41,7 @@
     "boundary:lint": "ast-grep scan apps packages tooling tests && deno task fallow:boundaries && deno run --allow-read tooling/boundary-linter/check-ownership.ts && deno run --allow-read tooling/public-contract/check.ts && deno task capabilities:check && deno task callgraph:check && deno task ai:boundary:check && deno task effect:boundaries:check && deno task uuid:policy:check",
     "effect:boundaries:check": "deno run --allow-read tooling/effect-boundaries/check.ts",
     "uuid:policy:check": "deno run --allow-read tooling/uuid-policy/check.ts",
+    "postgres19:rehearse": "deno run --allow-env --allow-net --allow-read --allow-write tooling/postgresql-19/rehearse.ts",
     "boundary:test": "ast-grep test --skip-snapshot-tests",
     "check": "deno check ."
   },

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-31T13:19:42.596Z",
+  "environment": "disposable-development",
+  "databaseName": "ritsei_pg19_scratch",
+  "serverVersionNum": 190000,
+  "serverVersion": "19beta3 (Ubuntu 19~beta3-1.pgdg24.04+1)",
+  "productionEligible": false,
+  "repack": {
+    "command": "REPACK (CONCURRENTLY true, ANALYZE true)",
+    "startedAt": "2026-08-31T13:19:42.322Z",
+    "finishedAt": "2026-08-31T13:19:42.596Z",
+    "rowCount": 13334,
+    "checksum": "ecbc8cc7bf11ef68ac01caa42aac8973",
+    "indexValidBefore": true,
+    "indexValidAfter": true
+  },
+  "operations": {
+    "dataChecksums": "on",
+    "autovacuum": "on",
+    "reservedConnections": 0,
+    "superuserReservedConnections": 3,
+    "maxRepackReplicationSlots": 5,
+    "pgStatIoRows": 88
+  }
+}

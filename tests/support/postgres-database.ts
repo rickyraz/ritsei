@@ -5,7 +5,7 @@ import { uuidv7 } from "../../packages/kernel/mod.ts"
 
 export const withTemporaryDatabase = <A, E, R>(
   databaseUrl: string,
-  use: (client: Sql) => Effect.Effect<A, E, R>,
+  use: (client: Sql, databaseUrl: string) => Effect.Effect<A, E, R>,
 ): Effect.Effect<A, E | unknown, R> => {
   const databaseName = `ritsei_test_${uuidv7().replaceAll("-", "")}`
   const targetUrl = new URL(databaseUrl)
@@ -19,7 +19,7 @@ export const withTemporaryDatabase = <A, E, R>(
           await admin.unsafe(`create database "${databaseName}"`)
           return postgres(targetUrl.toString(), { max: 4 })
         }),
-        use,
+        (client) => use(client, targetUrl.toString()),
         (client) => Effect.promise(() => client.end()),
       ).pipe(
         Effect.ensuring(
