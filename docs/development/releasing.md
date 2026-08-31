@@ -25,19 +25,15 @@ and publication. Each notes file is committed before its tag is created.
 
 ## Release status
 
-Current planned release records:
+Published release records:
 
-| Release  | Source target                                                               | Status                        |
-| -------- | --------------------------------------------------------------------------- | ----------------------------- |
-| `v0.1.0` | `7befeb495567e926e32ab85a926c96d20c92ec37`, August 13, 2026 01:35:28 +07:00 | Candidate historical baseline |
-| `v0.2.0` | Pending annotated tag on the current release-preparation master tip         | Pending                       |
+| Release  | Source target                                                               | Status                         |
+| -------- | --------------------------------------------------------------------------- | ------------------------------ |
+| `v0.1.0` | `7befeb495567e926e32ab85a926c96d20c92ec37`, August 13, 2026 01:35:28 +07:00 | Published pre-release          |
+| `v0.2.0` | `72d233e006faaadee30a57b194b9752b32f79d68`, August 31, 2026               | Published pre-release          |
 
-The `v0.1.0` candidate is not silently retargeted. The `v0.2.0` target is not assigned a past hash:
-the exact commit is recorded when the pending tag is created after release documentation and
-automation preparation.
-
-Both planned releases are pre-release, source-only snapshots. They do not promise a build artifact,
-package distribution, production deployment, or supported upgrade path.
+Both releases were published on August 31, 2026 as pre-release, source-only snapshots. They do not
+promise a build artifact, package distribution, production deployment, or supported upgrade path.
 
 ## Preparation checklist
 
