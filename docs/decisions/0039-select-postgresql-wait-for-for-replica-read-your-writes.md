@@ -4,7 +4,7 @@
 - Date: 2026-08-14
 - Supersedes: None
 - Superseded by: None
-- Implementation: Deferred
+- Implementation: Route-scoped procurement pilot behind opt-in configuration
 - Production activation: Gated on PostgreSQL 19 GA and route-scoped validation
 
 > **Related documents**
@@ -56,8 +56,9 @@ does not activate it for production.
 RITSEI selects PostgreSQL 19 `WAIT FOR` as the planned infrastructure mechanism for
 replica-backed read-your-writes consistency.
 
-The decision is accepted, but implementation and production activation are deferred. Activation is
-route-scoped rather than a universal requirement for every read.
+The decision is accepted. A route-scoped procurement pilot is implemented behind opt-in
+configuration; production activation remains deferred. Activation is route-scoped rather than a
+universal requirement for every read.
 
 ### Consistency taxonomy
 

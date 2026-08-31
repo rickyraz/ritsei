@@ -7,6 +7,8 @@ import {
   DatabaseFailure,
   isDatabaseConstraint,
   makePostgresDatabase,
+  makePostgresReadYourWrites,
+  ReplicaConsistencyFailure,
   UnsupportedPostgresVersion,
   validatePostgresVersion,
 } from "../mod.ts"
@@ -32,6 +34,42 @@ const makeClient = (version = "190000") => {
   }
   return { client: client as unknown as Sql, queries }
 }
+
+const makeConsistencyClient = (
+  options: {
+    readonly lsn?: string
+    readonly status?: string
+    readonly systemIdentifier?: string
+    readonly timelineId?: number
+  } = {},
+) => {
+  const queries: string[] = []
+  const client = {
+    options: { parsers: {}, serializers: {} },
+    unsafe: <Row extends Record<string, unknown>>(query: string) => {
+      queries.push(query)
+      const rows = query.includes("pg_current_wal_insert_lsn")
+        ? [{ lsn: options.lsn ?? "0/306EE20" }]
+        : query.startsWith("WAIT FOR")
+        ? [{ status: options.status ?? "success" }]
+        : [{
+          system_identifier: options.systemIdentifier ?? "7673735797966302046",
+          timeline_id: options.timelineId ?? 1,
+        }]
+      return Promise.resolve(rows as unknown as readonly Row[])
+    },
+  }
+  return { client: client as unknown as Sql, queries }
+}
+
+const consistencyConfig = {
+  placementId: "test-cluster",
+  secret: "01234567890123456789012345678901",
+  maxWaitMs: 500,
+  tokenTtlMs: 60_000,
+}
+
+const tenantId = "018f0000-0000-7000-8000-000000000001"
 
 describe("database service", () => {
   it.effect("executes typed Drizzle queries", () =>
@@ -66,5 +104,136 @@ describe("database service", () => {
       )
 
       assert.instanceOf(error, UnsupportedPostgresVersion)
+    }))
+
+  it.effect("captures and waits for an opaque PostgreSQL consistency token", () =>
+    Effect.gen(function* () {
+      const primary = makeConsistencyClient()
+      const replica = makeConsistencyClient()
+      const service = yield* makePostgresReadYourWrites(
+        primary.client,
+        replica.client,
+        consistencyConfig,
+      )
+      const token = yield* service.capture(tenantId)
+      yield* service.wait(tenantId, token)
+
+      assert.match(token, /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/)
+      assert.isTrue(
+        primary.queries.some((query) => query.includes("pg_current_wal_insert_lsn")),
+      )
+      assert.isTrue(
+        replica.queries.some((query) =>
+          query ===
+            "WAIT FOR LSN '0/306EE20' WITH (MODE 'standby_replay', TIMEOUT '500ms', NO_THROW)"
+        ),
+      )
+    }))
+
+  it.effect("rejects tampered and cross-tenant consistency tokens", () =>
+    Effect.gen(function* () {
+      const primary = makeConsistencyClient()
+      const replica = makeConsistencyClient()
+      const service = yield* makePostgresReadYourWrites(
+        primary.client,
+        replica.client,
+        consistencyConfig,
+      )
+      const token = yield* service.capture(tenantId)
+      const tampered = yield* Effect.flip(service.wait(tenantId, `${token}x`))
+      const wrongTenant = yield* Effect.flip(
+        service.wait("018f0000-0000-7000-8000-000000000002", token),
+      )
+
+      assert.instanceOf(tampered, ReplicaConsistencyFailure)
+      assert.strictEqual(tampered.reason, "invalid_token")
+      assert.strictEqual(wrongTenant.reason, "tenant_mismatch")
+    }))
+
+  it.effect("rejects expired consistency tokens", () =>
+    Effect.gen(function* () {
+      const { client: primary } = makeConsistencyClient()
+      const { client: replica } = makeConsistencyClient()
+      let now = 1_000
+      const service = yield* makePostgresReadYourWrites(
+        primary,
+        replica,
+        { ...consistencyConfig, tokenTtlMs: 1 },
+        () => now,
+      )
+      const token = yield* service.capture(tenantId)
+      now += 2_000
+      const failure = yield* Effect.flip(service.wait(tenantId, token))
+
+      assert.strictEqual(failure.reason, "expired_token")
+    }))
+
+  it.effect("rejects promotion and timeline mismatches before replica reads", () =>
+    Effect.gen(function* () {
+      const primary = makeConsistencyClient()
+      const promotedReplica = makeConsistencyClient({ systemIdentifier: "different-cluster" })
+      const service = yield* makePostgresReadYourWrites(
+        primary.client,
+        promotedReplica.client,
+        consistencyConfig,
+      )
+      const token = yield* service.capture(tenantId)
+      const placementFailure = yield* Effect.flip(service.wait(tenantId, token))
+
+      assert.strictEqual(placementFailure.reason, "placement_mismatch")
+
+      const timelineReplica = makeConsistencyClient({ timelineId: 2 })
+      const timelineService = yield* makePostgresReadYourWrites(
+        primary.client,
+        timelineReplica.client,
+        consistencyConfig,
+      )
+      const timelineToken = yield* timelineService.capture(tenantId)
+      const timelineFailure = yield* Effect.flip(
+        timelineService.wait(tenantId, timelineToken),
+      )
+
+      assert.strictEqual(timelineFailure.reason, "timeline_mismatch")
+    }))
+
+  it.effect("maps non-recovery and unknown replica wait statuses", () =>
+    Effect.gen(function* () {
+      const primary = makeConsistencyClient()
+      const notInRecovery = makeConsistencyClient({ status: "not in recovery" })
+      const service = yield* makePostgresReadYourWrites(
+        primary.client,
+        notInRecovery.client,
+        consistencyConfig,
+      )
+      const token = yield* service.capture(tenantId)
+      const failure = yield* Effect.flip(service.wait(tenantId, token))
+      assert.strictEqual(failure.reason, "not_in_recovery")
+
+      const unknownStatus = makeConsistencyClient({ status: "unexpected" })
+      const unknownService = yield* makePostgresReadYourWrites(
+        primary.client,
+        unknownStatus.client,
+        consistencyConfig,
+      )
+      const unknownToken = yield* unknownService.capture(tenantId)
+      const unknownFailure = yield* Effect.flip(
+        unknownService.wait(tenantId, unknownToken),
+      )
+      assert.strictEqual(unknownFailure.reason, "wait_failed")
+    }))
+
+  it.effect("maps bounded replica wait timeouts", () =>
+    Effect.gen(function* () {
+      const primary = makeConsistencyClient()
+      const replica = makeConsistencyClient({ status: "timeout" })
+      const service = yield* makePostgresReadYourWrites(
+        primary.client,
+        replica.client,
+        consistencyConfig,
+      )
+      const token = yield* service.capture(tenantId)
+      const failure = yield* Effect.flip(service.wait(tenantId, token))
+
+      assert.strictEqual(failure.reason, "timeout")
     }))
 })

@@ -1,10 +1,16 @@
 export {
+  ConsistencyToken,
+  CurrentConsistencyToken,
   CurrentDatabaseTransaction,
   Database,
   DatabaseFailure,
   isDatabaseConstraint,
   makePostgresDatabase,
+  makePostgresReadYourWrites,
   PostgresDatabaseLive,
+  PostgresReadYourWrites,
+  PostgresReadYourWritesLive,
+  ReplicaConsistencyFailure,
   UnsupportedPostgresVersion,
   validatePostgresVersion,
 } from "./database.ts"
@@ -115,5 +121,7 @@ export type {
   DrizzleDatabase,
   DrizzleTransaction,
   PostgresClient,
+  PostgresReadYourWritesConfig,
+  PostgresReadYourWritesService,
   PostgresTransaction,
 } from "./database.ts"
