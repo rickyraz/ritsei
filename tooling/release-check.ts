@@ -1,4 +1,4 @@
-const tag = Deno.args[0] ?? Deno.env.get("GITHUB_REF_NAME")
+const tag = Deno.args[0] ?? Deno.env.get("RELEASE_TAG") ?? Deno.env.get("GITHUB_REF_NAME")
 
 if (!tag || !/^v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(tag)) {
   throw new Error("release tag must match vX.Y.Z")
