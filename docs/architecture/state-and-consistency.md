@@ -26,6 +26,8 @@
 >   [`../decisions/0040-adopt-tigerbeetle-financial-ledger.md`](../decisions/0040-adopt-tigerbeetle-financial-ledger.md)
 > - Replica read-your-writes ADR:
 >   [`../decisions/0039-select-postgresql-wait-for-for-replica-read-your-writes.md`](../decisions/0039-select-postgresql-wait-for-for-replica-read-your-writes.md)
+> - Logical database and physical placement ADR:
+>   [`../decisions/0067-separate-logical-database-and-physical-data-placement.md`](../decisions/0067-separate-logical-database-and-physical-data-placement.md)
 > - RelationshipEngine ADR:
 >   [`../decisions/0059-define-replaceable-relationship-authorization-engine.md`](../decisions/0059-define-replaceable-relationship-authorization-engine.md)
 
@@ -136,8 +138,9 @@ replica_position >= required_position
 It does not prove that the replica equals the primary's newest state or includes commits after the
 required position.
 
-ADR-0039 selects PostgreSQL 19 `WAIT FOR` as the deferred mechanism for route-scoped replica
-read-your-writes. Application and transport infrastructure may carry an opaque `ConsistencyToken`,
+ADR-0039 selects PostgreSQL 19 `WAIT FOR` for route-scoped replica read-your-writes. The
+procurement route has an opt-in pilot implementation; production activation remains gated.
+Application and transport infrastructure may carry an opaque `ConsistencyToken`,
 but raw PostgreSQL WAL positions, timelines, cluster identifiers, and routing topology must not
 enter domain DTOs, capability IDs, domain events, entity addresses, or Process IR. The token grants
 no authorization, ownership, durability, or workload priority.
@@ -146,6 +149,12 @@ Production activation remains gated on PostgreSQL 19 GA, a concrete route requir
 and failure semantics, placement and timeline validation, current authorization, no-primary-
 fallback enforcement, and executable load and failover proof. Before activation, required
 read-after-write behavior stays on the authoritative path.
+
+A logical database endpoint does not erase placement scope. Transaction, RLS context, locks,
+idempotency, and uniqueness remain scoped to one transactionally compatible placement unless a
+separate consistency decision defines a broader protocol. Cross-placement reads are bounded,
+authorized, and non-authoritative; an invariant-sensitive cross-placement write must not masquerade
+as one PostgreSQL transaction or silently fall back to the primary.
 
 ## External Authorization Consistency
 

@@ -10,6 +10,8 @@
 >
 > - Canonical architecture: [`./architecture-spec-v4.md`](./architecture-spec-v4.md)
 > - PostgreSQL architecture: [`./postgresql-19-architecture.md`](./postgresql-19-architecture.md)
+> - Logical database and physical placement:
+>   [`../decisions/0067-separate-logical-database-and-physical-data-placement.md`](../decisions/0067-separate-logical-database-and-physical-data-placement.md)
 > - Search architecture: [`./search-architecture.md`](./search-architecture.md)
 > - Analytics architecture: [`./analytics-architecture.md`](./analytics-architecture.md)
 > - Stateful runtime: [`./runtime-architecture.md`](./runtime-architecture.md)
@@ -146,6 +148,15 @@ from PostgreSQL.
 
 The full term `WorkloadCell` must be used in architecture documents when ambiguity is possible.
 
+### Data placement
+
+Data placement determines where a PostgreSQL-owned authoritative fact or a rebuildable projection
+is stored. It is not a workload class, WorkloadCell, shuffle shard, capability, or semantic owner. A
+workload router selects a WorkloadCell and workload plane only; it must not select a PostgreSQL data
+placement. The kernel resolves any private data placement, and neither selection may enter public
+domain contracts. Placement changes must preserve the transaction, tenant, and authorization
+boundaries defined by the PostgreSQL and state-and-consistency architectures.
+
 ### Shuffle shard
 
 A shuffle shard is a deterministic, limited subset of executors or other contended resources
@@ -166,7 +177,7 @@ ownership.
                                     v
                     +-------------------------------+
                     | Thin Workload Router          |
-                    | route metadata + placement    |
+                    | route metadata + WorkloadCell |
                     | no business mutation          |
                     | no PostgreSQL transaction     |
                     | no primary credential         |
@@ -340,7 +351,7 @@ The router performs constant or tightly bounded work:
 
 1. validate or consume a trusted signed principal context;
 2. resolve static route metadata;
-3. derive a tenant-aware placement key;
+3. derive a tenant-aware workload-routing key;
 4. select the WorkloadCell and workload plane;
 5. enforce an ingress permit or route to the plane admission point;
 6. forward the request with correlation and deadline metadata.
@@ -356,8 +367,9 @@ The router must not:
 - accept a client-provided WorkloadCell, shard, executor, or pool identifier;
 - fall back from query to command resources.
 
-Placement changes use an internal version or epoch. Public entity IDs, capability IDs, event
-schemas, Process IR, and URLs remain stable across WorkloadCell movement.
+WorkloadCell routing changes use an internal version or epoch. Public entity IDs, capability IDs,
+event schemas, Process IR, and URLs remain stable across WorkloadCell movement. The router does not
+resolve or select a PostgreSQL data placement.
 
 The router is shared infrastructure and therefore needs its own hard in-flight bounds and protected
 command ingress reserve. If query traffic can exhaust all router or authentication capacity, the

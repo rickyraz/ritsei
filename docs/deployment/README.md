@@ -11,6 +11,8 @@
 >   [`../architecture/architecture-spec-v4.md`](../architecture/architecture-spec-v4.md)
 > - PostgreSQL architecture:
 >   [`../architecture/postgresql-19-architecture.md`](../architecture/postgresql-19-architecture.md)
+> - Logical database and physical placement:
+>   [`../decisions/0067-separate-logical-database-and-physical-data-placement.md`](../decisions/0067-separate-logical-database-and-physical-data-placement.md)
 > - Search architecture:
 >   [`../architecture/search-architecture.md`](../architecture/search-architecture.md)
 > - Analytics architecture:
@@ -33,8 +35,9 @@
 ## Topology Posture
 
 RITSEI does not lock operators into one deployment topology. A small installation may colocate
-logical roles and use PostgreSQL directly. A larger installation may replicate, partition, shard, or
-independently scale approved runtime components.
+logical roles and use PostgreSQL directly. A larger installation may use reviewed replicas or
+independently scale approved runtime components. Partitioning, sharding, and multi-region canonical
+writes remain separately gated placement strategies, not default deployment freedoms.
 
 The architecture standardizes the minimum semantics needed to preserve correctness, not a mandatory
 vendor product, process count, node count, region layout, or scaling strategy. Infrastructure may be
@@ -53,9 +56,9 @@ dependencies, separate credentials and paths where applicable, and executable ov
 | Layer                      | Minimum architectural requirement                                                                                                    | Deployment freedom                                                                       |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
 | Frontend and static assets | Typed API boundary; no ownership of authorization or business invariants                                                             | Local static server, CDN, or independently scaled asset hosting                          |
-| Thin workload router       | Topology-only placement and bounded ingress; no business mutation, PostgreSQL transaction, or primary credential                     | Colocated edge role or independently scaled router with protected command ingress        |
+| Thin workload router       | WorkloadCell routing and bounded ingress; no business mutation, PostgreSQL transaction, or primary credential                                | Colocated edge role or independently scaled router with protected command ingress        |
 | API and domain services    | Stateless by default; typed commands; authorization and tenant scope enforced before mutation                                        | One process or many replicas behind a load balancer                                      |
-| PostgreSQL                 | Canonical business facts, transactions, constraints, history, and audit                                                              | Direct connection, pooling, replicas, partitioning, or sharding hidden behind the kernel |
+| PostgreSQL                 | Canonical business facts, transactions, constraints, history, and audit                                                              | Direct connection, pooling, replicas, or partitioning; sharding only after ADR-0067 and reviewed evidence, hidden behind the kernel |
 | Read replicas              | Staleness must be explicit; read-your-writes requires the deferred ADR-0039 consistency-token and activation gates; never validate an invariant from replica state | Optional and independently scaled per read workload |
 | Projection query plane     | Bounded, authorized, rebuildable reads; hard-isolated routes have no primary credential or primary fallback                         | Colocated logical role, separate process, replica, or independent projection store       |
 | Stateful Entity Runtime    | Optional active ownership and entity-local serialization; never canonical authority by itself                                        | Local adapter, `celld`, another adapter, or disabled per entity category                 |
@@ -222,7 +225,8 @@ A larger installation may independently add or scale:
 - CDN, a thin workload router, and multiple API replicas;
 - bounded tenant-group WorkloadCells with staggered deployment and evacuation;
 - tenant-aware recursive shuffle sharding inside selected workload planes;
-- connection pooling, PostgreSQL replicas, partitioning, or shards;
+- connection pooling and reviewed PostgreSQL replicas or partitioning; shards only after ADR-0067,
+  measured need, and reviewed routing, transaction, recovery, and isolation evidence;
 - dedicated PgQue consumer and job-worker pools;
 - selected stateful entity categories through `celld` or another adapter;
 - distributed caches;

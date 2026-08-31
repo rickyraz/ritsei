@@ -6,6 +6,8 @@
 >
 > - Full specification: [`./architecture-spec-v4.md`](./architecture-spec-v4.md)
 > - PostgreSQL design: [`./postgresql-19-architecture.md`](./postgresql-19-architecture.md)
+> - Logical database and physical placement:
+>   [`../decisions/0067-separate-logical-database-and-physical-data-placement.md`](../decisions/0067-separate-logical-database-and-physical-data-placement.md)
 > - Workload isolation: [`./workload-isolation.md`](./workload-isolation.md)
 > - Analytics architecture: [`./analytics-architecture.md`](./analytics-architecture.md)
 > - Search architecture: [`./search-architecture.md`](./search-architecture.md)
@@ -57,10 +59,12 @@ in the activated ledger profile.
 ```
 
 The API, worker, event relay, and migrator remain separate processes in one application family. They
-share domain packages. WorkloadCell placement must preserve every accepted cross-domain PostgreSQL
-transaction boundary; splitting one requires a superseding consistency decision. The processes are
-not independent microservices. Minimal deployments may colocate workload roles; hard-isolation
-claims require actual reserved resources, credentials, pools, and tested failure boundaries.
+share domain packages and target a logical PostgreSQL database contract; the current deployment may
+still use one physical placement. WorkloadCell and data placement must preserve every accepted
+cross-domain PostgreSQL transaction boundary; splitting one requires a superseding consistency
+decision. The processes are not independent microservices. Minimal deployments may colocate workload
+roles; hard-isolation claims require actual reserved resources, credentials, pools, and tested failure
+boundaries.
 
 ## Runtime
 

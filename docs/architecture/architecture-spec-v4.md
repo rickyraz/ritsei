@@ -8,6 +8,8 @@
 >
 > - Summary: [`./overview.md`](./overview.md)
 > - PostgreSQL architecture: [`./postgresql-19-architecture.md`](./postgresql-19-architecture.md)
+> - Logical database and physical placement:
+>   [`../decisions/0067-separate-logical-database-and-physical-data-placement.md`](../decisions/0067-separate-logical-database-and-physical-data-placement.md)
 > - Workload isolation: [`./workload-isolation.md`](./workload-isolation.md)
 > - Analytics architecture: [`./analytics-architecture.md`](./analytics-architecture.md)
 > - Search architecture: [`./search-architecture.md`](./search-architecture.md)
@@ -91,7 +93,7 @@ principles.
 | Application AuthZ  | RITSEI Authorization Kernel with canonical PostgreSQL policy facts   |
 | Relationship AuthZ | Native PostgreSQL `RelationshipEngine`; optional SpiceDB adapter     |
 | HTTP               | Effect v4 `HttpApi` / `HttpRouter` with native `@effect/platform-deno` |
-| Database           | PostgreSQL 19+                                                        |
+| Database           | PostgreSQL 19+ logical transactional platform for non-ledger state    |
 | Persistent IDs     | UUIDv7 for new entity, event, and index-visible identities            |
 | Financial execution | TigerBeetle through the FinancialLedgerPort, activation-gated        |
 | Query layer        | Drizzle ORM with `postgres.js`                                        |
@@ -283,6 +285,19 @@ Detailed rationale is owned by
 [ADR-0046](../decisions/0046-adopt-owner-local-business-surface-and-generated-ergonomics.md).
 
 ## Database Contract
+
+The application targets a logical PostgreSQL database contract. The current deployment uses one
+PostgreSQL placement; future replicas, regions, or shards are private, evidence-gated infrastructure
+strategies rather than ordinary deployment freedoms.
+Domain packages and public contracts must not select or expose physical servers, placements,
+shards, replicas, pools, or routers. Data placement never changes semantic ownership.
+
+A logical endpoint does not guarantee one physical connection or portable session state. Existing
+invariant-sensitive cross-domain transactions remain on one transactionally compatible placement;
+splitting them requires an explicit consistency, recovery, and reconciliation decision. Current
+placement rules are owned by
+[`postgresql-19-architecture.md`](./postgresql-19-architecture.md); ADR-0067 records the rationale
+and decision history.
 
 Drizzle is used for typed tables, indexes, queries, parameter binding, and transactions. It must not
 conceal PostgreSQL-specific behavior such as:

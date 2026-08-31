@@ -17,6 +17,8 @@
 >   [`../decisions/0003-postgresql-is-transactional-truth.md`](../decisions/0003-postgresql-is-transactional-truth.md)
 > - Replica read-your-writes ADR:
 >   [`../decisions/0039-select-postgresql-wait-for-for-replica-read-your-writes.md`](../decisions/0039-select-postgresql-wait-for-for-replica-read-your-writes.md)
+> - Logical database and physical placement ADR:
+>   [`../decisions/0067-separate-logical-database-and-physical-data-placement.md`](../decisions/0067-separate-logical-database-and-physical-data-placement.md)
 > - Database roles: [`../operations/database-roles.md`](../operations/database-roles.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
 > - Authorization: [`./authorization.md`](./authorization.md)
@@ -43,7 +45,8 @@ ritsei-migrate
 ritsei-event-relay
 ```
 
-They share domain packages and one PostgreSQL ownership model.
+They share domain packages and one logical PostgreSQL ownership model. This does not promise one
+physical server, process, or database placement.
 
 Workload-isolated deployments may run separate command, query, and async composition roots with
 distinct credentials, pools, and hard resource budgets. This is resource topology inside one
@@ -51,6 +54,40 @@ application family, not domain microservices. Query workers that claim hard proj
 not possess a PostgreSQL-primary credential. A separate bounded read-only authorization path may
 serve sensitive projection queries. Async lifecycle roles remain narrow; async-triggered business
 commands re-enter the command role and transaction path.
+
+## Logical Database and Physical Placement
+
+RITSEI's PostgreSQL contract is logical. It describes the authoritative namespace and transaction
+semantics exposed to the application, not a permanent one-server topology.
+
+```text
+domain contract
+    ↓
+kernel database and placement boundary
+    ↓
+approved PostgreSQL 19+ placement(s)
+```
+
+The current baseline is one PostgreSQL placement. Primary/replica routing remains route-scoped and
+opt-in. Future placements may be tenant-, legal-entity-, warehouse-, or region-oriented, but
+placement keys and routing metadata stay in kernel, composition-root, and infrastructure layers.
+Domain packages, public DTOs, capabilities, events, Process IR, URLs, and client configuration must
+not name physical servers, shards, regions, replicas, pools, or routers.
+
+A logical endpoint is not a guarantee of one physical connection or portable session state.
+Transactions, RLS context, locks, sequences, idempotency, and uniqueness are placement-scoped unless
+an explicit architecture decision defines a broader protocol. Existing invariant-sensitive
+cross-domain transactions remain on one transactionally compatible placement. Splitting one requires
+a new consistency, migration, recovery, and reconciliation decision.
+
+Cross-placement reads may serve explicitly bounded projections, reports, search, graph, or
+reconciliation queries. They are not a second authority, must preserve tenant and authorization
+boundaries, and must not fall back silently to command or primary resources. Data placement and
+WorkloadCell placement are orthogonal; neither changes semantic ownership.
+
+Sharding and distributed routing are not activated by this rule. They require measured need and the
+evidence defined by
+[ADR-0067](../decisions/0067-separate-logical-database-and-physical-data-placement.md).
 
 ## Domain Ownership
 
@@ -150,9 +187,10 @@ versioned metric, freshness, correction, and provider gates in
 [`analytics-architecture.md`](./analytics-architecture.md). A hard-isolated projection route must not
 silently fall back to the primary when its projection path is stale, unavailable, or saturated.
 
-PostgreSQL 19 `WAIT FOR` is selected by ADR-0039 as the deferred mechanism for route-scoped
-replica-backed read-your-writes. It is not active merely because a replica exists and does not mean
-the replica equals the primary's latest state. Raw WAL and LSN details remain inside PostgreSQL
+PostgreSQL 19 `WAIT FOR` is selected by ADR-0039 for route-scoped replica-backed read-your-writes.
+A procurement pilot is implemented behind opt-in configuration; it is not active merely because a
+replica exists, nor does it mean the replica equals the primary's latest state. Raw WAL and LSN
+details remain inside PostgreSQL
 infrastructure behind an opaque consistency context. Production activation requires PostgreSQL 19
 GA and the route, timeout, timeline, authorization, no-fallback, load, and failover gates owned by
 [`state-and-consistency.md`](./state-and-consistency.md).

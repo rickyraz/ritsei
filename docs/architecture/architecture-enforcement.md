@@ -14,6 +14,8 @@
 > - Workload isolation: [`./workload-isolation.md`](./workload-isolation.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)
 > - Database roles: [`../operations/database-roles.md`](../operations/database-roles.md)
+> - Logical database and physical placement:
+>   [`../decisions/0067-separate-logical-database-and-physical-data-placement.md`](../decisions/0067-separate-logical-database-and-physical-data-placement.md)
 > - Authorization: [`./authorization.md`](./authorization.md)
 > - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
 > - HTTP API boundary: [`./api.md`](./api.md)
@@ -291,8 +293,8 @@ Static and contract checks should reject:
 - projection routes configured with a primary fallback;
 - adaptive limiters without a physical hard ceiling;
 - unbounded interactive queue or wait configuration;
-- public DTOs, events, entity addresses, or Process IR exposing WorkloadCell or shuffle-shard
-  placement.
+- public DTOs, events, entity addresses, Process IR, URLs, or client configuration exposing
+  WorkloadCell, shuffle-shard, or physical data placement.
 
 Secret and deployment checks should reject:
 

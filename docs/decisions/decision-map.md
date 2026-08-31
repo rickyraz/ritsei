@@ -57,6 +57,14 @@ ADR-0006  Scoped capability authorization
               +--> permission matrix remains the coarse gate
               +--> domain policy and SoD remain outside the engine
 
+ADR-0034  Non-interference overload isolation
+    |
+    +--> ADR-0067 logical database and physical data placement
+              +--> semantic ownership remains independent of placement
+              +--> logical database endpoints hide private topology
+              +--> transaction and consistency boundaries remain explicit
+              +--> sharding remains evidence-gated
+
 ADR-0046  Owner-local business surface + generated structural ergonomics
     |
     +--> concrete business objects remain owner-local
@@ -94,6 +102,7 @@ and ADR-0047 does not change the financial authority recorded by ADR-0040.
 | [ADR-0059](./0059-define-replaceable-relationship-authorization-engine.md) | Current authorization boundary | Native PostgreSQL RelationshipEngine default; SpiceDB optional; RITSEI/PostgreSQL remains canonical |
 | [ADR-0064](./0064-propose-gcp-financial-staging-platform.md) | Proposed infrastructure selection | GCP is proposed for financial staging; provider approval and production-equivalent evidence remain open |
 | [ADR-0065](./0065-propose-cloudflare-financial-edge-evidence-plane.md) | Proposed adjacent edge/evidence plane | Cloudflare may provide edge protection and a hash-bound evidence copy; it is not financial authority |
+| [ADR-0067](./0067-separate-logical-database-and-physical-data-placement.md) | Current PostgreSQL topology boundary | Logical database contract hides physical placement; sharding and routing remain evidence-gated |
 
 ## Current canonical rules
 
@@ -113,6 +122,7 @@ The current architecture is summarized here for navigation; the canonical rule r
 - RITSEI Authorization owns capability, scope, relationship coordination, SoD, and decision evidence.
 - Native PostgreSQL is the default RelationshipEngine; SpiceDB is an optional adapter, not a source of truth.
 - Goods Receipt evidence belongs to Procurement; physical receipt movement belongs to Inventory.
+- The logical database contract hides PostgreSQL placement; physical data topology remains infrastructure, not domain semantics.
 
 ## Historical integrity
 

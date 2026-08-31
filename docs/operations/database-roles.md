@@ -8,6 +8,8 @@
 > **Related documents**
 >
 > - PostgreSQL architecture: [`../architecture/postgresql-19-architecture.md`](../architecture/postgresql-19-architecture.md)
+> - Logical database and physical placement:
+>   [`../decisions/0067-separate-logical-database-and-physical-data-placement.md`](../decisions/0067-separate-logical-database-and-physical-data-placement.md)
 > - Workload isolation: [`../architecture/workload-isolation.md`](../architecture/workload-isolation.md)
 > - Architecture enforcement: [`../architecture/architecture-enforcement.md`](../architecture/architecture-enforcement.md)
 > - Authorization architecture: [`../architecture/authorization.md`](../architecture/authorization.md)
@@ -134,7 +136,8 @@ not bound work after a connection is acquired.
 
 Secrets for these roles must be delivered only to their intended composition roots. Query images,
 containers, or processes must not receive the command secret even when the application packages are
-shared.
+shared. A logical database endpoint is not a wildcard credential: each composition root receives
+only the placement credentials required by its approved workload and authority.
 
 ## Migrator Role
 
