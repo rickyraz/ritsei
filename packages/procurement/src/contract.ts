@@ -8,6 +8,7 @@ import { InventoryService, UnitOfMeasure } from "../../inventory/mod.ts"
 import {
   DatabaseFailure,
   FinancialMajorAmount,
+  ReplicaConsistencyFailure,
   requireExactMajorToMinor,
 } from "../../kernel/mod.ts"
 import { EventIdempotencyConflict } from "../../messaging/mod.ts"
@@ -199,7 +200,10 @@ export interface ProcurementService {
   ) => Effect.Effect<PurchaseOrder, SupplierAccountNotFound | CommonFailure>
   readonly getPurchaseOrder: (
     input: unknown,
-  ) => Effect.Effect<PurchaseOrder, PurchaseOrderNotFound | CommonFailure>
+  ) => Effect.Effect<
+    PurchaseOrder,
+    PurchaseOrderNotFound | ReplicaConsistencyFailure | CommonFailure
+  >
   readonly confirmPurchaseOrder: (
     input: unknown,
   ) => Effect.Effect<

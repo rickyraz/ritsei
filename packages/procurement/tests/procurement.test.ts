@@ -5,6 +5,15 @@ import * as Schema from "effect/Schema"
 
 import { AuthorizationDenied, makeAuthorizationTestLayer } from "../../authorization/mod.ts"
 import {
+  CurrentConsistencyToken,
+  Database,
+  DatabaseFailure,
+  type DatabaseService,
+  PostgresReadYourWrites,
+  type PostgresReadYourWritesService,
+  ReplicaConsistencyFailure,
+} from "../../kernel/mod.ts"
+import {
   InventoryCapabilities,
   InventoryService,
   makeInventoryTestLayer,
@@ -19,6 +28,7 @@ import {
   GoodsReceipt,
   makeProcurementTestLayer,
   ProcurementCapabilities,
+  ProcurementLive,
   ProcurementPurchaseOrderConfirmedEvent,
   ProcurementService,
   PurchaseOrder,
@@ -134,6 +144,67 @@ const createSupplierAccount = Effect.gen(function* () {
     supplierRelationshipId: relationship.id,
   })
 })
+
+const makeDatabaseStub = (
+  name: string,
+  transactionResult?: unknown,
+  calls: string[] = [],
+): DatabaseService => {
+  const failure = new DatabaseFailure({ operation: `${name}.transaction`, cause: "test" })
+  return {
+    query: <A>() => Effect.fail(failure) as Effect.Effect<A, DatabaseFailure>,
+    transaction: <A>() => {
+      calls.push(name)
+      return transactionResult === undefined
+        ? Effect.fail(failure) as Effect.Effect<A, DatabaseFailure>
+        : Effect.succeed(transactionResult as A)
+    },
+    withTransaction: <A, E, R>(operation: Effect.Effect<A, E, R>) => operation,
+  }
+}
+
+const makeProcurementPostgresTestLayer = (
+  primary: DatabaseService,
+  readYourWrites: PostgresReadYourWritesService,
+) => {
+  const authorization = makeAuthorizationTestLayer([{
+    userAccountId: principal.userAccountId,
+    tenantId,
+    capability: ProcurementCapabilities.purchaseOrderRead,
+  }])
+  const messaging = makeMessagingTestLayer()
+  const party = makePartyTestLayer().pipe(Layer.provide(authorization))
+  const inventory = makeInventoryTestLayer().pipe(
+    Layer.provide(Layer.merge(authorization, messaging)),
+  )
+  return ProcurementLive.pipe(
+    Layer.provide(
+      Layer.mergeAll(
+        authorization,
+        messaging,
+        party,
+        inventory,
+        Layer.succeed(Database, primary),
+        Layer.succeed(PostgresReadYourWrites, readYourWrites),
+      ),
+    ),
+  )
+}
+
+const readFixtureOrder: PurchaseOrder = {
+  id: "018f0000-0000-7000-8000-000000000010",
+  tenantId,
+  supplierAccountId: "018f0000-0000-7000-8000-000000000011",
+  status: "draft",
+  confirmedAt: null,
+  total: "12.50",
+  lines: [{
+    id: "018f0000-0000-7000-8000-000000000012",
+    itemId: "018f0000-0000-7000-8000-000000000013",
+    quantity: "1",
+    unitPrice: "12.50",
+  }],
+}
 
 const createPurchaseOrder = Effect.gen(function* () {
   const procurement = yield* ProcurementService
@@ -258,6 +329,67 @@ describe("procurement contract", () => {
         lines,
       )
     })))
+
+  it.effect("waits on the replica before reading and never falls back to primary", () => {
+    const primaryCalls: string[] = []
+    const waitCalls: string[] = []
+    const replica = makeDatabaseStub("replica", readFixtureOrder)
+    const readYourWrites: PostgresReadYourWritesService = {
+      capture: () => Effect.succeed("opaque.token"),
+      wait: (requestedTenantId, token) =>
+        Effect.sync(() => {
+          waitCalls.push(`${requestedTenantId}:${token}`)
+          return replica
+        }),
+    }
+    const program = Effect.gen(function* () {
+      const procurement = yield* ProcurementService
+      const order = yield* procurement.getPurchaseOrder({
+        principal,
+        tenantId,
+        purchaseOrderId: readFixtureOrder.id,
+      }).pipe(Effect.provideService(CurrentConsistencyToken, "opaque.token"))
+
+      assert.deepStrictEqual(order, readFixtureOrder)
+      assert.deepStrictEqual(waitCalls, [`${tenantId}:opaque.token`])
+      assert.deepStrictEqual(primaryCalls, [])
+    })
+    return Effect.provide(
+      program,
+      makeProcurementPostgresTestLayer(
+        makeDatabaseStub("primary", undefined, primaryCalls),
+        readYourWrites,
+      ),
+    )
+  })
+
+  it.effect("fails closed on replica wait failure without reading primary", () => {
+    const primaryCalls: string[] = []
+    const readYourWrites: PostgresReadYourWritesService = {
+      capture: () => Effect.succeed("opaque.token"),
+      wait: () => Effect.fail(new ReplicaConsistencyFailure({ reason: "timeout" })),
+    }
+    const program = Effect.gen(function* () {
+      const procurement = yield* ProcurementService
+      const failure = yield* Effect.flip(
+        procurement.getPurchaseOrder({
+          principal,
+          tenantId,
+          purchaseOrderId: readFixtureOrder.id,
+        }).pipe(Effect.provideService(CurrentConsistencyToken, "opaque.token")),
+      )
+
+      assert.instanceOf(failure, ReplicaConsistencyFailure)
+      assert.deepStrictEqual(primaryCalls, [])
+    })
+    return Effect.provide(
+      program,
+      makeProcurementPostgresTestLayer(
+        makeDatabaseStub("primary", undefined, primaryCalls),
+        readYourWrites,
+      ),
+    )
+  })
 
   it.effect("reads draft and confirmed purchase orders", () =>
     withProcurement(Effect.gen(function* () {

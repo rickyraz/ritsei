@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm"
 import * as Clock from "effect/Clock"
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 
 import {
@@ -12,7 +13,16 @@ import {
 } from "../../../db/schema/procurement.ts"
 import { AuthorizationService } from "../../authorization/mod.ts"
 import { InventoryService } from "../../inventory/mod.ts"
-import { Database, FinancialMajorAmount, isDatabaseConstraint, uuidv7 } from "../../kernel/mod.ts"
+import {
+  CurrentConsistencyToken,
+  CurrentDatabaseTransaction,
+  Database,
+  FinancialMajorAmount,
+  isDatabaseConstraint,
+  PostgresReadYourWrites,
+  ReplicaConsistencyFailure,
+  uuidv7,
+} from "../../kernel/mod.ts"
 import { MessagingService } from "../../messaging/mod.ts"
 import { PartyService } from "../../party/mod.ts"
 import { ProcurementCapabilities } from "./capabilities.ts"
@@ -64,6 +74,7 @@ import {
 
 export const makeProcurementService = Effect.gen(function* () {
   const database = yield* Database
+  const readYourWrites = yield* Effect.serviceOption(PostgresReadYourWrites)
   const authorization = yield* AuthorizationService
   const party = yield* PartyService
   const messaging = yield* MessagingService
@@ -175,7 +186,13 @@ export const makeProcurementService = Effect.gen(function* () {
           tenantId: decoded.tenantId,
           capability: ProcurementCapabilities.purchaseOrderRead,
         })
-        const order = yield* database.transaction(
+        const consistencyToken = yield* CurrentConsistencyToken
+        const readDatabase = consistencyToken === undefined
+          ? database
+          : Option.isSome(readYourWrites)
+          ? yield* readYourWrites.value.wait(decoded.tenantId, consistencyToken)
+          : yield* Effect.fail(new ReplicaConsistencyFailure({ reason: "disabled" }))
+        const read = readDatabase.transaction(
           async (tx) => {
             const [row] = await tx.select(purchaseOrderSelection)
               .from(purchaseOrders)
@@ -194,6 +211,9 @@ export const makeProcurementService = Effect.gen(function* () {
           },
           "procurement.purchase_order.get",
         )
+        const order = consistencyToken === undefined
+          ? yield* read
+          : yield* Effect.provideService(read, CurrentDatabaseTransaction, undefined)
         if (order === undefined) {
           return yield* Effect.fail(
             new PurchaseOrderNotFound({
