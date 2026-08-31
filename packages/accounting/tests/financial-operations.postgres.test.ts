@@ -28,6 +28,11 @@ import {
   type DatabaseService,
   DurableJobEnqueuer,
   FencingContextService,
+  type FinancialStoreInventoryType,
+  FinancialStoreObservationFailure,
+  FinancialStoreObservationRegistry,
+  type FinancialStoreWatermarkType,
+  hashFinancialStoreWatermarks,
   makePostgresDatabase,
   runMigrations,
   uuidv7,
@@ -249,7 +254,72 @@ it.effect.skipIf(databaseUrl === undefined)(
           const sales = {
             getConfirmedOrderTotal: () => Effect.succeed(LARGE_FINANCIAL_MAJOR),
           } as unknown as SalesService
+          const observationScope = `tenant:${tenant!.id}/legal-entity:${legalEntity!.id}`
+          const observedSourceWatermark = {
+            authority: "postgresql" as const,
+            scope: observationScope,
+            value: "postgres:test-watermark",
+            snapshotRef: "postgres:test-snapshot",
+            consistency: "bounded" as const,
+            capturedAt: "2026-08-30T00:00:00.000Z",
+          } satisfies FinancialStoreWatermarkType
+          const observedTargetWatermark = {
+            authority: "tigerbeetle" as const,
+            scope: "provider:tigerbeetle",
+            value: "tigerbeetle:test-watermark",
+            snapshotRef: "tigerbeetle:test-snapshot",
+            consistency: "bounded" as const,
+            capturedAt: "2026-08-30T00:00:00.000Z",
+          } satisfies FinancialStoreWatermarkType
+          const observationRecoveryWatermark = `observation:${yield* hashFinancialStoreWatermarks(
+            observedSourceWatermark,
+            observedTargetWatermark,
+          )}`
+          const makeObservationRegistry = (
+            sourceWatermark: FinancialStoreWatermarkType,
+            targetWatermark: FinancialStoreWatermarkType,
+          ) =>
+            Layer.succeed(
+              FinancialStoreObservationRegistry,
+              {
+                collect: (authority) =>
+                  Effect.succeed(
+                    authority === "postgresql" ? sourceWatermark : targetWatermark,
+                  ),
+                scan: (authority, input) => {
+                  const request = input as {
+                    readonly scope: string
+                    readonly watermark: FinancialStoreWatermarkType
+                  }
+                  return Effect.succeed(
+                    {
+                      authority,
+                      scope: request.scope,
+                      watermark: request.watermark,
+                      accounts: [],
+                      transfers: [],
+                    } satisfies FinancialStoreInventoryType,
+                  )
+                },
+              },
+            )
+          const observationRegistry = makeObservationRegistry(
+            observedSourceWatermark,
+            observedTargetWatermark,
+          )
           const service = yield* Effect.provide(
+            makeFinancialOperationService,
+            Layer.mergeAll(
+              Layer.succeed(Database, database),
+              authorization,
+              Layer.succeed(MessagingService, messaging),
+              Layer.succeed(DurableJobEnqueuer, jobs),
+              Layer.succeed(SalesService, sales),
+              Layer.succeed(FinancialLedgerPort, ledger),
+              observationRegistry,
+            ),
+          )
+          const unobservedService = yield* Effect.provide(
             makeFinancialOperationService,
             Layer.mergeAll(
               Layer.succeed(Database, database),
@@ -260,6 +330,21 @@ it.effect.skipIf(databaseUrl === undefined)(
               Layer.succeed(FinancialLedgerPort, ledger),
             ),
           )
+          const unobservedFailure = yield* Effect.flip(
+            unobservedService.reconcileFinancialCheckpoint({
+              principal,
+              tenantId: tenant!.id,
+              legalEntityId: legalEntity!.id,
+              recoveryWatermark: "caller-supplied",
+              sourceWatermark: "caller-source",
+              targetWatermark: "caller-target",
+              sourceSnapshotRef: "caller-source-snapshot",
+              targetSnapshotRef: "caller-target-snapshot",
+              evidenceArtifactId: null,
+            }),
+          )
+          assert.instanceOf(unobservedFailure, FinancialStoreObservationFailure)
+          assert.strictEqual(unobservedFailure.reason, "unavailable")
 
           const revenueMismatch = yield* Effect.flip(service.createRevenueIntent({
             principal,
@@ -1145,11 +1230,11 @@ it.effect.skipIf(databaseUrl === undefined)(
             principal,
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
-            recoveryWatermark: ` checkpoint-${uuidv7()} `,
-            sourceWatermark: " postgres:test-watermark ",
-            targetWatermark: " tigerbeetle:test-watermark ",
-            sourceSnapshotRef: " postgres:test-snapshot ",
-            targetSnapshotRef: " tigerbeetle:test-snapshot ",
+            recoveryWatermark: observationRecoveryWatermark,
+            sourceWatermark: observedSourceWatermark.value,
+            targetWatermark: observedTargetWatermark.value,
+            sourceSnapshotRef: observedSourceWatermark.snapshotRef,
+            targetSnapshotRef: observedTargetWatermark.snapshotRef,
             evidenceArtifactId: null,
           })
           assert.include(["verified", "blocked"], checkpoint.status)
@@ -1162,24 +1247,45 @@ it.effect.skipIf(databaseUrl === undefined)(
             tenantId: tenant!.id,
             legalEntityId: legalEntity!.id,
             recoveryWatermark: checkpoint.recoveryWatermark,
-            sourceWatermark: "postgres:test-watermark",
-            targetWatermark: "tigerbeetle:test-watermark",
-            sourceSnapshotRef: "postgres:test-snapshot",
-            targetSnapshotRef: "tigerbeetle:test-snapshot",
+            sourceWatermark: observedSourceWatermark.value,
+            targetWatermark: observedTargetWatermark.value,
+            sourceSnapshotRef: observedSourceWatermark.snapshotRef,
+            targetSnapshotRef: observedTargetWatermark.snapshotRef,
             evidenceArtifactId: null,
           })
           assert.deepStrictEqual(checkpointReplay, checkpoint)
+          const [conflictArtifact] = yield* Effect.promise(() =>
+            client<{ id: string }[]>`
+              insert into accounting.financial_verification_artifacts (
+                tenant_id, legal_entity_id, kind, status, completeness, scope,
+                schema_version, mapping_version, currency, source_watermark, target_watermark,
+                source_snapshot_ref, target_snapshot_ref, artifact_hash, signature_algorithm,
+                signing_key_id, signature, operation_set_hash, account_balance_hash,
+                transfer_set_hash, projection_hash, source_debit_minor, source_credit_minor,
+                target_debit_minor, target_credit_minor, account_count, operation_count,
+                transfer_count, mismatch_count, producer_principal_id, started_at, completed_at
+              ) values (
+                ${tenant!.id}, ${legalEntity!.id}, 'observability', 'verified', 'bounded',
+                ${observationScope}, 1, 1, 'USD', ${checkpoint.sourceWatermark},
+                ${checkpoint.targetWatermark}, ${checkpoint.sourceSnapshotRef},
+                ${checkpoint.targetSnapshotRef}, repeat('0', 64), 'Ed25519', 'test-key',
+                'test-signature', ${checkpoint.operationSetHash}, ${checkpoint.accountBalanceHash},
+                ${checkpoint.transferSetHash}, ${checkpoint.projectionHash}, '0', '0', '0', '0',
+                0, 0, 0, 0, ${principal.userAccountId}, now(), now()
+              ) returning id
+            `
+          )
           const checkpointConflict = yield* Effect.flip(
             service.reconcileFinancialCheckpoint({
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
               recoveryWatermark: checkpoint.recoveryWatermark,
-              sourceWatermark: "postgres:test-watermark",
-              targetWatermark: "tigerbeetle:changed-watermark",
-              sourceSnapshotRef: "postgres:test-snapshot",
-              targetSnapshotRef: "tigerbeetle:test-snapshot",
-              evidenceArtifactId: null,
+              sourceWatermark: observedSourceWatermark.value,
+              targetWatermark: observedTargetWatermark.value,
+              sourceSnapshotRef: observedSourceWatermark.snapshotRef,
+              targetSnapshotRef: observedTargetWatermark.snapshotRef,
+              evidenceArtifactId: conflictArtifact!.id,
             }),
           )
           assert.instanceOf(checkpointConflict, FinancialReconciliationCheckpointConflict)
@@ -1194,6 +1300,24 @@ it.effect.skipIf(databaseUrl === undefined)(
                 ),
               ),
           }
+          const mismatchSourceWatermark = {
+            ...observedSourceWatermark,
+            value: "postgres:mismatch-watermark",
+            snapshotRef: "postgres:mismatch-snapshot",
+          }
+          const mismatchTargetWatermark = {
+            ...observedTargetWatermark,
+            value: "tigerbeetle:mismatch-watermark",
+            snapshotRef: "tigerbeetle:mismatch-snapshot",
+          }
+          const mismatchRecoveryWatermark = `observation:${yield* hashFinancialStoreWatermarks(
+            mismatchSourceWatermark,
+            mismatchTargetWatermark,
+          )}`
+          const mismatchObservationRegistry = makeObservationRegistry(
+            mismatchSourceWatermark,
+            mismatchTargetWatermark,
+          )
           const checkpointMismatchService = yield* Effect.provide(
             makeFinancialOperationService,
             Layer.mergeAll(
@@ -1203,6 +1327,7 @@ it.effect.skipIf(databaseUrl === undefined)(
               Layer.succeed(DurableJobEnqueuer, jobs),
               Layer.succeed(SalesService, sales),
               Layer.succeed(FinancialLedgerPort, checkpointMismatchLedger),
+              mismatchObservationRegistry,
             ),
           )
           const mismatchedCheckpoint = yield* checkpointMismatchService
@@ -1210,11 +1335,11 @@ it.effect.skipIf(databaseUrl === undefined)(
               principal,
               tenantId: tenant!.id,
               legalEntityId: legalEntity!.id,
-              recoveryWatermark: `checkpoint-mismatch-${uuidv7()}`,
-              sourceWatermark: "postgres:mismatch-watermark",
-              targetWatermark: "tigerbeetle:mismatch-watermark",
-              sourceSnapshotRef: "postgres:mismatch-snapshot",
-              targetSnapshotRef: "tigerbeetle:mismatch-snapshot",
+              recoveryWatermark: mismatchRecoveryWatermark,
+              sourceWatermark: mismatchSourceWatermark.value,
+              targetWatermark: mismatchTargetWatermark.value,
+              sourceSnapshotRef: mismatchSourceWatermark.snapshotRef,
+              targetSnapshotRef: mismatchTargetWatermark.snapshotRef,
               evidenceArtifactId: null,
             })
           assert.strictEqual(mismatchedCheckpoint.status, "blocked")

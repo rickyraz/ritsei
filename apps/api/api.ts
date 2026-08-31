@@ -9,6 +9,10 @@ import * as HttpApiSecurity from "effect/unstable/httpapi/HttpApiSecurity"
 import * as OpenApi from "effect/unstable/httpapi/OpenApi"
 
 import { Principal } from "../../packages/auth/mod.ts"
+import {
+  FINANCIAL_STAGING_EVIDENCE_CANONICALIZATION_VERSION,
+  FinancialStagingEvidence,
+} from "../../packages/kernel/mod.ts"
 import { Capability } from "../../packages/authorization/mod.ts"
 import { UserAccount } from "../../packages/identity/mod.ts"
 import {
@@ -51,6 +55,7 @@ import {
   FinancialOperation,
   FinancialProjectionRebuildResult,
   FinancialReconciliationCheckpoint,
+  FinancialStagingEvidenceRecord,
   FinancialVerificationArtifact,
   FinancialVerificationEvidence,
   JournalEntry,
@@ -109,6 +114,26 @@ const CreatedFinancialOperation = FinancialOperation.pipe(HttpApiSchema.status(2
 const CreatedFinancialVerificationArtifact = FinancialVerificationArtifact.pipe(
   HttpApiSchema.status(201),
 )
+const FinancialStagingEvidenceList = Schema.Array(FinancialStagingEvidenceRecord)
+const FinancialStagingEvidenceAppendPayload = Schema.Struct({
+  evidence: FinancialStagingEvidence,
+  canonicalizationVersion: Schema.Literal(
+    FINANCIAL_STAGING_EVIDENCE_CANONICALIZATION_VERSION,
+  ),
+  evidenceHash: Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/)),
+})
+const FinancialStagingEvidenceLookupQuery = Schema.Struct({
+  legalEntityId: Schema.optionalKey(Schema.String),
+  gateId: Schema.optionalKey(Schema.String),
+  cohortId: Schema.optionalKey(Schema.String),
+  deploymentRevision: Schema.optionalKey(Schema.String),
+  limit: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 1_000 })),
+}).check(Schema.makeFilter(
+  (query) =>
+    query.gateId !== undefined || query.cohortId !== undefined ||
+    query.deploymentRevision !== undefined,
+  { expected: "staging evidence lookup requires gate, cohort, or deployment scope" },
+))
 const CreatedTenantMembership = TenantMembership.pipe(HttpApiSchema.status(201))
 const CreatedOrderConfirmation = OrderConfirmationResult.pipe(HttpApiSchema.status(201))
 const CreatedOrderCancellation = OrderCancellationResult.pipe(HttpApiSchema.status(201))
@@ -414,6 +439,26 @@ const Accounting = HttpApiGroup.make("Accounting").add(
     },
   ).middleware(BearerAuth),
   HttpApiEndpoint.post(
+    "recordFinancialStagingEvidence",
+    "/accounting/financial-staging-evidence",
+    {
+      headers: tenantHeaders,
+      payload: FinancialStagingEvidenceAppendPayload,
+      success: FinancialStagingEvidenceRecord.pipe(HttpApiSchema.status(201)),
+      error: errors,
+    },
+  ).middleware(BearerAuth),
+  HttpApiEndpoint.get(
+    "listFinancialStagingEvidence",
+    "/accounting/financial-staging-evidence",
+    {
+      headers: tenantHeaders,
+      query: FinancialStagingEvidenceLookupQuery,
+      success: FinancialStagingEvidenceList,
+      error: errors,
+    },
+  ).middleware(BearerAuth),
+  HttpApiEndpoint.post(
     "approveTigerBeetleCutover",
     "/accounting/legal-entities/:id/tigerbeetle/approve",
     {
@@ -476,11 +521,6 @@ const Accounting = HttpApiGroup.make("Accounting").add(
       headers: tenantHeaders,
       payload: Schema.Struct({
         legalEntityId: Schema.String,
-        recoveryWatermark: Schema.String,
-        sourceWatermark: Schema.String,
-        targetWatermark: Schema.String,
-        sourceSnapshotRef: Schema.String,
-        targetSnapshotRef: Schema.String,
         evidenceArtifactId: Schema.NullOr(Schema.String),
       }),
       success: FinancialReconciliationCheckpoint,

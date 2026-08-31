@@ -1,10 +1,18 @@
+import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 
 import {
   FinancialLedgerPort,
   makePostgresqlFinancialLedgerLayer,
+  makePostgresqlFinancialStoreObservation,
 } from "../../packages/accounting/mod.ts"
-import { makeTigerBeetleFinancialLedger, PostgresDatabaseLive } from "../../packages/kernel/mod.ts"
+import {
+  FinancialStoreObservationRegistry,
+  makeFinancialStoreObservationRegistry,
+  makeTigerBeetleFinancialLedger,
+  makeTigerBeetleFinancialStoreObservation,
+  PostgresDatabaseLive,
+} from "../../packages/kernel/mod.ts"
 import type { RitseiRuntimeConfiguration } from "../runtime-config.ts"
 
 export const makeFinancialLedgerLayer = (
@@ -19,4 +27,40 @@ export const makeFinancialLedgerLayer = (
     FinancialLedgerPort,
     makeTigerBeetleFinancialLedger(configuration.tigerBeetle),
   )
+}
+
+export const makeFinancialStoreObservationLayer = (
+  database: ReturnType<typeof PostgresDatabaseLive>,
+  configuration: RitseiRuntimeConfiguration,
+) => {
+  const postgresql = makePostgresqlFinancialStoreObservation()
+  const providers = configuration.financialAuthority === "postgresql"
+    ? postgresql.pipe(
+      Effect.map(({ collector, scanner }) => [{
+        authority: "postgresql" as const,
+        collector,
+        scanner,
+      }]),
+    )
+    : Effect.all([
+      postgresql,
+      makeTigerBeetleFinancialStoreObservation(configuration.tigerBeetle),
+    ]).pipe(
+      Effect.map(([postgresqlProvider, tigerbeetleProvider]) => [
+        {
+          authority: "postgresql" as const,
+          collector: postgresqlProvider.collector,
+          scanner: postgresqlProvider.scanner,
+        },
+        {
+          authority: "tigerbeetle" as const,
+          collector: tigerbeetleProvider.collector,
+          scanner: tigerbeetleProvider.scanner,
+        },
+      ]),
+    )
+  return Layer.effect(
+    FinancialStoreObservationRegistry,
+    providers.pipe(Effect.map(makeFinancialStoreObservationRegistry)),
+  ).pipe(Layer.provide(database))
 }

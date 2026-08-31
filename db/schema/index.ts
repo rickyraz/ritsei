@@ -15,6 +15,7 @@ export {
   financialOrphanTransferStatus,
   financialReconciliationCheckpoints,
   financialReconciliationCheckpointStatus,
+  financialStagingEvidence,
   financialTransferStatus,
   financialVerificationArtifacts,
   financialVerificationCompleteness,

@@ -26,6 +26,8 @@
 >   [`../architecture/durable-execution.md`](../architecture/durable-execution.md)
 > - External integrations:
 >   [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md)
+> - Financial staging infrastructure selection:
+>   [`../financial/staging-infrastructure-selection.md`](../financial/staging-infrastructure-selection.md)
 > - Frontend: [`../architecture/frontend.md`](../architecture/frontend.md)
 
 ## Topology Posture

@@ -9,6 +9,60 @@ export {
   validatePostgresVersion,
 } from "./database.ts"
 export { FencingContext, FencingContextService, LeaseGeneration } from "./fencing.ts"
+export {
+  canonicalizeFinancialStagingEvidence,
+  canonicalizeFinancialStoreFacts,
+  compareFinancialStoreInventories,
+  FINANCIAL_STAGING_EVIDENCE_CANONICALIZATION_VERSION,
+  FinancialBackupRestoreEvidence,
+  FinancialStagingAlert,
+  FinancialStagingCohort,
+  FinancialStagingEvidence,
+  FinancialStagingMetric,
+  FinancialStagingTelemetry,
+  FinancialStagingTelemetryFailure,
+  FinancialStagingTelemetryInput,
+  FinancialStagingTelemetrySnapshot,
+  FinancialStoreAccountObservation,
+  FinancialStoreAuthority,
+  FinancialStoreInventory,
+  FinancialStoreInventoryRequest,
+  FinancialStoreInventoryScanner,
+  FinancialStoreObservationFailure,
+  FinancialStoreObservationRegistry,
+  FinancialStoreTransferObservation,
+  FinancialStoreWatermark,
+  FinancialStoreWatermarkCollector,
+  FinancialStoreWatermarkInput,
+  hashFinancialStagingEvidence,
+  hashFinancialStoreFacts,
+  hashFinancialStoreWatermarks,
+  makeFinancialStoreObservationRegistry,
+  makeFinancialStoreObservationRegistryLayer,
+} from "./financial-readiness.ts"
+export type {
+  FinancialBackupRestoreEvidence as FinancialBackupRestoreEvidenceType,
+  FinancialStagingAlert as FinancialStagingAlertType,
+  FinancialStagingCohort as FinancialStagingCohortType,
+  FinancialStagingEvidence as FinancialStagingEvidenceType,
+  FinancialStagingMetric as FinancialStagingMetricType,
+  FinancialStagingTelemetryInput as FinancialStagingTelemetryInputType,
+  FinancialStagingTelemetryService,
+  FinancialStagingTelemetrySnapshot as FinancialStagingTelemetrySnapshotType,
+  FinancialStoreAccountObservation as FinancialStoreAccountObservationType,
+  FinancialStoreAuthority as FinancialStoreAuthorityType,
+  FinancialStoreInventory as FinancialStoreInventoryType,
+  FinancialStoreInventoryComparison,
+  FinancialStoreInventoryMismatch,
+  FinancialStoreInventoryRequest as FinancialStoreInventoryRequestType,
+  FinancialStoreInventoryScannerService,
+  FinancialStoreObservationProvider,
+  FinancialStoreObservationRegistryService,
+  FinancialStoreTransferObservation as FinancialStoreTransferObservationType,
+  FinancialStoreWatermark as FinancialStoreWatermarkType,
+  FinancialStoreWatermarkCollectorService,
+  FinancialStoreWatermarkInput as FinancialStoreWatermarkInputType,
+} from "./financial-readiness.ts"
 export type { FencingContextService as FencingContextServiceType } from "./fencing.ts"
 export {
   FinancialVerificationKeyGenerationFailure,
@@ -45,7 +99,12 @@ export type {
 export { uuidv7 } from "./ids.ts"
 export { MigrationFailure, runMigrations } from "./migrations.ts"
 export { DurableJob, DurableJobEnqueuer, DurableJobInput } from "./jobs.ts"
-export { makeTigerBeetleFinancialLedger, TigerBeetleConfigurationFailure } from "./tigerbeetle.ts"
+export {
+  makeTigerBeetleFinancialLedger,
+  makeTigerBeetleFinancialStoreObservation,
+  makeTigerBeetleFinancialStoreObservationLayer,
+  TigerBeetleConfigurationFailure,
+} from "./tigerbeetle.ts"
 export type {
   TigerBeetleClientFactory,
   TigerBeetleFinancialLedger,

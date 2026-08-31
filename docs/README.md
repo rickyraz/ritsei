@@ -68,6 +68,11 @@
 ## Deployment Notes
 
 - [`./deployment/README.md`](./deployment/README.md)
+- [`./financial/staging-readiness-plan.md`](./financial/staging-readiness-plan.md)
+- [`./financial/staging-topology.md`](./financial/staging-topology.md)
+- [`./financial/staging-infrastructure-selection.md`](./financial/staging-infrastructure-selection.md)
+- [`./financial/evidence-matrix.md`](./financial/evidence-matrix.md)
+- [`./financial/rehearsal-runbook.md`](./financial/rehearsal-runbook.md)
 
 ## Documentation Governance
 

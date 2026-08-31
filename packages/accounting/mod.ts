@@ -114,6 +114,10 @@ export {
   makePostgresqlFinancialLedgerLayer,
 } from "./src/postgresql-ledger.ts"
 export {
+  makePostgresqlFinancialStoreObservation,
+  makePostgresqlFinancialStoreObservationLayer,
+} from "./src/financial-observation.ts"
+export {
   AccountingLive,
   AccountingPostgresLive,
   FinancialOperationsLive,
@@ -144,6 +148,9 @@ export {
   FinancialEngineActivated,
   FinancialEngineCutoverBlocked,
   FinancialOperationsPending,
+  FinancialStagingEvidenceConflict,
+  FinancialStagingEvidenceInvalid,
+  FinancialStagingEvidenceRecord,
   FinancialVerificationArtifact,
   FinancialVerificationArtifactInvalid,
   FinancialVerificationArtifactNotFound,
@@ -153,12 +160,14 @@ export {
   JournalIdempotencyConflict,
   JournalLine,
   JournalReferenceAlreadyExists,
+  ListFinancialStagingEvidenceInput,
   makeAccountingService,
   makeAccountingTestLayer,
   OpenPeriodInput,
   PostJournalInput,
   PostRevenueForOrderInput,
   PrepareTigerBeetleCutoverInput,
+  RecordFinancialStagingEvidenceInput,
   RecordFinancialVerificationArtifactInput,
   RevenueJournalNotFound,
   RevenuePostingProfile,
@@ -172,6 +181,7 @@ export type {
   AccountingConfiguration as AccountingConfigurationType,
   AccountingPeriod as AccountingPeriodType,
   AccountingService as AccountingServiceShape,
+  FinancialStagingEvidenceRecord as FinancialStagingEvidenceRecordType,
   FinancialVerificationArtifact as FinancialVerificationArtifactType,
   JournalEntry as JournalEntryType,
   JournalLine as JournalLineType,

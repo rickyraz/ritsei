@@ -247,23 +247,55 @@ describe("financial readiness proofs", () => {
       const sourceHash = yield* hashFinancialFactSnapshot(source)
       const targetHash = yield* hashFinancialFactSnapshot(target)
       assert.strictEqual(sourceHash, targetHash)
-      const evidence = yield* buildFinancialVerificationEvidence({
+      const evidenceInput = {
         tenantId: "00000000-0000-4000-8000-000000000001",
         legalEntityId: "00000000-0000-4000-8000-000000000002",
-        kind: "cutover_rehearsal",
-        completeness: "bounded",
+        kind: "cutover_rehearsal" as const,
+        completeness: "bounded" as const,
         scope: " test ",
         mappingVersion: 1,
         currency: "USD",
         sourceWatermark: " source-1 ",
         targetWatermark: " target-1 ",
-        sourceSnapshotRef: " source-snapshot ",
-        targetSnapshotRef: " target-snapshot ",
         source,
         target,
+        sourceSnapshotRef: " source-snapshot ",
+        targetSnapshotRef: " target-snapshot ",
         startedAt: "2026-08-18T00:00:00.000Z",
         completedAt: "2026-08-18T00:01:00.000Z",
+      }
+      const evidence = yield* buildFinancialVerificationEvidence(evidenceInput)
+      const permutedEvidence = yield* buildFinancialVerificationEvidence({
+        ...evidenceInput,
+        source: {
+          ...source,
+          operations: [...source.operations].reverse(),
+          transfers: [...source.transfers].reverse(),
+          balances: [...source.balances].reverse(),
+          projections: [...source.projections].reverse(),
+        },
+        target: {
+          ...target,
+          operations: [...target.operations].reverse(),
+          transfers: [...target.transfers].reverse(),
+          balances: [...target.balances].reverse(),
+          projections: [...target.projections].reverse(),
+        },
       })
+      assert.deepStrictEqual(
+        [
+          evidence.operationSetHash,
+          evidence.accountBalanceHash,
+          evidence.transferSetHash,
+          evidence.projectionHash,
+        ],
+        [
+          permutedEvidence.operationSetHash,
+          permutedEvidence.accountBalanceHash,
+          permutedEvidence.transferSetHash,
+          permutedEvidence.projectionHash,
+        ],
+      )
       assert.strictEqual(evidence.mismatchCount, 0)
       assert.strictEqual(evidence.scope, "test")
       assert.strictEqual(evidence.sourceWatermark, "source-1")

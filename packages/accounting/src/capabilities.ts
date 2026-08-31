@@ -3,6 +3,7 @@ export const AccountingCapabilities = {
   financialEngineActivate: "accounting.financial_engine.activate",
   financialProjectionRebuild: "accounting.financial_projection.rebuild",
   financialEvidenceRecord: "accounting.financial_evidence.record",
+  financialEvidenceRead: "accounting.financial_evidence.read",
   financialReconciliationCheckpoint: "accounting.financial_reconciliation.checkpoint",
   accountCreate: "accounting.account.create",
   journalPost: "accounting.journal.post",

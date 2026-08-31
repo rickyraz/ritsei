@@ -142,6 +142,10 @@ Use explicit lifecycle or controlled verbs where the business effect differs. Or
 `read`, or `update` remains acceptable when it accurately names one coherent owner-controlled action.
 Broad `manage`, `write`, `admin`, `full_access`, and `execute` capabilities are forbidden by ADR-0031.
 
+Financial staging evidence deliberately separates `accounting.financial_evidence.record` from
+`accounting.financial_evidence.read`; recording binds the evidence operator to the authenticated
+principal, while lookup remains tenant-scoped and bounded.
+
 ## Scope
 
 A grant may be limited to:

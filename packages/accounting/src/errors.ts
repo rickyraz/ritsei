@@ -55,6 +55,31 @@ export class FinancialVerificationArtifactInvalid
     },
   ) {}
 
+export class FinancialStagingEvidenceConflict
+  extends Schema.TaggedError<FinancialStagingEvidenceConflict>()(
+    "FinancialStagingEvidenceConflict",
+    {
+      tenantId: Uuid,
+      recordId: Uuid,
+      reason: Schema.Literal("different_content"),
+    },
+  ) {}
+export class FinancialStagingEvidenceInvalid
+  extends Schema.TaggedError<FinancialStagingEvidenceInvalid>()(
+    "FinancialStagingEvidenceInvalid",
+    {
+      tenantId: Uuid,
+      recordId: Uuid,
+      reason: Schema.Literals([
+        "scope_mismatch",
+        "operator_mismatch",
+        "hash_mismatch",
+        "canonicalization_version",
+        "stored_payload_invalid",
+      ]),
+    },
+  ) {}
+
 export class AccountingLegalEntityNotFound
   extends Schema.TaggedError<AccountingLegalEntityNotFound>()(
     "AccountingLegalEntityNotFound",

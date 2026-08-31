@@ -66,6 +66,7 @@ const coreApiErrorPolicy = {
   FinancialProjectionRebuildBlocked: "conflict",
   FinancialReconciliationCheckpointConflict: "conflict",
   FinancialReconciliationCheckpointEvidenceInvalid: "conflict",
+  FinancialStoreObservationFailure: "service_unavailable",
   FinancialRevenueAmountMismatch: "conflict",
   FinancialReversalAlreadyExists: "conflict",
   FinancialReversalSourceNotFound: "not_found",
@@ -73,6 +74,8 @@ const coreApiErrorPolicy = {
   FinancialReversalSourceNotReady: "conflict",
   FinancialReversalSourceRequired: "conflict",
   FinancialSalesNotConfigured: "service_unavailable",
+  FinancialStagingEvidenceConflict: "conflict",
+  FinancialStagingEvidenceInvalid: "conflict",
   FinancialVerificationArtifactInvalid: "conflict",
   FinancialVerificationArtifactNotFound: "not_found",
   FinancialVerificationKeyGenerationFailure: "conflict",
@@ -752,6 +755,34 @@ export const AccountingHandlers = HttpApiBuilder.group(
               )
             },
           ),
+        )
+        .handle(
+          "recordFinancialStagingEvidence",
+          Effect.fn("Http.Accounting.recordFinancialStagingEvidence")(
+            function* ({ headers, payload }) {
+              const principal = yield* CurrentPrincipal
+              return yield* coreApiEffect(
+                accounting.recordFinancialStagingEvidence({
+                  principal,
+                  tenantId: headers["x-tenant-id"],
+                  ...payload,
+                }),
+              )
+            },
+          ),
+        )
+        .handle(
+          "listFinancialStagingEvidence",
+          Effect.fn("Http.Accounting.listFinancialStagingEvidence")(function* ({ headers, query }) {
+            const principal = yield* CurrentPrincipal
+            return yield* coreApiEffect(
+              accounting.listFinancialStagingEvidence({
+                principal,
+                tenantId: headers["x-tenant-id"],
+                ...query,
+              }),
+            )
+          }),
         )
         .handle(
           "approveTigerBeetleCutover",

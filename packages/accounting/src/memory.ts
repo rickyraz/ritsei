@@ -17,6 +17,7 @@ import { MessagingService } from "../../messaging/mod.ts"
 import { SalesService } from "../../sales/mod.ts"
 import { AccountingRevenuePostedEvent } from "./events.ts"
 import { hashFinancialVerificationEvidence } from "./financial-readiness.ts"
+import { makeMemoryFinancialStagingEvidenceStore } from "./financial-staging-evidence.ts"
 import {
   Account,
   AccountingConfiguration,
@@ -32,10 +33,12 @@ import {
   FinancialVerificationArtifact,
   JournalEntry,
   JournalLine,
+  ListFinancialStagingEvidenceInput,
   OpenPeriodInput,
   PostJournalInput,
   PostRevenueForOrderInput,
   PrepareTigerBeetleCutoverInput,
+  RecordFinancialStagingEvidenceInput,
   RecordFinancialVerificationArtifactInput,
   RevenuePostingProfile,
   ReverseRevenueForOrderInput,
@@ -50,6 +53,7 @@ import {
   AccountNotFound,
   FinancialEngineActivated,
   FinancialEngineCutoverBlocked,
+  FinancialStagingEvidenceInvalid,
   FinancialVerificationArtifactInvalid,
   FinancialVerificationArtifactNotFound,
   InvalidJournalLine,
@@ -102,6 +106,12 @@ const withAccountingOperationNames = (service: AccountingService): AccountingSer
   recordFinancialVerificationArtifact: Effect.fn(
     "AccountingService.recordFinancialVerificationArtifact",
   )((input: unknown) => service.recordFinancialVerificationArtifact(input)),
+  recordFinancialStagingEvidence: Effect.fn(
+    "AccountingService.recordFinancialStagingEvidence",
+  )((input: unknown) => service.recordFinancialStagingEvidence(input)),
+  listFinancialStagingEvidence: Effect.fn(
+    "AccountingService.listFinancialStagingEvidence",
+  )((input: unknown) => service.listFinancialStagingEvidence(input)),
   prepareTigerBeetleCutover: Effect.fn("AccountingService.prepareTigerBeetleCutover")((
     input: unknown,
   ) => service.prepareTigerBeetleCutover(input)),
@@ -151,6 +161,7 @@ export const makeAccountingTestLayer = () =>
       const storedJournals = new Map<string, JournalEntry>()
       const controls = new Map<string, FinancialCutoverControl>()
       const verificationArtifacts = new Map<string, FinancialVerificationArtifact>()
+      const stagingEvidenceStore = makeMemoryFinancialStagingEvidenceStore()
       const nextId = uuidv7
       const testControl = (tenantId: string, legalEntityId: string) => {
         const key = `${tenantId}:${legalEntityId}`
@@ -180,6 +191,73 @@ export const makeAccountingTestLayer = () =>
         return created
       }
       const service: AccountingService = {
+        recordFinancialStagingEvidence: (input) =>
+          Effect.gen(function* () {
+            const decoded = yield* Schema.decodeUnknownEffect(RecordFinancialStagingEvidenceInput)(
+              input,
+            )
+            yield* authorization.authorize({
+              principal: decoded.principal,
+              tenantId: decoded.tenantId,
+              capability: AccountingCapabilities.financialEvidenceRecord,
+            })
+            if (decoded.evidence.tenantId !== decoded.tenantId) {
+              return yield* Effect.fail(
+                new FinancialStagingEvidenceInvalid({
+                  tenantId: decoded.tenantId,
+                  recordId: decoded.evidence.recordId,
+                  reason: "scope_mismatch",
+                }),
+              )
+            }
+            if (decoded.evidence.operatorPrincipalId !== decoded.principal.userAccountId) {
+              return yield* Effect.fail(
+                new FinancialStagingEvidenceInvalid({
+                  tenantId: decoded.tenantId,
+                  recordId: decoded.evidence.recordId,
+                  reason: "operator_mismatch",
+                }),
+              )
+            }
+            if (!configurations.has(`${decoded.tenantId}:${decoded.evidence.legalEntityId}`)) {
+              return yield* Effect.fail(
+                new AccountingLegalEntityNotFound({
+                  tenantId: decoded.tenantId,
+                  legalEntityId: decoded.evidence.legalEntityId,
+                }),
+              )
+            }
+            const result = yield* stagingEvidenceStore.append({
+              tenantId: decoded.tenantId,
+              evidence: decoded.evidence,
+              canonicalizationVersion: decoded.canonicalizationVersion,
+              evidenceHash: decoded.evidenceHash,
+            })
+            return result.record
+          }),
+        listFinancialStagingEvidence: (input) =>
+          Effect.gen(function* () {
+            const decoded = yield* Schema.decodeUnknownEffect(ListFinancialStagingEvidenceInput)(
+              input,
+            )
+            yield* authorization.authorize({
+              principal: decoded.principal,
+              tenantId: decoded.tenantId,
+              capability: AccountingCapabilities.financialEvidenceRead,
+            })
+            return yield* stagingEvidenceStore.list({
+              tenantId: decoded.tenantId,
+              ...(decoded.legalEntityId === undefined
+                ? {}
+                : { legalEntityId: decoded.legalEntityId }),
+              ...(decoded.gateId === undefined ? {} : { gateId: decoded.gateId }),
+              ...(decoded.cohortId === undefined ? {} : { cohortId: decoded.cohortId }),
+              ...(decoded.deploymentRevision === undefined
+                ? {}
+                : { deploymentRevision: decoded.deploymentRevision }),
+              limit: decoded.limit,
+            })
+          }),
         recordFinancialVerificationArtifact: (input) =>
           Effect.gen(function* () {
             const decoded = yield* Schema.decodeUnknownEffect(

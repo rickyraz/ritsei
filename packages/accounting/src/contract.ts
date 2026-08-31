@@ -6,7 +6,9 @@ import { Principal } from "../../auth/mod.ts"
 import { AuthorizationDenied } from "../../authorization/mod.ts"
 import {
   DatabaseFailure,
+  FINANCIAL_STAGING_EVIDENCE_CANONICALIZATION_VERSION,
   FinancialMajorAmount,
+  FinancialStagingEvidence as KernelFinancialStagingEvidence,
   requireExactMajorToMinor,
 } from "../../kernel/mod.ts"
 import { EventEnvelope, EventIdempotencyConflict } from "../../messaging/mod.ts"
@@ -24,6 +26,10 @@ const UpperNonEmptyString = Schema.String.check(Schema.makeFilter(
   { expected: "a trimmed uppercase nonblank string" },
 ))
 const Uuid = Schema.String.check(Schema.isUUID())
+const Uuidv7 = Schema.String.check(Schema.isPattern(
+  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+))
+const Hash = Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/))
 const NonNegativeInt = Schema.Int.check(
   Schema.isBetween({ minimum: 0, maximum: 0x7fffffff }),
 )
@@ -201,6 +207,46 @@ export type FinancialVerificationArtifact = Schema.Schema.Type<
   typeof FinancialVerificationArtifact
 >
 
+export const FinancialStagingEvidenceRecord = Schema.Struct({
+  recordId: Uuidv7,
+  tenantId: Uuid,
+  legalEntityId: Uuid,
+  gateId: NonEmptyString,
+  cohortId: NonEmptyString,
+  deploymentRevision: NonEmptyString,
+  schemaVersion: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 0x7fff })),
+  canonicalizationVersion: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 0x7fff })),
+  evidenceHash: Hash,
+  evidence: KernelFinancialStagingEvidence,
+  persistedAt: InstantString,
+})
+export type FinancialStagingEvidenceRecord = Schema.Schema.Type<
+  typeof FinancialStagingEvidenceRecord
+>
+
+export const RecordFinancialStagingEvidenceInput = Schema.Struct({
+  ...ScopedInput,
+  evidence: KernelFinancialStagingEvidence,
+  canonicalizationVersion: Schema.Literal(
+    FINANCIAL_STAGING_EVIDENCE_CANONICALIZATION_VERSION,
+  ),
+  evidenceHash: Hash,
+})
+
+export const ListFinancialStagingEvidenceInput = Schema.Struct({
+  ...ScopedInput,
+  legalEntityId: Schema.optionalKey(Uuid),
+  gateId: Schema.optionalKey(NonEmptyString),
+  cohortId: Schema.optionalKey(NonEmptyString),
+  deploymentRevision: Schema.optionalKey(NonEmptyString),
+  limit: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 1_000 })),
+}).check(Schema.makeFilter(
+  (input) =>
+    input.gateId !== undefined || input.cohortId !== undefined ||
+    input.deploymentRevision !== undefined,
+  { expected: "staging evidence lookup requires gate, cohort, or deployment scope" },
+))
+
 export const RecordFinancialVerificationArtifactInput = Schema.Struct({
   ...ScopedInput,
   evidence: FinancialVerificationEvidence,
@@ -307,6 +353,26 @@ export interface AccountingService {
   ) => Effect.Effect<
     FinancialVerificationArtifact,
     | AccountingErrors.FinancialVerificationArtifactInvalid
+    | DatabaseFailure
+    | AuthorizationDenied
+    | Schema.SchemaError
+  >
+  readonly recordFinancialStagingEvidence: (
+    input: unknown,
+  ) => Effect.Effect<
+    FinancialStagingEvidenceRecord,
+    | AccountingErrors.FinancialStagingEvidenceConflict
+    | AccountingErrors.FinancialStagingEvidenceInvalid
+    | AccountingErrors.AccountingLegalEntityNotFound
+    | DatabaseFailure
+    | AuthorizationDenied
+    | Schema.SchemaError
+  >
+  readonly listFinancialStagingEvidence: (
+    input: unknown,
+  ) => Effect.Effect<
+    readonly FinancialStagingEvidenceRecord[],
+    | AccountingErrors.FinancialStagingEvidenceInvalid
     | DatabaseFailure
     | AuthorizationDenied
     | Schema.SchemaError

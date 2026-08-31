@@ -7,6 +7,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   numeric,
   pgSchema,
   primaryKey,
@@ -223,6 +224,96 @@ export const financialVerificationArtifacts = accountingSchema.table(
       table.tenantId,
       table.legalEntityId,
       table.kind,
+      table.createdAt,
+    ),
+  ],
+)
+
+export const financialStagingEvidence = accountingSchema.table(
+  "financial_staging_evidence",
+  {
+    recordId: uuidv7("record_id").notNull(),
+    tenantId: uuid("tenant_id").notNull(),
+    legalEntityId: uuid("legal_entity_id").notNull(),
+    gateId: text("gate_id").notNull(),
+    cohortId: text("cohort_id").notNull(),
+    deploymentRevision: text("deployment_revision").notNull(),
+    schemaVersion: smallint("schema_version").notNull(),
+    canonicalizationVersion: smallint("canonicalization_version").notNull(),
+    evidenceHash: text("evidence_hash").notNull(),
+    evidence: jsonb("evidence").notNull(),
+    operatorPrincipalId: text("operator_principal_id").notNull(),
+    providerIdentityRef: text("provider_identity_ref").notNull(),
+    result: text("result").notNull(),
+    mismatchCount: integer("mismatch_count").notNull(),
+    orphanCount: integer("orphan_count").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    primaryKey({
+      name: "financial_staging_evidence_pkey",
+      columns: [table.tenantId, table.recordId],
+    }),
+    foreignKey({
+      columns: [table.tenantId],
+      foreignColumns: [tenants.id],
+      name: "financial_staging_evidence_tenant_fkey",
+    }),
+    foreignKey({
+      columns: [table.tenantId, table.legalEntityId],
+      foreignColumns: [legalEntities.tenantId, legalEntities.id],
+      name: "financial_staging_evidence_legal_entity_fkey",
+    }),
+    check("financial_staging_evidence_gate_check", sql`${table.gateId} ~ '[^[:space:]]'`),
+    check("financial_staging_evidence_cohort_check", sql`${table.cohortId} ~ '[^[:space:]]'`),
+    check(
+      "financial_staging_evidence_deployment_check",
+      sql`${table.deploymentRevision} ~ '[^[:space:]]'`,
+    ),
+    check("financial_staging_evidence_schema_version_check", sql`${table.schemaVersion} > 0`),
+    check(
+      "financial_staging_evidence_canonicalization_version_check",
+      sql`${table.canonicalizationVersion} > 0`,
+    ),
+    check(
+      "financial_staging_evidence_hash_check",
+      sql`${table.evidenceHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "financial_staging_evidence_operator_check",
+      sql`${table.operatorPrincipalId} ~ '[^[:space:]]'`,
+    ),
+    check(
+      "financial_staging_evidence_provider_check",
+      sql`${table.providerIdentityRef} ~ '[^[:space:]]'`,
+    ),
+    check(
+      "financial_staging_evidence_result_check",
+      sql`${table.result} in ('pass', 'fail')`,
+    ),
+    check(
+      "financial_staging_evidence_count_check",
+      sql`${table.mismatchCount} >= 0 and ${table.orphanCount} >= 0 and (${table.result} <> 'pass' or (${table.mismatchCount} = 0 and ${table.orphanCount} = 0))`,
+    ),
+    check(
+      "financial_staging_evidence_time_check",
+      sql`${table.completedAt} >= ${table.startedAt}`,
+    ),
+    index("financial_staging_evidence_gate_index").on(
+      table.tenantId,
+      table.gateId,
+      table.createdAt,
+    ),
+    index("financial_staging_evidence_cohort_index").on(
+      table.tenantId,
+      table.cohortId,
+      table.createdAt,
+    ),
+    index("financial_staging_evidence_deployment_index").on(
+      table.tenantId,
+      table.deploymentRevision,
       table.createdAt,
     ),
   ],

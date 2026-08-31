@@ -47,6 +47,7 @@ export const CapabilityIds = [
   "accounting.legal_entity.configure",
   "accounting.financial_engine.activate",
   "accounting.financial_evidence.record",
+  "accounting.financial_evidence.read",
   "accounting.financial_reconciliation.checkpoint",
   "accounting.financial_projection.rebuild",
   "accounting.account.create",
@@ -59,7 +60,7 @@ export const CapabilityIds = [
 ] as const
 
 export const Capability = Schema.Literals(CapabilityIds)
-export type Capability = Schema.Schema.Type<typeof Capability>
+type Capability = Schema.Schema.Type<typeof Capability>
 
 export const LegacyCapabilityIds = [
   "auth.capability.grant",
@@ -280,6 +281,7 @@ export const CapabilityDefinitions: ReadonlyArray<CapabilityDefinition> = [
   definition("accounting.legal_entity.configure", "accounting", "legal_entity", "configure"),
   definition("accounting.financial_engine.activate", "accounting", "financial_engine", "activate"),
   definition("accounting.financial_evidence.record", "accounting", "financial_evidence", "record"),
+  definition("accounting.financial_evidence.read", "accounting", "financial_evidence", "read"),
   definition(
     "accounting.financial_reconciliation.checkpoint",
     "accounting",

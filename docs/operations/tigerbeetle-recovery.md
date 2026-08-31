@@ -9,6 +9,7 @@
 > - [Financial ledger architecture](../architecture/financial-ledger.md)
 > - [ADR-0040](../decisions/0040-adopt-tigerbeetle-financial-ledger.md)
 > - [Financial ledger execution roadmap](../roadmap/financial-ledger-execution.md)
+> - [Financial staging infrastructure selection](../financial/staging-infrastructure-selection.md)
 >
 > This runbook records the operational boundary for the pinned `tigerbeetle-node@0.17.9` client. The
 > application must remain PostgreSQL default until every release gate in the roadmap has executable
@@ -214,9 +215,12 @@ forward-only through reconciliation, correction/reversal, or explicit manual rec
 A successful bounded reconciliation writes an immutable `financial_reconciliation_checkpoints` row
 with source/target snapshot refs, operation/balance/transfer/projection hashes, recovery watermark,
 mismatch count, and orphan count. Unexpected transfer identities are inserted into
-`financial_orphan_transfers` and block the checkpoint. The current port scans known operation
-transfer IDs; it does not yet provide a TigerBeetle CDC/global transfer cursor, so an
-operation-scoped checkpoint is not global orphan-scan or point-in-time completeness evidence.
+`financial_orphan_transfers` and block the checkpoint. The kernel now collects store-derived
+watermarks and revalidates bounded observations before a checkpoint; PostgreSQL observations are
+Legal Entity scoped, while the TigerBeetle adapter currently exposes only a provider-wide bounded
+query. There is no TigerBeetle CDC/global cursor or cross-store point-in-time snapshot, and the
+provider-wide result is not used as a Legal Entity-scoped proof. An operation-scoped checkpoint
+therefore remains insufficient for the global orphan-scan gate.
 
 A signed evidence artifact is accepted only when its canonical evidence hash is signed by the
 configured Ed25519 signer. The test signer is ephemeral and is not production key-management

@@ -457,14 +457,30 @@ export type FinancialFactMismatch = Readonly<{
 
 const factKey = (...parts: readonly (string | number)[]) => parts.join(":")
 const sortedJson = (value: unknown) => JSON.stringify(value)
+const sortFacts = <A>(facts: readonly A[], key: (fact: A) => string) =>
+  [...facts].toSorted((left, right) => {
+    const keyOrder = key(left).localeCompare(key(right))
+    return keyOrder === 0 ? sortedJson(left).localeCompare(sortedJson(right)) : keyOrder
+  })
+const duplicateFactKeys = <A>(facts: readonly A[], key: (fact: A) => string) => {
+  const counts = new Map<string, number>()
+  for (const fact of facts) counts.set(key(fact), (counts.get(key(fact)) ?? 0) + 1)
+  return [...counts].filter(([, count]) => count > 1).map(([factKey]) => factKey).sort()
+}
 
-export const compareFinancialFactSnapshots = (
-  source: FinancialFactSnapshot,
-  target: FinancialFactSnapshot,
-): Readonly<{ ok: boolean; mismatches: readonly FinancialFactMismatch[] }> => {
-  const mismatches: FinancialFactMismatch[] = []
-  const sourceOperations = new Map(source.operations.map((fact) => [fact.operationId, fact]))
-  const targetOperations = new Map(target.operations.map((fact) => [fact.operationId, fact]))
+const appendOperationMismatches = (
+  mismatches: FinancialFactMismatch[],
+  source: readonly FinancialOperationFact[],
+  target: readonly FinancialOperationFact[],
+) => {
+  for (const operationId of duplicateFactKeys(source, (fact) => fact.operationId)) {
+    mismatches.push({ kind: "operation_mismatch", key: operationId, detail: "duplicate_source" })
+  }
+  for (const operationId of duplicateFactKeys(target, (fact) => fact.operationId)) {
+    mismatches.push({ kind: "operation_mismatch", key: operationId, detail: "duplicate_target" })
+  }
+  const sourceOperations = new Map(source.map((fact) => [fact.operationId, fact]))
+  const targetOperations = new Map(target.map((fact) => [fact.operationId, fact]))
   for (const [operationId, sourceFact] of sourceOperations) {
     const targetFact = targetOperations.get(operationId)
     if (targetFact === undefined) {
@@ -478,13 +494,22 @@ export const compareFinancialFactSnapshots = (
       mismatches.push({ kind: "unexpected_operation", key: operationId, detail: "target" })
     }
   }
+}
 
-  const sourceTransfers = new Map(
-    source.transfers.map((fact) => [factKey(fact.operationId, fact.position), fact]),
-  )
-  const targetTransfers = new Map(
-    target.transfers.map((fact) => [factKey(fact.operationId, fact.position), fact]),
-  )
+const appendTransferMismatches = (
+  mismatches: FinancialFactMismatch[],
+  source: readonly FinancialTransferFact[],
+  target: readonly FinancialTransferFact[],
+) => {
+  const keyOf = (fact: FinancialTransferFact) => factKey(fact.operationId, fact.position)
+  for (const key of duplicateFactKeys(source, keyOf)) {
+    mismatches.push({ kind: "transfer_mismatch", key, detail: "duplicate_source" })
+  }
+  for (const key of duplicateFactKeys(target, keyOf)) {
+    mismatches.push({ kind: "transfer_mismatch", key, detail: "duplicate_target" })
+  }
+  const sourceTransfers = new Map(source.map((fact) => [keyOf(fact), fact]))
+  const targetTransfers = new Map(target.map((fact) => [keyOf(fact), fact]))
   for (const [key, sourceFact] of sourceTransfers) {
     const targetFact = targetTransfers.get(key)
     if (targetFact === undefined) {
@@ -498,17 +523,23 @@ export const compareFinancialFactSnapshots = (
       mismatches.push({ kind: "unexpected_transfer", key, detail: "target" })
     }
   }
+}
 
-  const sourceBalances = new Map(
-    source.balances.map((
-      fact,
-    ) => [factKey(fact.accountId, fact.currency, fact.mappingVersion), fact]),
-  )
-  const targetBalances = new Map(
-    target.balances.map((
-      fact,
-    ) => [factKey(fact.accountId, fact.currency, fact.mappingVersion), fact]),
-  )
+const appendBalanceMismatches = (
+  mismatches: FinancialFactMismatch[],
+  source: readonly FinancialBalanceFact[],
+  target: readonly FinancialBalanceFact[],
+) => {
+  const keyOf = (fact: FinancialBalanceFact) =>
+    factKey(fact.accountId, fact.currency, fact.mappingVersion)
+  for (const key of duplicateFactKeys(source, keyOf)) {
+    mismatches.push({ kind: "balance_mismatch", key, detail: "duplicate_source" })
+  }
+  for (const key of duplicateFactKeys(target, keyOf)) {
+    mismatches.push({ kind: "balance_mismatch", key, detail: "duplicate_target" })
+  }
+  const sourceBalances = new Map(source.map((fact) => [keyOf(fact), fact]))
+  const targetBalances = new Map(target.map((fact) => [keyOf(fact), fact]))
   for (const [key, sourceFact] of sourceBalances) {
     const targetFact = targetBalances.get(key)
     if (targetFact === undefined || sortedJson(sourceFact) !== sortedJson(targetFact)) {
@@ -524,9 +555,21 @@ export const compareFinancialFactSnapshots = (
       mismatches.push({ kind: "balance_mismatch", key, detail: "unexpected" })
     }
   }
+}
 
-  const sourceProjections = new Map(source.projections.map((fact) => [fact.operationId, fact]))
-  const targetProjections = new Map(target.projections.map((fact) => [fact.operationId, fact]))
+const appendProjectionMismatches = (
+  mismatches: FinancialFactMismatch[],
+  source: readonly FinancialProjectionFact[],
+  target: readonly FinancialProjectionFact[],
+) => {
+  for (const key of duplicateFactKeys(source, (fact) => fact.operationId)) {
+    mismatches.push({ kind: "projection_mismatch", key, detail: "duplicate_source" })
+  }
+  for (const key of duplicateFactKeys(target, (fact) => fact.operationId)) {
+    mismatches.push({ kind: "projection_mismatch", key, detail: "duplicate_target" })
+  }
+  const sourceProjections = new Map(source.map((fact) => [fact.operationId, fact]))
+  const targetProjections = new Map(target.map((fact) => [fact.operationId, fact]))
   for (const [key, sourceFact] of sourceProjections) {
     const targetFact = targetProjections.get(key)
     if (targetFact === undefined || sortedJson(sourceFact) !== sortedJson(targetFact)) {
@@ -542,6 +585,17 @@ export const compareFinancialFactSnapshots = (
       mismatches.push({ kind: "projection_mismatch", key, detail: "unexpected" })
     }
   }
+}
+
+export const compareFinancialFactSnapshots = (
+  source: FinancialFactSnapshot,
+  target: FinancialFactSnapshot,
+): Readonly<{ ok: boolean; mismatches: readonly FinancialFactMismatch[] }> => {
+  const mismatches: FinancialFactMismatch[] = []
+  appendOperationMismatches(mismatches, source.operations, target.operations)
+  appendTransferMismatches(mismatches, source.transfers, target.transfers)
+  appendBalanceMismatches(mismatches, source.balances, target.balances)
+  appendProjectionMismatches(mismatches, source.projections, target.projections)
   return { ok: mismatches.length === 0, mismatches }
 }
 
@@ -553,23 +607,18 @@ const hashJson = (value: unknown) =>
     return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("")
   })
 
+const canonicalizeFinancialFactSnapshot = (snapshot: FinancialFactSnapshot) => ({
+  operations: sortFacts(snapshot.operations, (fact) => fact.operationId),
+  transfers: sortFacts(snapshot.transfers, (fact) => factKey(fact.operationId, fact.position)),
+  balances: sortFacts(
+    snapshot.balances,
+    (fact) => factKey(fact.accountId, fact.currency, fact.mappingVersion),
+  ),
+  projections: sortFacts(snapshot.projections, (fact) => fact.operationId),
+})
+
 export const hashFinancialFactSnapshot = (snapshot: FinancialFactSnapshot) =>
-  hashJson({
-    operations: [...snapshot.operations].toSorted((a, b) =>
-      a.operationId.localeCompare(b.operationId)
-    ),
-    transfers: [...snapshot.transfers].toSorted((a, b) =>
-      factKey(a.operationId, a.position).localeCompare(factKey(b.operationId, b.position))
-    ),
-    balances: [...snapshot.balances].toSorted((a, b) =>
-      factKey(a.accountId, a.currency, a.mappingVersion).localeCompare(
-        factKey(b.accountId, b.currency, b.mappingVersion),
-      )
-    ),
-    projections: [...snapshot.projections].toSorted((a, b) =>
-      a.operationId.localeCompare(b.operationId)
-    ),
-  })
+  hashJson(canonicalizeFinancialFactSnapshot(snapshot))
 
 export type FinancialVerificationEvidenceSource = Readonly<{
   tenantId: string
@@ -599,12 +648,13 @@ export const buildFinancialVerificationEvidence = (
 ) =>
   Effect.gen(function* () {
     const comparison = compareFinancialFactSnapshots(input.source, input.target)
+    const canonicalSource = canonicalizeFinancialFactSnapshot(input.source)
     const [operationSetHash, accountBalanceHash, transferSetHash, projectionHash] = yield* Effect
       .all([
-        hashJson(input.source.operations),
-        hashJson(input.source.balances),
-        hashJson(input.source.transfers),
-        hashJson(input.source.projections),
+        hashJson(canonicalSource.operations),
+        hashJson(canonicalSource.balances),
+        hashJson(canonicalSource.transfers),
+        hashJson(canonicalSource.projections),
       ])
     return {
       tenantId: input.tenantId,

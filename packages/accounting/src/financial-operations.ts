@@ -30,6 +30,10 @@ import {
   FencingContextService,
   FINANCIAL_LEDGER_MAX_MINOR,
   FinancialMajorAmount,
+  type FinancialStoreInventoryType,
+  FinancialStoreObservationFailure,
+  FinancialStoreObservationRegistry,
+  hashFinancialStoreWatermarks,
   isDatabaseConstraint,
   requireExactMajorToMinor,
 } from "../../kernel/mod.ts"
@@ -45,6 +49,8 @@ import {
 import {
   buildFinancialVerificationEvidence,
   type FinancialFactSnapshot,
+  FinancialFactSnapshot as FinancialFactSnapshotSchema,
+  hashFinancialFactSnapshot,
 } from "./financial-readiness.ts"
 import { AccountingFinancialOperationReconciledEvent } from "./events.ts"
 import {
@@ -81,6 +87,7 @@ const operationTypeMatchesSourceJournal = (operation: {
     ? operation.sourceJournalId !== null
     : operation.sourceJournalId === null
 const CurrencyCode = Schema.String.check(Schema.isPattern(/^[A-Z]{3}$/))
+const Hash = Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/))
 
 export const FinancialOperationStatus = Schema.Literals([
   "intent",
@@ -278,17 +285,20 @@ export const FinancialProjectionRebuildResult = Schema.Struct({
   checkedOperations: Schema.Int,
   rebuiltOperations: Schema.Int,
   quarantinedOperations: Schema.Int,
+  reportSnapshot: FinancialFactSnapshotSchema,
+  reportSnapshotHash: Hash,
 })
 
 export const ReconcileFinancialCheckpointInput = Schema.Struct({
   principal: Principal,
   tenantId: Uuid,
   legalEntityId: Uuid,
-  recoveryWatermark: NonEmptyString,
-  sourceWatermark: NonEmptyString,
-  targetWatermark: NonEmptyString,
-  sourceSnapshotRef: NonEmptyString,
-  targetSnapshotRef: NonEmptyString,
+  /** Optional compatibility fields are validated against store-derived observations; never trusted. */
+  recoveryWatermark: Schema.optionalKey(NonEmptyString),
+  sourceWatermark: Schema.optionalKey(NonEmptyString),
+  targetWatermark: Schema.optionalKey(NonEmptyString),
+  sourceSnapshotRef: Schema.optionalKey(NonEmptyString),
+  targetSnapshotRef: Schema.optionalKey(NonEmptyString),
   evidenceArtifactId: Schema.NullOr(Uuid),
 })
 
@@ -581,6 +591,7 @@ export interface FinancialOperationService {
     | FinancialLedgerNotConfigured
     | FinancialReconciliationCheckpointEvidenceInvalid
     | FinancialReconciliationCheckpointConflict
+    | FinancialStoreObservationFailure
     | DatabaseFailure
     | Schema.SchemaError
   >
@@ -912,6 +923,9 @@ export const makeFinancialOperationService = Effect.gen(function* () {
   const jobs = yield* DurableJobEnqueuer
   const messaging = yield* MessagingService
   const failpointOption = yield* Effect.serviceOption(FinancialOperationFailpointService)
+  const financialObservationOption = yield* Effect.serviceOption(
+    FinancialStoreObservationRegistry,
+  )
   const hit = (point: FinancialOperationFailpointName) =>
     Option.isSome(failpointOption) ? failpointOption.value.hit(point) : Effect.void
 
@@ -1436,13 +1450,13 @@ export const makeFinancialOperationService = Effect.gen(function* () {
   const reconcileFinancialCheckpoint = (input: unknown) =>
     Effect.gen(function* () {
       const parsed = yield* Schema.decodeUnknownEffect(ReconcileFinancialCheckpointInput)(input)
-      const decoded = {
+      let decoded = {
         ...parsed,
-        recoveryWatermark: parsed.recoveryWatermark.trim(),
-        sourceWatermark: parsed.sourceWatermark.trim(),
-        targetWatermark: parsed.targetWatermark.trim(),
-        sourceSnapshotRef: parsed.sourceSnapshotRef.trim(),
-        targetSnapshotRef: parsed.targetSnapshotRef.trim(),
+        recoveryWatermark: parsed.recoveryWatermark?.trim() ?? "",
+        sourceWatermark: parsed.sourceWatermark?.trim() ?? "",
+        targetWatermark: parsed.targetWatermark?.trim() ?? "",
+        sourceSnapshotRef: parsed.sourceSnapshotRef?.trim() ?? "",
+        targetSnapshotRef: parsed.targetSnapshotRef?.trim() ?? "",
       }
       yield* authorization.authorize({
         principal: decoded.principal,
@@ -1453,6 +1467,70 @@ export const makeFinancialOperationService = Effect.gen(function* () {
         return yield* Effect.fail(new FinancialLedgerNotConfigured({}))
       }
       const authority = ledgerOption.value.authority
+      const scope = `tenant:${decoded.tenantId}/legal-entity:${decoded.legalEntityId}`
+      if (Option.isNone(financialObservationOption)) {
+        return yield* Effect.fail(
+          new FinancialStoreObservationFailure({ scope, reason: "unavailable" }),
+        )
+      }
+      const financialObservation = financialObservationOption.value
+      let observedTargetInventory: FinancialStoreInventoryType | undefined
+      let inventoryMismatchCount = 0
+      {
+        const targetScope = authority === "tigerbeetle" ? "provider:tigerbeetle" : scope
+        const sourceWatermark = yield* financialObservation.collect("postgresql", {
+          scope,
+          maxRecords: 8188,
+        })
+        const targetWatermark = yield* financialObservation.collect(authority, {
+          scope: targetScope,
+          maxRecords: 8188,
+        })
+        const recoveryHash = yield* hashFinancialStoreWatermarks(
+          sourceWatermark,
+          targetWatermark,
+        )
+        const suppliedWatermarks = [
+          parsed.recoveryWatermark,
+          parsed.sourceWatermark,
+          parsed.targetWatermark,
+          parsed.sourceSnapshotRef,
+          parsed.targetSnapshotRef,
+        ]
+        if (
+          suppliedWatermarks.some((value) => value !== undefined) &&
+          (suppliedWatermarks.some((value) => value === undefined) ||
+            parsed.recoveryWatermark?.trim() !== `observation:${recoveryHash}` ||
+            parsed.sourceWatermark?.trim() !== sourceWatermark.value ||
+            parsed.targetWatermark?.trim() !== targetWatermark.value ||
+            parsed.sourceSnapshotRef?.trim() !== sourceWatermark.snapshotRef ||
+            parsed.targetSnapshotRef?.trim() !== targetWatermark.snapshotRef)
+        ) {
+          return yield* Effect.fail(
+            new FinancialStoreObservationFailure({ scope, reason: "invalid_watermark" }),
+          )
+        }
+        yield* financialObservation.scan("postgresql", {
+          scope: sourceWatermark.scope,
+          maxRecords: 8188,
+          watermark: sourceWatermark,
+        })
+        if (authority === "postgresql") {
+          observedTargetInventory = yield* financialObservation.scan(authority, {
+            scope: targetWatermark.scope,
+            maxRecords: 8188,
+            watermark: targetWatermark,
+          })
+        }
+        decoded = {
+          ...decoded,
+          recoveryWatermark: `observation:${recoveryHash}`,
+          sourceWatermark: sourceWatermark.value,
+          targetWatermark: targetWatermark.value,
+          sourceSnapshotRef: sourceWatermark.snapshotRef,
+          targetSnapshotRef: targetWatermark.snapshotRef,
+        }
+      }
       let evidenceArtifactMappingVersion: number | undefined
       let evidenceArtifactFactHashes: {
         readonly operationSetHash: string
@@ -1654,7 +1732,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       const sourceProjections: Array<FinancialFactSnapshot["projections"][number]> = []
       const targetProjections: Array<FinancialFactSnapshot["projections"][number]> = []
       const orphanTransfers: Array<{
-        readonly operationId: string
+        readonly operationId: string | null
         readonly transferId: string
         readonly mappingVersion: number
       }> = []
@@ -1858,6 +1936,25 @@ export const makeFinancialOperationService = Effect.gen(function* () {
         balances: targetBalances,
         projections: targetProjections,
       }
+      if (observedTargetInventory !== undefined) {
+        const expectedTransferIds = new Set(targetTransfers.map((transfer) => transfer.transferId))
+        const observedTransfers = new Map(
+          observedTargetInventory.transfers.map((transfer) => [transfer.transferRef, transfer]),
+        )
+        for (const expectedTransferId of expectedTransferIds) {
+          const observed = observedTransfers.get(expectedTransferId)
+          if (observed === undefined || observed.status !== "accepted") inventoryMismatchCount++
+        }
+        for (const observed of observedTargetInventory.transfers) {
+          if (!expectedTransferIds.has(observed.transferRef)) {
+            orphanTransfers.push({
+              operationId: null,
+              transferId: observed.transferRef,
+              mappingVersion: observed.mappingVersion,
+            })
+          }
+        }
+      }
       const uniqueOrphans = [...new Map(
         orphanTransfers.map((orphan) => [
           `${orphan.operationId}:${orphan.transferId}`,
@@ -1905,7 +2002,8 @@ export const makeFinancialOperationService = Effect.gen(function* () {
           }),
         )
       }
-      const status = evidence.mismatchCount === 0 && uniqueOrphans.length === 0
+      const status = evidence.mismatchCount === 0 && inventoryMismatchCount === 0 &&
+          uniqueOrphans.length === 0
         ? "verified"
         : "blocked"
       const checkedAt = currentTime()
@@ -1928,7 +2026,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
                 transferSetHash: evidence.transferSetHash,
                 projectionHash: evidence.projectionHash,
                 evidenceArtifactId: decoded.evidenceArtifactId,
-                mismatchCount: evidence.mismatchCount,
+                mismatchCount: evidence.mismatchCount + inventoryMismatchCount,
                 orphanCount: uniqueOrphans.length,
                 checkedBy: decoded.principal.userAccountId,
                 checkedAt,
@@ -2150,12 +2248,212 @@ export const makeFinancialOperationService = Effect.gen(function* () {
           }),
         )
       }
+      const finalOperations = yield* database.query(
+        (db) =>
+          db.select(operationSelection).from(financialOperations).where(and(
+            eq(financialOperations.tenantId, decoded.tenantId),
+            eq(financialOperations.legalEntityId, decoded.legalEntityId),
+            eq(financialOperations.engine, authority),
+            eq(financialOperations.engineVerified, true),
+            inArray(financialOperations.status, ["accepted", "reconciled"]),
+          )).orderBy(financialOperations.createdAt),
+        "accounting.financial_projection_rebuild.final_operations",
+      )
+      const transferRows = yield* database.query(
+        (db) =>
+          db.select({
+            operationId: financialOperations.operationId,
+            position: financialOperationTransfers.position,
+            debitAccountId: financialOperationTransfers.debitAccountId,
+            creditAccountId: financialOperationTransfers.creditAccountId,
+            amountMinor: financialOperationTransfers.amountMinor,
+            engineTransferId: financialOperationTransfers.engineTransferId,
+            status: financialOperationTransfers.status,
+            currency: financialOperations.currency,
+            mappingVersion: financialOperations.mappingVersion,
+          }).from(financialOperationTransfers).innerJoin(
+            financialOperations,
+            and(
+              eq(financialOperationTransfers.tenantId, financialOperations.tenantId),
+              eq(financialOperationTransfers.operationId, financialOperations.id),
+            ),
+          ).where(and(
+            eq(financialOperations.tenantId, decoded.tenantId),
+            eq(financialOperations.legalEntityId, decoded.legalEntityId),
+            eq(financialOperations.engine, authority),
+            eq(financialOperations.engineVerified, true),
+            inArray(financialOperations.status, ["accepted", "reconciled"]),
+          )).orderBy(
+            financialOperations.operationId,
+            financialOperationTransfers.position,
+          ),
+        "accounting.financial_projection_rebuild.report_transfers",
+      )
+      const journalRows = yield* database.query(
+        (db) =>
+          db.select({
+            operationId: financialOperations.operationId,
+            journalStatus: journalEntries.status,
+          }).from(financialOperations).innerJoin(
+            journalEntries,
+            and(
+              eq(financialOperations.tenantId, journalEntries.tenantId),
+              eq(financialOperations.journalId, journalEntries.id),
+            ),
+          ).where(and(
+            eq(financialOperations.tenantId, decoded.tenantId),
+            eq(financialOperations.legalEntityId, decoded.legalEntityId),
+            eq(financialOperations.engine, authority),
+            eq(financialOperations.engineVerified, true),
+            inArray(financialOperations.status, ["accepted", "reconciled"]),
+          )),
+        "accounting.financial_projection_rebuild.report_journals",
+      )
+      const balanceRows = yield* database.query(
+        (db) =>
+          db.select({
+            operationId: financialOperations.operationId,
+            accountId: journalLines.accountId,
+            currency: financialOperations.currency,
+            mappingVersion: financialOperations.mappingVersion,
+          }).from(journalLines).innerJoin(
+            journalEntries,
+            and(
+              eq(journalLines.tenantId, journalEntries.tenantId),
+              eq(journalLines.entryId, journalEntries.id),
+            ),
+          ).innerJoin(
+            financialOperations,
+            and(
+              eq(financialOperations.tenantId, journalEntries.tenantId),
+              eq(financialOperations.journalId, journalEntries.id),
+            ),
+          ).where(and(
+            eq(financialOperations.tenantId, decoded.tenantId),
+            eq(financialOperations.legalEntityId, decoded.legalEntityId),
+            eq(financialOperations.engine, authority),
+            eq(financialOperations.engineVerified, true),
+            inArray(financialOperations.status, ["accepted", "reconciled"]),
+            inArray(journalEntries.status, ["posted", "reversed"]),
+          )),
+        "accounting.financial_projection_rebuild.report_balances",
+      )
+      const balanceTargets = new Map<string, typeof balanceRows[number]>()
+      for (const row of balanceRows) {
+        balanceTargets.set(
+          `${row.accountId}:${row.currency}:${row.mappingVersion}`,
+          row,
+        )
+      }
+      const balances = [] as Array<FinancialFactSnapshot["balances"][number]>
+      for (const target of balanceTargets.values()) {
+        const outcome = yield* ledgerOption.value.getBalance({
+          tenantId: decoded.tenantId,
+          legalEntityId: decoded.legalEntityId,
+          accountId: target.accountId,
+          currency: target.currency,
+          mappingVersion: target.mappingVersion,
+        })
+        if (outcome._tag !== "available") {
+          return yield* Effect.fail(
+            new FinancialProjectionRebuildBlocked({
+              tenantId: decoded.tenantId,
+              legalEntityId: decoded.legalEntityId,
+              operationId: target.operationId,
+              reason: outcome._tag === "not_found"
+                ? "not_found"
+                : outcome._tag === "unknown"
+                ? "unavailable"
+                : "mapping_mismatch",
+            }),
+          )
+        }
+        balances.push({
+          accountId: outcome.accountId,
+          currency: target.currency,
+          mappingVersion: outcome.mappingVersion,
+          debitsPostedMinor: outcome.debitsPostedMinor,
+          creditsPostedMinor: outcome.creditsPostedMinor,
+        })
+      }
+      const reportTransfers = [] as Array<FinancialFactSnapshot["transfers"][number]>
+      for (const row of transferRows) {
+        if (row.engineTransferId === null) {
+          return yield* Effect.fail(
+            new FinancialProjectionRebuildBlocked({
+              tenantId: decoded.tenantId,
+              legalEntityId: decoded.legalEntityId,
+              operationId: row.operationId,
+              reason: "mapping_mismatch",
+            }),
+          )
+        }
+        reportTransfers.push({
+          operationId: row.operationId,
+          position: row.position,
+          status: row.status,
+          transferId: row.engineTransferId,
+          debitAccountId: row.debitAccountId,
+          creditAccountId: row.creditAccountId,
+          amountMinor: String(row.amountMinor),
+          currency: row.currency,
+          mappingVersion: row.mappingVersion,
+        })
+      }
+      const transfersByOperation = new Map<string, string[]>()
+      for (const row of transferRows) {
+        if (row.engineTransferId === null) continue
+        const ids = transfersByOperation.get(row.operationId) ?? []
+        ids[row.position] = row.engineTransferId
+        transfersByOperation.set(row.operationId, ids)
+      }
+      const journalStatusByOperation = new Map(
+        journalRows.map((row) => [row.operationId, row.journalStatus]),
+      )
+      const projections = [] as Array<FinancialFactSnapshot["projections"][number]>
+      for (const operation of finalOperations) {
+        const journalStatus = journalStatusByOperation.get(operation.operationId)
+        const transferIds = transfersByOperation.get(operation.operationId)
+        const transferIdsAreComplete = transferIds !== undefined &&
+          transferIds.length > 0 &&
+          Object.keys(transferIds).length === transferIds.length &&
+          transferIds.every((id) => id !== undefined)
+        if (journalStatus === undefined || !transferIdsAreComplete) {
+          return yield* Effect.fail(
+            new FinancialProjectionRebuildBlocked({
+              tenantId: decoded.tenantId,
+              legalEntityId: decoded.legalEntityId,
+              operationId: operation.operationId,
+              reason: "mapping_mismatch",
+            }),
+          )
+        }
+        projections.push({
+          operationId: operation.operationId,
+          journalStatus,
+          transferIds,
+        })
+      }
+      const reportSnapshot: FinancialFactSnapshot = {
+        operations: finalOperations.map((operation) => ({
+          operationId: operation.operationId,
+          status: operation.status,
+          currency: operation.currency,
+          mappingVersion: operation.mappingVersion,
+        })),
+        transfers: reportTransfers,
+        balances,
+        projections,
+      }
+      const reportSnapshotHash = yield* hashFinancialFactSnapshot(reportSnapshot)
       return {
         tenantId: decoded.tenantId,
         legalEntityId: decoded.legalEntityId,
         checkedOperations: operations.length,
         rebuiltOperations,
         quarantinedOperations,
+        reportSnapshot,
+        reportSnapshotHash,
       }
     })
 

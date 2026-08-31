@@ -92,6 +92,8 @@ and ADR-0047 does not change the financial authority recorded by ADR-0040.
 | [ADR-0057](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Current frontend clarification | Selective Query cache plus headless Table, Virtual, Form, and optional Pacer/DB boundaries |
 | [ADR-0058](./0058-define-provider-neutral-identity-and-authentication-boundary.md) | Current identity boundary | OIDC/OAuth2 provider-neutral contract; ZITADEL recommended; RITSEI owns account mapping, membership, and ERP authority |
 | [ADR-0059](./0059-define-replaceable-relationship-authorization-engine.md) | Current authorization boundary | Native PostgreSQL RelationshipEngine default; SpiceDB optional; RITSEI/PostgreSQL remains canonical |
+| [ADR-0064](./0064-propose-gcp-financial-staging-platform.md) | Proposed infrastructure selection | GCP is proposed for financial staging; provider approval and production-equivalent evidence remain open |
+| [ADR-0065](./0065-propose-cloudflare-financial-edge-evidence-plane.md) | Proposed adjacent edge/evidence plane | Cloudflare may provide edge protection and a hash-bound evidence copy; it is not financial authority |
 
 ## Current canonical rules
 

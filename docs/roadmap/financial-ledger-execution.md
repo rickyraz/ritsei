@@ -24,6 +24,8 @@
 > - Durable execution:
 >   [`../architecture/durable-execution.md`](../architecture/durable-execution.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)
+> - Financial staging infrastructure selection:
+>   [`../financial/staging-infrastructure-selection.md`](../financial/staging-infrastructure-selection.md)
 
 ## Goal
 
@@ -103,9 +105,12 @@ The repository now contains a bounded execution slice:
   Process owns `process.jobs` lease/fencing state;
 - migrations enforce operation identity, period ownership, state transitions, source-journal
   binding, and the non-overlapping process job types;
+- kernel observation contracts collect store-derived bounded watermarks and inventories, with
+  PostgreSQL Legal Entity filtering and provider-neutral failure mapping; TigerBeetle remains
+  provider-wide until an approved scoped inventory/CDC capability exists;
 - contract, PostgreSQL, worker, response-loss, receipt-failure, reversal, and optional local-cluster
-  integration tests cover replay, rejection, reconciliation, period fencing, and projection
-  behavior.
+  integration tests cover replay, rejection, reconciliation, period fencing, projection behavior,
+  observation cleanup, and deterministic evidence hashing.
 
 The existing PostgreSQL `postJournal` and revenue commands remain transitional for compatibility;
 the new financial-operation endpoints and worker path use the selected authority, with PostgreSQL

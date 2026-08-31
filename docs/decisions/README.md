@@ -87,5 +87,7 @@ current system; ADRs preserve decision history.
 | [`0061`](./0061-correct-roadmap-gate-granularity.md) | Require executable evidence for roadmap gate completion | Accepted |
 | [`0062`](./0062-adopt-fallow-for-generic-static-analysis.md) | Adopt Fallow for generic static analysis | Accepted |
 | [`0063`](./0063-define-governed-ai-recommendation-and-agent-boundary.md) | Define governed AI recommendation and agent boundary | Accepted |
+| [`0064`](./0064-propose-gcp-financial-staging-platform.md) | Propose GCP as the first financial staging platform | Proposed |
+| [`0065`](./0065-propose-cloudflare-financial-edge-evidence-plane.md) | Propose Cloudflare as the financial edge and evidence plane | Proposed |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

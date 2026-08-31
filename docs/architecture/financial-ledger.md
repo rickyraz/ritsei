@@ -28,6 +28,12 @@
 >
 > - Recovery and cutover runbook:
 >   [`../operations/tigerbeetle-recovery.md`](../operations/tigerbeetle-recovery.md)
+> - Financial staging readiness plan:
+>   [`../financial/staging-readiness-plan.md`](../financial/staging-readiness-plan.md)
+> - Financial staging evidence matrix:
+>   [`../financial/evidence-matrix.md`](../financial/evidence-matrix.md)
+> - Financial staging infrastructure selection:
+>   [`../financial/staging-infrastructure-selection.md`](../financial/staging-infrastructure-selection.md)
 
 ## Position
 
@@ -86,6 +92,7 @@ and fixes precision at two, so exponent-aware conversion is a generic primitive 
 | Journal/document metadata and correction relationships                    | PostgreSQL / Accounting             | Financial acceptance is derived from the selected adapter                    |
 | Audit references and reporting projection                                 | PostgreSQL                          | Rebuildable from TigerBeetle facts plus control-plane metadata        |
 | Reconciliation state and mismatch quarantine                              | PostgreSQL / application operations | Reconciliation never creates an unapproved business correction        |
+| Staging evidence envelope, cohort bounds, and evidence hash               | Kernel / Accounting                 | Append-only owner boundary; custody/WORM remains external             |
 | TigerBeetle client, transport, batching, and provider failures            | Kernel/infrastructure               | Never part of a domain public contract                                |
 
 No row has two authorities. A PostgreSQL journal row or balance projection cannot authorize a new
@@ -363,10 +370,30 @@ business commands and use new transfers.
 The implementation persists append-only `financial_reconciliation_checkpoints` with source/target
 watermarks, snapshot references, fact-set hashes, mismatch/orphan counts, and optional linkage to an
 immutable signed `financial_verification_artifacts` row. Unexpected operation-scoped transfer IDs
-are quarantined in `financial_orphan_transfers`. This is a bounded checkpoint: the current port
-reconciles known operation IDs and does not yet expose a global TigerBeetle CDC cursor, so it cannot
-be described as a complete global orphan scan or point-in-time proof until that provider capability
-and its rehearsal exist.
+are quarantined in `financial_orphan_transfers`. Kernel observation contracts now collect and
+revalidate store-derived bounded watermarks and inventories: PostgreSQL observations are filtered to
+the declared Tenant/Legal Entity scope, while the current TigerBeetle query is provider-wide because
+its deployed metadata does not yet provide an approved reversible Legal Entity filter. The
+checkpoint consumes a TigerBeetle inventory only when the authority/scope is comparable; it never
+turns a provider-wide scan into a scoped proof. There is still no global TigerBeetle CDC cursor or
+point-in-time cross-store snapshot, so the global reconciliation gate remains open.
+
+### Staging evidence boundary
+
+`FinancialStagingEvidence` is a provider-neutral, hash-bound envelope owned by Kernel. Its cohort
+must name the Tenant/Legal Entity, deployment revision, owner, approval authority, abort authority,
+planned failure scenarios, and maximum operation count. Passing evidence is schema-invalid when it
+contains mismatches, orphans, out-of-range operations, or unplanned scenarios. Backup/restore facts
+and telemetry are typed provider-neutral records; backup commands, metric delivery, alert routing,
+and custody remain adapter responsibilities.
+
+Accounting exposes authorized append and tenant-scoped lookup operations for staging evidence. The
+append operation binds `operatorPrincipalId` to the authenticated principal. The persistence port has
+no update or delete operation, verifies the canonical hash and duplicated scope columns on every
+read, supports lookup by gate/cohort/deployment, and rejects ordinary PostgreSQL mutation/truncate
+through an append-only trigger. PostgreSQL storage is a local durable adapter, not
+WORM or activation evidence; an approved immutable/WORM adapter and production custody layer remain
+required for staging-real or production-real proof.
 
 ### Cross-store restore protocol
 

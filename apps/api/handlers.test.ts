@@ -23,6 +23,14 @@ it("maps closed-world core failures to stable HTTP errors", () => {
   assert.instanceOf(procurementConflict, ApiConflict)
   assert.strictEqual(procurementConflict.code, "PurchaseReceiptQuantityExceeded")
 
+  const stagingEvidenceConflict = toCoreApiError({ _tag: "FinancialStagingEvidenceConflict" })
+  assert.instanceOf(stagingEvidenceConflict, ApiConflict)
+  assert.strictEqual(stagingEvidenceConflict.code, "FinancialStagingEvidenceConflict")
+
+  const stagingEvidenceInvalid = toCoreApiError({ _tag: "FinancialStagingEvidenceInvalid" })
+  assert.instanceOf(stagingEvidenceInvalid, ApiConflict)
+  assert.strictEqual(stagingEvidenceInvalid.code, "FinancialStagingEvidenceInvalid")
+
   const invalidRequest = toCoreApiError({ _tag: "SchemaError" })
   assert.instanceOf(invalidRequest, ApiConflict)
   assert.strictEqual(invalidRequest.code, "invalid_request")

@@ -33,6 +33,10 @@ import { MessagingService } from "../../messaging/mod.ts"
 import { SalesService } from "../../sales/mod.ts"
 import { AccountingRevenuePostedEvent, RevenuePostedEventPayload } from "./events.ts"
 import {
+  FinancialStagingEvidenceStore,
+  makePostgresFinancialStagingEvidenceStore,
+} from "./financial-staging-evidence.ts"
+import {
   type ExecutionAccountOutcome,
   type FinancialAccountConstraint,
   FinancialLedgerPort,
@@ -53,10 +57,12 @@ import {
   FinancialCutoverControl,
   FinancialVerificationArtifact,
   JournalLine,
+  ListFinancialStagingEvidenceInput,
   OpenPeriodInput,
   PostJournalInput,
   PostRevenueForOrderInput,
   PrepareTigerBeetleCutoverInput,
+  RecordFinancialStagingEvidenceInput,
   RecordFinancialVerificationArtifactInput,
   ReverseRevenueForOrderInput,
 } from "./contract.ts"
@@ -71,6 +77,7 @@ import {
   FinancialEngineActivated,
   FinancialEngineCutoverBlocked,
   FinancialOperationsPending,
+  FinancialStagingEvidenceInvalid,
   FinancialVerificationArtifactInvalid,
   FinancialVerificationArtifactNotFound,
   InvalidJournalLine,
@@ -101,6 +108,12 @@ const withAccountingOperationNames = (service: AccountingService): AccountingSer
   recordFinancialVerificationArtifact: Effect.fn(
     "AccountingService.recordFinancialVerificationArtifact",
   )((input: unknown) => service.recordFinancialVerificationArtifact(input)),
+  recordFinancialStagingEvidence: Effect.fn(
+    "AccountingService.recordFinancialStagingEvidence",
+  )((input: unknown) => service.recordFinancialStagingEvidence(input)),
+  listFinancialStagingEvidence: Effect.fn(
+    "AccountingService.listFinancialStagingEvidence",
+  )((input: unknown) => service.listFinancialStagingEvidence(input)),
   prepareTigerBeetleCutover: Effect.fn("AccountingService.prepareTigerBeetleCutover")((
     input: unknown,
   ) => service.prepareTigerBeetleCutover(input)),
@@ -185,6 +198,10 @@ export const makeAccountingService = Effect.gen(function* () {
   const ledgerOption = yield* Effect.serviceOption(FinancialLedgerPort)
   const signerOption = yield* Effect.serviceOption(FinancialVerificationSigner)
   const keyringOption = yield* Effect.serviceOption(FinancialVerificationKeyring)
+  const stagingEvidenceStoreOption = yield* Effect.serviceOption(FinancialStagingEvidenceStore)
+  const stagingEvidenceStore = Option.isSome(stagingEvidenceStoreOption)
+    ? stagingEvidenceStoreOption.value
+    : yield* makePostgresFinancialStagingEvidenceStore
   const now = () => new Date(clock.currentTimeMillisUnsafe())
   const toCutoverControl = (row: {
     readonly tenantId: string
@@ -379,6 +396,70 @@ export const makeAccountingService = Effect.gen(function* () {
     )
 
   const service: AccountingService = {
+    recordFinancialStagingEvidence: (input) =>
+      Effect.gen(function* () {
+        const decoded = yield* Schema.decodeUnknownEffect(RecordFinancialStagingEvidenceInput)(
+          input,
+        )
+        yield* authorization.authorize({
+          principal: decoded.principal,
+          tenantId: decoded.tenantId,
+          capability: AccountingCapabilities.financialEvidenceRecord,
+        })
+        if (decoded.evidence.tenantId !== decoded.tenantId) {
+          return yield* Effect.fail(
+            new FinancialStagingEvidenceInvalid({
+              tenantId: decoded.tenantId,
+              recordId: decoded.evidence.recordId,
+              reason: "scope_mismatch",
+            }),
+          )
+        }
+        if (decoded.evidence.operatorPrincipalId !== decoded.principal.userAccountId) {
+          return yield* Effect.fail(
+            new FinancialStagingEvidenceInvalid({
+              tenantId: decoded.tenantId,
+              recordId: decoded.evidence.recordId,
+              reason: "operator_mismatch",
+            }),
+          )
+        }
+        const result = yield* stagingEvidenceStore.append({
+          tenantId: decoded.tenantId,
+          evidence: decoded.evidence,
+          canonicalizationVersion: decoded.canonicalizationVersion,
+          evidenceHash: decoded.evidenceHash,
+        }).pipe(
+          Effect.mapError((error) =>
+            isDatabaseConstraint(error, "financial_staging_evidence_legal_entity_fkey", "23503")
+              ? new AccountingLegalEntityNotFound({
+                tenantId: decoded.tenantId,
+                legalEntityId: decoded.evidence.legalEntityId,
+              })
+              : error
+          ),
+        )
+        return result.record
+      }),
+    listFinancialStagingEvidence: (input) =>
+      Effect.gen(function* () {
+        const decoded = yield* Schema.decodeUnknownEffect(ListFinancialStagingEvidenceInput)(input)
+        yield* authorization.authorize({
+          principal: decoded.principal,
+          tenantId: decoded.tenantId,
+          capability: AccountingCapabilities.financialEvidenceRead,
+        })
+        return yield* stagingEvidenceStore.list({
+          tenantId: decoded.tenantId,
+          ...(decoded.legalEntityId === undefined ? {} : { legalEntityId: decoded.legalEntityId }),
+          ...(decoded.gateId === undefined ? {} : { gateId: decoded.gateId }),
+          ...(decoded.cohortId === undefined ? {} : { cohortId: decoded.cohortId }),
+          ...(decoded.deploymentRevision === undefined
+            ? {}
+            : { deploymentRevision: decoded.deploymentRevision }),
+          limit: decoded.limit,
+        })
+      }),
     recordFinancialVerificationArtifact: (input) =>
       Effect.gen(function* () {
         const decoded = yield* Schema.decodeUnknownEffect(RecordFinancialVerificationArtifactInput)(

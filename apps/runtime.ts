@@ -26,7 +26,10 @@ import {
 } from "../packages/process/mod.ts"
 import type { FinancialVerificationSignerService } from "../packages/kernel/mod.ts"
 import { IdentityAccountAuthorizerLive } from "./adapters/identity-account-authorizer.ts"
-import { makeFinancialLedgerLayer } from "./adapters/financial-ledger.ts"
+import {
+  makeFinancialLedgerLayer,
+  makeFinancialStoreObservationLayer,
+} from "./adapters/financial-ledger.ts"
 import type { RitseiRuntimeConfiguration } from "./runtime-config.ts"
 
 export const serviceLayers = (
@@ -38,6 +41,7 @@ export const serviceLayers = (
   const PlatformCore = DatabaseLive
   const PlatformLive = Layer.mergeAll(PlatformCore, WebCryptoLive)
   const financialLedger = makeFinancialLedgerLayer(DatabaseLive, configuration)
+  const financialObservation = makeFinancialStoreObservationLayer(DatabaseLive, configuration)
 
   const AuthorizationLive = Layer.effect(AuthorizationService, makeAuthorizationService).pipe(
     Layer.provide(DatabaseLive),
@@ -77,12 +81,19 @@ export const serviceLayers = (
   )
 
   const AccountingRequirements = financialSigner === undefined
-    ? Layer.mergeAll(BusinessRequirements, MessagingLive, SalesLive, financialLedger)
+    ? Layer.mergeAll(
+      BusinessRequirements,
+      MessagingLive,
+      SalesLive,
+      financialLedger,
+      financialObservation,
+    )
     : Layer.mergeAll(
       BusinessRequirements,
       MessagingLive,
       SalesLive,
       financialLedger,
+      financialObservation,
       financialSigner,
     )
   const AccountingLive = Layer.effect(AccountingService, makeAccountingService).pipe(
@@ -101,6 +112,7 @@ export const serviceLayers = (
       SalesLive,
       ProcessJobEnqueuerLive,
       financialLedger,
+      financialObservation,
     )),
   )
 

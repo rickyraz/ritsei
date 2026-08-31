@@ -6,9 +6,12 @@ import {
   FinancialOperationServiceLive,
   makeFinancialOperationService,
 } from "./financial-operations.ts"
+import { FinancialStagingEvidencePostgresLive } from "./financial-staging-evidence.ts"
 
 /** Named production composition for the Accounting control-plane service. */
-export const AccountingLive = Layer.effect(AccountingService, makeAccountingService)
+export const AccountingLive = Layer.effect(AccountingService, makeAccountingService).pipe(
+  Layer.provide(FinancialStagingEvidencePostgresLive),
+)
 
 /** Named production composition for financial operation submission/reconciliation. */
 export const FinancialOperationsLive = FinancialOperationServiceLive

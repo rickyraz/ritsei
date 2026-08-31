@@ -1,5 +1,21 @@
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
+
+import {
+  type FinancialStoreAccountObservation,
+  type FinancialStoreInventory,
+  FinancialStoreInventoryRequest,
+  FinancialStoreInventoryScanner,
+  type FinancialStoreInventoryScannerService,
+  FinancialStoreObservationFailure,
+  type FinancialStoreTransferObservation,
+  type FinancialStoreWatermark,
+  FinancialStoreWatermarkCollector,
+  type FinancialStoreWatermarkCollectorService,
+  FinancialStoreWatermarkInput,
+  hashFinancialStoreFacts,
+} from "./financial-readiness.ts"
 import type {
   Account as TigerBeetleAccount,
   Client as TigerBeetleClient,
@@ -229,6 +245,29 @@ const balanceConstraintFlags = (
 }
 
 const acceptedTimestamp = (timestamp: bigint) => timestamp.toString()
+
+const makeTigerBeetleClient = (
+  config: TigerBeetleFinancialLedgerConfig,
+  clientFactory?: TigerBeetleClientFactory,
+) =>
+  Effect.gen(function* () {
+    const runtime = yield* Effect.tryPromise({
+      try: () => import("tigerbeetle-node"),
+      catch: () => makeConfigurationFailure("client_initialization_failed"),
+    })
+    const client = yield* Effect.acquireRelease(
+      Effect.try({
+        try: () =>
+          (clientFactory ?? runtime.createClient)({
+            cluster_id: config.clusterId,
+            replica_addresses: [...config.replicaAddresses],
+          }),
+        catch: () => makeConfigurationFailure("client_initialization_failed"),
+      }),
+      (client) => Effect.sync(() => client.destroy()),
+    )
+    return { client, runtime }
+  })
 
 const accountOutcome = (
   input: CreateExecutionAccountInput,
@@ -715,21 +754,185 @@ export const makeTigerBeetleFinancialLedger = (
     return Effect.fail(makeConfigurationFailure("invalid_configuration"))
   }
   return Effect.gen(function* () {
-    const runtime = yield* Effect.tryPromise({
-      try: () => import("tigerbeetle-node"),
-      catch: () => makeConfigurationFailure("client_initialization_failed"),
-    })
-    const client = yield* Effect.acquireRelease(
-      Effect.try({
-        try: () =>
-          (clientFactory ?? runtime.createClient)({
-            cluster_id: config.clusterId,
-            replica_addresses: [...config.replicaAddresses],
-          }),
-        catch: () => makeConfigurationFailure("client_initialization_failed"),
-      }),
-      (client) => Effect.sync(() => client.destroy()),
-    )
+    const { client, runtime } = yield* makeTigerBeetleClient(config, clientFactory)
     return makeAdapter(client, config, runtime)
   })
 }
+
+const observationFailure = (
+  scope: string,
+  reason: "unavailable" | "unsupported" | "incomplete" | "invalid_fact" | "invalid_watermark",
+) => new FinancialStoreObservationFailure({ scope, reason })
+
+const flagIsSet = (flags: number, flag: number) => (flags & flag) === flag
+
+const financialStoreObservation = (
+  config: TigerBeetleFinancialLedgerConfig,
+  clientFactory: TigerBeetleClientFactory | undefined,
+  now: () => Date,
+) =>
+  Effect.gen(function* () {
+    const { client, runtime } = yield* makeTigerBeetleClient(config, clientFactory)
+    const query = <A>(scope: string, run: () => Promise<A[]>) =>
+      Effect.tryPromise({ try: run, catch: () => observationFailure(scope, "unavailable") })
+    const scan = (scope: string, maxRecords: number) =>
+      Effect.gen(function* () {
+        if (!/^provider:tigerbeetle(?::[^:]+(?::[^:]+)*)?$/.test(scope)) {
+          return yield* Effect.fail(observationFailure(scope, "unsupported"))
+        }
+        const limit = maxRecords + 1
+        const filter = {
+          user_data_128: 0n,
+          user_data_64: 0n,
+          user_data_32: 0,
+          ledger: config.ledger,
+          code: config.code,
+          timestamp_min: 0n,
+          timestamp_max: 0n,
+          limit,
+          flags: 0,
+        }
+        const [providerAccounts, providerTransfers] = yield* Effect.all([
+          query(scope, () => client.queryAccounts(filter)),
+          query(scope, () => client.queryTransfers(filter)),
+        ])
+        if (providerAccounts.length > maxRecords || providerTransfers.length > maxRecords) {
+          return yield* Effect.fail(observationFailure(scope, "incomplete"))
+        }
+        const accountFlags = runtime.AccountFlags
+        const transferFlags = runtime.TransferFlags
+        const allowedAccountFlags = accountFlags.linked |
+          accountFlags.debits_must_not_exceed_credits |
+          accountFlags.credits_must_not_exceed_debits | accountFlags.history |
+          accountFlags.imported |
+          accountFlags.closed
+        const allowedTransferFlags = transferFlags.linked | transferFlags.pending |
+          transferFlags.post_pending_transfer | transferFlags.void_pending_transfer |
+          transferFlags.balancing_debit | transferFlags.balancing_credit |
+          transferFlags.closing_debit | transferFlags.closing_credit | transferFlags.imported
+        if (
+          providerAccounts.some((account) =>
+            account.user_data_128 !== 0n || account.user_data_64 !== 0n ||
+            account.user_data_32 < 1 ||
+            account.reserved !== 0 || account.ledger !== config.ledger ||
+            account.code !== config.code ||
+            (account.flags & ~allowedAccountFlags) !== 0 ||
+            (account.flags & accountFlags.history) !== accountFlags.history
+          ) ||
+          providerTransfers.some((transfer) =>
+            transfer.user_data_128 !== 0n || transfer.user_data_64 !== 0n ||
+            transfer.user_data_32 < 1 || transfer.ledger !== config.ledger ||
+            transfer.code !== config.code || transfer.amount <= 0n ||
+            transfer.debit_account_id === transfer.credit_account_id || transfer.timeout !== 0 ||
+            (transfer.flags & ~allowedTransferFlags) !== 0
+          )
+        ) {
+          return yield* Effect.fail(observationFailure(scope, "invalid_fact"))
+        }
+        const accounts: FinancialStoreAccountObservation[] = providerAccounts.map((account) => ({
+          accountRef: account.id.toString(),
+          currency: config.currency.toUpperCase(),
+          mappingVersion: account.user_data_32,
+          debitsPendingMinor: account.debits_pending.toString(),
+          debitsPostedMinor: account.debits_posted.toString(),
+          creditsPendingMinor: account.credits_pending.toString(),
+          creditsPostedMinor: account.credits_posted.toString(),
+          observedAt: account.timestamp.toString(),
+        }))
+        const transfers: FinancialStoreTransferObservation[] = providerTransfers.map((
+          transfer,
+        ) => ({
+          transferRef: transfer.id.toString(),
+          debitAccountRef: transfer.debit_account_id.toString(),
+          creditAccountRef: transfer.credit_account_id.toString(),
+          amountMinor: transfer.amount.toString(),
+          currency: config.currency.toUpperCase(),
+          mappingVersion: transfer.user_data_32,
+          status: flagIsSet(transfer.flags, runtime.TransferFlags.void_pending_transfer)
+            ? "voided"
+            : flagIsSet(transfer.flags, runtime.TransferFlags.pending)
+            ? "pending"
+            : "accepted",
+          observedAt: transfer.timestamp.toString(),
+        }))
+        const hash = yield* hashFinancialStoreFacts({ accounts, transfers })
+        const watermark: FinancialStoreWatermark = {
+          authority: "tigerbeetle",
+          scope,
+          value: `timestamp:${
+            maxTimestamp([...providerAccounts, ...providerTransfers])
+          };accounts:${accounts.length};transfers:${transfers.length}`,
+          snapshotRef: `sha256:${hash}`,
+          consistency: "bounded",
+          capturedAt: now().toISOString(),
+        }
+        return {
+          watermark,
+          inventory: {
+            authority: "tigerbeetle" as const,
+            scope,
+            watermark,
+            accounts,
+            transfers,
+          } satisfies FinancialStoreInventory,
+        }
+      })
+    const collector: FinancialStoreWatermarkCollectorService = {
+      collect: (input) =>
+        Effect.gen(function* () {
+          const decoded = yield* Schema.decodeUnknownEffect(FinancialStoreWatermarkInput)(input)
+          return (yield* scan(decoded.scope, decoded.maxRecords)).watermark
+        }),
+    }
+    const scanner: FinancialStoreInventoryScannerService = {
+      scan: (input) =>
+        Effect.gen(function* () {
+          const decoded = yield* Schema.decodeUnknownEffect(FinancialStoreInventoryRequest)(input)
+          if (decoded.watermark.authority !== "tigerbeetle") {
+            return yield* Effect.fail(observationFailure(decoded.scope, "invalid_watermark"))
+          }
+          const observed = yield* scan(decoded.scope, decoded.maxRecords)
+          if (
+            observed.watermark.value !== decoded.watermark.value ||
+            observed.watermark.snapshotRef !== decoded.watermark.snapshotRef ||
+            observed.watermark.consistency !== decoded.watermark.consistency
+          ) {
+            return yield* Effect.fail(observationFailure(decoded.scope, "invalid_watermark"))
+          }
+          return observed.inventory
+        }),
+    }
+    return { collector, scanner }
+  })
+
+export const makeTigerBeetleFinancialStoreObservation = (
+  config: TigerBeetleFinancialLedgerConfig,
+  clientFactory?: TigerBeetleClientFactory,
+  now: () => Date = () => new Date(),
+) => {
+  if (!isValidConfig(config)) {
+    return Effect.fail(makeConfigurationFailure("invalid_configuration"))
+  }
+  return financialStoreObservation(config, clientFactory, now)
+}
+
+/** Creates private provider-observation services; no provider type crosses the service boundary. */
+export const makeTigerBeetleFinancialStoreObservationLayer = (
+  config: TigerBeetleFinancialLedgerConfig,
+  clientFactory?: TigerBeetleClientFactory,
+  now: () => Date = () => new Date(),
+) =>
+  Layer.mergeAll(
+    Layer.effect(
+      FinancialStoreWatermarkCollector,
+      makeTigerBeetleFinancialStoreObservation(config, clientFactory, now).pipe(
+        Effect.map(({ collector }) => collector),
+      ),
+    ),
+    Layer.effect(
+      FinancialStoreInventoryScanner,
+      makeTigerBeetleFinancialStoreObservation(config, clientFactory, now).pipe(
+        Effect.map(({ scanner }) => scanner),
+      ),
+    ),
+  )

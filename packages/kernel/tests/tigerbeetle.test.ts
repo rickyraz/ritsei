@@ -10,7 +10,9 @@ import {
 } from "tigerbeetle-node"
 
 import {
+  FinancialStoreObservationFailure,
   makeTigerBeetleFinancialLedger,
+  makeTigerBeetleFinancialStoreObservation,
   TigerBeetleConfigurationFailure,
   type TigerBeetleFinancialLedgerConfig,
 } from "../mod.ts"
@@ -175,8 +177,8 @@ const makeFakeClient = (state: FakeState): Client => ({
     })),
   getAccountTransfers: () => promise([]),
   getAccountBalances: () => promise([]),
-  queryAccounts: () => promise([]),
-  queryTransfers: () => promise([]),
+  queryAccounts: () => promise([...state.accounts.values()]),
+  queryTransfers: () => promise([...state.transfers.values()]),
   destroy: () => {
     state.destroyed = true
   },
@@ -235,6 +237,51 @@ describe("TigerBeetle financial adapter", () => {
         (yield* ledger.createExecutionAccount(accountInput("cash")))._tag,
         "manual_recovery",
       )
+    }))
+  })
+
+  it.effect("observes a bounded inventory and rejects an unscoped scan", () => {
+    const state = makeState()
+    return Effect.scoped(Effect.gen(function* () {
+      const ledger = yield* makeTigerBeetleFinancialLedger(config, () => makeFakeClient(state))
+      yield* ledger.createExecutionAccount(accountInput("cash"))
+      yield* ledger.createExecutionAccount(accountInput("revenue"))
+      yield* ledger.postJournal(journalInput("observed-operation"))
+
+      const observation = yield* makeTigerBeetleFinancialStoreObservation(
+        config,
+        () => makeFakeClient(state),
+        () => new Date("2026-08-30T00:00:00.000Z"),
+      )
+      const watermark = yield* observation.collector.collect({
+        scope: "provider:tigerbeetle",
+        maxRecords: 10,
+      })
+      const inventory = yield* observation.scanner.scan({
+        scope: "provider:tigerbeetle",
+        maxRecords: 10,
+        watermark,
+      })
+      assert.strictEqual(inventory.accounts.length, 2)
+      assert.strictEqual(inventory.transfers.length, 1)
+      assert.strictEqual(inventory.watermark.snapshotRef, watermark.snapshotRef)
+
+      const account = [...state.accounts.values()][0]!
+      state.accounts.set(account.id, { ...account, user_data_64: 1n })
+      const invalidFact = yield* Effect.flip(observation.collector.collect({
+        scope: "provider:tigerbeetle",
+        maxRecords: 10,
+      }))
+      assert.instanceOf(invalidFact, FinancialStoreObservationFailure)
+      assert.strictEqual(invalidFact.reason, "invalid_fact")
+
+      const failure = yield* Effect.flip(observation.scanner.scan({
+        scope: "tenant:tenant-a/legal-entity:legal-entity-a",
+        maxRecords: 10,
+        watermark: { ...watermark, scope: "tenant:tenant-a/legal-entity:legal-entity-a" },
+      }))
+      assert.instanceOf(failure, FinancialStoreObservationFailure)
+      assert.strictEqual(failure.reason, "unsupported")
     }))
   })
 
