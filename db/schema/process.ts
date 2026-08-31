@@ -14,7 +14,7 @@ import {
 } from "drizzle-orm/pg-core"
 
 import { tenants } from "./auth.ts"
-import { createdAt, id, updatedAt, uuidv7 } from "./common.ts"
+import { createdAt, id, updatedAt } from "./common.ts"
 
 export const processSchema = pgSchema("process")
 export const workflowRunStatus = processSchema.enum(

@@ -1,0 +1,51 @@
+changelog:
+  categories:
+    - title: "Accounting"
+      labels:
+        - "accounting"
+    - title: "Billing"
+      labels:
+        - "billing"
+    - title: "Catalog"
+      labels:
+        - "catalog"
+    - title: "Identity & Authorization"
+      labels:
+        - "identity"
+        - "authorization"
+    - title: "Foundation"
+      labels:
+        - "foundation"
+        - "kernel"
+        - "api"
+        - "database"
+        - "tooling"
+    - title: "Inventory"
+      labels:
+        - "inventory"
+    - title: "Messaging & Integrations"
+      labels:
+        - "messaging"
+        - "integrations"
+    - title: "Party"
+      labels:
+        - "party"
+    - title: "Process Studio"
+      labels:
+        - "process"
+    - title: "Platform"
+      labels:
+        - "platform"
+        - "web"
+        - "ci"
+        - "build"
+        - "docs"
+    - title: "Procurement"
+      labels:
+        - "procurement"
+    - title: "Sales"
+      labels:
+        - "sales"
+    - title: "Other Changes"
+      labels:
+        - "*"

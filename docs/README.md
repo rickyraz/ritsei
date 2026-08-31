@@ -83,6 +83,7 @@
 - [`./decisions/README.md`](./decisions/README.md)
 - [`./development/commit-message-guidelines.md`](./development/commit-message-guidelines.md)
 - [`./development/documentation-workflow.md`](./development/documentation-workflow.md)
+- [`./development/releasing.md`](./development/releasing.md)
 - [`./development/testing.md`](./development/testing.md)
 - [`./operations/database-roles.md`](./operations/database-roles.md)
 - [`./operations/tigerbeetle-recovery.md`](./operations/tigerbeetle-recovery.md)

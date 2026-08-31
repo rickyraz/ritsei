@@ -5,6 +5,7 @@
 > - Agent and repository rules: [`./AGENTS.md`](./AGENTS.md)
 > - Documentation index: [`./docs/README.md`](./docs/README.md)
 > - Commit-message standard: [`./docs/development/commit-message-guidelines.md`](./docs/development/commit-message-guidelines.md)
+> - Release workflow: [`./docs/development/releasing.md`](./docs/development/releasing.md)
 > - ADR index: [`./docs/decisions/README.md`](./docs/decisions/README.md)
 
 ## Workflow
@@ -13,10 +14,11 @@
 2. Read the architecture document relevant to the change.
 3. Check related ADRs.
 4. Keep the change narrowly scoped.
-5. Add or update tests.
-6. Run all available validation.
-7. Update documentation when behavior or architecture changes.
-8. Follow the [commit-message standard](./docs/development/commit-message-guidelines.md).
+5. For release preparation, follow the [release workflow](./docs/development/releasing.md) and keep the annotated product tag as the sole SemVer authority.
+6. Add or update tests.
+7. Run all available validation.
+8. Update documentation when behavior or architecture changes.
+9. Follow the [commit-message standard](./docs/development/commit-message-guidelines.md).
 
 ## Commit messages
 

@@ -19,6 +19,8 @@
 > - Process Studio architecture: [`../architecture/process-studio.md`](../architecture/process-studio.md)
 > - External integration surface: [`../architecture/integration-architecture.md`](../architecture/integration-architecture.md)
 > - Process Studio ADR: [`../decisions/0018-adopt-typed-process-studio.md`](../decisions/0018-adopt-typed-process-studio.md)
+> - Product release workflow: [`../development/releasing.md`](../development/releasing.md)
+> - Product SemVer authority ADR: [`../decisions/0066-adopt-single-product-semver-authority.md`](../decisions/0066-adopt-single-product-semver-authority.md)
 
 ## Purpose
 
@@ -77,6 +79,16 @@ a bounded Level 2 draft/read/confirm/cancel `PurchaseOrder` lifecycle, and a bou
 [`../architecture/procurement.md`](../architecture/procurement.md) specification. Procurement and
 Billing must not be advertised as Process Studio providers until their selected actions reach the
 required maturity. PgQue, external connectors, and the broad workflow runtime remain gated.
+
+## Release Plan
+
+Product release identity is an annotated `vX.Y.Z` Git tag. `v0.1.0` is the historical P0–P3 baseline
+at `7befeb495567e926e32ab85a926c96d20c92ec37` from August 13, 2026. `v0.2.0` is the current
+release-preparation snapshot and must be tagged only after the release checks pass. Both are
+pre-release, source-only snapshots without a build-artifact or automatic migration/upgrade guarantee.
+
+See [`../development/releasing.md`](../development/releasing.md) and
+[`../decisions/0066-adopt-single-product-semver-authority.md`](../decisions/0066-adopt-single-product-semver-authority.md).
 
 ## Roadmap Tracks
 

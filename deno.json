@@ -31,6 +31,8 @@
     "fallow:boundaries": "npx --no-install fallow dead-code --boundary-violations",
     "fallow:fix:dry-run": "npx --no-install fallow fix --dry-run",
     "skills:check": "deno run --allow-read tooling/check-agent-skills.ts",
+    "release:metadata": "deno run --allow-read --allow-env --allow-run tooling/release-check.ts",
+    "release:check": "deno fmt --check && deno lint && deno task check && deno task db:check && deno task skills:check && deno task boundary:test && deno task boundary:lint && deno task test && deno task fallow:audit",
     "capabilities:check": "deno run --allow-read tooling/capabilities/check.ts",
     "callgraph:check": "deno run --allow-read --allow-run tooling/call-graph/check.ts",
     "ai:boundary:check": "deno run --allow-read tooling/ai-boundary/check.ts",
