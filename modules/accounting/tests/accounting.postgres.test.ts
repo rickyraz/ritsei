@@ -1103,3 +1103,99 @@ it.effect.skipIf(databaseUrl === undefined)(
         }),
     ),
 )
+
+it.effect.skipIf(databaseUrl === undefined)(
+  "rejects journal reversal cycles in PostgreSQL",
+  () =>
+    withTemporaryDatabase(
+      databaseUrl!,
+      (client) =>
+        Effect.gen(function* () {
+          yield* runMigrations(client)
+
+          const [tenant] = yield* Effect.promise(() =>
+            client<{ id: string }[]>`
+              insert into auth.tenants (slug) values (${uuidv7()}) returning id
+            `
+          )
+          const accounts = yield* Effect.promise(() =>
+            client<{ id: string }[]>`
+              insert into accounting.accounts (tenant_id, code, name, type)
+              values
+                (${tenant!.id}, 'CYCLE-DEBIT', 'Cycle Debit', 'asset'),
+                (${tenant!.id}, 'CYCLE-CREDIT', 'Cycle Credit', 'revenue')
+              returning id
+            `
+          )
+          const entries = yield* Effect.promise(() =>
+            client.begin(async (transaction) => {
+              const [first] = await transaction<{ id: string }[]>`
+                insert into accounting.journal_entries (tenant_id, reference)
+                values (${tenant!.id}, 'REVERSAL-CYCLE-A') returning id
+              `
+              const [second] = await transaction<{ id: string }[]>`
+                insert into accounting.journal_entries (tenant_id, reference)
+                values (${tenant!.id}, 'REVERSAL-CYCLE-B') returning id
+              `
+              await transaction`
+                insert into accounting.journal_lines
+                  (tenant_id, entry_id, account_id, debit, credit)
+                values
+                  (${tenant!.id}, ${first!.id}, ${accounts[0]!.id}, 1, 0),
+                  (${tenant!.id}, ${first!.id}, ${accounts[1]!.id}, 0, 1),
+                  (${tenant!.id}, ${second!.id}, ${accounts[0]!.id}, 1, 0),
+                  (${tenant!.id}, ${second!.id}, ${accounts[1]!.id}, 0, 1)
+              `
+              await transaction`
+                update accounting.journal_entries
+                set status = 'posted', posted_at = now()
+                where tenant_id = ${tenant!.id} and id = ${second!.id}
+              `
+              return { reversalId: first!.id, sourceId: second!.id }
+            })
+          )
+
+          yield* Effect.promise(() =>
+            client`
+              update accounting.journal_entries
+              set status = 'reversed', posted_at = now(), reverses_entry_id = ${entries.sourceId}
+              where tenant_id = ${tenant!.id} and id = ${entries.reversalId}
+            `
+          )
+
+          const [reversalState] = yield* Effect.promise(() =>
+            client<{ status: string; reverses_entry_id: string | null }[]>`
+              select status, reverses_entry_id
+              from accounting.journal_entries
+              where tenant_id = ${tenant!.id} and id = ${entries.reversalId}
+            `
+          )
+          assert.deepStrictEqual(reversalState, {
+            status: "reversed",
+            reverses_entry_id: entries.sourceId,
+          })
+
+          const cycle = yield* postgresFailure(() =>
+            client`
+              update accounting.journal_entries
+              set status = 'reversed', posted_at = now(), reverses_entry_id = ${entries.reversalId}
+              where tenant_id = ${tenant!.id} and id = ${entries.sourceId}
+            `
+          )
+          assert.strictEqual((cycle as { code?: string }).code, "23514")
+          assert.strictEqual(
+            (cycle as { constraint_name?: string }).constraint_name,
+            "journal_entries_reversal_source_check",
+          )
+
+          const [state] = yield* Effect.promise(() =>
+            client<{ status: string; reverses_entry_id: string | null }[]>`
+              select status, reverses_entry_id
+              from accounting.journal_entries
+              where tenant_id = ${tenant!.id} and id = ${entries.sourceId}
+            `
+          )
+          assert.deepStrictEqual(state, { status: "posted", reverses_entry_id: null })
+        }),
+    ),
+)
