@@ -13,7 +13,7 @@
 > - Architecture enforcement: [`../architecture/architecture-enforcement.md`](../architecture/architecture-enforcement.md)
 > - Agent rules: [`../../AGENTS.md`](../../AGENTS.md)
 > - Fallow configuration: [`../../.fallowrc.json`](../../.fallowrc.json)
-> - Fallow static policy pack: [`../../rule-packs/ritsei-static-policy.json`](../../rule-packs/ritsei-static-policy.json)
+> - Fallow static policy pack: [`../../tooling/fallow/rules/ritsei-static-policy.json`](../../tooling/fallow/rules/ritsei-static-policy.json)
 
 ## Context
 

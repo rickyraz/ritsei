@@ -132,7 +132,7 @@ The current scaffold enforces these checks with:
 
 - generic repository graph analysis in Fallow, configured by
   [`../../.fallowrc.json`](../../.fallowrc.json) and its
-  [`../../rule-packs/ritsei-static-policy.json`](../../rule-packs/ritsei-static-policy.json);
+  [`../../tooling/fallow/rules/ritsei-static-policy.json`](../../tooling/fallow/rules/ritsei-static-policy.json);
 - Fallow boundary, circular-dependency, dead-code, duplication, and health tasks through
   `deno task fallow:*`;
 - the remaining `ast-grep` structural rule and tests in

@@ -50,7 +50,7 @@
       "exports": ["Capability"]
     }
   ],
-  "rulePacks": ["./rule-packs/ritsei-static-policy.json"],
+  "rulePacks": ["./tooling/fallow/rules/ritsei-static-policy.json"],
   "rules": {
     "policy-violation": "error"
   },
@@ -58,9 +58,9 @@
     "gate": "all",
     "css": false,
     "cssDeep": false,
-    "deadCodeBaseline": "fallow-baselines/dead-code.json",
-    "healthBaseline": "fallow-baselines/health.json",
-    "dupesBaseline": "fallow-baselines/dupes.json"
+    "deadCodeBaseline": "tooling/fallow/baselines/dead-code.json",
+    "healthBaseline": "tooling/fallow/baselines/health.json",
+    "dupesBaseline": "tooling/fallow/baselines/dupes.json"
   },
   "boundaries": {
     "zones": [

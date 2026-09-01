@@ -2,7 +2,7 @@
 
 Fallow owns generic repository-wide graph checks: import zones, circular dependencies, dead code,
 duplication, and complexity. Its policy pack also carries the generic Effect-version, test-runner,
-and frontend dependency rules in `../../rule-packs/ritsei-static-policy.json`.
+and frontend dependency rules in `../fallow/rules/ritsei-static-policy.json`.
 
 RITSEI-specific checks remain in this directory and the adjacent tooling:
 
