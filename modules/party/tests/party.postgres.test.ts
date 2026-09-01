@@ -333,6 +333,19 @@ it.effect.skipIf(databaseUrl === undefined)(
             legalEntityId: secondLegalEntity.id,
             kind: "customer",
           })
+          yield* party.assignRole({
+            principal,
+            tenantId: tenant.id,
+            partyId: secondOrganization.id,
+            role: "customer",
+          })
+          yield* party.createRelationship({
+            principal,
+            tenantId: tenant.id,
+            partyId: secondOrganization.id,
+            legalEntityId: legalEntity.id,
+            kind: "customer",
+          })
           assert.strictEqual(relationship.active, true)
           const graphPaths = yield* party.findRelatedPartyPaths({
             principal,
@@ -390,6 +403,19 @@ it.effect.skipIf(databaseUrl === undefined)(
           })
           assert.strictEqual(limitedGraphPaths.length, 1)
           assert.isFalse(graphPaths.some((path) => path.targetPartyId === organization.id))
+          const projectedPaths = yield* Effect.promise(() =>
+            client<{ source_party_id: string; target_party_id: string }[]>`
+              select source_party_id, target_party_id
+              from party.related_party_paths
+              where tenant_id = ${tenant.id}
+                and source_party_id = ${organization.id}
+              order by legal_entity_id, relationship_id
+            `
+          )
+          assert.deepStrictEqual(projectedPaths, [{
+            source_party_id: organization.id,
+            target_party_id: secondOrganization.id,
+          }])
           assert.deepStrictEqual(
             yield* party.findRelatedPartyPaths({
               principal,
@@ -413,7 +439,6 @@ it.effect.skipIf(databaseUrl === undefined)(
               from party.related_party_paths
               where tenant_id = ${tenant.id}
                 and source_party_id = ${organization.id}
-                and target_party_id <> ${organization.id}
               order by depth, legal_entity_id, relationship_id
               limit 10
             `

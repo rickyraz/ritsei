@@ -647,6 +647,45 @@ describe("party contract", () => {
       )
     })))
 
+  it.effect("filters reflexive related-party paths", () =>
+    withParty(Effect.gen(function* () {
+      const service = yield* PartyService
+      const organization = yield* service.create({
+        principal,
+        tenantId,
+        kind: "organization",
+        name: "Self Organization",
+      })
+      const legalEntity = yield* service.createLegalEntity({
+        principal,
+        tenantId,
+        organizationId: organization.id,
+      })
+      yield* service.assignRole({
+        principal,
+        tenantId,
+        partyId: organization.id,
+        role: "customer",
+      })
+      yield* service.createRelationship({
+        principal,
+        tenantId,
+        partyId: organization.id,
+        legalEntityId: legalEntity.id,
+        kind: "customer",
+      })
+
+      assert.deepStrictEqual(
+        yield* service.findRelatedPartyPaths({
+          principal,
+          tenantId,
+          sourcePartyId: organization.id,
+          limit: 10,
+        }),
+        [],
+      )
+    })))
+
   it.effect("denies relationship reads without their capability", () => {
     const authorization = makeAuthorizationTestLayer([
       ...capabilities.filter((capability) => capability !== PartyCapabilities.partyRelationshipRead)

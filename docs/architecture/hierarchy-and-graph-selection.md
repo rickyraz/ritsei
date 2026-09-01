@@ -57,7 +57,11 @@ authority; its relationship result is one input to the RITSEI Authorization
 decision and never replaces tenant isolation, business policy, or SoD. Native
 PostgreSQL is the default; SpiceDB is an optional adapter. The current Party pilot
 is a fixed two-edge, bounded related-path projection and is not an authorization
-or mutation authority.
+or mutation authority. `party.related_party_paths` MUST NOT expose reflexive paths
+where `source_party_id = target_party_id`; this is a projection invariant, not a
+prohibition on cyclic relationships in the underlying Party graph. Source
+relationships remain governed by domain rules, while PostgreSQL, memory, and
+adapter implementations preserve the non-reflexive result contract.
 
 ## Hot-Path Rule
 
