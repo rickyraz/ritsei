@@ -14,6 +14,7 @@
 > - Contract schema decision: [`../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md`](../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md)
 > - Effect application architecture: [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
 > - Design system and Visual Grammar: [`./design-system.md`](./design-system.md)
+> - Cartographic visual grammar: [`../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md`](../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md)
 > - Layered TanStack frontend engine boundaries:
 >   [`../decisions/0057-define-layered-tanstack-frontend-engine-boundaries.md`](../decisions/0057-define-layered-tanstack-frontend-engine-boundaries.md)
 > - Solid compiler boundary: [`../decisions/0049-keep-solid-compiler-at-rendering-boundary.md`](../decisions/0049-keep-solid-compiler-at-rendering-boundary.md)
@@ -48,6 +49,11 @@ The RITSEI Design System owns Product Patterns, Interaction Grammar, Visual Gram
 component contracts, density, and frontend styling boundaries. Ark UI is the single headless behavior
 primitive source behind RITSEI-owned components. Panda CSS is the constrained styling substrate. See
 [`design-system.md`](./design-system.md).
+
+Frontend rendering is HTML-first: DOM owns semantics, interaction, accessibility, tables, forms, and
+standard record surfaces. SVG, Canvas, and optional WebGPU render only approved visual projections or
+material layers behind replaceable adapters and tested semantic fallbacks. WebGPU MUST NOT own
+business state, authorization, or the only representation of a critical value or action.
 
 It may be introduced only when server rendering, a frontend-owned BFF,
 server-session management, server functions, or unified full-stack deployment

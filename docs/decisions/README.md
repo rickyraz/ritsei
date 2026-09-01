@@ -92,5 +92,6 @@ current system; ADRs preserve decision history.
 | [`0066`](./0066-adopt-single-product-semver-authority.md) | Adopt a single product SemVer authority | Accepted |
 | [`0067`](./0067-separate-logical-database-and-physical-data-placement.md) | Separate logical database from physical data placement | Accepted |
 | [`0068`](./0068-establish-foundation-modules-platform-runtime-taxonomy.md) | Establish foundation, modules, platform, and runtime taxonomy | Accepted |
+| [`0069`](./0069-adopt-cartographic-enterprise-visual-grammar.md) | Adopt the cartographic enterprise visual grammar | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

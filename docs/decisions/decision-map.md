@@ -39,6 +39,11 @@ ADR-0010  Vite-based SolidJS SPA
                         +--> Query is selective server-state cache policy
                         +--> Table, Virtual, and Form are headless ERP engines
                         +--> Pacer is optional; DB remains research-only
+              |
+              +--> ADR-0069 cartographic enterprise visual grammar
+                        +--> HTML owns semantics and interaction
+                        +--> WebGPU is optional and fallback-first
+                        +--> material ratios are art direction, not a page template
 
 ADR-0030  UserAccount lifecycle and tenant membership
     |
@@ -106,6 +111,7 @@ and ADR-0047 does not change the financial authority recorded by ADR-0040.
 | [ADR-0047](./0047-define-procurement-goods-receipt-boundary.md) | Current amendment | Procurement evidence plus Inventory movement in one bounded receipt transaction |
 | [ADR-0056](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Current frontend amendment | Product Patterns, Visual Grammar, Ark UI, and constrained Panda styling boundaries |
 | [ADR-0057](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Current frontend clarification | Selective Query cache plus headless Table, Virtual, Form, and optional Pacer/DB boundaries |
+| [ADR-0069](./0069-adopt-cartographic-enterprise-visual-grammar.md) | Current frontend visual grammar | Cartographic Enterprise UI, HTML-first rendering, optional WebGPU, and governed material tokens |
 | [ADR-0058](./0058-define-provider-neutral-identity-and-authentication-boundary.md) | Current identity boundary | OIDC/OAuth2 provider-neutral contract; ZITADEL recommended; RITSEI owns account mapping, membership, and ERP authority |
 | [ADR-0059](./0059-define-replaceable-relationship-authorization-engine.md) | Current authorization boundary | Native PostgreSQL RelationshipEngine default; SpiceDB optional; RITSEI/PostgreSQL remains canonical |
 | [ADR-0064](./0064-propose-gcp-financial-staging-platform.md) | Proposed infrastructure selection | GCP is proposed for financial staging; provider approval and production-equivalent evidence remain open |

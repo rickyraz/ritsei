@@ -20,6 +20,7 @@
 > - Authorization: [`./authorization.md`](./authorization.md)
 > - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
 > - HTTP API boundary: [`./api.md`](./api.md)
+> - Design system and Visual Grammar: [`./design-system.md`](./design-system.md)
 > - Governed AI recommendation and agent boundary:
 >   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
 > - Documentation ownership: [`../documentation-boundaries.md`](../documentation-boundaries.md)
@@ -94,6 +95,23 @@ frontend
   -> module public contracts
   -X-> backend repositories or database schema
 ```
+
+## Frontend Design-System Enforcement
+
+The canonical frontend visual and interaction rules live in
+[`./design-system.md`](./design-system.md). Once production UI activation begins, static and
+contract checks must enforce the boundary rather than relying on review alone:
+
+- Ark UI, Panda-generated artifacts, dnd-kit, chart adapters, Canvas, and WebGPU imports are limited
+  to the internal `apps/web/src/ui/` layer;
+- feature UI consumes semantic RITSEI variants and approved recipes, not raw primitive colors,
+  arbitrary spacing, broad style props, or hard-coded material intensity;
+- renderer adapters expose semantic fallbacks and cannot become sources of business state,
+  authorization, or workflow authority; and
+- accessibility, reduced-motion, contrast, and renderer performance remain runtime/evidence checks,
+  not claims inferred from static import boundaries.
+
+No current check claims that the exploratory frontend prototype has completed these activation gates.
 
 ## Module Boundary Manifest
 
