@@ -9,7 +9,7 @@ Expose the smallest stable domain contract callers need while keeping persistenc
 
 # Use This Skill When
 
-- adding or modifying exports in `packages/*/mod.ts`;
+- adding or modifying exports in `modules/*/mod.ts`;
 - another domain, app, or adapter needs behavior owned by a package;
 - introducing a command/query or tagged business failure;
 - versioning or changing an existing public DTO.
@@ -89,5 +89,5 @@ Callers can perform the requested behavior through one typed public boundary; im
 - [Module contract](../../../docs/architecture/architecture-spec-v4.md)
 - [Testing strategy](../../../docs/development/testing.md)
 - [Architecture enforcement](../../../docs/architecture/architecture-enforcement.md)
-- [UserAccount public contract example](../../../packages/identity/mod.ts)
-- [Party public contract example](../../../packages/party/mod.ts)
+- [UserAccount public contract example](../../../modules/identity/mod.ts)
+- [Party public contract example](../../../modules/party/mod.ts)

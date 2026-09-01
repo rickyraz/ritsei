@@ -1,16 +1,26 @@
 {
   "$schema": "./node_modules/fallow/schema.json",
   "entry": [
-    "apps/api/mod.ts",
-    "apps/migrate/mod.ts",
-    "apps/migrate/p0-backfill.ts",
-    "apps/worker/mod.ts",
+    "runtime/api/mod.ts",
+    "runtime/migrator/mod.ts",
+    "runtime/migrator/p0-backfill.ts",
+    "runtime/worker/mod.ts",
     "apps/web/src/features/process-studio/index.ts",
     "apps/**/*.test.ts",
     "apps/**/*.test.tsx",
-    "packages/*/mod.ts",
-    "packages/**/*.test.ts",
-    "packages/**/*.test.tsx",
+    "foundation/mod.ts",
+    "foundation/*/mod.ts",
+    "foundation/**/*.test.ts",
+    "foundation/**/*.test.tsx",
+    "modules/*/mod.ts",
+    "modules/**/*.test.ts",
+    "modules/**/*.test.tsx",
+    "platform/mod.ts",
+    "platform/*/mod.ts",
+    "platform/**/*.test.ts",
+    "platform/**/*.test.tsx",
+    "runtime/**/*.test.ts",
+    "runtime/**/*.test.tsx",
     "tests/**/*.test.ts",
     "tests/**/*.test.tsx",
     "tooling/**/*.ts",
@@ -29,6 +39,16 @@
     "@std/fs",
     "@std/media-types",
     "@std/streams"
+  ],
+  "ignoreExports": [
+    {
+      "file": "modules/authorization/src/capabilities.ts",
+      "exports": ["Capability"]
+    },
+    {
+      "file": "modules/authorization/src/contract.ts",
+      "exports": ["Capability"]
+    }
   ],
   "rulePacks": ["./rule-packs/ritsei-static-policy.json"],
   "rules": {
@@ -50,8 +70,14 @@
           "tests/**",
           "apps/**/*.test.ts",
           "apps/**/*.test.tsx",
-          "packages/**/*.test.ts",
-          "packages/**/*.test.tsx"
+          "foundation/**/*.test.ts",
+          "foundation/**/*.test.tsx",
+          "modules/**/*.test.ts",
+          "modules/**/*.test.tsx",
+          "platform/**/*.test.ts",
+          "platform/**/*.test.tsx",
+          "runtime/**/*.test.ts",
+          "runtime/**/*.test.tsx"
         ]
       },
       {
@@ -63,20 +89,24 @@
         "patterns": ["apps/web/**"]
       },
       {
-        "name": "apps-adapters",
-        "patterns": ["apps/adapters/**"]
+        "name": "runtime-adapters",
+        "patterns": ["runtime/adapters/**"]
       },
       {
-        "name": "apps",
-        "patterns": ["apps/**"]
+        "name": "runtime",
+        "patterns": ["runtime/**"]
       },
       {
-        "name": "packages-kernel",
-        "patterns": ["packages/kernel/**"]
+        "name": "foundation",
+        "patterns": ["foundation/**"]
       },
       {
-        "name": "packages",
-        "patterns": ["packages/**"]
+        "name": "modules",
+        "patterns": ["modules/**"]
+      },
+      {
+        "name": "platform",
+        "patterns": ["platform/**"]
       },
       {
         "name": "database",
@@ -91,11 +121,12 @@
       {
         "from": "tests",
         "allow": [
-          "apps",
           "apps-web",
-          "apps-adapters",
-          "packages-kernel",
-          "packages",
+          "foundation",
+          "modules",
+          "platform",
+          "runtime",
+          "runtime-adapters",
           "database",
           "tooling",
           "configs"
@@ -107,23 +138,35 @@
       },
       {
         "from": "apps-web",
-        "allow": ["packages-kernel", "packages"]
+        "allow": ["modules", "foundation"]
       },
       {
-        "from": "apps-adapters",
-        "allow": ["apps", "packages-kernel", "packages"]
+        "from": "runtime-adapters",
+        "allow": ["runtime", "modules", "platform", "foundation", "database"]
       },
       {
-        "from": "apps",
-        "allow": ["apps-adapters", "packages-kernel", "packages", "tooling"]
+        "from": "runtime",
+        "allow": [
+          "runtime-adapters",
+          "runtime",
+          "modules",
+          "platform",
+          "foundation",
+          "database",
+          "tooling"
+        ]
       },
       {
-        "from": "packages-kernel",
-        "allow": ["packages-kernel"]
+        "from": "foundation",
+        "allow": ["foundation"]
       },
       {
-        "from": "packages",
-        "allow": ["packages-kernel", "packages", "database"]
+        "from": "modules",
+        "allow": ["modules", "foundation", "database"]
+      },
+      {
+        "from": "platform",
+        "allow": ["platform", "foundation", "modules"]
       },
       {
         "from": "database",
@@ -131,7 +174,7 @@
       },
       {
         "from": "tooling",
-        "allow": ["tooling", "packages-kernel", "packages", "database"]
+        "allow": ["tooling", "runtime", "foundation", "modules", "platform", "database"]
       }
     ],
     "coverage": {

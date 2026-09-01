@@ -1,6 +1,6 @@
 ---
 name: add-api-endpoint
-description: "Use when exposing or changing RITSEI HTTP behavior in apps/api, including an endpoint schema, handler, authentication middleware, error mapping, OpenAPI contract, or service layer wiring."
+description: "Use when exposing or changing RITSEI HTTP behavior in runtime/api, including an endpoint schema, handler, authentication middleware, error mapping, OpenAPI contract, or service layer wiring."
 ---
 
 # Purpose
@@ -9,7 +9,7 @@ Add an Effect-native HTTP endpoint that delegates to a public domain contract an
 
 # Use This Skill When
 
-- adding a route under `apps/api/`;
+- adding a route under `runtime/api/`;
 - exposing a domain command or query over HTTP;
 - changing payload, params, headers, response, security, or transport errors;
 - adding a service to API composition.
@@ -22,7 +22,7 @@ Add an Effect-native HTTP endpoint that delegates to a public domain contract an
 
 # Required Context
 
-Inspect [`apps/api/api.ts`](../../../apps/api/api.ts), [`apps/api/handlers.ts`](../../../apps/api/handlers.ts), [`apps/api/mod.ts`](../../../apps/api/mod.ts), the OpenAPI test, and the target package’s `mod.ts` contract.
+Inspect [`runtime/api/api.ts`](../../../runtime/api/api.ts), [`runtime/api/handlers.ts`](../../../runtime/api/handlers.ts), [`runtime/api/mod.ts`](../../../runtime/api/mod.ts), the OpenAPI test, and the target module’s `mod.ts` contract.
 
 # Architecture Rules
 
@@ -58,7 +58,7 @@ Verify generated OpenAPI, typed handler compatibility, security middleware, and 
 # Deterministic Tools
 
 ```sh
-deno task test apps/api/mod.test.ts tests/architecture/http.test.ts
+deno task test runtime/api/mod.test.ts tests/architecture/http.test.ts
 deno task boundary:test
 deno task boundary:lint
 deno task check
@@ -94,5 +94,5 @@ The endpoint is derived from Effect HttpApi, delegates to a public domain servic
 - [ADR-0012: Effect-native HTTP](../../../docs/decisions/0012-use-drizzle-schema-flow-and-effect-http.md)
 - [ADR-0017: Deno adapter](../../../docs/decisions/0017-use-effect-platform-deno.md)
 - [HTTP architecture test](../../../tests/architecture/http.test.ts)
-- [API contract](../../../apps/api/api.ts)
-- [API handlers](../../../apps/api/handlers.ts)
+- [API contract](../../../runtime/api/api.ts)
+- [API handlers](../../../runtime/api/handlers.ts)

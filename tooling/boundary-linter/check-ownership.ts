@@ -90,18 +90,28 @@ export const checkOwnership = async (): Promise<readonly string[]> => {
   await checkMigrations("db/migrations")
 
   const sourceOwner = (path: string): string | undefined => {
-    const packageName = path.match(/^packages\/([^/]+)\/src\//)?.[1]
-    return packageName === undefined ? undefined : `packages/${packageName}`
+    const moduleName = path.match(/^modules\/([^/]+)\/src\//)?.[1]
+    return moduleName === undefined ? undefined : `modules/${moduleName}`
   }
 
-  const isKernelSchemaTest = (path: string) => path.startsWith("packages/kernel/tests/")
+  const isPlatformSchemaTest = (path: string) => path.startsWith("platform/postgres/tests/")
 
-  for (const root of ["apps", "packages", "tests", "tooling"] as const) {
+  for (
+    const root of [
+      "apps",
+      "foundation",
+      "modules",
+      "platform",
+      "runtime",
+      "tests",
+      "tooling",
+    ] as const
+  ) {
     for (const { path, source } of await collectSourceFiles(root, [".ts"])) {
       for (const match of source.matchAll(/db\/schema\/([A-Za-z_][A-Za-z0-9_-]*)\.ts/g)) {
         const importedSchema = match[1]!
         const importedOwner = schemas.get(importedSchema)
-        if (importedOwner === undefined || isKernelSchemaTest(path)) continue
+        if (importedOwner === undefined || isPlatformSchemaTest(path)) continue
         const owner = sourceOwner(path)
         if (owner === undefined) {
           failures.push(

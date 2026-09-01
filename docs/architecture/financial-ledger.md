@@ -92,8 +92,8 @@ and fixes precision at two, so exponent-aware conversion is a generic primitive 
 | Journal/document metadata and correction relationships                    | PostgreSQL / Accounting             | Financial acceptance is derived from the selected adapter                    |
 | Audit references and reporting projection                                 | PostgreSQL                          | Rebuildable from TigerBeetle facts plus control-plane metadata        |
 | Reconciliation state and mismatch quarantine                              | PostgreSQL / application operations | Reconciliation never creates an unapproved business correction        |
-| Staging evidence envelope, cohort bounds, and evidence hash               | Kernel / Accounting                 | Append-only owner boundary; custody/WORM remains external             |
-| TigerBeetle client, transport, batching, and provider failures            | Kernel/infrastructure               | Never part of a domain public contract                                |
+| Staging evidence envelope, cohort bounds, and evidence hash               | Accounting                          | Append-only owner boundary; custody/WORM remains external             |
+| TigerBeetle client, transport, batching, and provider failures            | `platform/tigerbeetle`              | Never part of a domain public contract                                |
 
 No row has two authorities. A PostgreSQL journal row or balance projection cannot authorize a new
 financial movement by itself.
@@ -142,23 +142,23 @@ are not a license to implement payment, settlement, credit, budget, or inventory
 than a lowest-common-denominator storage interface. TigerBeetle account, transfer, flag, timestamp,
 client, and transport types remain private to the trusted adapter.
 
-The adapter may be implemented behind the kernel/infrastructure boundary. Domain packages depend on
+The adapter is implemented behind the `platform/tigerbeetle` boundary. Business modules depend on
 stable capability-level failures and the public port, never on TigerBeetle or PostgreSQL driver
 failures.
 
 The port is owned by the Accounting/application contract boundary and is supplied at the composition
-root. Kernel/infrastructure may implement the provider adapter but must not import Accounting domain
+root. Platform may implement the provider adapter but must not import Accounting domain
 semantics. If a neutral package is needed later, it may contain only the provider-neutral port
 shape; it must not become a generic ledger domain or import TigerBeetle types.
 
 ### Transitional PostgreSQL adapter exposure
 
-During the PostgreSQL-to-TigerBeetle transition, `packages/accounting/mod.ts` re-exports the
+During the PostgreSQL-to-TigerBeetle transition, `modules/accounting/mod.ts` re-exports the
 provider factory `makePostgresqlFinancialLedger` and its layer so the application composition root
 and PostgreSQL ledger integration tests can construct the transitional adapter. This is an
 infrastructure wiring exception, not a domain contract: callers must depend on `FinancialLedgerPort`,
-not PostgreSQL, Drizzle, or TigerBeetle types. The factory should move behind the application/kernel
-composition boundary when that boundary is separated without changing the port or authority rules.
+not PostgreSQL, Drizzle, or TigerBeetle types. The factory remains behind the runtime composition
+boundary without changing the port or authority rules.
 
 ## Financial Operation Protocol
 
@@ -370,7 +370,7 @@ business commands and use new transfers.
 The implementation persists append-only `financial_reconciliation_checkpoints` with source/target
 watermarks, snapshot references, fact-set hashes, mismatch/orphan counts, and optional linkage to an
 immutable signed `financial_verification_artifacts` row. Unexpected operation-scoped transfer IDs
-are quarantined in `financial_orphan_transfers`. Kernel observation contracts now collect and
+are quarantined in `financial_orphan_transfers`. Accounting observation contracts now collect and
 revalidate store-derived bounded watermarks and inventories: PostgreSQL observations are filtered to
 the declared Tenant/Legal Entity scope, while the current TigerBeetle query is provider-wide because
 its deployed metadata does not yet provide an approved reversible Legal Entity filter. The
@@ -380,7 +380,7 @@ point-in-time cross-store snapshot, so the global reconciliation gate remains op
 
 ### Staging evidence boundary
 
-`FinancialStagingEvidence` is a provider-neutral, hash-bound envelope owned by Kernel. Its cohort
+`FinancialStagingEvidence` is a provider-neutral, hash-bound envelope owned by Accounting. Its cohort
 must name the Tenant/Legal Entity, deployment revision, owner, approval authority, abort authority,
 planned failure scenarios, and maximum operation count. Passing evidence is schema-invalid when it
 contains mismatches, orphans, out-of-range operations, or unplanned scenarios. Backup/restore facts

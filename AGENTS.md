@@ -178,15 +178,15 @@ Integration rules:
 - Drizzle owns SQL construction, dialect rendering, and typed persistence
   schema; it is never the domain model.
 - Keep the PostgreSQL driver, Drizzle client lifecycle, transaction boundary,
-  and infrastructure-error mapping inside `packages/kernel/`.
+  and infrastructure-error mapping inside `foundation/` contracts and `platform/postgres/` adapters.
 - `db/schema/index.ts` is the Drizzle Kit entry point. A domain implementation
   may import only its owned tables; public package entry points must not
   re-export persistence tables or Drizzle query types.
 - Use Drizzle query builders for application reads and writes. Raw SQL in a
   domain implementation is forbidden; unsupported PostgreSQL DDL belongs in a
   reviewed Drizzle custom migration.
-- Execute every invariant-sensitive mutation through the kernel's typed Drizzle
-  transaction service. Do not construct a driver client inside a domain.
+- Execute every invariant-sensitive mutation through the foundation database contract's typed Drizzle
+  transaction service, implemented by `platform/postgres/`. Do not construct a driver client inside a domain.
 - Map constraint failures to tagged domain errors at the owning domain boundary;
   never expose raw PostgreSQL or Drizzle errors to callers.
 - Do not copy integration examples verbatim. Adapt them to this repository's
@@ -202,7 +202,7 @@ Integration rules:
   imports as package substitutes unless an accepted ADR explicitly requires the
   exception.
 - `drizzle-orm/effect-postgres` and its `effect` / `@effect/sql-pg` peer path are
-  covered by the kernel import smoke test. Keep required peer dependencies in
+  covered by the foundation/platform import smoke test. Keep required peer dependencies in
   the root `package.json`.
 - Generate every migration with pinned Drizzle Kit `1.0.0-rc.4`. Custom SQL must
   start from `drizzle-kit generate --custom`; every migration directory must
@@ -262,7 +262,7 @@ use a typed service contract, including when both modules participate in the
 same PostgreSQL transaction.
 
 - The financial ledger domain must depend on an engine-independent port. Keep
-  PostgreSQL and the TigerBeetle adapter behind kernel/infrastructure boundaries;
+  PostgreSQL and the TigerBeetle adapter behind foundation/platform boundaries;
   do not import engine-specific account, transfer, or balance types into domain
   modules.
 
@@ -283,7 +283,7 @@ Rules for new work:
   `memory.ts` exists when a deterministic test implementation can preserve the same invariants.
 - `layers.ts` owns named production/test composition; `mod.ts` exports only the public contract,
   errors, operations, and layers.
-- `apps/api/api.ts` defines transport schemas and routes; `apps/api/handlers.ts` stays thin and
+- `runtime/api/api.ts` defines transport schemas and routes; `runtime/api/handlers.ts` stays thin and
   calls public services only.
 - Preserve tenant scope, authorization, tagged failures, transactions, idempotency, events, and
   financial/workflow authority. Add database constraints and invariant tests for every new mutable
@@ -297,7 +297,7 @@ Rules for new work:
 - New persistent entity, stored event, stored line, workflow, and other
   index-visible identities MUST use UUIDv7.
 - PostgreSQL-owned IDs use the `uuidv7()` default from `db/schema/common.ts`.
-  Application-created persistent IDs use the kernel-owned `uuidv7()` helper;
+  Application-created persistent IDs use the foundation-owned `uuidv7()` helper;
   domain packages must not import `@std/uuid` directly.
 - Do not use `crypto.randomUUID()` for persistent identities, stored event IDs,
   or generated test UUID fixtures. UUIDv4 remains valid for opaque ephemeral
@@ -319,7 +319,7 @@ Keep failure types at the layer that owns and can act on them:
 
 - Domain packages own business-policy errors, authorization errors, and their
   input-validation failures.
-- Kernel services own stable capability-level technical failures such as
+- Foundation and platform services own stable capability-level technical failures such as
   `DatabaseFailure`.
 - Application composition roots own startup, configuration, deployment, and
   compatibility failures such as `UnsupportedPostgresVersion`.
@@ -327,12 +327,12 @@ Keep failure types at the layer that owns and can act on them:
   not import PostgreSQL, Drizzle, driver, migration, pool, version-check, or
   other infrastructure-specific error types.
 - Map known constraint violations to tagged errors in the owning domain. Map all
-  other database implementation failures once at the kernel boundary.
+  other database implementation failures once at the platform boundary.
 - Adding an infrastructure failure must not widen every domain failure union.
   Translate it into the existing stable service failure or handle it at the
   composition root.
 - Keep startup probes and lifecycle methods out of domain-facing service
-  interfaces. Expose them as kernel or application bootstrap operations.
+  interfaces. Expose them as platform or application bootstrap operations.
 - Preserve underlying causes for internal diagnostics, but never expose raw SQL,
   SQLSTATE, credentials, driver objects, or stack traces through public DTOs or
   API responses.
@@ -362,7 +362,7 @@ introduced.
 
 ## Database Rules
 
-- PostgreSQL 19+ is the minimum supported database version; the kernel must
+- PostgreSQL 19+ is the minimum supported database version; the `platform/postgres` adapter must
   reject `server_version_num` values below `190000`.
 - PostgreSQL is the transactional source of truth for control-plane and non-ledger
   business state; financial transfer, balance, and transfer-history authority follows
@@ -479,7 +479,7 @@ and ADR-0019.
   contract/catalog; do not make AsyncAPI a required broker.
 - Keep `DomainAction`/`DomainEvent` distinct from `ExternalAction`/`ExternalEvent`.
 - Keep protocols, credentials, provider retries, and transport failures inside
-  `packages/integrations` or approved connector plugins.
+  `modules/integrations` or approved connector plugins.
 - Do not expose Kafka partitions, gRPC stubs, SOAP envelopes, raw OAuth tokens,
   or provider storage identifiers to Process Studio or domain packages.
 - Use OAuth 2.0 with RFC 9700 security practices and RFC 9457 Problem Details;
@@ -614,7 +614,7 @@ All TypeScript tests MUST use `@effect/vitest`:
   both it and `vitest` in the root `package.json`.
 - Run worktree-local tests through `deno task check:affected`; reserve `deno task
   test` for the full suite and CI. Do not introduce a second test command path.
-- Test discovery MUST be allowlisted to `apps/**`, `packages/**`, and `tests/**`.
+- Test discovery MUST be allowlisted to `apps/**`, `foundation/**`, `modules/**`, `platform/**`, `runtime/**`, and `tests/**`.
   Exclude `vendor/**` and `node_modules/**` from tests, coverage, watch mode,
   formatting, linting, type checking, and boundary scans. Vendored subtrees are
   reference material and keep their own upstream validation workflows.

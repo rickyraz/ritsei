@@ -62,9 +62,9 @@ live PostgreSQL mirror, or a per-request choice between authorities.
 
 | Owner                          | Responsibility                                                                                |
 | ------------------------------ | --------------------------------------------------------------------------------------------- |
-| `packages/accounting`          | policy, periods, authorization, public operation/finalize/reconcile commands                  |
-| kernel/infrastructure          | TigerBeetle client lifecycle, deterministic IDs, batching, failure mapping, cleanup           |
-| `apps/worker` / `process.jobs` | leased submission and reconciliation work through public Accounting contracts                 |
+| `modules/accounting`           | policy, periods, authorization, public operation/finalize/reconcile commands                  |
+| `platform/tigerbeetle`         | TigerBeetle client lifecycle, deterministic IDs, batching, failure mapping, cleanup           |
+| `runtime/worker` / `modules/process` jobs | leased submission and reconciliation work through public Accounting contracts       |
 | Accounting schema              | intent, mapping, outcome, provenance, reconciliation, and projection metadata                 |
 | PostgreSQL                     | control plane, historical archive, and rebuildable projection—not accepted-transfer authority |
 | TigerBeetle                    | accepted transfers, balances, and immutable transfer history after cutover                    |

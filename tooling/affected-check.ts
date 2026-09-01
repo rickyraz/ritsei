@@ -82,6 +82,7 @@ if (files.length === 0) {
 
 const packageNames = new Set<string>()
 const appNames = new Set<string>()
+const componentRoots = new Set<string>()
 const tests = new Set<string>()
 const relatedSources = new Set<string>()
 let rootAppChanged = false
@@ -102,8 +103,8 @@ for (const path of files) {
     continue
   }
 
-  if (path.startsWith("packages/")) {
-    const match = path.match(/^packages\/([^/]+)\//)
+  if (path.startsWith("modules/")) {
+    const match = path.match(/^modules\/([^/]+)\//)
     if (match === null) continue
 
     if (isTestFile(path)) tests.add(path)
@@ -111,6 +112,14 @@ for (const path of files) {
       packageNames.add(match[1]!)
       if (path.endsWith("/mod.ts")) relatedSources.add(path)
     }
+    continue
+  }
+
+  if (
+    path.startsWith("foundation/") || path.startsWith("platform/") || path.startsWith("runtime/")
+  ) {
+    if (isTestFile(path)) tests.add(path)
+    else componentRoots.add(path.split("/")[0]!)
     continue
   }
 
@@ -124,17 +133,26 @@ for (const path of files) {
     continue
   }
 
+  if (path.startsWith("tooling/")) {
+    if (isTestFile(path)) tests.add(path)
+    else if (path === "tooling/load-env.ts") fullSuite = true
+    else {
+      for (const test of await collectTests("tests/architecture")) tests.add(test)
+    }
+    continue
+  }
+
   if (path.startsWith("tests/") && isTestFile(path)) {
     tests.add(path)
     continue
   }
 
-  if (path.startsWith("tests/") || path === "tooling/load-env.ts") fullSuite = true
+  if (path.startsWith("tests/")) fullSuite = true
 }
 
 for (const packageName of packageNames) {
-  if (!relatedSources.has(`packages/${packageName}/mod.ts`)) {
-    for (const path of await collectTests(`packages/${packageName}/tests`)) tests.add(path)
+  if (!relatedSources.has(`modules/${packageName}/mod.ts`)) {
+    for (const path of await collectTests(`modules/${packageName}/tests`)) tests.add(path)
   }
 }
 
@@ -144,6 +162,10 @@ for (const appName of appNames) {
 
 if (rootAppChanged) {
   for (const path of await collectTests("apps")) tests.add(path)
+}
+
+for (const root of componentRoots) {
+  for (const path of await collectTests(root)) tests.add(path)
 }
 
 if (skillsChanged) await run(["deno", "task", "skills:check"], dryRun)

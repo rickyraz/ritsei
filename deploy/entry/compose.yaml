@@ -24,7 +24,7 @@ services:
       RITSEI_FINANCIAL_AUTHORITY: postgresql
     volumes:
       - ../..:/app
-    command: ["deno", "run", "-A", "apps/migrate/mod.ts"]
+    command: ["deno", "run", "-A", "runtime/migrator/mod.ts"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -39,7 +39,7 @@ services:
       PORT: "8000"
     volumes:
       - ../..:/app
-    command: ["deno", "run", "-A", "apps/api/mod.ts"]
+    command: ["deno", "run", "-A", "runtime/api/mod.ts"]
     ports:
       - "8000:8000"
     depends_on:
@@ -57,7 +57,7 @@ services:
       WORKER_ID: entry-accounting-worker
     volumes:
       - ../..:/app
-    command: ["deno", "run", "-A", "apps/worker/mod.ts"]
+    command: ["deno", "run", "-A", "runtime/worker/mod.ts"]
     depends_on:
       migrate:
         condition: service_completed_successfully

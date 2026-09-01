@@ -103,5 +103,5 @@ The selected durability primitive matches the business semantics; ownership and 
 - [Durable execution](../../../docs/architecture/durable-execution.md)
 - [PgQue messaging](../../../docs/architecture/pgque-messaging.md)
 - [PostgreSQL architecture](../../../docs/architecture/postgresql-19-architecture.md)
-- [Inventory atomic reservation example](../../../packages/inventory/src/service.ts)
-- [Accounting invariant example](../../../packages/accounting/src/service.ts)
+- [Inventory atomic reservation example](../../../modules/inventory/src/service.ts)
+- [Accounting invariant example](../../../modules/accounting/src/service.ts)

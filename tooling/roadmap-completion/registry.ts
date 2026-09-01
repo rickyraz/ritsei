@@ -45,8 +45,8 @@ export const gates: readonly Gate[] = [
     commands: [
       task(
         "test",
-        "packages/identity/tests/identity.test.ts",
-        "packages/party/tests/party.test.ts",
+        "modules/identity/tests/identity.test.ts",
+        "modules/party/tests/party.test.ts",
       ),
     ],
     requirements: [
@@ -58,8 +58,8 @@ export const gates: readonly Gate[] = [
         "P0-10",
       ),
       file("docs/decisions/0021-define-p0-scope-and-identity-model.md"),
-      file("packages/identity/tests/identity.test.ts"),
-      file("packages/party/tests/party.test.ts"),
+      file("modules/identity/tests/identity.test.ts"),
+      file("modules/party/tests/party.test.ts"),
     ],
   },
   {
@@ -67,7 +67,7 @@ export const gates: readonly Gate[] = [
     title: "P1 product, quantity, and location baseline",
     source: "docs/roadmap/erp-primitives.md",
     kind: "markers",
-    commands: [task("test", "packages/inventory/tests/inventory.test.ts")],
+    commands: [task("test", "modules/inventory/tests/inventory.test.ts")],
     requirements: [
       marker(
         "docs/roadmap/erp-primitives.md",
@@ -76,7 +76,7 @@ export const gates: readonly Gate[] = [
         "quantity inputs and outputs have typed units",
       ),
       file("docs/decisions/0035-define-p1-inventory-primitives.md"),
-      marker("packages/inventory/tests/inventory.test.ts", "adjustStock", "reserveStock"),
+      marker("modules/inventory/tests/inventory.test.ts", "adjustStock", "reserveStock"),
     ],
   },
   {
@@ -84,7 +84,7 @@ export const gates: readonly Gate[] = [
     title: "P2 documents and financial semantics baseline",
     source: "docs/roadmap/erp-primitives.md",
     kind: "markers",
-    commands: [task("test", "packages/accounting/tests/accounting.test.ts")],
+    commands: [task("test", "modules/accounting/tests/accounting.test.ts")],
     requirements: [
       marker(
         "docs/roadmap/erp-primitives.md",
@@ -94,7 +94,7 @@ export const gates: readonly Gate[] = [
       ),
       file("docs/decisions/0036-define-p2-document-and-financial-baseline.md"),
       marker(
-        "packages/accounting/tests/accounting.test.ts",
+        "modules/accounting/tests/accounting.test.ts",
         "postRevenueForOrder",
         "reverseRevenue",
       ),
@@ -105,7 +105,7 @@ export const gates: readonly Gate[] = [
     title: "P3 audit, events, and integration baseline",
     source: "docs/roadmap/erp-primitives.md",
     kind: "markers",
-    commands: [task("test", "packages/catalog/tests/catalog.test.ts")],
+    commands: [task("test", "modules/catalog/tests/catalog.test.ts")],
     requirements: [
       marker(
         "docs/roadmap/erp-primitives.md",
@@ -115,7 +115,7 @@ export const gates: readonly Gate[] = [
       file("docs/decisions/0037-define-p3-audit-event-and-delivery-boundary.md"),
       file("docs/decisions/0038-move-internal-event-delivery-to-messaging.md"),
       marker(
-        "packages/catalog/tests/catalog.test.ts",
+        "modules/catalog/tests/catalog.test.ts",
         "AccountingRevenuePostedEvent",
         "ProcurementPurchaseOrderConfirmedEvent",
       ),
@@ -155,7 +155,7 @@ export const gates: readonly Gate[] = [
       "domain.inventory.level3",
       "domain.sales.level3",
     ],
-    commands: [task("test", "packages/process/tests/process.test.ts")],
+    commands: [task("test", "modules/process/tests/process.test.ts")],
     requirements: [
       marker(
         "docs/roadmap/process-studio.md",
@@ -191,16 +191,16 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.pre08"],
-    commands: [task("test", "packages/process/tests/catalog-release.test.ts")],
+    commands: [task("test", "modules/process/tests/catalog-release.test.ts")],
     requirements: [
       marker(
-        "packages/process/src/catalog-release.ts",
+        "modules/process/src/catalog-release.ts",
         "ProcessReleaseValidation",
         "resolveReleasedCapability",
         "unregistered capability",
       ),
       marker(
-        "packages/process/tests/catalog-release.test.ts",
+        "modules/process/tests/catalog-release.test.ts",
         "rejects unregistered actions",
         "released process",
         "catalog compatibility",
@@ -213,16 +213,16 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.catalog08"],
-    commands: [task("test", "packages/process/tests/runtime.test.ts")],
+    commands: [task("test", "modules/process/tests/runtime.test.ts")],
     requirements: [
       marker(
-        "packages/process/src/runtime-store.ts",
+        "modules/process/src/runtime-store.ts",
         "ProcessCheckpointStore",
         "durable checkpoint",
         "recoverCheckpoint",
       ),
       marker(
-        "packages/process/tests/runtime-postgres.test.ts",
+        "modules/process/tests/runtime-postgres.test.ts",
         "crash recovery",
         "duplicate event",
         "exact catalog version",
@@ -236,17 +236,17 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.runtime085"],
-    commands: [task("test", "packages/process/tests/operations.test.ts")],
+    commands: [task("test", "modules/process/tests/operations.test.ts")],
     requirements: [
       marker(
-        "packages/process/src/operations-store.ts",
+        "modules/process/src/operations-store.ts",
         "ProcessOperatorStore",
         "manual recovery",
         "compensation",
         "authorized operator",
       ),
       marker(
-        "packages/process/tests/operations-postgres.test.ts",
+        "modules/process/tests/operations-postgres.test.ts",
         "unknown external outcome",
         "operator control",
         "crash recovery",
@@ -282,17 +282,17 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.designer095"],
-    commands: [task("test", "packages/process/tests/release-postgres.test.ts")],
+    commands: [task("test", "modules/process/tests/release-postgres.test.ts")],
     requirements: [
       marker(
-        "packages/process/src/release-store.ts",
+        "modules/process/src/release-store.ts",
         "immutable release",
         "deployment binding",
         "approval",
         "audit",
       ),
       marker(
-        "packages/process/tests/release-postgres.test.ts",
+        "modules/process/tests/release-postgres.test.ts",
         "release immutability",
         "promotion audit",
         "environment",
@@ -308,25 +308,25 @@ export const gates: readonly Gate[] = [
     commands: [
       task(
         "test",
-        "packages/integrations/tests/openapi.test.ts",
-        "packages/integrations/tests/cloudevents.test.ts",
+        "modules/integrations/tests/openapi.test.ts",
+        "modules/integrations/tests/cloudevents.test.ts",
       ),
     ],
     requirements: [
       marker(
-        "packages/integrations/src/openapi.ts",
+        "modules/integrations/src/openapi.ts",
         "OpenAPI 3.2.0",
         "allowlist",
         "ExternalAction",
       ),
       marker(
-        "packages/integrations/src/cloudevents.ts",
+        "modules/integrations/src/cloudevents.ts",
         "CloudEvents 1.0.x",
         "ExternalEvent",
         "separate envelope",
       ),
       marker(
-        "packages/integrations/tests/openapi.test.ts",
+        "modules/integrations/tests/openapi.test.ts",
         "allowlisted operation",
         "provider credentials",
       ),
@@ -338,23 +338,23 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["integration.contract08"],
-    commands: [task("test", "packages/integrations/tests/https-runtime.test.ts")],
+    commands: [task("test", "modules/integrations/tests/https-runtime.test.ts")],
     requirements: [
       marker(
-        "packages/integrations/src/https-runtime.ts",
+        "modules/integrations/src/https-runtime.ts",
         "HTTPS",
         "verify signature",
         "WebhookIngestion",
         "deduplicate",
       ),
       marker(
-        "packages/integrations/src/delivery-store.ts",
+        "modules/integrations/src/delivery-store.ts",
         "delivery log",
         "unknown outcome",
         "manual recovery",
       ),
       marker(
-        "packages/integrations/tests/https-runtime.test.ts",
+        "modules/integrations/tests/https-runtime.test.ts",
         "duplicate delivery",
         "timeout",
         "unknown outcome",
@@ -367,17 +367,17 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["integration.runtime085"],
-    commands: [task("test", "packages/integrations/tests/reliability.test.ts")],
+    commands: [task("test", "modules/integrations/tests/reliability.test.ts")],
     requirements: [
       marker(
-        "packages/integrations/src/reliability-store.ts",
+        "modules/integrations/src/reliability-store.ts",
         "dead letter",
         "replay protection",
         "provider status",
         "redaction",
       ),
       marker(
-        "packages/integrations/tests/reliability-postgres.test.ts",
+        "modules/integrations/tests/reliability-postgres.test.ts",
         "compatibility",
         "payload limit",
         "health metric",
@@ -390,16 +390,16 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["integration.reliability09"],
-    commands: [task("test", "packages/integrations/tests/process-bridge.test.ts")],
+    commands: [task("test", "modules/integrations/tests/process-bridge.test.ts")],
     requirements: [
       marker(
-        "packages/integrations/src/process-bridge.ts",
+        "modules/integrations/src/process-bridge.ts",
         "ExternalCatalogEntry",
         "simulateWithoutSideEffect",
         "transport absent from Process IR",
       ),
       marker(
-        "packages/integrations/tests/process-bridge.test.ts",
+        "modules/integrations/tests/process-bridge.test.ts",
         "separate OAuth scope",
         "typed mapping",
         "no provider side effect",
@@ -412,17 +412,17 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["integration.process095"],
-    commands: [task("test", "packages/integrations/tests/governance.test.ts")],
+    commands: [task("test", "modules/integrations/tests/governance.test.ts")],
     requirements: [
       marker(
-        "packages/integrations/src/governance-store.ts",
+        "modules/integrations/src/governance-store.ts",
         "reviewed connector",
         "connector retirement",
         "delivery controls",
         "audit",
       ),
       marker(
-        "packages/integrations/tests/governance-postgres.test.ts",
+        "modules/integrations/tests/governance-postgres.test.ts",
         "unreviewed operation",
         "connector version",
         "retention",
@@ -435,7 +435,7 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-pack-library.md",
     kind: "markers",
     dependencies: ["process.pre08"],
-    commands: [task("test", "packages/process/tests/packs.test.ts")],
+    commands: [task("test", "modules/process/tests/packs.test.ts")],
     requirements: [
       marker(
         "docs/roadmap/process-pack-library.md",
@@ -444,7 +444,7 @@ export const gates: readonly Gate[] = [
         "## Stop conditions",
       ),
       marker(
-        "packages/process/tests/packs.test.ts",
+        "modules/process/tests/packs.test.ts",
         "Distribution starter pack",
         "missing_required_capabilities",
       ),
@@ -455,16 +455,16 @@ export const gates: readonly Gate[] = [
     title: "PostgreSQL 19 minimum version enforcement",
     source: "docs/roadmap/postgresql-19.md",
     kind: "markers",
-    commands: [task("test", "packages/kernel/tests/database.test.ts")],
+    commands: [task("test", "platform/postgres/tests/database.test.ts")],
     requirements: [
       marker(
-        "packages/kernel/src/database/postgres.ts",
+        "platform/postgres/postgres.ts",
         "server_version_num",
         "version < 190000",
         "UnsupportedPostgresVersion",
       ),
       marker(
-        "packages/kernel/tests/database.test.ts",
+        "platform/postgres/tests/database.test.ts",
         "rejects PostgreSQL versions below 19",
         "UnsupportedPostgresVersion",
       ),
@@ -480,40 +480,40 @@ export const gates: readonly Gate[] = [
     commands: [
       task(
         "test",
-        "packages/kernel/tests/database.test.ts",
-        "apps/api/handlers.test.ts",
-        "apps/api/procurement.integration.test.ts",
+        "platform/postgres/tests/database.test.ts",
+        "runtime/api/handlers.test.ts",
+        "runtime/api/procurement.integration.test.ts",
       ),
     ],
     requirements: [
       marker(
-        "packages/kernel/src/consistency/contract.ts",
+        "foundation/database/consistency.ts",
         "ConsistencyToken",
         "tenant_mismatch",
         "timeline_mismatch",
       ),
       marker(
-        "packages/kernel/src/consistency/postgres.ts",
+        "platform/postgres/consistency.ts",
         "pg_current_wal_insert_lsn",
         "WAIT FOR LSN",
         "standby_replay",
         "NO_THROW",
       ),
       marker(
-        "apps/api/handlers.ts",
+        "runtime/api/handlers.ts",
         "x-ritsei-consistency-token",
         "PostgresReadYourWrites",
         "createPurchaseOrder",
         "getPurchaseOrder",
       ),
       marker(
-        "packages/kernel/tests/database.test.ts",
+        "platform/postgres/tests/database.test.ts",
         "captures and waits for an opaque PostgreSQL consistency token",
         "rejects promotion and timeline mismatches",
         "maps bounded replica wait timeouts",
       ),
       marker(
-        "packages/kernel/tests/postgresql-19.postgres.test.ts",
+        "platform/postgres/tests/postgresql-19.postgres.test.ts",
         "proves non-superuser PostgreSQL 19 control and WAIT FOR privileges",
       ),
     ],
@@ -527,7 +527,7 @@ export const gates: readonly Gate[] = [
     commands: [
       task(
         "test",
-        "packages/party/tests/party.test.ts",
+        "modules/party/tests/party.test.ts",
         "tests/architecture/postgresql-19.test.ts",
       ),
     ],
@@ -540,17 +540,17 @@ export const gates: readonly Gate[] = [
         'WHERE graph_path."active"',
       ),
       marker(
-        "packages/party/src/contract.ts",
+        "modules/party/src/contract.ts",
         "RelatedPartyPath",
         "FindRelatedPartyPathsInput",
       ),
       marker(
-        "packages/party/src/postgres.ts",
+        "modules/party/src/postgres.ts",
         "party.related-party-paths.find",
         "relatedPartyPaths",
       ),
       marker(
-        "packages/party/tests/party.postgres.test.ts",
+        "modules/party/tests/party.postgres.test.ts",
         "findRelatedPartyPaths",
         "baseline",
         "targetPartyId",

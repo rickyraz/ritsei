@@ -1,7 +1,7 @@
 import { extractModuleSpecifiers } from "../public-contract/check.ts"
 import { collectSourceFiles, type SourceFile } from "../source-files.ts"
 
-const roots = ["apps", "packages", "tests"] as const
+const roots = ["apps", "foundation", "modules", "platform", "runtime", "tests", "tooling"] as const
 // ponytail: closed provider list; extend when a new SDK is approved.
 const providerSpecifiers = [
   /^@ai-sdk(?:\/|$)/,
@@ -20,7 +20,6 @@ const providerSpecifiers = [
 const privateSpecifier =
   /(?:^|\/)(?:db\/schema|migrations?|repositories?|repository|tables?|table|postgres)(?:\/|\.|$)/i
 const privatePackageSource = /^@ritsei\/[^/]+\/src\//
-const privateKernelSource = /^@ritsei\/kernel(?:\/|$)/
 const databaseSpecifier = /^(?:drizzle-orm|postgres|@effect\/sql-pg)(?:\/|$)/
 const directMutation =
   /\b(?:db|database|tx|transaction|store|repository)\s*\.\s*(?:insert|update|delete|execute|query|save|write|create)\s*\(/i
@@ -30,17 +29,16 @@ const isProviderImport = (specifier: string) =>
   providerSpecifiers.some((pattern) => pattern.test(specifier))
 // These explicit persistence adapters are not provider/model code.
 const isPersistenceBoundary = (path: string) =>
-  path === "packages/integrations/src/reliability-store.ts" ||
-  path === "packages/integrations/src/governance-store.ts"
+  path === "modules/integrations/src/reliability-store.ts" ||
+  path === "modules/integrations/src/governance-store.ts"
 const isAiSurface = (path: string) =>
-  path.startsWith("packages/integrations/") ||
+  path.startsWith("modules/integrations/") ||
   /(?:^|\/)(?:ai|agent|agents|recommendation|recommendations)(?:\/|[-_.]|$)/i.test(path)
-const isApprovedProviderPath = (path: string) => path.startsWith("packages/integrations/")
+const isApprovedProviderPath = (path: string) => path.startsWith("modules/integrations/")
 
 const isPrivateSpecifier = (specifier: string) =>
   privateSpecifier.test(specifier) ||
   privatePackageSource.test(specifier) ||
-  privateKernelSource.test(specifier) ||
   databaseSpecifier.test(specifier)
 
 const providerBoundaryFailures = (path: string, providerImports: readonly string[]) =>
@@ -48,7 +46,7 @@ const providerBoundaryFailures = (path: string, providerImports: readonly string
     (specifier) =>
       `${path}: model/provider import ${
         JSON.stringify(specifier)
-      } must stay under packages/integrations/`,
+      } must stay under modules/integrations/`,
   )
 
 const persistenceBoundaryFailures = (path: string, providerImports: readonly string[]) =>

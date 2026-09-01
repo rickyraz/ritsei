@@ -26,7 +26,7 @@ Start here for a new business capability even when the final owner is an existin
 Inspect only the relevant repository context before designing:
 
 1. Source of truth: accepted superseding ADRs, then [`architecture-spec-v4.md`](../../../docs/architecture/architecture-spec-v4.md), then the owning subsystem documentation.
-2. Ownership: [`db/ownership.toml`](../../../db/ownership.toml), relevant `packages/*/mod.ts`, schema files, public services, and neighboring implementations.
+2. Ownership: [`db/ownership.toml`](../../../db/ownership.toml), relevant `modules/*/mod.ts`, schema files, public services, and neighboring implementations.
 3. Contracts and enforcement: related tests, [`architecture-enforcement.md`](../../../docs/architecture/architecture-enforcement.md), authorization rules, transaction conventions, and existing Skills under this directory.
 4. Existing vocabulary: use the repository’s names, identifiers, errors, lifecycle states, package boundaries, and validation commands before inventing new ones.
 

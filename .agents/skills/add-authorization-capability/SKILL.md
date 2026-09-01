@@ -22,7 +22,7 @@ Introduce a deny-by-default business capability and enforce it consistently in d
 
 # Required Context
 
-Inspect [`packages/authorization/src/service.ts`](../../../packages/authorization/src/service.ts), the target domain service, API middleware/handler, authorization tests, and the canonical capability model.
+Inspect [`modules/authorization/src/service.ts`](../../../modules/authorization/src/service.ts), the target domain service, API middleware/handler, authorization tests, and the canonical capability model.
 
 # Architecture Rules
 
@@ -94,6 +94,6 @@ The capability is closed-schema, narrowly named, enforced server-side at every e
 
 - [Authorization architecture](../../../docs/architecture/authorization.md)
 - [ADR-0006: capability authorization](../../../docs/decisions/0006-use-capability-based-authorization.md)
-- [Authorization service](../../../packages/authorization/src/service.ts)
-- [Authorization tests](../../../packages/authorization/tests/authorization.test.ts)
+- [Authorization service](../../../modules/authorization/src/service.ts)
+- [Authorization tests](../../../modules/authorization/tests/authorization.test.ts)
 - [Testing strategy](../../../docs/development/testing.md)

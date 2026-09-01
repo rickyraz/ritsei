@@ -295,7 +295,7 @@ Search contracts never contain shard, replica, node, region, index, or provider 
 search remains conceptual retrieval; semantic analytics and metric contracts are a sibling subsystem
 owned by [`analytics-architecture.md`](./analytics-architecture.md).
 
-- Domain-local search routes through the same kernel ownership and database-routing rules as other
+- Domain-local search routes through the same foundation, module-ownership, and platform-routing rules as other
   domain queries.
 - Cross-shard global search uses a rebuildable projection or explicit fan-out strategy owned by the
   search implementation.

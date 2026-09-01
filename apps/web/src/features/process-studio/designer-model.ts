@@ -1,4 +1,4 @@
-import type { ProcessDefinitionType } from "../../../../../packages/process/mod.ts"
+import type { ProcessDefinitionType } from "../../../../../modules/process/mod.ts"
 
 // process designer edits a typed mapping model and emits deterministic Process IR.
 export type ProcessNodeKind = ProcessDefinitionType["nodes"][number]["kind"]

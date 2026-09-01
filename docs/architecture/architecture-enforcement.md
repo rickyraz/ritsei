@@ -2,13 +2,14 @@
 
 > **Status:** Canonical
 >
-> **Owns:** Automated enforcement of package boundaries, schema ownership,
+> **Owns:** Automated enforcement of module and technical boundaries, schema ownership,
 > forbidden cross-domain imports, dependency cycles, and conservative public
 > call-graph checks.
 >
 > **Related documents**
 >
 > - Global architecture: [`./architecture-spec-v4.md`](./architecture-spec-v4.md)
+> - Repository taxonomy: [`../decisions/0068-establish-foundation-modules-platform-runtime-taxonomy.md`](../decisions/0068-establish-foundation-modules-platform-runtime-taxonomy.md)
 > - PostgreSQL ownership: [`./postgresql-19-architecture.md`](./postgresql-19-architecture.md)
 > - Financial ledger: [`./financial-ledger.md`](./financial-ledger.md)
 > - Workload isolation: [`./workload-isolation.md`](./workload-isolation.md)
@@ -29,21 +30,28 @@ Architectural boundaries are not considered effective merely because they are
 documented. The repository must enforce them through static checks, tests,
 database privileges, deployment validation, and CI.
 
-## Package Boundary Model
+## Module Boundary Model
 
-A domain package may import:
+A business module may import:
 
 - its own internal modules;
-- public contracts exported by another domain;
-- approved kernel abstractions;
-- shared contract and utility packages that have no domain ownership.
+- public contracts exported by another business module;
+- generic contracts from `foundation/`; and
+- its owned `db/schema` tables where the ownership registry permits it.
 
-A domain package must not import:
+A business module must not import:
+
+- concrete adapters from `platform/`;
+- application composition from `runtime/`;
 
 - another domain's table definitions;
 - another domain's repository implementations;
 - another domain's internal services;
 - another domain's migration files;
+- another module's table definitions;
+- another module's repository implementations;
+- another module's internal services;
+- another module's migration files;
 - application entry points;
 - server-only code from frontend packages.
 
@@ -71,29 +79,30 @@ public path.
 ## Allowed Dependency Direction
 
 ```text
-apps
-  -> domain public contracts
-  -> approved kernel abstractions
+foundation
+  <- modules <- runtime
+  <- platform <- runtime
 
-domain A
-  -> domain B public contract
+module A
+  -> module B public contract
 
-domain A
-  -X-> domain B internal implementation
+module A
+  -X-> platform adapter
+  -X-> module B internal implementation
 
 frontend
-  -> shared public contracts
+  -> module public contracts
   -X-> backend repositories or database schema
 ```
 
-## Package Boundary Manifest
+## Module Boundary Manifest
 
-Each domain package should expose an explicit public entry point.
+Each business module should expose an explicit public `mod.ts` entry point.
 
 Example:
 
 ```text
-packages/inventory/
+modules/inventory/
 ├── mod.ts
 ├── src/
 │   ├── commands/
@@ -131,8 +140,10 @@ The current scaffold enforces these checks with:
   [`../../tooling/boundary-linter/`](../../tooling/boundary-linter/);
 - RITSEI-specific schema ownership and migration validation:
   [`../../tooling/boundary-linter/check-ownership.ts`](../../tooling/boundary-linter/check-ownership.ts);
-- RITSEI-specific public package-entrypoint validation:
+- RITSEI-specific public module-entrypoint validation:
   [`../../tooling/public-contract/check.ts`](../../tooling/public-contract/check.ts);
+- foundation/module/platform/runtime dependency-direction validation:
+  [`../../tooling/dependency-direction/check.ts`](../../tooling/dependency-direction/check.ts);
 - conservative public call-graph validation:
   [`../../tooling/call-graph/check.ts`](../../tooling/call-graph/check.ts).
 
@@ -164,14 +175,14 @@ Maintain one machine-readable registry, for example:
 
 ```toml
 [schemas]
-identity = "packages/identity"
-auth = "packages/auth"
-sales = "packages/sales"
-inventory = "packages/inventory"
-accounting = "packages/accounting"
-process = "packages/process"
-billing = "packages/billing"
-integration = "packages/integrations"
+identity = "modules/identity"
+auth = "modules/auth"
+sales = "modules/sales"
+inventory = "modules/inventory"
+accounting = "modules/accounting"
+process = "modules/process"
+billing = "modules/billing"
+integration = "modules/integrations"
 ```
 
 The active registry is [`../../db/ownership.toml`](../../db/ownership.toml). It is
@@ -183,7 +194,7 @@ use the same registry instead of defining a second ownership map.
 
 Static SQL checks should reject:
 
-- writes to a schema not owned by the current package;
+- writes to a schema not owned by the current module;
 - migrations placed outside the owning module or central reviewed migration tree;
 - unqualified table references where schema qualification is required;
 - raw SQL that bypasses an approved domain service without an explicit exception.
@@ -213,7 +224,7 @@ RelationshipEngine adapter. Provider-specific SDKs, tokens, claims, tuple format
 credentials, and topology remain inside designated adapters or composition roots. Public contracts
 expose only provider-neutral RITSEI principals and authorization results.
 
-Domain packages must not call an identity or relationship provider directly. Authentication goes
+Business modules must not call an identity or relationship provider directly. Authentication goes
 through the provider-neutral IdentityProvider boundary; relationship checks go through the
 RelationshipEngine boundary. Membership, roles, capabilities, grants, scopes, SoD, policy, and tenant
 isolation remain owned by RITSEI/PostgreSQL and the owning domains.
@@ -226,7 +237,7 @@ decision.
 
 When AI or model-provider code is introduced, static and deployment checks must preserve ADR-0063:
 
-- provider SDK imports are confined to approved adapters under `packages/integrations/`;
+- provider SDK imports are confined to approved adapters under `modules/integrations/`;
 - AI/provider code cannot import `db/schema`, migrations, database clients, repositories, private
   domain modules, or private process services;
 - cross-domain access, when justified, resolves through a public package entry point and typed
@@ -258,21 +269,22 @@ deno task fallow:dead-code
 deno task fallow:boundaries
 ```
 
-`deno task boundary:lint` includes the focused Fallow boundary check. RITSEI's public package
-entrypoint rule remains separate because it proves the stronger requirement that cross-package
-imports resolve through `mod.ts`, not merely that their zones are allowed.
+`deno task boundary:lint` includes the focused Fallow boundary check. RITSEI's public module
+entrypoint and dependency-direction rules remain separate because they prove the stronger
+requirement that cross-module imports resolve through `mod.ts` and that foundation, modules,
+platform, and runtime keep their declared direction.
 
 ## Public Call Graph
 
-The repository records a conservative static call graph for `apps/`,
-`packages/`, `tests/`, and `tooling/`. It tracks:
+The repository records a conservative static call graph for `apps/`, `foundation/`, `modules/`,
+`platform/`, `runtime/`, `tests/`, and `tooling/`. It tracks:
 
 - direct calls between locally defined functions;
-- calls to callable names imported through another package's public `mod.ts`;
-- the public package symbol used by each cross-package edge.
+- calls to callable names imported through another module's public `mod.ts`;
+- the public module symbol used by each cross-module edge.
 
-The checker rejects a tracked cross-package call when the imported symbol is not
-exported by the target package. It is a boundary aid, not proof of every runtime
+The checker rejects a tracked cross-module call when the imported symbol is not
+exported by the target module. It is a boundary aid, not proof of every runtime
 call: Effect dependency injection, callbacks, reflection, dynamic property
 access, and generated code remain outside its static resolution model.
 
@@ -327,7 +339,7 @@ The default branch must reject changes when any of these fail:
 
 ```text
 Fallow generic graph, boundary, dead-code, and policy validation
-RITSEI public package-entrypoint validation
+RITSEI public module-entrypoint and dependency-direction validation
 conservative public call-graph validation
 schema-ownership validation
 Drizzle migration-graph validation
@@ -365,7 +377,7 @@ Architecture enforcement is complete only when:
 - every PostgreSQL schema has one registered owner;
 - forbidden imports fail locally and in CI;
 - dependency cycles fail CI;
-- tracked public call edges resolve through public package contracts;
+- tracked public call edges resolve through public module contracts;
 - architecture exceptions are explicit and reviewable;
 - database privileges reinforce the same ownership model;
 - query, async, and command composition roots cannot acquire one another's protected credentials;

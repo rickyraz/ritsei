@@ -95,8 +95,8 @@ transfer is not evidence that the PostgreSQL projection is complete until the op
 | L. TigerBeetle unavailable        | submitted/unknown                | unknown                  | bounded same-ID retry; no PostgreSQL fallback | resume after health             | retry budget exhausted            |
 | M. PostgreSQL unavailable         | last committed state             | unchanged                | retry PostgreSQL work                         | compare after recovery          | restore divergence fences posting |
 
-The executable matrix is also exported as `packages/accounting/src/financial-readiness.ts` and
-tested by `packages/accounting/tests/financial-readiness.test.ts`. Accounting failpoints
+The executable matrix is also exported as `modules/accounting/src/financial-readiness.ts` and
+tested by `modules/accounting/tests/financial-readiness.test.ts`. Accounting failpoints
 (`makeFinancialOperationFailpointLayer`) cover the PostgreSQL/engine crash windows, provider faults
 cover unknown/unavailable responses, and worker failpoints cover lease/restart/stale-completion
 behavior. The PostgreSQL test `financial-operations.postgres.test.ts` executes the recovery retries
@@ -237,10 +237,10 @@ backup/restore, or cutover evidence.
 Safe automated evidence:
 
 ```sh
-deno task test packages/accounting/tests/financial-readiness.test.ts
-deno task test packages/accounting/tests/financial-ledger.test.ts
-deno task test packages/kernel/tests/tigerbeetle.test.ts
-deno task test apps/worker/worker.test.ts
+deno task test modules/accounting/tests/financial-readiness.test.ts
+deno task test modules/accounting/tests/financial-ledger.test.ts
+deno task test platform/tigerbeetle/tests/tigerbeetle.test.ts
+deno task test runtime/worker/worker.test.ts
 ```
 
 PostgreSQL rehearsals must use `withTemporaryDatabase` and never a production URL. The live

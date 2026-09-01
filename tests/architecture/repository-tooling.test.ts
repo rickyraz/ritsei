@@ -117,15 +117,15 @@ describe("repository tooling", () => {
 
   it("rejects cross-package imports outside public entry points", () => {
     const failures = analyzePublicPackageImports([
-      { path: "packages/a/mod.ts", source: 'export { A } from "./src/service.ts"' },
+      { path: "modules/a/mod.ts", source: 'export { A } from "./src/service.ts"' },
       {
-        path: "packages/a/src/service.ts",
+        path: "modules/a/src/service.ts",
         source: 'import { B } from "../../b/src/service.ts"',
       },
-      { path: "packages/b/mod.ts", source: 'export { B } from "./src/service.ts"' },
+      { path: "modules/b/mod.ts", source: 'export { B } from "./src/service.ts"' },
     ], ["a", "b"])
 
-    assert.isTrue(failures.some((failure) => failure.includes("must use packages/b/mod.ts")))
+    assert.isTrue(failures.some((failure) => failure.includes("must use modules/b/mod.ts")))
   })
 
   it("keeps AI/provider code behind the integration and persistence boundaries", () => {
@@ -134,7 +134,7 @@ describe("repository tooling", () => {
 
     assert.deepStrictEqual(
       analyzeAiBoundary([{
-        path: "packages/integrations/src/model-adapter.ts",
+        path: "modules/integrations/src/model-adapter.ts",
         source: providerImport("effect/unstable/ai", "{ LanguageModel }"),
       }]),
       [],
@@ -142,10 +142,10 @@ describe("repository tooling", () => {
     const integrationSchemaPath = ["../../../db/schema", "integration.ts"].join("/")
     assert.deepStrictEqual(
       analyzeAiBoundary([{
-        path: "packages/integrations/src/reliability-store.ts",
+        path: "modules/integrations/src/reliability-store.ts",
         source: [
           `import { externalReliabilityRecords } from "${integrationSchemaPath}"`,
-          'import { Database } from "../../kernel/mod.ts"',
+          'import { Database } from "../../foundation/mod.ts"',
           "database.transaction(() => undefined)",
         ].join("\n"),
       }]),
@@ -153,16 +153,16 @@ describe("repository tooling", () => {
     )
     assert.isTrue(
       analyzeAiBoundary([{
-        path: "packages/integrations/src/reliability-store.ts",
+        path: "modules/integrations/src/reliability-store.ts",
         source: providerImport("openai", "OpenAI"),
       }]).some((failure) => failure.includes("persistence adapter cannot import provider SDK")),
     )
     assert.deepStrictEqual(
       analyzeAiBoundary([{
-        path: "packages/integrations/src/governance-store.ts",
+        path: "modules/integrations/src/governance-store.ts",
         source: [
           `import { externalConnectorGovernance } from "${integrationSchemaPath}"`,
-          'import { Database } from "../../kernel/mod.ts"',
+          'import { Database } from "../../foundation/mod.ts"',
           "database.transaction(() => undefined)",
         ].join("\n"),
       }]),
@@ -170,13 +170,13 @@ describe("repository tooling", () => {
     )
     assert.isTrue(
       analyzeAiBoundary([{
-        path: "packages/integrations/src/governance-store.ts",
+        path: "modules/integrations/src/governance-store.ts",
         source: providerImport("openai", "OpenAI"),
       }]).some((failure) => failure.includes("persistence adapter cannot import provider SDK")),
     )
 
     const failures = analyzeAiBoundary([{
-      path: "packages/sales/src/recommendations/model.ts",
+      path: "modules/sales/src/recommendations/model.ts",
       source: [
         providerImport("openai", "OpenAI"),
         ['import { orders } from "../../db/', "schema/sales.ts", '"'].join(""),
@@ -185,7 +185,7 @@ describe("repository tooling", () => {
     }])
 
     assert.isTrue(
-      failures.some((failure) => failure.includes("must stay under packages/integrations")),
+      failures.some((failure) => failure.includes("must stay under modules/integrations")),
     )
     assert.isTrue(failures.some((failure) => failure.includes("private persistence")))
     assert.isTrue(failures.some((failure) => failure.includes("direct business-fact mutations")))
@@ -211,9 +211,9 @@ const localCall = () => undefined
     )
 
     const result = buildCallGraph(
-      [{ path: "packages/a/src/service.ts", source }],
+      [{ path: "modules/a/src/service.ts", source }],
       [{
-        path: "packages/a/src/service.ts",
+        path: "modules/a/src/service.ts",
         items: [{
           name: "entry",
           symbolType: "function",
@@ -225,7 +225,7 @@ const localCall = () => undefined
         }],
       }],
       [{
-        file: "packages/a/src/service.ts",
+        file: "modules/a/src/service.ts",
         callee: "localCall",
         range: {
           byteOffset: {
@@ -234,7 +234,7 @@ const localCall = () => undefined
           },
         },
       }, {
-        file: "packages/a/src/service.ts",
+        file: "modules/a/src/service.ts",
         callee: "publicCall",
         range: {
           byteOffset: {
@@ -256,10 +256,10 @@ const localCall = () => undefined
   it("rejects a direct call to a non-public export", () => {
     const source = 'import { privateCall } from "../../b/mod.ts"\nprivateCall()'
     const result = buildCallGraph(
-      [{ path: "packages/a/src/service.ts", source }],
-      [{ path: "packages/a/src/service.ts", items: [] }],
+      [{ path: "modules/a/src/service.ts", source }],
+      [{ path: "modules/a/src/service.ts", items: [] }],
       [{
-        file: "packages/a/src/service.ts",
+        file: "modules/a/src/service.ts",
         callee: "privateCall",
         range: { byteOffset: { start: source.indexOf("privateCall()"), end: source.length } },
       }],

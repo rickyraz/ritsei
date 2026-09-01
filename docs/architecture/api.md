@@ -81,7 +81,7 @@ authorization.
 
 ## Authorization order
 
-The API invokes public RITSEI domain services, which use the AuthZ Kernel abstraction. The API must
+The API invokes public RITSEI domain services, which use the Authorization module abstraction. The API must
 not call a relationship provider directly and must not implement business policy in handlers.
 
 ```text

@@ -29,8 +29,8 @@
 
 PostgreSQL 19 is the development floor and the transactional core for the control plane and
 non-ledger domain state. The project may track beta and release-candidate builds during development
-but must move to PostgreSQL 19 GA before production deployment. The kernel rejects connections whose
-`server_version_num` is below `190000` before running application work. The financial ledger profile
+but must move to PostgreSQL 19 GA before production deployment. The `platform/postgres` adapter
+rejects connections whose `server_version_num` is below `190000` before running application work. The financial ledger profile
 uses TigerBeetle for accepted transfers and balances through the boundary in
 [`financial-ledger.md`](./financial-ledger.md).
 
@@ -45,7 +45,7 @@ ritsei-migrate
 ritsei-event-relay
 ```
 
-They share domain packages and one logical PostgreSQL ownership model. This does not promise one
+They share business modules and one logical PostgreSQL ownership model. This does not promise one
 physical server, process, or database placement.
 
 Workload-isolated deployments may run separate command, query, and async composition roots with
@@ -63,15 +63,15 @@ semantics exposed to the application, not a permanent one-server topology.
 ```text
 domain contract
     ↓
-kernel database and placement boundary
+foundation database and platform placement boundary
     ↓
 approved PostgreSQL 19+ placement(s)
 ```
 
 The current baseline is one PostgreSQL placement. Primary/replica routing remains route-scoped and
 opt-in. Future placements may be tenant-, legal-entity-, warehouse-, or region-oriented, but
-placement keys and routing metadata stay in kernel, composition-root, and infrastructure layers.
-Domain packages, public DTOs, capabilities, events, Process IR, URLs, and client configuration must
+placement keys and routing metadata stay in foundation, runtime, and platform layers. Business
+modules, public DTOs, capabilities, events, Process IR, URLs, and client configuration must
 not name physical servers, shards, regions, replicas, pools, or routers.
 
 A logical endpoint is not a guarantee of one physical connection or portable session state.
@@ -94,7 +94,7 @@ evidence defined by
 The implemented schema registry is:
 
 ```text
-system.*         -> kernel
+system.*         -> foundation/platform
 identity.*       -> identity
 party.*          -> party
 auth.*           -> auth
@@ -109,7 +109,7 @@ integration.*    -> integrations
 messaging.*      -> messaging
 ```
 
-`packages/catalog` is contract-only and owns no PostgreSQL schema. Planned domains do not receive a
+`modules/catalog` is contract-only and owns no PostgreSQL schema. Planned domains do not receive a
 schema until a concrete invariant requires one and the ownership registry is updated. A module must
 not perform arbitrary mutations against another module's schema; it must call the owner through a
 typed public contract.
@@ -164,7 +164,8 @@ Redis, ClickHouse, search indexes, external authorization evaluators, and caches
 Migration discovery is deterministic by timestamped directory name. Names, versions, checksums, and
 snapshot ancestry must form one valid ordered catalog.
 
-Applied named migrations are immutable. Before applying pending migrations, the kernel compares the
+Applied named migrations are immutable. Before applying pending migrations, the runtime migration
+adapter compares the
 local catalog with `system.schema_migrations` and rejects missing, modified, duplicated, reordered,
 or retroactively inserted migration identities. A semantic change to an applied migration requires a
 new migration rather than rewriting history.

@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 
-const apiFiles = ["apps/api/api.ts", "apps/api/handlers.ts", "apps/api/mod.ts"]
+const apiFiles = ["runtime/api/api.ts", "runtime/api/handlers.ts", "runtime/api/mod.ts"]
 
 it.effect("keeps HTTP routing Effect-native", () =>
   Effect.gen(function* () {

@@ -16,7 +16,7 @@ changelog:
     - title: "Foundation"
       labels:
         - "foundation"
-        - "kernel"
+        - "foundation"
         - "api"
         - "database"
         - "tooling"

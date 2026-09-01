@@ -219,7 +219,7 @@ PostgreSQL enforces at least:
 - Supplier Account and order references remain tenant-local.
 
 Known relational failures map to stable Procurement errors. Unknown database failures remain the
-kernel-owned `DatabaseFailure`; raw SQL, SQLSTATE, driver objects, and constraint details never enter
+foundation-owned `DatabaseFailure`; raw SQL, SQLSTATE, driver objects, and constraint details never enter
 the public DTO contract.
 
 ## Authorization
@@ -318,7 +318,7 @@ Level 3 until each receives its own action/event and recovery contract.
 
 ## Runtime Composition Status
 
-`ProcurementLive` is installed in the `apps/runtime.ts` `ApplicationLive` composition with Database,
+`ProcurementLive` is installed in the `runtime/layers.ts` `ApplicationLive` composition with Database,
 Authorization, Party, and Inventory dependencies. The Effect HTTP API exposes the bounded
 SupplierAccount, PurchaseOrder, and GoodsReceipt operations; no worker or Process Studio route
 consumes Procurement. Keep API handlers on the public package contract rather than importing
@@ -328,20 +328,20 @@ persistence internals.
 
 | Concern | Owner path |
 | --- | --- |
-| Public schemas and service contract | `packages/procurement/src/contract.ts` |
-| Public tagged errors | `packages/procurement/src/errors.ts` |
-| Service compatibility surface | `packages/procurement/src/service.ts` |
-| Semantic persistence port | `packages/procurement/src/store.ts` |
-| PostgreSQL implementation | `packages/procurement/src/postgres.ts` |
-| Deterministic test implementation | `packages/procurement/src/memory.ts` |
-| Named production/test layers | `packages/procurement/src/layers.ts` |
-| Public package exports | `packages/procurement/mod.ts` |
-| Capability constants | `packages/procurement/src/capabilities.ts` |
-| Closed authorization catalog | `packages/authorization/src/capabilities.ts` |
+| Public schemas and service contract | `modules/procurement/src/contract.ts` |
+| Public tagged errors | `modules/procurement/src/errors.ts` |
+| Service compatibility surface | `modules/procurement/src/service.ts` |
+| Semantic persistence port | `modules/procurement/src/store.ts` |
+| PostgreSQL implementation | `modules/procurement/src/postgres.ts` |
+| Deterministic test implementation | `modules/procurement/src/memory.ts` |
+| Named production/test layers | `modules/procurement/src/layers.ts` |
+| Public package exports | `modules/procurement/mod.ts` |
+| Capability constants | `modules/procurement/src/capabilities.ts` |
+| Closed authorization catalog | `modules/authorization/src/capabilities.ts` |
 | Drizzle schema | `db/schema/procurement.ts` |
 | Migration history | `db/migrations/` |
-| Contract tests | `packages/procurement/tests/procurement.test.ts` |
-| PostgreSQL invariant tests | `packages/procurement/tests/procurement.postgres.test.ts` |
+| Contract tests | `modules/procurement/tests/procurement.test.ts` |
+| PostgreSQL invariant tests | `modules/procurement/tests/procurement.postgres.test.ts` |
 
 Persistence tables, repositories, Drizzle query types, confirmation keys, and migration helpers are
 private and must not be re-exported.

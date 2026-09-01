@@ -1,6 +1,6 @@
 {
   "finding_counts": {
-    "apps/api/mod.test.ts": {
+    "runtime/api/mod.test.ts": {
       "complexity_critical": {
         "count": 1
       },
@@ -8,7 +8,7 @@
         "count": 1
       }
     },
-    "apps/runtime-config.ts": {
+    "runtime/config.ts": {
       "crap_moderate": {
         "count": 2
       }
@@ -26,7 +26,7 @@
         "count": 3
       }
     },
-    "apps/worker/runner.ts": {
+    "runtime/worker/runner.ts": {
       "crap_high": {
         "count": 1
       },
@@ -34,12 +34,12 @@
         "count": 1
       }
     },
-    "packages/accounting/src/contract.ts": {
+    "modules/accounting/src/contract.ts": {
       "crap_moderate": {
         "count": 1
       }
     },
-    "packages/accounting/src/financial-ledger.ts": {
+    "modules/accounting/src/financial-ledger.ts": {
       "complexity_critical": {
         "count": 1
       },
@@ -47,7 +47,7 @@
         "count": 1
       }
     },
-    "packages/accounting/src/financial-operations.ts": {
+    "modules/accounting/src/financial-operations.ts": {
       "complexity_critical": {
         "count": 6
       },
@@ -61,7 +61,7 @@
         "count": 1
       }
     },
-    "packages/accounting/src/financial-readiness.ts": {
+    "modules/accounting/src/financial-readiness.ts": {
       "complexity_high": {
         "count": 1
       },
@@ -69,7 +69,7 @@
         "count": 1
       }
     },
-    "packages/accounting/src/memory.ts": {
+    "modules/accounting/src/memory.ts": {
       "complexity_critical": {
         "count": 1
       },
@@ -77,7 +77,7 @@
         "count": 1
       }
     },
-    "packages/accounting/src/postgres.ts": {
+    "modules/accounting/src/postgres.ts": {
       "complexity_critical": {
         "count": 1
       },
@@ -88,7 +88,7 @@
         "count": 1
       }
     },
-    "packages/accounting/src/postgresql-ledger.ts": {
+    "modules/accounting/src/postgresql-ledger.ts": {
       "complexity_critical": {
         "count": 1
       },
@@ -102,22 +102,22 @@
         "count": 1
       }
     },
-    "packages/accounting/tests/accounting.postgres.test.ts": {
+    "modules/accounting/tests/accounting.postgres.test.ts": {
       "crap_moderate": {
         "count": 1
       }
     },
-    "packages/accounting/tests/financial-operations.postgres.test.ts": {
+    "modules/accounting/tests/financial-operations.postgres.test.ts": {
       "crap_critical": {
         "count": 1
       }
     },
-    "packages/inventory/src/contract.ts": {
+    "modules/inventory/src/contract.ts": {
       "crap_moderate": {
         "count": 1
       }
     },
-    "packages/inventory/src/memory.ts": {
+    "modules/inventory/src/memory.ts": {
       "crap_high": {
         "count": 2
       },
@@ -125,7 +125,7 @@
         "count": 1
       }
     },
-    "packages/inventory/src/postgres.ts": {
+    "modules/inventory/src/postgres.ts": {
       "complexity_critical": {
         "count": 1
       },
@@ -136,12 +136,12 @@
         "count": 1
       }
     },
-    "packages/kernel/src/migrations.ts": {
+    "platform/postgres/migrations.ts": {
       "complexity_high": {
         "count": 1
       }
     },
-    "packages/kernel/src/tigerbeetle.ts": {
+    "platform/tigerbeetle/tigerbeetle.ts": {
       "crap_high": {
         "count": 1
       },
@@ -149,12 +149,12 @@
         "count": 5
       }
     },
-    "packages/kernel/tests/tigerbeetle.test.ts": {
+    "platform/tigerbeetle/tests/tigerbeetle.test.ts": {
       "crap_moderate": {
         "count": 1
       }
     },
-    "packages/process/src/postgres.ts": {
+    "modules/process/src/postgres.ts": {
       "crap_high": {
         "count": 4
       },
@@ -162,32 +162,32 @@
         "count": 4
       }
     },
-    "packages/process/src/runtime-store.ts": {
+    "modules/process/src/runtime-store.ts": {
       "crap_moderate": {
         "count": 1
       }
     },
-    "packages/process/tests/order-confirmation.postgres.test.ts": {
+    "modules/process/tests/order-confirmation.postgres.test.ts": {
       "crap_high": {
         "count": 1
       }
     },
-    "packages/procurement/src/memory.ts": {
+    "modules/procurement/src/memory.ts": {
       "crap_high": {
         "count": 1
       }
     },
-    "packages/procurement/src/postgres.ts": {
+    "modules/procurement/src/postgres.ts": {
       "crap_moderate": {
         "count": 1
       }
     },
-    "packages/procurement/tests/procurement.postgres.test.ts": {
+    "modules/procurement/tests/procurement.postgres.test.ts": {
       "crap_high": {
         "count": 1
       }
     },
-    "packages/sales/tests/sales.postgres.test.ts": {
+    "modules/sales/tests/sales.postgres.test.ts": {
       "crap_moderate": {
         "count": 1
       }
@@ -245,13 +245,13 @@
   },
   "runtime_coverage_findings": [],
   "target_keys": [
-    "apps/runtime-config.ts:dead code",
-    "apps/api/bootstrap.ts:dead code",
-    "apps/api/handlers.ts:dead code",
-    "packages/accounting/src/financial-operations.ts:complexity",
+    "runtime/config.ts:dead code",
+    "runtime/api/bootstrap.ts:dead code",
+    "runtime/api/handlers.ts:dead code",
+    "modules/accounting/src/financial-operations.ts:complexity",
     "apps/web/src/features/process-studio/designer-model.ts:complexity",
     "tooling/boundary-linter/check-ownership.ts:untested risk",
-    "packages/kernel/src/migrations.ts:complexity",
-    "packages/accounting/src/financial-readiness.ts:complexity"
+    "platform/postgres/migrations.ts:complexity",
+    "modules/accounting/src/financial-readiness.ts:complexity"
   ]
 }

@@ -1,6 +1,6 @@
 ---
 name: create-domain-module
-description: "Use when adding a new packages/<domain> capability, assigning a new schema owner, or when a request says to create a domain such as supplier contracts, fulfillment, settlement, or evidence."
+description: "Use when adding a new modules/<domain> capability, assigning a new schema owner, or when a request says to create a domain such as supplier contracts, fulfillment, settlement, or evidence."
 ---
 
 # Purpose
@@ -9,7 +9,7 @@ Create the smallest RITSEI domain package with explicit semantic ownership, a pu
 
 # Use This Skill When
 
-- adding a new directory under `packages/`;
+- adding a new directory under `modules/`;
 - introducing a new authoritative business capability or PostgreSQL schema owner;
 - a traditional feature must be split into an orthogonal capability;
 - the request says “add a domain/module for …”.
@@ -24,7 +24,7 @@ Create the smallest RITSEI domain package with explicit semantic ownership, a pu
 
 Inspect first:
 
-- the closest implemented package, usually [`packages/party`](../../../packages/party/mod.ts), [`packages/inventory`](../../../packages/inventory/mod.ts), or [`packages/accounting`](../../../packages/accounting/mod.ts);
+- the closest implemented module, usually [`modules/party`](../../../modules/party/mod.ts), [`modules/inventory`](../../../modules/inventory/mod.ts), or [`modules/accounting`](../../../modules/accounting/mod.ts);
 - [`db/ownership.toml`](../../../db/ownership.toml);
 - the semantic-owner and module-contract rules in the canonical architecture;
 - related ADRs and the affected composite process.
@@ -55,9 +55,9 @@ If this changes a difficult-to-reverse boundary or source of truth, create an AD
 Create only the files required now:
 
 ```text
-packages/<domain>/mod.ts
-packages/<domain>/src/...
-packages/<domain>/tests/...
+modules/<domain>/mod.ts
+modules/<domain>/src/...
+modules/<domain>/tests/...
 ```
 
 If persistence is required, compose with `change-owned-schema`. If another domain must consume it, compose with `expose-public-contract` and `introduce-cross-domain-integration`. Add API and authorization surfaces only when requested.
@@ -80,7 +80,7 @@ Use `deno task db:generate` and `deno task db:check` only when the domain owns p
 
 # Required Checks
 
-- public tests import only `packages/<domain>/mod.ts`;
+- public tests import only `modules/<domain>/mod.ts`;
 - ownership registry and migration checks pass when persistence is added;
 - package dependency graph remains acyclic;
 - every public tagged failure and authorization path is tested;

@@ -42,16 +42,16 @@ type DomainTarget = {
 const targets: readonly DomainTarget[] = [
   {
     domain: "identity",
-    module: "../../packages/identity/mod.ts",
+    module: "../../modules/identity/mod.ts",
     actionsExport: "IdentityTypedActionCatalog",
     eventsExport: "IdentityTypedEventCatalog",
-    contractTests: ["packages/identity/tests/identity.test.ts"],
+    contractTests: ["modules/identity/tests/identity.test.ts"],
     authorizationTest: {
-      path: "packages/identity/tests/identity.test.ts",
+      path: "modules/identity/tests/identity.test.ts",
       markers: ["IdentityAuthorizationDenied", "assert.instanceOf"],
     },
     publicationTest: {
-      path: "packages/identity/tests/identity.postgres.test.ts",
+      path: "modules/identity/tests/identity.postgres.test.ts",
       markers: ["UserAccountCreatedEvent", "event_outbox", "assert.deepStrictEqual"],
     },
     catalogMarker: "IdentityTypedActionCatalog",
@@ -59,16 +59,16 @@ const targets: readonly DomainTarget[] = [
   },
   {
     domain: "party",
-    module: "../../packages/party/mod.ts",
+    module: "../../modules/party/mod.ts",
     actionsExport: "PartyTypedActionCatalog",
     eventsExport: "PartyTypedEventCatalog",
-    contractTests: ["packages/party/tests/party.test.ts"],
+    contractTests: ["modules/party/tests/party.test.ts"],
     authorizationTest: {
-      path: "packages/party/tests/party.test.ts",
+      path: "modules/party/tests/party.test.ts",
       markers: ["AuthorizationDenied", "assert.instanceOf"],
     },
     publicationTest: {
-      path: "packages/party/tests/party.postgres.test.ts",
+      path: "modules/party/tests/party.postgres.test.ts",
       markers: ["PartyCreatedEvent", "event_outbox", "assert.deepStrictEqual"],
     },
     catalogMarker: "PartyTypedActionCatalog",
@@ -76,16 +76,16 @@ const targets: readonly DomainTarget[] = [
   },
   {
     domain: "inventory",
-    module: "../../packages/inventory/mod.ts",
+    module: "../../modules/inventory/mod.ts",
     actionsExport: "InventoryTypedActionCatalog",
     eventsExport: "InventoryTypedEventCatalog",
-    contractTests: ["packages/inventory/tests/inventory.test.ts"],
+    contractTests: ["modules/inventory/tests/inventory.test.ts"],
     authorizationTest: {
-      path: "packages/inventory/tests/inventory.test.ts",
+      path: "modules/inventory/tests/inventory.test.ts",
       markers: ["AuthorizationDenied", "assert.instanceOf"],
     },
     publicationTest: {
-      path: "packages/inventory/tests/inventory.postgres.test.ts",
+      path: "modules/inventory/tests/inventory.postgres.test.ts",
       markers: ["InventoryStockCorrectedEvent", "event_outbox", "assert.deepStrictEqual"],
     },
     catalogMarker: "InventoryTypedActionCatalog",
@@ -93,16 +93,16 @@ const targets: readonly DomainTarget[] = [
   },
   {
     domain: "accounting",
-    module: "../../packages/accounting/mod.ts",
+    module: "../../modules/accounting/mod.ts",
     actionsExport: "AccountingTypedActionCatalog",
     eventsExport: "AccountingTypedEventCatalog",
-    contractTests: ["packages/accounting/tests/accounting.test.ts"],
+    contractTests: ["modules/accounting/tests/accounting.test.ts"],
     authorizationTest: {
-      path: "packages/accounting/tests/accounting.test.ts",
+      path: "modules/accounting/tests/accounting.test.ts",
       markers: ["AuthorizationDenied", "assert.instanceOf"],
     },
     publicationTest: {
-      path: "packages/accounting/tests/accounting.postgres.test.ts",
+      path: "modules/accounting/tests/accounting.postgres.test.ts",
       markers: ["AccountingRevenuePostedEvent", "event_outbox", "assert.deepStrictEqual"],
     },
     catalogMarker: "AccountingTypedActionCatalog",
@@ -110,16 +110,16 @@ const targets: readonly DomainTarget[] = [
   },
   {
     domain: "sales",
-    module: "../../packages/sales/mod.ts",
+    module: "../../modules/sales/mod.ts",
     actionsExport: "SalesTypedActionCatalog",
     eventsExport: "SalesTypedEventCatalog",
-    contractTests: ["packages/sales/tests/sales.test.ts"],
+    contractTests: ["modules/sales/tests/sales.test.ts"],
     authorizationTest: {
-      path: "packages/sales/tests/sales.test.ts",
+      path: "modules/sales/tests/sales.test.ts",
       markers: ["AuthorizationDenied", "assert.instanceOf"],
     },
     publicationTest: {
-      path: "packages/sales/tests/sales.postgres.test.ts",
+      path: "modules/sales/tests/sales.postgres.test.ts",
       markers: ["SalesOrderConfirmedEvent", "event_outbox", "assert.deepStrictEqual"],
     },
     catalogMarker: "SalesTypedActionCatalog",
@@ -127,16 +127,16 @@ const targets: readonly DomainTarget[] = [
   },
   {
     domain: "procurement",
-    module: "../../packages/procurement/mod.ts",
+    module: "../../modules/procurement/mod.ts",
     actionsExport: "ProcurementTypedActionCatalog",
     eventsExport: "ProcurementTypedEventCatalog",
-    contractTests: ["packages/procurement/tests/procurement.test.ts"],
+    contractTests: ["modules/procurement/tests/procurement.test.ts"],
     authorizationTest: {
-      path: "packages/procurement/tests/procurement.test.ts",
+      path: "modules/procurement/tests/procurement.test.ts",
       markers: ["AuthorizationDenied", "assert.instanceOf"],
     },
     publicationTest: {
-      path: "packages/procurement/tests/procurement.postgres.test.ts",
+      path: "modules/procurement/tests/procurement.postgres.test.ts",
       markers: [
         "ProcurementPurchaseOrderConfirmedEvent",
         "event_outbox",
@@ -148,7 +148,7 @@ const targets: readonly DomainTarget[] = [
   },
 ]
 
-const catalogTest = "packages/catalog/tests/catalog.test.ts"
+const catalogTest = "modules/catalog/tests/catalog.test.ts"
 const executableTestFiles = [
   catalogTest,
   ...targets.flatMap((target) => target.contractTests),

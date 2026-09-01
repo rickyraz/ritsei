@@ -40,7 +40,7 @@ not wait on them, and their output remains a rebuildable search projection gover
 
 Provider/model adapters and persistence adapters are separate responsibilities. The current
 provider-neutral reliability proof is owned by the dedicated integration persistence adapter at
-`packages/integrations/src/reliability-store.ts`; it may use the kernel database capability and
+`modules/integrations/src/reliability-store.ts`; it may use the foundation database capability and
 integration-owned tables, but it must not import provider SDKs or execute provider calls. The
 AI/provider boundary check allowlists only this explicit persistence seam; other provider/model
 files remain unable to access private persistence.
@@ -458,7 +458,7 @@ to the provider contract.
 
 The bounded 0.9 reliability slice persists tenant-scoped replay records with normalized provider
 status, retry/dead-letter state, redacted payloads, compatibility checks, payload limits, and
-connector lag metrics. PostgreSQL writes use the kernel transaction boundary; the slice does not
+connector lag metrics. PostgreSQL writes use the foundation transaction boundary; the slice does not
 claim a live provider adapter, cross-system exactly-once delivery, or production connector
 activation.
 

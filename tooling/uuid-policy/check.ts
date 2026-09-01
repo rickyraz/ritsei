@@ -1,6 +1,6 @@
-const roots = ["apps", "packages", "tests"]
+const roots = ["apps", "foundation", "modules", "platform", "runtime", "tests"]
 const allowedEphemeralUses = new Map([
-  ["packages/process/src/postgres.ts", "leaseToken"],
+  ["modules/process/src/postgres.ts", "leaseToken"],
 ])
 
 const isSourceFile = (path: string) => /\.(?:c|m)?tsx?$/.test(path)
@@ -23,7 +23,7 @@ for (const root of roots) {
       throw new Error(
         `${path}:${
           index + 1
-        } uses crypto.randomUUID(); use kernel uuidv7() for persistent identities`,
+        } uses crypto.randomUUID(); use the foundation uuidv7() helper for persistent identities`,
       )
     }
   }

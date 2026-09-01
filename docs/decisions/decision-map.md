@@ -65,6 +65,14 @@ ADR-0034  Non-interference overload isolation
               +--> transaction and consistency boundaries remain explicit
               +--> sharding remains evidence-gated
 
+ADR-0001  Modular monolith
+    |
+    +--> ADR-0068 foundation, modules, platform, and runtime taxonomy
+              +--> generic contracts live in foundation
+              +--> business capabilities live in modules
+              +--> concrete adapters live in platform
+              +--> composition roots live in runtime
+
 ADR-0046  Owner-local business surface + generated structural ergonomics
     |
     +--> concrete business objects remain owner-local
@@ -103,6 +111,7 @@ and ADR-0047 does not change the financial authority recorded by ADR-0040.
 | [ADR-0064](./0064-propose-gcp-financial-staging-platform.md) | Proposed infrastructure selection | GCP is proposed for financial staging; provider approval and production-equivalent evidence remain open |
 | [ADR-0065](./0065-propose-cloudflare-financial-edge-evidence-plane.md) | Proposed adjacent edge/evidence plane | Cloudflare may provide edge protection and a hash-bound evidence copy; it is not financial authority |
 | [ADR-0067](./0067-separate-logical-database-and-physical-data-placement.md) | Current PostgreSQL topology boundary | Logical database contract hides physical placement; sharding and routing remain evidence-gated |
+| [ADR-0068](./0068-establish-foundation-modules-platform-runtime-taxonomy.md) | Current repository taxonomy | Foundation, modules, platform, and runtime have explicit dependency direction |
 
 ## Current canonical rules
 
@@ -123,6 +132,7 @@ The current architecture is summarized here for navigation; the canonical rule r
 - Native PostgreSQL is the default RelationshipEngine; SpiceDB is an optional adapter, not a source of truth.
 - Goods Receipt evidence belongs to Procurement; physical receipt movement belongs to Inventory.
 - The logical database contract hides PostgreSQL placement; physical data topology remains infrastructure, not domain semantics.
+- Foundation contains generic contracts, modules contain business capabilities, platform contains concrete adapters, and runtime contains composition roots.
 
 ## Historical integrity
 

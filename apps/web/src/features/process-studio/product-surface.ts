@@ -2,7 +2,7 @@ import type {
   ProcessPackCapabilityReferenceType,
   ProcessPackCapabilityResolutionType,
   ProcessPackType,
-} from "../../../../../packages/process/mod.ts"
+} from "../../../../../modules/process/mod.ts"
 import {
   applyDesignerAction,
   type DesignerModel,

@@ -153,7 +153,7 @@ The full term `WorkloadCell` must be used in architecture documents when ambigui
 Data placement determines where a PostgreSQL-owned authoritative fact or a rebuildable projection
 is stored. It is not a workload class, WorkloadCell, shuffle shard, capability, or semantic owner. A
 workload router selects a WorkloadCell and workload plane only; it must not select a PostgreSQL data
-placement. The kernel resolves any private data placement, and neither selection may enter public
+placement. The runtime/platform boundary resolves any private data placement, and neither selection may enter public
 domain contracts. Placement changes must preserve the transaction, tenant, and authorization
 boundaries defined by the PostgreSQL and state-and-consistency architectures.
 
@@ -526,7 +526,7 @@ It may:
 
 - execute public owner-controlled business commands;
 - perform authoritative reads required for authorization and invariant evaluation;
-- open typed PostgreSQL transactions through the kernel;
+- open typed PostgreSQL transactions through the foundation database contract;
 - write canonical idempotency outcomes and transactional events/outbox records;
 - use the optional Stateful Entity Runtime before the PostgreSQL transaction for approved
   categories.

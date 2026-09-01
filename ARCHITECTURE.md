@@ -54,6 +54,18 @@ defined in [`docs/architecture/authorization.md`](./docs/architecture/authorizat
 Procurement ownership, the Purchase Order lifecycle, and receipt activation gates are defined in
 [`docs/architecture/procurement.md`](./docs/architecture/procurement.md).
 
+## Repository taxonomy
+
+- `foundation/`: generic primitives and contracts;
+- `modules/`: business capabilities with public `mod.ts` entries;
+- `platform/`: concrete infrastructure adapters;
+- `runtime/`: application composition roots and transport workers;
+- `apps/web/`: the separate frontend application; and
+- `db/`: schema and migration authority.
+
+The dependency matrix and enforcement decision are in
+[`docs/decisions/0068-establish-foundation-modules-platform-runtime-taxonomy.md`](./docs/decisions/0068-establish-foundation-modules-platform-runtime-taxonomy.md).
+
 ## Dependency Ownership
 
 ```text

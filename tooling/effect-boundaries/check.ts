@@ -1,6 +1,6 @@
 const read = (path: string) => Deno.readTextFile(path)
 
-const handlerSource = await read("apps/api/handlers.ts")
+const handlerSource = await read("runtime/api/handlers.ts")
 
 const requiredHandlerOperations = [
   "Http.UserAccounts.create",
@@ -23,16 +23,16 @@ if (/\b[A-Za-z]+Service\.use\(/.test(handlerSource)) {
 }
 
 const requiredLiveExports: Readonly<Record<string, string>> = {
-  "packages/auth/mod.ts": "AuthLive",
-  "packages/authorization/mod.ts": "AuthorizationLive",
-  "packages/identity/mod.ts": "IdentityLive",
-  "packages/party/mod.ts": "PartyLive",
-  "packages/sales/mod.ts": "SalesLive",
-  "packages/inventory/mod.ts": "InventoryLive",
-  "packages/messaging/mod.ts": "MessagingLive",
-  "packages/procurement/mod.ts": "ProcurementLive",
-  "packages/accounting/mod.ts": "AccountingLive",
-  "packages/process/mod.ts": "ProcessLive",
+  "modules/auth/mod.ts": "AuthLive",
+  "modules/authorization/mod.ts": "AuthorizationLive",
+  "modules/identity/mod.ts": "IdentityLive",
+  "modules/party/mod.ts": "PartyLive",
+  "modules/sales/mod.ts": "SalesLive",
+  "modules/inventory/mod.ts": "InventoryLive",
+  "modules/messaging/mod.ts": "MessagingLive",
+  "modules/procurement/mod.ts": "ProcurementLive",
+  "modules/accounting/mod.ts": "AccountingLive",
+  "modules/process/mod.ts": "ProcessLive",
 }
 
 for (const [path, name] of Object.entries(requiredLiveExports)) {

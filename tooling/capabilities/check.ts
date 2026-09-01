@@ -3,20 +3,20 @@ import {
   CapabilityIds,
   isCapabilityIdShape,
   isKnownCapability,
-} from "../../packages/authorization/mod.ts"
+} from "../../modules/authorization/mod.ts"
 
 const ownerDeclarations = [
-  ["authorization", "packages/authorization/src/capabilities.ts"],
-  ["identity", "packages/identity/src/capabilities.ts"],
-  ["party", "packages/party/src/capabilities.ts"],
-  ["sales", "packages/sales/src/capabilities.ts"],
-  ["procurement", "packages/procurement/src/capabilities.ts"],
-  ["inventory", "packages/inventory/src/capabilities.ts"],
-  ["accounting", "packages/accounting/src/capabilities.ts"],
-  ["process", "packages/process/src/capabilities.ts"],
+  ["authorization", "modules/authorization/src/capabilities.ts"],
+  ["identity", "modules/identity/src/capabilities.ts"],
+  ["party", "modules/party/src/capabilities.ts"],
+  ["sales", "modules/sales/src/capabilities.ts"],
+  ["procurement", "modules/procurement/src/capabilities.ts"],
+  ["inventory", "modules/inventory/src/capabilities.ts"],
+  ["accounting", "modules/accounting/src/capabilities.ts"],
+  ["process", "modules/process/src/capabilities.ts"],
 ] as const
 
-const sourceRoots = ["apps", "packages", "tests"] as const
+const sourceRoots = ["apps", "foundation", "modules", "platform", "runtime", "tests"] as const
 const directCapabilityPattern = /capability\s*:\s*["']([^"']+)["']/g
 const ownerObjectPattern = /export const \w+Capabilities = \{([\s\S]*?)\} as const/g
 const ownerDeclarationPattern = /:\s*["']([^"']+)["']/g

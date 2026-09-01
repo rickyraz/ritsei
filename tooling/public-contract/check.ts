@@ -24,7 +24,7 @@ const packageTarget = (file: string, specifier: string) => {
   const resolved = decodeURIComponent(
     new URL(specifier, `file:///${normalizePath(file)}`).pathname.slice(1),
   )
-  const target = resolved.match(/^packages\/([^/]+)\/(.+)$/)
+  const target = resolved.match(/^modules\/([^/]+)\/(.+)$/)
   return target === null ? undefined : { name: target[1]!, path: target[2]! }
 }
 
@@ -37,7 +37,7 @@ export const analyzePublicPackageImports = (
 
   for (const file of files) {
     const path = normalizePath(file.path)
-    const containingPackage = path.match(/^packages\/([^/]+)\//)?.[1]
+    const containingPackage = path.match(/^modules\/([^/]+)\//)?.[1]
 
     for (const specifier of extractModuleSpecifiers(file.source)) {
       const target = packageTarget(path, specifier)
@@ -51,7 +51,7 @@ export const analyzePublicPackageImports = (
         failures.push(
           `${path}: cross-package import ${
             JSON.stringify(specifier)
-          } must use packages/${target.name}/mod.ts`,
+          } must use modules/${target.name}/mod.ts`,
         )
       }
     }
@@ -62,17 +62,17 @@ export const analyzePublicPackageImports = (
 
 export const checkPublicPackageImports = async (): Promise<readonly string[]> => {
   const packageNames: string[] = []
-  for await (const entry of Deno.readDir("packages")) {
+  for await (const entry of Deno.readDir("modules")) {
     if (!entry.isDirectory) continue
     try {
-      if ((await Deno.stat(`packages/${entry.name}/mod.ts`)).isFile) packageNames.push(entry.name)
+      if ((await Deno.stat(`modules/${entry.name}/mod.ts`)).isFile) packageNames.push(entry.name)
     } catch (cause) {
       if (!(cause instanceof Deno.errors.NotFound)) throw cause
     }
   }
 
   const files = (await Promise.all(
-    ["apps", "packages", "tests", "tooling"].map((root) =>
+    ["apps", "foundation", "modules", "platform", "runtime", "tests", "tooling"].map((root) =>
       collectSourceFiles(root, [".ts", ".tsx"])
     ),
   )).flat()

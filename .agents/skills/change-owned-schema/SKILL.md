@@ -105,4 +105,4 @@ The owner’s schema, generated migration graph, service mappings, and invariant
 - [ADR-0012: Drizzle schema flow](../../../docs/decisions/0012-use-drizzle-schema-flow-and-effect-http.md)
 - [Architecture enforcement](../../../docs/architecture/architecture-enforcement.md)
 - [Database roles](../../../docs/operations/database-roles.md)
-- [Migration catalog tests](../../../packages/kernel/tests/migrations.test.ts)
+- [Migration catalog tests](../../../platform/postgres/tests/migrations.test.ts)

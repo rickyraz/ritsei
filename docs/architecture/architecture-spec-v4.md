@@ -90,7 +90,7 @@ principles.
 | Application model  | Effect                                                                |
 | Runtime            | Deno                                                                  |
 | Identity / IAM     | Provider-neutral OIDC/OAuth2 `IdentityProvider`; ZITADEL recommended |
-| Application AuthZ  | RITSEI Authorization Kernel with canonical PostgreSQL policy facts   |
+| Application AuthZ  | RITSEI Authorization module with canonical PostgreSQL policy facts |
 | Relationship AuthZ | Native PostgreSQL `RelationshipEngine`; optional SpiceDB adapter     |
 | HTTP               | Effect v4 `HttpApi` / `HttpRouter` with native `@effect/platform-deno` |
 | Database           | PostgreSQL 19+ logical transactional platform for non-ledger state    |
@@ -162,39 +162,42 @@ Deno-specific configuration.
 
 ```text
 ritsei/
-├── apps/
+├── foundation/              # generic primitives and contracts
+│   ├── concurrency/
+│   ├── database/
+│   ├── ids/
+│   ├── jobs/
+│   └── money/
+├── modules/                 # business capabilities with public mod.ts entries
+│   ├── identity/  ├── party/       ├── auth/
+│   ├── authorization/  ├── catalog/  ├── messaging/
+│   ├── sales/  ├── procurement/  ├── inventory/
+│   ├── accounting/  ├── process/  ├── billing/
+│   └── integrations/
+├── platform/                # concrete PostgreSQL, crypto, and ledger adapters
+│   ├── postgres/
+│   ├── crypto/
+│   └── tigerbeetle/
+├── runtime/                 # API, worker, migrator, configuration, composition
 │   ├── api/
 │   ├── worker/
+│   ├── migrator/
+│   └── adapters/
+├── apps/
 │   ├── event-relay/
-│   ├── migrate/
 │   └── web/                 # Vite + SolidJS 2.0 SPA
-├── packages/
-│   ├── kernel/
-│   ├── identity/
-│   ├── party/
-│   ├── auth/
-│   ├── authorization/
-│   ├── catalog/
-│   ├── messaging/
-│   ├── sales/
-│   ├── procurement/
-│   ├── inventory/
-│   ├── accounting/
-│   ├── process/
-│   ├── billing/
-│   └── integrations/
 ├── native/ritsei-calc/
-├── db/
-│   ├── schema/
-│   ├── migrations/
-│   ├── policies/
-│   └── seeds/
+├── db/                      # schema, migrations, policies, and seeds
 ├── deno.json
 ├── package.json
 └── drizzle.config.ts
 ```
 
-The executables share domain packages. Internal module calls must not use loopback HTTP.
+The dependency direction is `foundation <- modules <- runtime` and
+`foundation <- platform <- runtime`; platform adapters may consume module public contracts.
+Business modules must not import concrete platform code, and internal module calls must not use
+loopback HTTP. The full decision and dependency matrix are in
+[ADR-0068](../decisions/0068-establish-foundation-modules-platform-runtime-taxonomy.md).
 
 ## Module Contract
 
@@ -222,14 +225,15 @@ layers.ts    -> named live/test composition
 ```
 
 `mod.ts` normally exports contracts, errors, service operations, and layers; it does not export
-private stores or persistence adapters. Platform contracts and adapters follow the same rule in
-`kernel`. The transitional PostgreSQL financial-ledger factory re-export from Accounting is an
-explicit exception documented in [`financial-ledger.md`](./financial-ledger.md); callers must still
-use `FinancialLedgerPort` rather than provider-specific types. Invariant-heavy financial and
-durable-workflow implementations may keep their specialized ports and adapters separate rather than
-forcing them into a generic repository shape.
+private stores or persistence adapters. Business modules expose these entries from `modules/*/mod.ts`.
+Foundation contracts, platform adapters, and runtime composition roots have their own public entry
+points. The transitional PostgreSQL financial-ledger factory re-export from Accounting is an explicit
+exception documented in [`financial-ledger.md`](./financial-ledger.md); callers must still use
+`FinancialLedgerPort` rather than provider-specific types. Invariant-heavy financial and durable-
+workflow implementations may keep their specialized ports and adapters separate rather than forcing
+them into a generic repository shape.
 
-Production composition is named in `apps/runtime.ts` (`PlatformCore`, `PlatformLive`, domain `*Live`
+Production composition is named in `runtime/layers.ts` (`PlatformCore`, `PlatformLive`, domain `*Live`
 layers, and `ApplicationLive`). HTTP handler groups resolve static services once during group
 construction; request-scoped `CurrentPrincipal` remains inside each request operation. Public
 Effect operations use stable `Effect.fn("Domain.operation")` names for readable execution traces.
@@ -313,9 +317,10 @@ conceal PostgreSQL-specific behavior such as:
 
 Reviewed SQL is the escape hatch and remains a first-class artifact.
 
-The kernel owns the `postgres.js` client, Drizzle database lifecycle, typed transaction callbacks,
-and stable infrastructure failures. Domain implementations build type-safe queries only against
-their owned tables. Public domain contracts do not expose Drizzle or PostgreSQL types.
+The `platform/postgres` adapter owns the `postgres.js` client, Drizzle database lifecycle, typed
+transaction callbacks, and stable infrastructure failure mapping behind the foundation database
+contracts. Domain implementations build type-safe queries only against their owned tables. Public
+domain contracts do not expose Drizzle or PostgreSQL types.
 
 PostgreSQL remains canonical for RITSEI authorization facts and control-plane state. An external
 relationship evaluator is a replaceable projection/evaluation dependency and must not become a second
@@ -339,7 +344,7 @@ control-plane metadata, policy, workflow state, audit links, and projections.
 
 New persistent entity, stored event, stored line, workflow, and other index-visible identities use
 UUIDv7. PostgreSQL-owned IDs use the existing `uuidv7()` default in `db/schema/common.ts`; application
-code that must create a persistent identity before insertion uses the kernel-owned `uuidv7()` helper,
+code that must create a persistent identity before insertion uses the foundation-owned `uuidv7()` helper,
 implemented through the pinned `@std/uuid` package. Existing UUIDv4 rows remain valid and are not migrated
 solely for version conversion. UUIDv4 remains acceptable for ephemeral opaque values such as lease
 tokens and test fixtures. UUIDv7 is not a replacement for `created_at`, business numbers, or secrets.
@@ -647,7 +652,7 @@ timeout/retry policy, provider status, and compensation or manual recovery.
 ## External Standards Contract
 
 External standards such as UBL, ISO 20022, EPCIS, XBRL, and jurisdiction-specific reporting formats
-must enter and leave through versioned adapters in `packages/integrations`.
+must enter and leave through versioned adapters in `modules/integrations`.
 
 An adapter must identify its standard, version, and profile or message type. It maps external
 representations to public domain contracts and must not make external generated types part of a

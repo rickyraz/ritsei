@@ -3,7 +3,7 @@ language: TypeScript
 severity: error
 message: Private implementation details must not be re-exported from a public package entry point.
 files:
-  - packages/*/mod.ts
+  - modules/*/mod.ts
 ignores:
   - vendor/**
   - tooling/boundary-linter/rule-tests/**

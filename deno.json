@@ -9,10 +9,10 @@
     "vendor/"
   ],
   "tasks": {
-    "dev": "deno run --watch --allow-read --allow-env --allow-net apps/api/mod.ts",
-    "worker": "deno run -A apps/worker/mod.ts",
-    "migrate": "deno run --allow-read --allow-env --allow-net apps/migrate/mod.ts",
-    "migrate:p0-backfill": "deno run --allow-read --allow-env --allow-net apps/migrate/p0-backfill.ts",
+    "dev": "deno run --watch --allow-read --allow-env --allow-net runtime/api/mod.ts",
+    "worker": "deno run -A runtime/worker/mod.ts",
+    "migrate": "deno run --allow-read --allow-env --allow-net runtime/migrator/mod.ts",
+    "migrate:p0-backfill": "deno run --allow-read --allow-env --allow-net runtime/migrator/p0-backfill.ts",
     "db:generate": "deno run -A npm:drizzle-kit@1.0.0-rc.4 generate --config=drizzle.config.ts",
     "db:migrate": "deno run -A npm:drizzle-kit@1.0.0-rc.4 migrate --config=drizzle.config.ts",
     "db:check": "deno run -A npm:drizzle-kit@1.0.0-rc.4 check --config=drizzle.config.ts",
@@ -20,7 +20,7 @@
     "test:related": "vitest related --run",
     "check:affected": "deno run --allow-read --allow-run tooling/affected-check.ts",
     "test:coverage": "vitest run --coverage --coverage.provider=v8",
-    "test:identity-coverage": "vitest run --coverage --coverage.provider=v8 --coverage.include=packages/identity/src/**/*.ts --coverage.thresholds.100 packages/identity/tests",
+    "test:identity-coverage": "vitest run --coverage --coverage.provider=v8 --coverage.include=modules/identity/src/**/*.ts --coverage.thresholds.100 modules/identity/tests",
     "test:contract": "vitest run --config vitest.contract.config.ts",
     "lefthook:install": "lefthook install",
     "fallow": "npx --no-install fallow",
@@ -38,9 +38,10 @@
     "ai:boundary:check": "deno run --allow-read tooling/ai-boundary/check.ts",
     "financial:gate": "deno run --allow-read tooling/financial-readiness/release-gate.ts",
     "roadmap:measure": "deno run --allow-read --allow-run tooling/roadmap-completion/measure.ts",
-    "boundary:lint": "ast-grep scan apps packages tooling tests && deno task fallow:boundaries && deno run --allow-read tooling/boundary-linter/check-ownership.ts && deno run --allow-read tooling/public-contract/check.ts && deno task capabilities:check && deno task callgraph:check && deno task ai:boundary:check && deno task effect:boundaries:check && deno task uuid:policy:check",
+    "boundary:lint": "ast-grep scan apps foundation modules platform runtime tooling tests && deno task fallow:boundaries && deno run --allow-read tooling/boundary-linter/check-ownership.ts && deno run --allow-read tooling/public-contract/check.ts && deno task capabilities:check && deno task callgraph:check && deno task ai:boundary:check && deno task effect:boundaries:check && deno task uuid:policy:check && deno task dependency:check",
     "effect:boundaries:check": "deno run --allow-read tooling/effect-boundaries/check.ts",
     "uuid:policy:check": "deno run --allow-read tooling/uuid-policy/check.ts",
+    "dependency:check": "deno run --allow-read tooling/dependency-direction/check.ts",
     "postgres19:rehearse": "deno run --allow-env --allow-net --allow-read --allow-write tooling/postgresql-19/rehearse.ts",
     "boundary:test": "ast-grep test --skip-snapshot-tests",
     "check": "deno check ."
@@ -48,7 +49,10 @@
   "fmt": {
     "include": [
       "apps/",
-      "packages/",
+      "foundation/",
+      "modules/",
+      "platform/",
+      "runtime/",
       "tooling/",
       "tests/",
       "db/",

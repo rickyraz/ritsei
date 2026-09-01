@@ -53,7 +53,15 @@ interface ResolvedImport {
   readonly packageName: string
 }
 
-const sourceRoots = ["apps", "packages", "tests", "tooling"] as const
+const sourceRoots = [
+  "apps",
+  "foundation",
+  "modules",
+  "platform",
+  "runtime",
+  "tests",
+  "tooling",
+] as const
 const simpleName = /^[A-Za-z_$][\w$]*$/
 const memberName = /^([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)$/
 
@@ -67,7 +75,7 @@ const packageFromSpecifier = (file: string, specifier: string): string | undefin
   const resolved = decodeURIComponent(
     new URL(specifier, `file:///${normalizePath(file)}`).pathname.slice(1),
   )
-  return resolved.match(/^packages\/([^/]+)\/mod\.tsx?$/)?.[1]
+  return resolved.match(/^modules\/([^/]+)\/mod\.tsx?$/)?.[1]
 }
 
 const stripComments = (source: string) =>
@@ -285,7 +293,7 @@ const parseJsonLines = <T>(output: string): T[] =>
 const loadPublicExports = async (packages: readonly string[]) => {
   const result = new Map<string, PublicExports>()
   for (const packageName of packages) {
-    const path = `packages/${packageName}/mod.ts`
+    const path = `modules/${packageName}/mod.ts`
     try {
       result.set(packageName, extractExportedNames(await Deno.readTextFile(path)))
     } catch (cause) {
@@ -351,7 +359,7 @@ export const checkCallGraph = async (): Promise<CallGraphResult> => {
       : []
   })
   const packageNames = sources
-    .map(({ path }) => path.match(/^packages\/([^/]+)\//)?.[1])
+    .map(({ path }) => path.match(/^modules\/([^/]+)\//)?.[1])
     .filter((name): name is string => name !== undefined)
   return buildCallGraph(
     sources,
