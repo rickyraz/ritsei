@@ -44,6 +44,10 @@ ADR-0010  Vite-based SolidJS SPA
                         +--> HTML owns semantics and interaction
                         +--> WebGPU is optional and fallback-first
                         +--> material ratios are art direction, not a page template
+                        +--> ADR-0070 selects vgpu behind a RITSEI renderer adapter
+                                  +--> TypeGPU is deferred for future GPU-compute workloads
+                        +--> ADR-0071 adopts seven universal cartographic archetypes
+                                  +--> deterministic variation and semantic depth
 
 ADR-0030  UserAccount lifecycle and tenant membership
     |
@@ -94,9 +98,12 @@ amends the receipt and cancellation boundary of ADR-0044 and ADR-0045. ADR-0056 
 frontend primitive and styling selection recorded by ADR-0010; ADR-0057 clarifies the role and
 adoption scope of the TanStack frontend engines; ADR-0058 amends only the authentication/session
 provider boundary in ADR-0030; ADR-0059 defines the replaceable RelationshipEngine boundary in
-ADR-0006. Both providers remain optional adapters; the RITSEI contracts and authority remain active.
-The rest of those decisions remains active. None of these amendments rewrite historical decisions,
-and ADR-0047 does not change the financial authority recorded by ADR-0040.
+ADR-0006; ADR-0070 concretizes the optional cartographic renderer selected by ADR-0069 without
+changing its HTML-first, fallback-first semantics; and ADR-0071 replaces coarse industry categories
+with seven universal cartographic archetypes, context-aware semantic mappings, deterministic
+variation, and semantic depth. Both providers remain optional adapters; the RITSEI contracts and
+authority remain active. The rest of those decisions remains active. None of these amendments rewrite
+historical decisions, and ADR-0047 does not change the financial authority recorded by ADR-0040.
 
 ## Relationship matrix
 
@@ -112,6 +119,8 @@ and ADR-0047 does not change the financial authority recorded by ADR-0040.
 | [ADR-0056](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Current frontend amendment | Product Patterns, Visual Grammar, Ark UI, and constrained Panda styling boundaries |
 | [ADR-0057](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Current frontend clarification | Selective Query cache plus headless Table, Virtual, Form, and optional Pacer/DB boundaries |
 | [ADR-0069](./0069-adopt-cartographic-enterprise-visual-grammar.md) | Current frontend visual grammar | Cartographic Enterprise UI, HTML-first rendering, optional WebGPU, and governed material tokens |
+| [ADR-0070](./0070-select-vgpu-and-defer-typegpu.md) | Current cartographic renderer selection | `vgpu` behind a RITSEI adapter; TypeGPU deferred for measured GPU-compute workloads |
+| [ADR-0071](./0071-adopt-universal-cartographic-archetypes.md) | Current cartographic semantic model | Seven universal archetypes, context-aware mappings, deterministic variation, and semantic depth |
 | [ADR-0058](./0058-define-provider-neutral-identity-and-authentication-boundary.md) | Current identity boundary | OIDC/OAuth2 provider-neutral contract; ZITADEL recommended; RITSEI owns account mapping, membership, and ERP authority |
 | [ADR-0059](./0059-define-replaceable-relationship-authorization-engine.md) | Current authorization boundary | Native PostgreSQL RelationshipEngine default; SpiceDB optional; RITSEI/PostgreSQL remains canonical |
 | [ADR-0064](./0064-propose-gcp-financial-staging-platform.md) | Proposed infrastructure selection | GCP is proposed for financial staging; provider approval and production-equivalent evidence remain open |
@@ -139,6 +148,9 @@ The current architecture is summarized here for navigation; the canonical rule r
 - Goods Receipt evidence belongs to Procurement; physical receipt movement belongs to Inventory.
 - The logical database contract hides PostgreSQL placement; physical data topology remains infrastructure, not domain semantics.
 - Foundation contains generic contracts, modules contain business capabilities, platform contains concrete adapters, and runtime contains composition roots.
+- Cartographic is a grammar for structure, relationship, pressure, movement, boundary, and state—not a requirement for topographic maps on every page.
+- The seven visual archetypes are Stock, Flow, Capacity, Value, Relationship, Progress, and Asset / Space; industries compose them rather than receiving separate visual themes.
+- Material variation is deterministic and context-aware; semantic depth complements, but never replaces, semantic HTML, labels, contrast, or accessible alternatives.
 
 ## Historical integrity
 

@@ -93,5 +93,7 @@ current system; ADRs preserve decision history.
 | [`0067`](./0067-separate-logical-database-and-physical-data-placement.md) | Separate logical database from physical data placement | Accepted |
 | [`0068`](./0068-establish-foundation-modules-platform-runtime-taxonomy.md) | Establish foundation, modules, platform, and runtime taxonomy | Accepted |
 | [`0069`](./0069-adopt-cartographic-enterprise-visual-grammar.md) | Adopt the cartographic enterprise visual grammar | Accepted |
+| [`0070`](./0070-select-vgpu-and-defer-typegpu.md) | Select `vgpu` as the optional cartographic renderer and defer TypeGPU compute | Accepted |
+| [`0071`](./0071-adopt-universal-cartographic-archetypes.md) | Adopt seven universal cartographic visual archetypes | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

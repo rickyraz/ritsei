@@ -15,6 +15,10 @@
 > - Effect application architecture: [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
 > - Design system and Visual Grammar: [`./design-system.md`](./design-system.md)
 > - Cartographic visual grammar: [`../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md`](../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md)
+> - Cartographic renderer selection: [`../decisions/0070-select-vgpu-and-defer-typegpu.md`](../decisions/0070-select-vgpu-and-defer-typegpu.md)
+> - Cartographic renderer reference: [`./reference/cartographic-renderer-selection.md`](./reference/cartographic-renderer-selection.md)
+> - Universal cartographic archetypes: [`../decisions/0071-adopt-universal-cartographic-archetypes.md`](../decisions/0071-adopt-universal-cartographic-archetypes.md)
+> - Archetypes and semantic depth reference: [`./reference/cartographic-archetypes-and-semantic-depth.md`](./reference/cartographic-archetypes-and-semantic-depth.md)
 > - Layered TanStack frontend engine boundaries:
 >   [`../decisions/0057-define-layered-tanstack-frontend-engine-boundaries.md`](../decisions/0057-define-layered-tanstack-frontend-engine-boundaries.md)
 > - Solid compiler boundary: [`../decisions/0049-keep-solid-compiler-at-rendering-boundary.md`](../decisions/0049-keep-solid-compiler-at-rendering-boundary.md)
@@ -52,8 +56,10 @@ primitive source behind RITSEI-owned components. Panda CSS is the constrained st
 
 Frontend rendering is HTML-first: DOM owns semantics, interaction, accessibility, tables, forms, and
 standard record surfaces. SVG, Canvas, and optional WebGPU render only approved visual projections or
-material layers behind replaceable adapters and tested semantic fallbacks. WebGPU MUST NOT own
-business state, authorization, or the only representation of a critical value or action.
+material layers behind replaceable adapters and tested semantic fallbacks. `vgpu` is the selected
+optional WebGPU implementation behind the cartography adapter; it is not a direct feature dependency.
+WebGPU MUST NOT own business state, authorization, or the only representation of a critical value or
+action.
 
 It may be introduced only when server rendering, a frontend-owned BFF,
 server-session management, server functions, or unified full-stack deployment
@@ -141,6 +147,19 @@ Not every signal is an application Message, and not every application Message
 belongs in a global Model. Local presentation state is intentionally allowed
 and must not be forced through a Model-to-Message transition merely for
 architectural uniformity.
+
+### Renderer state and frame ownership
+
+Solid signals and Effects may carry semantic changes such as theme, warehouse data, selection,
+viewport size, or filters to a cartography adapter. They MUST NOT be used as a permanent frame
+counter or as the renderer's clock. Renderer-owned time, delta, particles, simulation, scheduling,
+and frame submission remain behind the renderer adapter. Static scenes render once or from cached
+inputs; bounded loops run only for visible interaction or declared operational activity and stop
+when that activity settles.
+
+Ark UI controls and overlays remain DOM-owned. Canvas or WebGPU may provide pointer picking, but
+selection is presentation state and explanations remain accessible through RITSEI-owned components,
+text, and data/table alternatives.
 
 Foldkit is an architectural reference only. RITSEI does not add Foldkit as a
 dependency or couple public application contracts to its renderer, VDOM, runtime,
@@ -604,6 +623,7 @@ apps/web/src/
 │   │   ├── api/
 │   │   ├── contracts/
 │   │   ├── forms/
+│   │   ├── projections/
 │   │   ├── queries/
 │   │   ├── tables/
 │   │   └── ui/
@@ -614,11 +634,12 @@ apps/web/src/
 └── shared/
     ├── contracts/
     ├── infrastructure/
-    ├── routing/
-    └── ui/
+    └── routing/
 ```
 
-Avoid global directories where unrelated behavior accumulates inside generic
+RITSEI-owned shared UI and renderer adapters live under `apps/web/src/ui/`; feature-specific visual
+projections live under `apps/web/src/features/<domain>/projections/`. Avoid global directories where
+unrelated behavior accumulates inside generic
 hooks, services, stores, or utility files.
 
 ## Domain Logic
@@ -735,10 +756,12 @@ Core workflows must support:
 - meaningful labels;
 - accessible validation feedback;
 - reduced-motion preferences where relevant;
-- screen-reader-compatible tables and forms.
+- screen-reader-compatible tables and forms; and
+- semantic summaries or data/table alternatives for analytical visualizations.
 
 Ark UI provides headless accessible behavior behind RITSEI-owned components, but feature
-composition must still be tested.
+composition must still be tested. Decorative canvas output may be `aria-hidden="true"`; it must not
+be the only channel for a business value, status, relationship, or action.
 
 ## Performance
 
@@ -752,10 +775,12 @@ Prioritize:
 4. memoized derived state;
 5. table virtualization when measured;
 6. code splitting by route or feature;
-7. payload and contract-size control.
+7. payload and contract-size control;
+8. static-frame caching, visibility-aware rendering, and bounded animation for cartographic scenes;
+9. renderer fallback and long-session power behavior when a visual adapter is activated.
 
 Do not introduce broad global stores, speculative prefetching, or duplicated
-client projections without evidence.
+client projections without evidence. Do not run a permanent GPU frame loop for static ERP scenes.
 
 ## Testing
 
@@ -767,7 +792,11 @@ Frontend changes should use the smallest useful combination of:
 - query tests for cache and invalidation behavior;
 - accessibility tests;
 - integration tests for feature flows;
-- end-to-end tests for critical ERP workflows.
+- end-to-end tests for critical ERP workflows;
+- renderer-neutral projection and semantic-material tests;
+- deterministic fallback and mock-renderer tests;
+- headless renderer smoke tests when `vgpu` is activated; and
+- accessibility and reduced-motion tests around visualizations.
 
 Tests should assert user-visible behavior and public contracts rather than
 internal signal or memo implementation details.
@@ -788,4 +817,7 @@ The frontend architecture is correctly implemented when:
 - authorization remains enforced by the backend;
 - complex workflow coordination uses explicit Effect transitions where needed;
 - presentation-only state remains local to Solid primitives;
+- cartographic renderer imports remain behind the internal UI adapter boundary;
+- static visual scenes do not require a permanent frame loop;
+- semantic fallbacks remain usable when WebGPU is unavailable or fails; and
 - SolidStart and SSR are absent unless an approved requirement activates them.

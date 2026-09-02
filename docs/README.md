@@ -54,6 +54,8 @@
 - [`./architecture/reference/process-pack-positioning.md`](./architecture/reference/process-pack-positioning.md)
 - [`./architecture/reference/hard-isolation-patterns.md`](./architecture/reference/hard-isolation-patterns.md)
 - [`./architecture/reference/analytical-isolation-and-semantic-projection-patterns.md`](./architecture/reference/analytical-isolation-and-semantic-projection-patterns.md)
+- [`./architecture/reference/cartographic-renderer-selection.md`](./architecture/reference/cartographic-renderer-selection.md)
+- [`./architecture/reference/cartographic-archetypes-and-semantic-depth.md`](./architecture/reference/cartographic-archetypes-and-semantic-depth.md)
 
 ## Roadmaps
 

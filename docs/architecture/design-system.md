@@ -4,9 +4,10 @@
 >
 > **Implementation status:** The design-system contract is approved. `apps/web` is still in
 > frontend activation and does not yet contain the production Panda, Ark UI, renderer, or token
-> runtime. This document therefore defines the target contract and its activation gates; it does
-> not claim that WebGPU, glass recipes, visual regression, or production accessibility evidence
-> already exists.
+> runtime. `vgpu` is the selected optional cartographic renderer behind a RITSEI-owned adapter, but
+> it is not activated as a runtime dependency yet. This document therefore defines the target
+> contract and its activation gates; it does not claim that WebGPU, glass recipes, visual regression,
+> or production accessibility evidence already exists.
 >
 > **Owns:** Product Patterns, Interaction Grammar, Visual Grammar, semantic design tokens, material
 > rules, component contracts, accessibility, density, renderer boundaries, and frontend design-system
@@ -18,6 +19,10 @@
 > - Active architecture: [`./architecture-spec-v4.md`](./architecture-spec-v4.md)
 > - Design-system decision: [`../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md`](../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md)
 > - Cartographic UI decision: [`../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md`](../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md)
+> - Cartographic renderer selection: [`../decisions/0070-select-vgpu-and-defer-typegpu.md`](../decisions/0070-select-vgpu-and-defer-typegpu.md)
+> - Cartographic renderer reference: [`./reference/cartographic-renderer-selection.md`](./reference/cartographic-renderer-selection.md)
+> - Universal cartographic archetypes: [`../decisions/0071-adopt-universal-cartographic-archetypes.md`](../decisions/0071-adopt-universal-cartographic-archetypes.md)
+> - Archetypes and semantic depth reference: [`./reference/cartographic-archetypes-and-semantic-depth.md`](./reference/cartographic-archetypes-and-semantic-depth.md)
 > - Frontend state ownership: [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
 > - Vite and SolidJS SPA: [`../decisions/0010-use-vite-solidjs-spa.md`](../decisions/0010-use-vite-solidjs-spa.md)
 > - Process Studio: [`./process-studio.md`](./process-studio.md)
@@ -44,7 +49,8 @@ new design-system dialect.
 The material ratios and HTML/rendering ratios in this document are **art-direction targets**, not a
 literal per-component budget or a universal page template. A form or table MAY be almost entirely
 HTML and still conform. A data-dense spatial view MAY use more canvas or WebGPU when its measured
-question requires it.
+question requires it. For composed experiences that actually need a visual renderer, the current
+planning target is approximately `85–95%` HTML/CSS/SVG and `5–15%` Canvas/WebGPU.
 
 ## 2. Design thesis
 
@@ -116,7 +122,7 @@ Business truth
       ↓
 Business semantics
       ↓
-Projection intent
+Typed visual projection intent
       ↓
 Product Patterns + Interaction Grammar
       ↓
@@ -134,7 +140,7 @@ The layers have separate owners:
 | Layer | Owns | Must not own |
 |---|---|---|
 | Domain | Authoritative facts, invariants, capabilities, typed commands | UI layout or styling |
-| Projection | Decoded view models and representation intent | New business authority |
+| Projection | Decoded view models and typed representation intent | New business authority |
 | Product Pattern | Canonical composition and workflow behavior | CSS implementation details |
 | Interaction Grammar | Selection, editing, dragging, focus, confirmation, navigation | Backend authorization |
 | Visual Grammar | How business meaning is represented visually | Domain truth or renderer internals |
@@ -530,6 +536,11 @@ They represent:
 A primitive MUST have a declared semantic meaning in its projection contract. It MUST NOT be added
 only to fill empty space.
 
+Cartographic is a grammar for structure, relationship, pressure, movement, boundary, and state. It
+MUST NOT be interpreted as a requirement to place maps or topographic contours on every page. The
+business question selects the projection; finance, forms, tables, and ordinary record surfaces may
+use restrained fields, boundaries, concentration, or no cartographic material at all.
+
 ### Topographic usage by surface
 
 ```text
@@ -577,37 +588,195 @@ texture asset and MUST NOT reduce text, chart, or control contrast.
 
 ## 14. Domain-adaptive visual language
 
-Each domain may emphasize different cartographic primitives while sharing the same grammar:
+Domains share one cartographic grammar but select different archetype compositions according to the
+business question. The foundation is seven universal business archetypes:
+
+| Archetype | Meaning | Visual grammar |
+|---|---|---|
+| **Stock** | Something available, stored, or held | density, mass, level |
+| **Flow** | Something moving from one point or state to another | route, direction, velocity |
+| **Capacity** | Load compared with ability or limit | pressure, compression, elevation |
+| **Value** | Money, exposure, or value concentration | field, concentration, variance |
+| **Relationship** | People, accounts, vendors, teams, or networks | nodes, proximity, connection |
+| **Progress** | Work moving toward an outcome | path, milestones, blockage |
+| **Asset / Space** | A thing or place with position and state | regions, boundaries, markers |
+
+A domain may emphasize several archetypes while sharing the same visual language:
 
 ```text
-Process       → Flow
-Inventory     → Space
-Manufacturing → Load
-Procurement   → Dependency
-Finance       → Concentration
-CRM           → Relationship
+Process       → Progress + Flow
+Inventory     → Stock + Capacity + Flow + Asset / Space
+Manufacturing → Stock + Flow + Capacity + Progress + Asset / Space
+Procurement   → Relationship + Flow + Capacity + Value
+Finance       → Value + Relationship + Flow + Capacity
+CRM           → Relationship + Value + Progress
 ```
 
 The projection is selected by the user's question:
 
 ```text
-Movement + "Where is inventory going?"  → Flow
-Movement + "What happened to this item?" → Timeline
-Movement + "Where is inventory now?"     → Map
+Movement + "Where is inventory going?"   → Flow
+Movement + "What happened to this item?"  → Progress / Flow
+Movement + "Where is inventory now?"      → Stock + Asset / Space
 ```
 
-Industry composition is not a new dashboard family:
+Industry composition is a combination of archetypes, not a new dashboard family:
 
 ```text
-Manufacturing = Process + Movement + Capacity + Exception
-Distribution  = Movement + Location + Commitment + Exception
-Retail        = Movement + Velocity + Location + Exception
-ISP           = Relationship + Location + Capacity + Exception
-Consulting    = Commitment + Capacity + Time + Exception
+Retail        = Stock + Flow + Value + Relationship
+Manufacturing = Stock + Flow + Capacity + Progress + Asset / Space
+Logistics     = Flow + Capacity + Asset / Space + Progress
+Banking       = Value + Relationship + Flow + Capacity
+Consulting    = Progress + Capacity + Relationship + Value
+Construction  = Progress + Asset / Space + Capacity + Stock + Value
+Hospitality   = Capacity + Relationship + Stock + Value
+Healthcare    = Capacity + Asset / Space + Flow + Relationship + Stock
+Telecom       = Asset / Space + Flow + Capacity + Relationship + Value
+Software/SaaS = Relationship + Capacity + Progress + Value
+Education     = Relationship + Capacity + Progress + Asset / Space
+Utilities     = Asset / Space + Flow + Capacity + Value
 ```
 
 Do not create `ManufacturingDashboard`, `RetailDashboard`, or `ISPDashboard` as the primary
-architecture. Compose approved projections and Product Patterns.
+architecture. Compose approved archetypes, projections, and Product Patterns. The archetypes are
+visual projection concepts; they do not own business facts, authorization, workflow state, or
+domain invariants.
+
+### Context-aware semantic mapping
+
+A numeric value MUST NOT map to one universal visual operation. The semantic dimension and business
+question determine the mapping:
+
+```text
+Inventory capacity ↑  → terrain elevation ↑
+Risk ↑               → compression / pressure ↑
+Movement ↑           → velocity ↑
+Uncertainty ↑        → boundary softness ↑
+Discrepancy ↑        → continuity breaks ↑
+```
+
+Examples include:
+
+```text
+Supplier risk         → pressure + contour density
+Financial exposure    → concentration + depth
+Machine failure risk  → local pulse + boundary
+Project risk          → obstruction + path compression
+Warehouse risk        → density + spatial pressure
+```
+
+The design system MUST NOT apply:
+
+```text
+high number → everything becomes higher
+```
+
+### Deterministic procedural variation
+
+RITSEI distinguishes stable procedural variation from per-render randomness:
+
+```text
+randomness      ✗
+variation       ✓
+```
+
+Renderer variation MUST be deterministic for the same stable entity identity, semantic state,
+surface type, and design-token inputs. `Math.random()` or equivalent unbounded randomness MUST NOT
+control the appearance of a business entity on each render.
+
+```text
+stable entity identity
+      +
+semantic state
+      +
+surface type
+      +
+design tokens
+      ↓
+stable seed
+      ↓
+procedural variation
+```
+
+The seed is an adapter input. Raw business identifiers MUST NOT be exposed to shaders when a derived
+seed is sufficient. Entities with equal semantic state MAY have different stable field shapes, but
+semantic comparability MUST remain intact.
+
+### Semantic depth
+
+UI depth remains the stable hierarchy defined in Section 12:
+
+```text
+L0 Canvas
+L1 Content
+L2 Card
+L3 Interactive
+L4 Modal
+```
+
+Semantic depth is different: it is the perceived depth of data inside a visual field. It MUST be
+selected by archetype and meaning, not assigned randomly. Risk may use compression and contour
+concentration; capacity may use elevation; movement may use velocity; uncertainty may use boundary
+softness. Semantic depth MUST NOT replace explicit labels, semantic color, contrast, reduced-motion
+behavior, or accessible alternatives.
+
+### Material vocabulary
+
+Cartographic renderers MAY use a generic material vocabulary broader than color and opacity:
+
+```text
+density
+amplitude
+compression
+roughness
+continuity
+velocity
+depth
+blur
+field radius
+contour count
+mass
+level
+concentration
+boundary softness
+proximity
+pulse
+```
+
+Business semantics map into this vocabulary through a CPU-side visual projection. The material
+vocabulary MUST NOT become a second domain model.
+
+### Data-driven material variation
+
+Material variation MAY respond to data and context when it expresses a declared business or system
+state rather than random decoration:
+
+| State or meaning | Permitted material response |
+|---|---|
+| Risk | Denser contours and stronger critical intensity |
+| Capacity | Greater elevation or height |
+| Flow | Directional lines or movement following the transaction direction |
+| Idle / stable | Flatter, sparser, calmer field |
+| Forecast | Softer or ghosted layer |
+| Discrepancy | Broken contour or restrained jitter |
+| Success / recovery | Lower density and a return toward the neutral palette |
+
+Layout, typography, spacing, interaction behavior, and semantic labels MUST remain consistent. Only
+the material layer and approved visual semantics vary. This gives RITSEI a consistent structure with
+a surface that responds to business conditions rather than a different dashboard dialect on every
+page.
+
+A useful progression is:
+
+```text
+Low risk      → sparse, calm
+Medium risk   → denser, warmer
+High risk     → tight contour, critical red pressure
+Recovered     → contour relaxes
+```
+
+Material variation MUST NOT override explicit text, semantic color, contrast, reduced-motion
+behavior, or the accessible fallback.
 
 ## 15. Domain surfaces
 
@@ -842,6 +1011,11 @@ NOT import Ark UI, dnd-kit, Panda-generated artifacts, or renderer libraries dir
 The material layer MUST NOT carry information by itself. Canvas and WebGPU are never substitutes for
 semantic DOM, accessible labels, keyboard access, or text/table alternatives.
 
+Analytical visualizations SHOULD use a hybrid composition: a visual canvas or SVG scene, a DOM
+summary, and an accessible data or table view. Pointer picking MAY update a Solid selection, but the
+explanation, tooltip, popover, or dialog remains DOM-owned and uses the RITSEI/Ark UI interaction
+boundary. Decorative canvas output SHOULD be marked `aria-hidden="true"`.
+
 All interactive controls MUST provide:
 
 - visible keyboard focus;
@@ -871,13 +1045,50 @@ rules. Respect:
 Reduced motion MUST disable or replace particle flows, terrain animation, dynamic distortion, and
 continuous parallax. Static contour MAY remain.
 
+### Static-first rendering
+
+ERP scenes MUST default to static or event-driven rendering rather than a permanent 60 FPS loop:
+
+```text
+STATIC
+──────
+
+data changes
+    ↓
+render()
+    ↓
+GPU idle
+```
+
+A bounded active loop MAY run for pointer interaction, a visible transition, an operational flow, or
+another declared semantic change, then SHOULD stop when the activity settles:
+
+```text
+ACTIVE
+──────
+
+pointer / transition / flow
+          ↓
+      bounded loop
+          ↓
+ animation settles
+          ↓
+         stop
+```
+
+Static topology, paper grain, and unchanged inputs SHOULD be baked or cached. Continuous animation
+is reserved for a real-time operational need and MUST be visibility-aware, throttled, and allowed a
+reduced-quality mode. Solid signals MUST carry semantic changes, not frame counters; renderer-owned
+time, delta, particles, simulation, scheduling, and frame submission stay behind the renderer
+adapter.
+
 ## 19. HTML, CSS, SVG, Canvas, and WebGPU
 
 HTML remains the application and semantic layer. The default implementation balance is:
 
 ```text
-HTML / DOM     80–95%
-Canvas/WebGPU   5–20%
+HTML / CSS / SVG     85–95%
+Canvas / WebGPU       5–15%
 ```
 
 This is a target for composed visual experiences, not a requirement that every route use a GPU. A
@@ -903,17 +1114,33 @@ Application / Solid / HTML
      └── DataPulse
 ```
 
+The cartography contract receives typed visual intent from a domain/application projection. The
+selected WebGPU implementation is `vgpu`, but it is reachable only through a RITSEI-owned renderer
+adapter:
+
+```text
+Domain projection
+      ↓
+typed visual intent
+      ↓
+RITSEI cartography contract
+      ├── SVG / Canvas / CSS fallback
+      └── vgpu adapter
+                ↓
+             WebGPU
+```
+
 WebGPU MAY handle procedural topology, dense visualization, field deformation, data-driven contour,
 particle movement, extremely dense charts, spatial visualization, and material rendering. It MUST
 NOT own semantics, fetching, authorization, business aggregation, workflow state, or authoritative
-facts.
+facts. Feature and domain code MUST NOT import `vgpu` or raw WebGPU objects directly.
 
 ### Progressive enhancement
 
 The fallback hierarchy is mandatory:
 
 ```text
-WebGPU
+vgpu / WebGPU
 ↓
 Canvas 2D / SVG
 ↓
@@ -932,15 +1159,17 @@ Use CSS for simple blur, shadow, opacity, minor masks, basic texture, and static
 Use SVG for small contours, simple routes, vector distortion, and a small number of interactive
 paths.
 
-Use WebGPU only when measured need includes thousands of objects, dynamic topology, continuous fields,
-massive data, real-time deformation, particle visualization, or complex data-driven material that
-lower layers cannot satisfy.
+Use the `vgpu` adapter only when measured need includes thousands of objects, dynamic topology,
+continuous fields, massive data, real-time deformation, particle visualization, or complex
+data-driven material that lower layers cannot satisfy.
 
 A modal pressure effect with only 2–3px deformation belongs in CSS or SVG. WebGPU is justified only
 when the contour field is procedural and materially spans the application scene.
 
-No WebGPU, map, chart, or material dependency is activated by this document. Activation requires an
-implementation spike and the evidence in Section 23.
+`vgpu` is the selected optional renderer, not a commitment to expose its API or to add it before the
+activation gate passes. TypeGPU is deferred for a future GPU-compute-centered subsystem and is not a
+current RITSEI renderer dependency. Activation requires an implementation spike and the evidence in
+Section 23.
 
 ## 20. Shadow, glass, and material constraints
 
@@ -1049,6 +1278,8 @@ apps/web/src/
 │   ├── grammar/
 │   ├── interaction/
 │   └── renderers/
+│       ├── cartography/
+│       └── cartography-gpu/
 ├── features/
 │   └── <domain>/
 │       ├── projections/
@@ -1093,6 +1324,8 @@ Frontend activation gates include:
   enforcement;
 - dnd-kit pointer/keyboard parity where used;
 - deterministic renderer output and accessible fallbacks;
+- the same renderer adapter contract in browser, headless Node, and deterministic mock paths;
+- `vgpu/node` headless validation and `vgpu/mock` CI coverage when the adapter is activated;
 - bundle, route, frame-time, memory, and interaction performance measurements;
 - no permanent GPU animation for static scenes;
 - power behavior during long-lived enterprise sessions; and
@@ -1119,6 +1352,7 @@ This design system does not:
 - define backend business semantics or authorization;
 - define Process IR or Process Studio runtime semantics;
 - select a chart, graph, map, or canvas engine for every visual grammar;
+- adopt TypeGPU as a GPU application or compute platform before a measured requirement and separate ADR;
 - require WebGPU, SSR, SolidStart, or a universal metadata-driven UI framework;
 - add frontend dependencies before an implementation spike and activation gate;
 - replace frontend state ownership in ADR-0048; or
@@ -1136,11 +1370,24 @@ This design system does not:
 With implementation balance:
 
 ```text
-80–95% HTML / CSS
- 5–20% Canvas / WebGPU
+85–95% HTML / CSS / SVG
+ 5–15% Canvas / WebGPU
 ```
 
-The most important rule remains:
+As a non-normative screen-level design philosophy:
+
+```text
+90% deterministic structure
+ 8% semantic procedural variation
+ 2% entity-specific variation
+```
+
+This is not an engineering budget or a literal pixel allocation. It is a guardrail that keeps layout,
+typography, spacing, interaction, and accessibility stable while allowing data-driven material
+expression.
+
+The selected optional WebGPU implementation is `vgpu` behind a RITSEI-owned adapter. The most
+important rule remains:
 
 > **HTML owns interaction and semantics. WebGPU owns optional material, field, density, and
 > high-complexity visualization.**

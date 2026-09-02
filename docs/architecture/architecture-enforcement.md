@@ -21,6 +21,8 @@
 > - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
 > - HTTP API boundary: [`./api.md`](./api.md)
 > - Design system and Visual Grammar: [`./design-system.md`](./design-system.md)
+> - Cartographic renderer selection: [`../decisions/0070-select-vgpu-and-defer-typegpu.md`](../decisions/0070-select-vgpu-and-defer-typegpu.md)
+> - Universal cartographic archetypes: [`../decisions/0071-adopt-universal-cartographic-archetypes.md`](../decisions/0071-adopt-universal-cartographic-archetypes.md)
 > - Governed AI recommendation and agent boundary:
 >   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
 > - Documentation ownership: [`../documentation-boundaries.md`](../documentation-boundaries.md)
@@ -102,12 +104,17 @@ The canonical frontend visual and interaction rules live in
 [`./design-system.md`](./design-system.md). Once production UI activation begins, static and
 contract checks must enforce the boundary rather than relying on review alone:
 
-- Ark UI, Panda-generated artifacts, dnd-kit, chart adapters, Canvas, and WebGPU imports are limited
-  to the internal `apps/web/src/ui/` layer;
+- Ark UI, Panda-generated artifacts, dnd-kit, chart adapters, Canvas, WebGPU, and `vgpu` imports
+  (including `vgpu/node`, `vgpu/mock`, and `vgpu/scene`) are limited to the internal
+  `apps/web/src/ui/` layer;
 - feature UI consumes semantic RITSEI variants and approved recipes, not raw primitive colors,
   arbitrary spacing, broad style props, or hard-coded material intensity;
+- cartographic projections declare their archetype and semantic material mapping; per-render random
+  values must not define an entity's visual identity;
 - renderer adapters expose semantic fallbacks and cannot become sources of business state,
-  authorization, or workflow authority; and
+  authorization, or workflow authority;
+- cartographic projections pass typed visual intent to the renderer adapter rather than importing
+  `vgpu` or raw WebGPU directly; and
 - accessibility, reduced-motion, contrast, and renderer performance remain runtime/evidence checks,
   not claims inferred from static import boundaries.
 
