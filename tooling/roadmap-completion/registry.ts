@@ -174,6 +174,7 @@ export const gates: readonly Gate[] = [
         "[x] process promotion separates release from deployment across environments",
         "[x] execution principal, delegation, SoD, and business observability are explicit",
         "[x] authentication, current tenant membership, relationship scope, and revocation fail closed",
+        "[x] AI output is non-authoritative; no AgentPrincipal, agent node, or autonomous mutation is in scope",
       ),
       marker(
         "docs/architecture/identity-and-principals.md",
@@ -213,7 +214,13 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.catalog08"],
-    commands: [task("test", "modules/process/tests/runtime.test.ts")],
+    commands: [
+      task(
+        "test",
+        "modules/process/tests/runtime.test.ts",
+        "modules/process/tests/runtime-postgres.test.ts",
+      ),
+    ],
     requirements: [
       marker(
         "modules/process/src/runtime-store.ts",
@@ -236,7 +243,13 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/process-studio.md",
     kind: "markers",
     dependencies: ["process.runtime085"],
-    commands: [task("test", "modules/process/tests/operations.test.ts")],
+    commands: [
+      task(
+        "test",
+        "modules/process/tests/operations.test.ts",
+        "modules/process/tests/operations-postgres.test.ts",
+      ),
+    ],
     requirements: [
       marker(
         "modules/process/src/operations-store.ts",
@@ -268,9 +281,13 @@ export const gates: readonly Gate[] = [
     ],
     requirements: [
       marker(
-        "apps/web/src/features/process-studio/",
+        "apps/web/src/features/process-studio/designer-model.ts",
         "process designer",
         "typed mapping",
+        "deterministic Process IR",
+      ),
+      marker(
+        "apps/web/src/features/process-studio/designer.test.ts",
         "keyboard",
         "deterministic Process IR",
       ),
@@ -367,7 +384,13 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["integration.runtime085"],
-    commands: [task("test", "modules/integrations/tests/reliability.test.ts")],
+    commands: [
+      task(
+        "test",
+        "modules/integrations/tests/reliability.test.ts",
+        "modules/integrations/tests/reliability-postgres.test.ts",
+      ),
+    ],
     requirements: [
       marker(
         "modules/integrations/src/reliability-store.ts",
@@ -412,7 +435,13 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/integration-surface.md",
     kind: "markers",
     dependencies: ["integration.process095"],
-    commands: [task("test", "modules/integrations/tests/governance.test.ts")],
+    commands: [
+      task(
+        "test",
+        "modules/integrations/tests/governance.test.ts",
+        "modules/integrations/tests/governance-postgres.test.ts",
+      ),
+    ],
     requirements: [
       marker(
         "modules/integrations/src/governance-store.ts",
@@ -637,6 +666,11 @@ export const gates: readonly Gate[] = [
       "integration.reliability09",
       "integration.process095",
       "integration.governed10",
+      "packs.contract",
+      "postgres19.minimum-version",
+      "postgres19.wait-for-pilot",
+      "postgres19.property-graph-pilot",
+      "postgres19.repack-rehearsal",
       "postgres19.production-ga",
     ],
   },

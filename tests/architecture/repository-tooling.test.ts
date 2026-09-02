@@ -12,7 +12,12 @@ import {
   requiredFinancialGateIds,
 } from "../../tooling/financial-readiness/evaluate.ts"
 import { analyzePublicPackageImports } from "../../tooling/public-contract/check.ts"
-import { type Gate, validateGateGraph } from "../../tooling/roadmap-completion/registry.ts"
+import {
+  type Gate,
+  gates,
+  roadmapTracks,
+  validateGateGraph,
+} from "../../tooling/roadmap-completion/registry.ts"
 
 const skillHeadings = [
   "# Purpose",
@@ -112,6 +117,15 @@ describe("repository tooling", () => {
         gate("first", ["second"]),
         gate("second", ["first"]),
       ]).some((failure) => failure.includes("dependency cycle")),
+    )
+  })
+
+  it("keeps the global roadmap gate dependent on every registered track gate", () => {
+    const global = gates.find(({ id }) => id === "roadmap.global-exit")
+    assert.isDefined(global)
+    assert.deepStrictEqual(
+      [...new Set(global.dependencies)].sort(),
+      roadmapTracks.flatMap(({ gateIds }) => gateIds).sort(),
     )
   })
 
