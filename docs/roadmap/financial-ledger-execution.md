@@ -53,21 +53,21 @@ quantity remain separate decisions.
 | Adapter    | trusted provider-neutral kernel adapter and bounded local compatibility proof exist         | outage, quorum, restart, and exit rehearsal            |
 | Reporting  | operation-level projection/rebuild exists                                                   | complete balance and report rebuild correspondence     |
 | Cutover    | controlled prepare/approve/activate state machine exists                                    | signed bounded-cohort opening-balance/replay rehearsal |
-| Production | **NO-GO**; `2/16` financial gates pass                                                      | close all P0 activation evidence                       |
+| Production | **NO-GO**; live gate count is emitted by `deno task roadmap:measure`                        | close all P0 activation evidence                       |
 
 The implementation slice is transitional. It does not authorize TigerBeetle production activation, a
 live PostgreSQL mirror, or a per-request choice between authorities.
 
 ## Target boundary
 
-| Owner                          | Responsibility                                                                                |
-| ------------------------------ | --------------------------------------------------------------------------------------------- |
-| `modules/accounting`           | policy, periods, authorization, public operation/finalize/reconcile commands                  |
-| `platform/tigerbeetle`         | TigerBeetle client lifecycle, deterministic IDs, batching, failure mapping, cleanup           |
-| `runtime/worker` / `modules/process` jobs | leased submission and reconciliation work through public Accounting contracts       |
-| Accounting schema              | intent, mapping, outcome, provenance, reconciliation, and projection metadata                 |
-| PostgreSQL                     | control plane, historical archive, and rebuildable projection—not accepted-transfer authority |
-| TigerBeetle                    | accepted transfers, balances, and immutable transfer history after cutover                    |
+| Owner                                     | Responsibility                                                                                |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `modules/accounting`                      | policy, periods, authorization, public operation/finalize/reconcile commands                  |
+| `platform/tigerbeetle`                    | TigerBeetle client lifecycle, deterministic IDs, batching, failure mapping, cleanup           |
+| `runtime/worker` / `modules/process` jobs | leased submission and reconciliation work through public Accounting contracts                 |
+| Accounting schema                         | intent, mapping, outcome, provenance, reconciliation, and projection metadata                 |
+| PostgreSQL                                | control plane, historical archive, and rebuildable projection—not accepted-transfer authority |
+| TigerBeetle                               | accepted transfers, balances, and immutable transfer history after cutover                    |
 
 No TigerBeetle type or provider failure crosses the Accounting public contract. No Effect fiber is a
 durability boundary.

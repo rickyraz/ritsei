@@ -35,14 +35,19 @@ production.
 
 ## Sequence
 
-### Minimum version
+The first four gates prove the registered PostgreSQL capability scope. The final gate records the
+production decision. The current registry requires both pilots because both are part of that scope;
+if a future deployment profile selects only one pilot, split the activation gate rather than bypass
+or reinterpret a dependency.
+
+### Minimum version (`postgres19.minimum-version`)
 
 Keep the kernel version floor at PostgreSQL 19 (`server_version_num >= 190000`) and verify it before
 application work or migration execution.
 
 **Exit:** the version check and regression test pass.
 
-### Replica read-your-writes pilot
+### Replica read-your-writes pilot (`postgres19.wait-for-pilot`)
 
 Pilot route-scoped `WAIT FOR ... MODE 'standby_replay'` for procurement purchase-order create/read.
 The command captures an opaque, tenant-bound token after commit; the read validates placement and
@@ -53,7 +58,7 @@ approved primary path.
 **Exit:** token integrity, tenant binding, bounded wait, malformed/expired handling, promotion and
 timeline rejection, no-primary-fallback behavior, and route response semantics are tested.
 
-### Party property-graph pilot
+### Party property-graph pilot (`postgres19.property-graph-pilot`)
 
 Expose a bounded Party related-party path query over `party.parties`, `party.legal_entities`, and
 `party.party_relationships`. SQL/PGQ is a read projection; relational foreign keys, tenant scope,
@@ -63,7 +68,7 @@ authorization, and mutation paths remain authoritative.
 and active-only, its result matches the relational baseline, and its bounded result is covered by a
 public Party contract test.
 
-### Operational rehearsal
+### Operational rehearsal (`postgres19.repack-rehearsal`)
 
 Run the disposable-database rehearsal for native `REPACK (CONCURRENTLY true, ANALYZE true)`,
 checksums, autovacuum, reserved connections, `max_repack_replication_slots`, and `pg_stat_io`.
@@ -71,34 +76,36 @@ checksums, autovacuum, reserved connections, `max_repack_replication_slots`, and
 **Exit:** row/checksum preservation and index validity are recorded in reviewable evidence; beta/RC
 runs remain development-only.
 
-### Production GA gate
+### Production GA gate (`postgres19.production-ga`)
 
 Keep PostgreSQL 19 production activation closed until GA, backup/PITR, migration, failover,
 replication, workload-isolation, observability, and route-specific evidence are accepted.
 
-**Exit:** all preceding gates pass and the production review explicitly approves activation. A
-passing mechanical gate is not production approval.
+**Exit:** the first four gates pass before final review, and the production evidence records that
+the production review explicitly approves activation on PostgreSQL 19 GA. The
+`postgres19.production-ga` gate passes only after that review; a passing mechanical gate is not
+production approval.
 
 ## Current evidence
 
 The repository proves the minimum version, a route-scoped consistency adapter and tests, a
-non-superuser control/`WAIT FOR` privilege test, a Party SQL/PGQ migration with a relational baseline
-and `EXPLAIN ANALYZE` test, and a disposable operational rehearsal. The local
-development database is PostgreSQL 19 Beta 3 on August 31, 2026; production eligibility is therefore
-**OPEN**.
+non-superuser control/`WAIT FOR` privilege test, a Party SQL/PGQ migration with a relational
+baseline and `EXPLAIN ANALYZE` test, and a disposable operational rehearsal. Evidence captured on
+August 31, 2026 used PostgreSQL 19 Beta 3; production eligibility therefore remains **OPEN** as of
+September 2, 2026.
 
 ## Measures
 
-| Measure                                                | Target                                 |
-| ------------------------------------------------------ | -------------------------------------- |
-| `postgres19.*` mechanical gates                        | all five pass before activation review |
-| PostgreSQL server version floor                        | `server_version_num >= 190000`         |
-| opaque token leakage into domain contracts             | `0`                                    |
-| primary fallback after a selected replica wait failure | `0`                                    |
-| graph query tenant-boundary failures                   | `0`                                    |
-| graph result mismatch against relational baseline      | `0`                                    |
-| rehearsal checksum/index failures                      | `0`                                    |
-| production eligibility on beta/RC                      | `OPEN`                                 |
+| Measure                                                | Target                                                  |
+| ------------------------------------------------------ | ------------------------------------------------------- |
+| `postgres19.*` registered gates                        | first four before final review; all five for activation |
+| PostgreSQL server version floor                        | `server_version_num >= 190000`                          |
+| opaque token leakage into domain contracts             | `0`                                                     |
+| primary fallback after a selected replica wait failure | `0`                                                     |
+| graph query tenant-boundary failures                   | `0`                                                     |
+| graph result mismatch against relational baseline      | `0`                                                     |
+| rehearsal checksum/index failures                      | `0`                                                     |
+| production eligibility on beta/RC                      | `OPEN`                                                  |
 
 ## Stop conditions
 

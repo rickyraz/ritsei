@@ -3,15 +3,11 @@
 > **Status:** Canonical target architecture
 >
 > **Owns:** Process design-time semantics, typed action and event catalogs, RITSEI Process IR,
-> static process validation, definition governance, compensation metadata, and the staged Process
-> Studio roadmap.
+> static process validation, definition governance, and compensation metadata.
 >
-> **Implementation status:** The contract-only catalog protocol, bounded Level 3 Inventory and Sales
-> action slices, an Accounting PUBLIC event contributor, deterministic Process IR, release/runtime
-> governance slices, an accessible structured designer, and an experimental Process Pack
-> manifest/resolver are implemented. Broad catalog-driven
-> execution and operational scale remain staged behind the roadmap gates. AI-assisted modeling and
-> recommendations remain non-authoritative and are governed by
+> **Implementation status:** Owned by the
+> [Process Studio roadmap](../roadmap/process-studio.md) and `deno task roadmap:measure`. AI-assisted
+> modeling and recommendations remain non-authoritative and are governed by
 > [ADR-0063](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md).
 >
 > **Related documents**
@@ -1460,132 +1456,12 @@ coordination layer rather than a platform-wide programming model.
 - [x] Rejected assumptions and explicit non-goals are documented.
 - [ ] Runtime evidence gates are complete; implementation remains roadmap work.
 
-## Delivery Roadmap
+## Delivery Sequencing
 
-The visual designer arrives after catalog and runtime semantics are proven. Version labels describe
-architectural milestones, not permission to ship unvalidated behavior. Primitive and domain
-preconditions are tracked in [`../roadmap/README.md`](../roadmap/README.md) and the Process Studio
-readiness gates in [`../roadmap/process-studio.md`](../roadmap/process-studio.md).
-
-### 0.8 — Capability Metadata
-
-```text
-Domain capability metadata
-Typed Action Catalog
-Typed Event Catalog
-Idempotency contracts
-Correlation and causation contracts
-Compensation metadata
-Bounded precondition/effect vocabulary
-```
-
-Exit criteria:
-
-- at least two domains publish versioned actions and events;
-- catalog contracts expose no implementation or persistence types;
-- action invocation and event filtering are tenant-aware;
-- compensation metadata distinguishes explicit command from none;
-- contract and architecture tests prevent unregistered execution.
-
-### 0.85 — Minimal Headless Runtime
-
-```text
-RITSEI Process IR
-Process definitions
-Process instances
-Domain command execution
-Timer
-Wait for Event
-Human tasks
-Pure decisions
-```
-
-Exit criteria:
-
-- a headless process survives restart at every checkpoint;
-- duplicate command and event delivery do not duplicate business effects;
-- instances are pinned to exact definition and catalog versions;
-- committed actions and compensation state remain observable.
-
-### 0.9 — Operational Maturity
-
-```text
-Definition versioning
-Recovery
-Bounded retry
-Audit correlation
-Cancellation
-Compensation execution
-Monitoring APIs
-Operational controls
-```
-
-Exit criteria:
-
-- load, crash-recovery, migration, and upgrade tests pass;
-- operators can distinguish retryable, business, compensation, and manual recovery states;
-- no workflow engine bypasses domain contracts or transaction ownership.
-
-### 0.95 — Visual Designer
-
-```text
-Drag-and-drop editor
-Keyboard/structured editor alternative
-Catalog-driven palettes
-Typed mappings
-Static validation
-Decision tables
-Simulation
-Version comparison
-```
-
-Exit criteria:
-
-- every visual model serializes deterministically to Process IR;
-- the UI cannot publish invalid or unauthorized definitions;
-- designer accessibility and critical interaction tests pass.
-
-### 1.0 — Governed Process Studio
-
-```text
-Review and approval
-Publishing and retirement
-Simulation
-Task Inbox
-Process Monitor
-Recovery and compensation controls
-Basic process documentation
-Basic duration and bottleneck reporting
-BPMN import/export compatibility boundary
-```
-
-Exit criteria:
-
-- definition governance and action execution capabilities are independently enforced;
-- released versions are immutable and active instances are stable across new deployments;
-- runtime, inbox, monitor, and designer satisfy tenant, audit, accessibility, recovery, and
-  authorization requirements;
-- BPMN interoperability translates through Process IR rather than becoming runtime truth.
-
-### Post-1.0
-
-Potential later capabilities include:
-
-```text
-broader BPMN interoperability
-DMN interoperability
-advanced process mining
-cost and resource simulation
-conformance analytics
-cross-system connector marketplace
-sandboxed executable extensions
-AI-assisted modeling
-agentic workflows
-RPA
-```
-
-Each requires evidence, bounded trust, and its own accepted architecture decision when it changes
-the core runtime or security model.
+This document owns Process Studio semantics and completion requirements. Phase order, gate IDs,
+measured status, and future delivery scope are owned by the
+[Process Studio roadmap](../roadmap/process-studio.md); global dependencies are owned by the
+[roadmap index](../roadmap/README.md).
 
 ## Non-Goals for 1.0
 

@@ -26,7 +26,8 @@
 ## Scope
 
 External integration is a typed, versioned, observable boundary—not a shortcut around domain
-ownership and not transport metadata in Process IR.
+ownership and not transport metadata in Process IR. Numeric milestone labels are historical roadmap
+identifiers, not product SemVer.
 
 ```text
 external protocol → connector adapter → ExternalAction / ExternalEvent
@@ -35,7 +36,7 @@ external protocol → connector adapter → ExternalAction / ExternalEvent
 
 ## Sequence
 
-### 0.8 — Contract profile
+### 0.8 — Contract profile (`integration.contract08`)
 
 Use the approved baseline:
 
@@ -51,7 +52,7 @@ RFC 9457 Problem Details
 tenant boundaries are typed; OpenAPI operations are allowlisted; CloudEvents envelopes and payloads
 are separately validated; credentials do not enter Process IR or domain contracts.
 
-### 0.85 — Connector runtime
+### 0.85 — Connector runtime (`integration.runtime085`)
 
 Implement the minimum headless path: OpenAPI action invocation, HTTPS webhook ingestion, CloudEvents
 validation, OAuth scope enforcement, idempotency/deduplication, timeout/bounded retry, and delivery
@@ -61,7 +62,7 @@ log.
 errors normalize to stable integration failures; network calls do not extend PostgreSQL
 transactions; side effects have compensation or manual recovery.
 
-### 0.9 — Reliability and compatibility
+### 0.9 — Reliability and compatibility (`integration.reliability09`)
 
 Add dead-letter handling, replay protection, rate/payload limits, redaction/retention, provider
 status, contract compatibility, health, and lag measures. gRPC, Kafka, AMQP, NATS, SQS/Pub/Sub,
@@ -70,7 +71,7 @@ EventBridge, SOAP, and OData remain optional adapters behind the same boundary.
 **Exit:** advanced protocols are invisible to Process IR; every adapter has an owner, version,
 compatibility range, tests, provider-specific retry policy, and secret-handling review.
 
-### 0.95 — Process Studio integration
+### 0.95 — Process Studio integration (`integration.process095`)
 
 Expose only approved connector capabilities through catalog references. The canvas sees typed
 inputs/outputs, scope, idempotency, timeout, retry, and compensation—not transport details.
@@ -78,7 +79,7 @@ inputs/outputs, scope, idempotency, timeout, retry, and compensation—not trans
 **Exit:** external actions/events are versioned and catalog-driven; OAuth scopes remain separate
 from domain capabilities; static validation and side-effect-free simulation pass.
 
-### 1.0 — Governed integration surface
+### 1.0 — Governed integration surface (`integration.governed10`)
 
 Deliver connector registration/review, OpenAPI import governance, webhook verification, publication,
 versioning/retirement, operator delivery controls, provider runbooks, audit, and redaction.
@@ -104,9 +105,10 @@ Process Studio bridge. It does not activate a provider or claim production readi
 | credentials or raw provider payloads in Process IR        | `0`                               |
 | provider-specific transport types in domain packages      | `0`                               |
 
-A passing surface gate does not activate a provider. Provider activation additionally requires a
-selected owner, credentials, production endpoint, recovery rehearsal, and reviewed runbook. These
-are mechanical readiness gates, not proof that every provider is production-ready.
+`integration_surface_gates_remaining` is the live roadmap metric. The other rows are provider or
+release-evidence requirements, not separately emitted counters. A passing surface gate does not
+activate a provider. Provider activation additionally requires a selected owner, credentials,
+production endpoint, recovery rehearsal, and reviewed runbook.
 
 ## Stop conditions
 

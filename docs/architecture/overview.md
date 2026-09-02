@@ -197,7 +197,7 @@ immutable, running instances remain version-pinned, and every command executes
 through its owning public domain contract.
 
 See [`./process-studio.md`](./process-studio.md) for the canonical target and
-0.8–1.0 delivery gates.
+[`../roadmap/process-studio.md`](../roadmap/process-studio.md) for delivery gates.
 
 ## Extensions
 

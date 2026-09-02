@@ -541,8 +541,8 @@ explicit compensating commands, and process definitions select compensation or m
 policy. Static validation checks catalog versions, schemas, mappings, capabilities, tenant scope,
 transition ordering, idempotency, waits, parallel effects, and compensation before release.
 
-The detailed target architecture and staged 0.8–1.0 delivery gates are owned by
-[`./process-studio.md`](./process-studio.md).
+The detailed target architecture is owned by [`./process-studio.md`](./process-studio.md); staged
+delivery gates are owned by [`../roadmap/process-studio.md`](../roadmap/process-studio.md).
 
 ## AI and Recommendation Boundary
 

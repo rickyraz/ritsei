@@ -36,9 +36,12 @@ primitive decisions → mature providers → typed catalogs → headless Process
 ```
 
 The designer is a projection over validated runtime semantics. It does not execute commands, provide
-authorization, or create an autonomous agent path.
+authorization, or create an autonomous agent path. Numeric milestone labels are historical roadmap
+identifiers, not product SemVer.
 
 ## Pre-0.8 Gate
+
+**Registry gate:** `process.pre08`
 
 Before Process Studio 0.8 work starts, resolve:
 
@@ -67,7 +70,7 @@ explicit, not that Billing is implemented.
 
 ## Sequence
 
-### 0.8 — Capability metadata
+### 0.8 — Capability metadata (`process.catalog08`)
 
 Register versioned Typed Action and Event Catalog entries from public contracts. Include tenant and
 capability scope, stability/release state, idempotency, correlation, causation, compensation, and a
@@ -77,7 +80,7 @@ bounded precondition/effect vocabulary. External actions/events remain separate.
 actions/events cannot execute; AI/provider code cannot register capabilities or access private
 persistence.
 
-### 0.85 — Minimal headless runtime
+### 0.85 — Minimal headless runtime (`process.runtime085`)
 
 Implement the smallest deterministic Process IR for definitions, instances, domain commands, pure
 decisions, timers, typed event waits, human tasks, execution context, and persisted step state.
@@ -86,7 +89,7 @@ decisions, timers, typed event waits, human tasks, execution context, and persis
 pinning, and observable task/timer/event/compensation state pass. Process IR contains no model call,
 prompt, dynamic action, or nondeterministic AI binding.
 
-### 0.9 — Operational maturity
+### 0.9 — Operational maturity (`process.ops09`)
 
 Add bounded retry, cancellation, recovery, compensation, audit correlation, SoD context, monitoring,
 operator controls, release/deployment promotion, and capability retirement.
@@ -95,7 +98,7 @@ operator controls, release/deployment promotion, and capability retirement.
 compensation, and manual recovery; compensation is authorized and idempotent; load, crash,
 migration, and upgrade proofs pass; `pg_durable` gates remain enforced.
 
-### 0.95 — Validated designer
+### 0.95 — Validated designer (`process.designer095`)
 
 Provide a catalog-driven palette, drag-and-drop and keyboard/structured editing, typed mappings,
 static validation, pure decision tables, simulation, and version comparison.
@@ -104,7 +107,7 @@ static validation, pure decision tables, simulation, and version comparison.
 mapping, ordering, retry, and compensation are rejected; keyboard alternatives and AI draft-only
 behavior are tested.
 
-### 1.0 — Governed Process Studio
+### 1.0 — Governed Process Studio (`process.governed10`)
 
 Preserve the simple user flow (`Draft → Test → Publish`) while the backend keeps immutable release
 versions, DEV/TEST/PROD deployment bindings, approvals, retirement, Task Inbox, Process Monitor,
@@ -136,8 +139,9 @@ Process Studio architecture and ADR-0063.
 | running instances with floating versions        | `0`                                          |
 | unresolved recovery/compensation paths          | `0` for released processes                   |
 
-These are mechanical readiness gates plus targeted tests; they do not replace production rehearsal
-or financial activation approval.
+`process_studio_mechanical_gates_remaining` is the live roadmap metric. The other rows are
+release-evidence requirements, not separately emitted counters. These gates do not replace
+production rehearsal or financial activation approval.
 
 ## Stop conditions
 

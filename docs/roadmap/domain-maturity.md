@@ -132,8 +132,10 @@ an existing owner.
 | `sales`       | `sales.order.confirm` → `sales.order.confirmed`                               |
 | `procurement` | `procurement.purchase_order.confirm` → `procurement.purchase_order.confirmed` |
 
-These six slices do not make all package commands process-safe, activate PgQue, or activate the
-external connector or workflow runtime.
+Each `domain.<domain>.level3` gate represents exactly the action/event pair listed above, not
+package-wide maturity. Add a separate measured gate for another action instead of silently widening
+an existing gate. These six slices do not make all package commands process-safe, activate PgQue, or
+activate the external connector or workflow runtime.
 
 ## Measures
 

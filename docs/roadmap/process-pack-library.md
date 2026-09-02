@@ -15,7 +15,7 @@
 > **Product positioning belongs to:**
 > [`../architecture/reference/process-pack-positioning.md`](../architecture/reference/process-pack-positioning.md).
 >
-> **Review date:** August 31, 2026
+> **Reviewed:** September 2, 2026
 >
 > **Related documents**
 >
@@ -51,6 +51,10 @@ The repository has public pack schemas, exact `(kind, id, version)` resolution, 
 Distribution starter pack, three editable starter drafts, a Templates lane, and tests for decoding,
 version mismatches, draft provenance, and Process IR isolation. It does not have pack persistence,
 installation mutation, onboarding authority, automatic approval/release/deployment, or execution.
+
+Only Phase 0 is registered and measured today. Phases 1–6 are ordered future stages, not completed
+or mechanically tracked work; add a registry gate only when a stage has an implementation owner and
+executable or operational evidence.
 
 ## Sequence
 
@@ -126,7 +130,7 @@ gates pass.
 **Exit:** a new pack needs no private imports, cross-domain table writes, second catalog, or
 authorization/runtime exception.
 
-## MVP gate
+## Future MVP gate (unregistered)
 
 ```text
 [ ] one owner-reviewed Distribution pack
@@ -142,6 +146,7 @@ authorization/runtime exception.
 ```
 
 The MVP is complete when first-use time-to-value improves without creating a new authority boundary.
+This checklist does not affect `roadmap.global-exit` until it becomes a registered gate.
 
 ## Measures
 
