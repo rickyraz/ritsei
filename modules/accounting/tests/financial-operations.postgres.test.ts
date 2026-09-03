@@ -1255,6 +1255,68 @@ it.effect.skipIf(databaseUrl === undefined)(
             evidenceArtifactId: null,
           })
           assert.deepStrictEqual(checkpointReplay, checkpoint)
+
+          const concurrentSourceWatermark = {
+            ...observedSourceWatermark,
+            value: "postgres:concurrent-checkpoint",
+            snapshotRef: "postgres:concurrent-source-snapshot",
+          }
+          const concurrentTargetWatermark = {
+            ...observedTargetWatermark,
+            value: "tigerbeetle:concurrent-checkpoint",
+            snapshotRef: "tigerbeetle:concurrent-target-snapshot",
+          }
+          const concurrentRecoveryWatermark = `observation:${yield* hashFinancialStoreWatermarks(
+            concurrentSourceWatermark,
+            concurrentTargetWatermark,
+          )}`
+          const concurrentService = yield* Effect.provide(
+            makeFinancialOperationService,
+            Layer.mergeAll(
+              Layer.succeed(Database, database),
+              authorization,
+              Layer.succeed(MessagingService, messaging),
+              Layer.succeed(DurableJobEnqueuer, jobs),
+              Layer.succeed(SalesService, sales),
+              Layer.succeed(FinancialLedgerPort, ledger),
+              makeObservationRegistry(concurrentSourceWatermark, concurrentTargetWatermark),
+            ),
+          )
+          const [concurrentCheckpoint, concurrentCheckpointReplay] = yield* Effect.all([
+            concurrentService.reconcileFinancialCheckpoint({
+              principal,
+              tenantId: tenant!.id,
+              legalEntityId: legalEntity!.id,
+              recoveryWatermark: concurrentRecoveryWatermark,
+              sourceWatermark: concurrentSourceWatermark.value,
+              targetWatermark: concurrentTargetWatermark.value,
+              sourceSnapshotRef: concurrentSourceWatermark.snapshotRef,
+              targetSnapshotRef: concurrentTargetWatermark.snapshotRef,
+              evidenceArtifactId: null,
+            }),
+            concurrentService.reconcileFinancialCheckpoint({
+              principal,
+              tenantId: tenant!.id,
+              legalEntityId: legalEntity!.id,
+              recoveryWatermark: concurrentRecoveryWatermark,
+              sourceWatermark: concurrentSourceWatermark.value,
+              targetWatermark: concurrentTargetWatermark.value,
+              sourceSnapshotRef: concurrentSourceWatermark.snapshotRef,
+              targetSnapshotRef: concurrentTargetWatermark.snapshotRef,
+              evidenceArtifactId: null,
+            }),
+          ], { concurrency: "unbounded" })
+          assert.deepStrictEqual(concurrentCheckpointReplay, concurrentCheckpoint)
+          const [concurrentRows] = yield* Effect.promise(() =>
+            client<{ count: string }[]>`
+              select count(*)::text as count
+              from accounting.financial_reconciliation_checkpoints
+              where tenant_id = ${tenant!.id}
+                and recovery_watermark = ${concurrentRecoveryWatermark}
+            `
+          )
+          assert.strictEqual(concurrentRows!.count, "1")
+
           const [conflictArtifact] = yield* Effect.promise(() =>
             client<{ id: string }[]>`
               insert into accounting.financial_verification_artifacts (

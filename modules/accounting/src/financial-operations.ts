@@ -25,6 +25,7 @@ import { Principal } from "../../auth/mod.ts"
 import {
   Database,
   DatabaseFailure,
+  type DatabaseService,
   DurableJobEnqueuer,
   FencingContext,
   FencingContextService,
@@ -52,6 +53,7 @@ import {
   buildFinancialVerificationEvidence,
   type FinancialFactSnapshot,
   FinancialFactSnapshot as FinancialFactSnapshotSchema,
+  type FinancialVerificationEvidence,
   hashFinancialFactSnapshot,
 } from "./financial-readiness.ts"
 import { AccountingFinancialOperationReconciledEvent } from "./events.ts"
@@ -746,6 +748,135 @@ const toCheckpoint = (row: {
 })
 
 const toMinor = (value: string): string => requireExactMajorToMinor(value, 2).toString()
+
+type ReconciliationCheckpointRow = Parameters<typeof toCheckpoint>[0]
+type ReconciliationOrphan = Readonly<{
+  readonly operationId: string | null
+  readonly transferId: string
+  readonly mappingVersion: number
+}>
+type ReconciliationCheckpointPersistenceInput = Readonly<{
+  readonly database: DatabaseService
+  readonly tenantId: string
+  readonly legalEntityId: string
+  readonly engine: FinancialLedgerAuthority
+  readonly status: "verified" | "blocked"
+  readonly recoveryWatermark: string
+  readonly sourceWatermark: string
+  readonly targetWatermark: string
+  readonly sourceSnapshotRef: string
+  readonly targetSnapshotRef: string
+  readonly evidence: FinancialVerificationEvidence
+  readonly evidenceArtifactId: string | null
+  readonly inventoryMismatchCount: number
+  readonly uniqueOrphans: readonly ReconciliationOrphan[]
+  readonly checkedBy: string
+  readonly checkedAt: Date
+  readonly loadExistingCheckpoint: () => Effect.Effect<
+    readonly ReconciliationCheckpointRow[],
+    DatabaseFailure
+  >
+  readonly matchesCheckpointRequest: (row: ReconciliationCheckpointRow) => boolean
+}>
+
+const persistReconciliationCheckpointIdempotently = ({
+  database,
+  tenantId,
+  legalEntityId,
+  engine,
+  status,
+  recoveryWatermark,
+  sourceWatermark,
+  targetWatermark,
+  sourceSnapshotRef,
+  targetSnapshotRef,
+  evidence,
+  evidenceArtifactId,
+  inventoryMismatchCount,
+  uniqueOrphans,
+  checkedBy,
+  checkedAt,
+  loadExistingCheckpoint,
+  matchesCheckpointRequest,
+}: ReconciliationCheckpointPersistenceInput) =>
+  database.withTransaction(
+    Effect.gen(function* () {
+      const [checkpoint] = yield* database.query(
+        (db) =>
+          db.insert(financialReconciliationCheckpoints).values({
+            tenantId,
+            legalEntityId,
+            engine,
+            status,
+            recoveryWatermark,
+            sourceWatermark,
+            targetWatermark,
+            sourceSnapshotRef,
+            targetSnapshotRef,
+            operationSetHash: evidence.operationSetHash,
+            accountBalanceHash: evidence.accountBalanceHash,
+            transferSetHash: evidence.transferSetHash,
+            projectionHash: evidence.projectionHash,
+            evidenceArtifactId,
+            mismatchCount: evidence.mismatchCount + inventoryMismatchCount,
+            orphanCount: uniqueOrphans.length,
+            checkedBy,
+            checkedAt,
+          }).returning(),
+        "accounting.financial_reconciliation_checkpoint.insert",
+      )
+      if (uniqueOrphans.length > 0) {
+        yield* database.query(
+          (db) =>
+            db.insert(financialOrphanTransfers).values(uniqueOrphans.map((orphan) => ({
+              tenantId,
+              legalEntityId,
+              checkpointId: checkpoint!.id,
+              operationId: orphan.operationId,
+              transferId: orphan.transferId,
+              mappingVersion: orphan.mappingVersion,
+              status: "open" as const,
+              reason: "unexpected_provider_transfer",
+              detectedAt: checkedAt,
+            }))),
+          "accounting.financial_reconciliation_checkpoint.orphans",
+        )
+      }
+      return toCheckpoint(checkpoint!)
+    }),
+    "accounting.financial_reconciliation_checkpoint.transaction",
+  ).pipe(
+    Effect.catchIf(
+      (error) =>
+        error instanceof DatabaseFailure &&
+        isDatabaseConstraint(
+          error,
+          "financial_reconciliation_checkpoints_scope_watermark_key",
+        ),
+      () =>
+        Effect.gen(function* () {
+          const [winner] = yield* loadExistingCheckpoint()
+          if (winner === undefined) {
+            return yield* Effect.fail(
+              new DatabaseFailure({
+                operation: "accounting.financial_reconciliation_checkpoint.idempotency",
+                cause: "checkpoint winner disappeared",
+              }),
+            )
+          }
+          if (!matchesCheckpointRequest(winner)) {
+            return yield* Effect.fail(
+              new FinancialReconciliationCheckpointConflict({
+                tenantId,
+                legalEntityId,
+                recoveryWatermark,
+              }),
+            )
+          }
+          return toCheckpoint(winner)
+        }),
+    ),
+  )
 
 type FinancialIntentFingerprintInput =
   & Omit<
@@ -1733,11 +1864,7 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       const targetTransfers: Array<FinancialFactSnapshot["transfers"][number]> = []
       const sourceProjections: Array<FinancialFactSnapshot["projections"][number]> = []
       const targetProjections: Array<FinancialFactSnapshot["projections"][number]> = []
-      const orphanTransfers: Array<{
-        readonly operationId: string | null
-        readonly transferId: string
-        readonly mappingVersion: number
-      }> = []
+      const orphanTransfers: ReconciliationOrphan[] = []
 
       for (const operation of operations) {
         if (operation.currency !== configuration.baseCurrency) {
@@ -2009,84 +2136,26 @@ export const makeFinancialOperationService = Effect.gen(function* () {
         ? "verified"
         : "blocked"
       const checkedAt = currentTime()
-      return yield* database.withTransaction(
-        Effect.gen(function* () {
-          const [checkpoint] = yield* database.query(
-            (db) =>
-              db.insert(financialReconciliationCheckpoints).values({
-                tenantId: decoded.tenantId,
-                legalEntityId: decoded.legalEntityId,
-                engine: authority,
-                status,
-                recoveryWatermark: decoded.recoveryWatermark,
-                sourceWatermark: decoded.sourceWatermark,
-                targetWatermark: decoded.targetWatermark,
-                sourceSnapshotRef: decoded.sourceSnapshotRef,
-                targetSnapshotRef: decoded.targetSnapshotRef,
-                operationSetHash: evidence.operationSetHash,
-                accountBalanceHash: evidence.accountBalanceHash,
-                transferSetHash: evidence.transferSetHash,
-                projectionHash: evidence.projectionHash,
-                evidenceArtifactId: decoded.evidenceArtifactId,
-                mismatchCount: evidence.mismatchCount + inventoryMismatchCount,
-                orphanCount: uniqueOrphans.length,
-                checkedBy: decoded.principal.userAccountId,
-                checkedAt,
-              }).returning(),
-            "accounting.financial_reconciliation_checkpoint.insert",
-          )
-          if (uniqueOrphans.length > 0) {
-            yield* database.query(
-              (db) =>
-                db.insert(financialOrphanTransfers).values(uniqueOrphans.map((orphan) => ({
-                  tenantId: decoded.tenantId,
-                  legalEntityId: decoded.legalEntityId,
-                  checkpointId: checkpoint!.id,
-                  operationId: orphan.operationId,
-                  transferId: orphan.transferId,
-                  mappingVersion: orphan.mappingVersion,
-                  status: "open" as const,
-                  reason: "unexpected_provider_transfer",
-                  detectedAt: checkedAt,
-                }))),
-              "accounting.financial_reconciliation_checkpoint.orphans",
-            )
-          }
-          return toCheckpoint(checkpoint!)
-        }),
-        "accounting.financial_reconciliation_checkpoint.transaction",
-      ).pipe(
-        Effect.catchIf(
-          (error) =>
-            error instanceof DatabaseFailure &&
-            isDatabaseConstraint(
-              error,
-              "financial_reconciliation_checkpoints_scope_watermark_key",
-            ),
-          () =>
-            Effect.gen(function* () {
-              const [winner] = yield* loadExistingCheckpoint()
-              if (winner === undefined) {
-                return yield* Effect.fail(
-                  new DatabaseFailure({
-                    operation: "accounting.financial_reconciliation_checkpoint.idempotency",
-                    cause: "checkpoint winner disappeared",
-                  }),
-                )
-              }
-              if (!matchesCheckpointRequest(winner)) {
-                return yield* Effect.fail(
-                  new FinancialReconciliationCheckpointConflict({
-                    tenantId: decoded.tenantId,
-                    legalEntityId: decoded.legalEntityId,
-                    recoveryWatermark: decoded.recoveryWatermark,
-                  }),
-                )
-              }
-              return toCheckpoint(winner)
-            }),
-        ),
-      )
+      return yield* persistReconciliationCheckpointIdempotently({
+        database,
+        tenantId: decoded.tenantId,
+        legalEntityId: decoded.legalEntityId,
+        engine: authority,
+        status,
+        recoveryWatermark: decoded.recoveryWatermark,
+        sourceWatermark: decoded.sourceWatermark,
+        targetWatermark: decoded.targetWatermark,
+        sourceSnapshotRef: decoded.sourceSnapshotRef,
+        targetSnapshotRef: decoded.targetSnapshotRef,
+        evidence,
+        evidenceArtifactId: decoded.evidenceArtifactId,
+        inventoryMismatchCount,
+        uniqueOrphans,
+        checkedBy: decoded.principal.userAccountId,
+        checkedAt,
+        loadExistingCheckpoint,
+        matchesCheckpointRequest,
+      })
     })
 
   const rebuildFinancialProjections = (input: unknown) =>
