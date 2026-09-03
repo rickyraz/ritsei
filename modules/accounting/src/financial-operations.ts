@@ -1041,6 +1041,143 @@ const financialOperationEventMetadata = (operationId: string) => ({
   idempotencyKey: `accounting.financial_operation.reconciled:${operationId}`,
 })
 
+type ReconciliationFactHashes = Pick<
+  FinancialVerificationEvidence,
+  "operationSetHash" | "accountBalanceHash" | "transferSetHash" | "projectionHash"
+>
+type ReconciliationInventoryInput = Readonly<{
+  readonly target: FinancialFactSnapshot
+  readonly orphanTransfers: readonly ReconciliationOrphan[]
+  readonly observedTargetInventory?: FinancialStoreInventory
+}>
+type ReconciliationInventoryAssessment = Readonly<{
+  readonly inventoryMismatchCount: number
+  readonly uniqueOrphans: readonly ReconciliationOrphan[]
+}>
+
+/** Counts observed inventory gaps and deduplicates orphan candidates. */
+const classifyReconciliationInventory = (
+  input: ReconciliationInventoryInput,
+): ReconciliationInventoryAssessment => {
+  let inventoryMismatchCount = 0
+  const orphanTransfers = [...input.orphanTransfers]
+  if (input.observedTargetInventory !== undefined) {
+    const expectedTransferIds = new Set(
+      input.target.transfers.map((transfer) => transfer.transferId),
+    )
+    const observedTransfers = new Map(
+      input.observedTargetInventory.transfers.map((transfer) => [transfer.transferRef, transfer]),
+    )
+    for (const expectedTransferId of expectedTransferIds) {
+      const observed = observedTransfers.get(expectedTransferId)
+      if (observed === undefined || observed.status !== "accepted") inventoryMismatchCount++
+    }
+    for (const observed of input.observedTargetInventory.transfers) {
+      if (!expectedTransferIds.has(observed.transferRef)) {
+        orphanTransfers.push({
+          operationId: null,
+          transferId: observed.transferRef,
+          mappingVersion: observed.mappingVersion,
+        })
+      }
+    }
+  }
+  const uniqueOrphans = [...new Map(
+    orphanTransfers.map((orphan) => [
+      `${orphan.operationId}:${orphan.transferId}`,
+      orphan,
+    ]),
+  ).values()]
+  return { inventoryMismatchCount, uniqueOrphans }
+}
+
+type ReconciliationAssessmentInput = Readonly<{
+  readonly tenantId: string
+  readonly legalEntityId: string
+  readonly mappingVersion: number
+  readonly currency: string
+  readonly sourceWatermark: string
+  readonly targetWatermark: string
+  readonly sourceSnapshotRef: string
+  readonly targetSnapshotRef: string
+  readonly source: FinancialFactSnapshot
+  readonly target: FinancialFactSnapshot
+  readonly orphanTransfers: readonly ReconciliationOrphan[]
+  readonly observedTargetInventory?: FinancialStoreInventory
+  readonly expectedFactHashes?: ReconciliationFactHashes
+}>
+type ReconciliationAssessment = Readonly<{
+  readonly evidence: FinancialVerificationEvidence
+  readonly inventoryMismatchCount: number
+  readonly uniqueOrphans: readonly ReconciliationOrphan[]
+  readonly status: "verified" | "blocked"
+}>
+
+/**
+ * Builds the reconciliation decision from loaded facts without database,
+ * provider, authorization, or persistence effects.
+ */
+const buildReconciliationAssessment = (input: ReconciliationAssessmentInput) =>
+  Effect.gen(function* () {
+    const inventory = classifyReconciliationInventory({
+      target: input.target,
+      orphanTransfers: input.orphanTransfers,
+      observedTargetInventory: input.observedTargetInventory,
+    })
+    const evidence = yield* buildFinancialVerificationEvidence({
+      tenantId: input.tenantId,
+      legalEntityId: input.legalEntityId,
+      kind: "observability",
+      completeness: "bounded",
+      scope: `tenant:${input.tenantId}/legal-entity:${input.legalEntityId}`,
+      mappingVersion: input.mappingVersion,
+      currency: input.currency,
+      sourceWatermark: input.sourceWatermark,
+      targetWatermark: input.targetWatermark,
+      sourceSnapshotRef: input.sourceSnapshotRef,
+      targetSnapshotRef: input.targetSnapshotRef,
+      source: input.source,
+      target: input.target,
+      startedAt: currentTime().toISOString(),
+      completedAt: currentTime().toISOString(),
+    }).pipe(
+      Effect.catch(() =>
+        Effect.fail(
+          new DatabaseFailure({
+            operation: "accounting.financial_reconciliation_checkpoint.hash",
+            cause: "hash_failed",
+          }),
+        )
+      ),
+    )
+    if (
+      input.expectedFactHashes !== undefined &&
+      (input.expectedFactHashes.operationSetHash !== evidence.operationSetHash ||
+        input.expectedFactHashes.accountBalanceHash !== evidence.accountBalanceHash ||
+        input.expectedFactHashes.transferSetHash !== evidence.transferSetHash ||
+        input.expectedFactHashes.projectionHash !== evidence.projectionHash)
+    ) {
+      return yield* Effect.fail(
+        new FinancialReconciliationCheckpointEvidenceInvalid({
+          tenantId: input.tenantId,
+          legalEntityId: input.legalEntityId,
+          reason: "hash_mismatch",
+        }),
+      )
+    }
+    const status = evidence.mismatchCount === 0 &&
+        inventory.inventoryMismatchCount === 0 &&
+        inventory.uniqueOrphans.length === 0
+      ? "verified"
+      : "blocked"
+    return {
+      evidence,
+      inventoryMismatchCount: inventory.inventoryMismatchCount,
+      uniqueOrphans: inventory.uniqueOrphans,
+      status,
+    } satisfies ReconciliationAssessment
+  })
+
 const balanceConstraintForAccountType = (
   type: "asset" | "liability" | "equity" | "revenue" | "expense",
 ): FinancialAccountConstraint =>
@@ -1608,7 +1745,6 @@ export const makeFinancialOperationService = Effect.gen(function* () {
       }
       const financialObservation = financialObservationOption.value
       let observedTargetInventory: FinancialStoreInventory | undefined
-      let inventoryMismatchCount = 0
       {
         const targetScope = authority === "tigerbeetle" ? "provider:tigerbeetle" : scope
         const sourceWatermark = yield* financialObservation.collect("postgresql", {
@@ -2065,37 +2201,9 @@ export const makeFinancialOperationService = Effect.gen(function* () {
         balances: targetBalances,
         projections: targetProjections,
       }
-      if (observedTargetInventory !== undefined) {
-        const expectedTransferIds = new Set(targetTransfers.map((transfer) => transfer.transferId))
-        const observedTransfers = new Map(
-          observedTargetInventory.transfers.map((transfer) => [transfer.transferRef, transfer]),
-        )
-        for (const expectedTransferId of expectedTransferIds) {
-          const observed = observedTransfers.get(expectedTransferId)
-          if (observed === undefined || observed.status !== "accepted") inventoryMismatchCount++
-        }
-        for (const observed of observedTargetInventory.transfers) {
-          if (!expectedTransferIds.has(observed.transferRef)) {
-            orphanTransfers.push({
-              operationId: null,
-              transferId: observed.transferRef,
-              mappingVersion: observed.mappingVersion,
-            })
-          }
-        }
-      }
-      const uniqueOrphans = [...new Map(
-        orphanTransfers.map((orphan) => [
-          `${orphan.operationId}:${orphan.transferId}`,
-          orphan,
-        ]),
-      ).values()]
-      const evidence = yield* buildFinancialVerificationEvidence({
+      const assessment = yield* buildReconciliationAssessment({
         tenantId: decoded.tenantId,
         legalEntityId: decoded.legalEntityId,
-        kind: "observability",
-        completeness: "bounded",
-        scope: `tenant:${decoded.tenantId}/legal-entity:${decoded.legalEntityId}`,
         mappingVersion: operations[0]?.mappingVersion ?? 1,
         currency: operations[0]?.currency ?? configuration.baseCurrency,
         sourceWatermark: decoded.sourceWatermark,
@@ -2104,53 +2212,26 @@ export const makeFinancialOperationService = Effect.gen(function* () {
         targetSnapshotRef: decoded.targetSnapshotRef,
         source,
         target,
-        startedAt: currentTime().toISOString(),
-        completedAt: currentTime().toISOString(),
-      }).pipe(
-        Effect.catch(() =>
-          Effect.fail(
-            new DatabaseFailure({
-              operation: "accounting.financial_reconciliation_checkpoint.hash",
-              cause: "hash_failed",
-            }),
-          )
-        ),
-      )
-      if (
-        evidenceArtifactFactHashes !== undefined &&
-        (evidenceArtifactFactHashes.operationSetHash !== evidence.operationSetHash ||
-          evidenceArtifactFactHashes.accountBalanceHash !== evidence.accountBalanceHash ||
-          evidenceArtifactFactHashes.transferSetHash !== evidence.transferSetHash ||
-          evidenceArtifactFactHashes.projectionHash !== evidence.projectionHash)
-      ) {
-        return yield* Effect.fail(
-          new FinancialReconciliationCheckpointEvidenceInvalid({
-            tenantId: decoded.tenantId,
-            legalEntityId: decoded.legalEntityId,
-            reason: "hash_mismatch",
-          }),
-        )
-      }
-      const status = evidence.mismatchCount === 0 && inventoryMismatchCount === 0 &&
-          uniqueOrphans.length === 0
-        ? "verified"
-        : "blocked"
+        orphanTransfers,
+        observedTargetInventory,
+        expectedFactHashes: evidenceArtifactFactHashes,
+      })
       const checkedAt = currentTime()
       return yield* persistReconciliationCheckpointIdempotently({
         database,
         tenantId: decoded.tenantId,
         legalEntityId: decoded.legalEntityId,
         engine: authority,
-        status,
+        status: assessment.status,
         recoveryWatermark: decoded.recoveryWatermark,
         sourceWatermark: decoded.sourceWatermark,
         targetWatermark: decoded.targetWatermark,
         sourceSnapshotRef: decoded.sourceSnapshotRef,
         targetSnapshotRef: decoded.targetSnapshotRef,
-        evidence,
+        evidence: assessment.evidence,
         evidenceArtifactId: decoded.evidenceArtifactId,
-        inventoryMismatchCount,
-        uniqueOrphans,
+        inventoryMismatchCount: assessment.inventoryMismatchCount,
+        uniqueOrphans: assessment.uniqueOrphans,
         checkedBy: decoded.principal.userAccountId,
         checkedAt,
         loadExistingCheckpoint,

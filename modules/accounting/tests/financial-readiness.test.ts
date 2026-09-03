@@ -316,6 +316,34 @@ describe("financial readiness proofs", () => {
       })
       assert.isFalse(statusMismatch.ok)
       assert.strictEqual(statusMismatch.mismatches[0]!.kind, "transfer_mismatch")
+
+      const missingTransfer = compareFinancialFactSnapshots(source, {
+        ...target,
+        transfers: [],
+      })
+      assert.isFalse(missingTransfer.ok)
+      assert.strictEqual(missingTransfer.mismatches[0]!.kind, "missing_transfer")
+
+      const unexpectedTransfer = compareFinancialFactSnapshots(
+        { ...source, transfers: [] },
+        target,
+      )
+      assert.isFalse(unexpectedTransfer.ok)
+      assert.strictEqual(unexpectedTransfer.mismatches[0]!.kind, "unexpected_transfer")
+
+      const balanceMismatch = compareFinancialFactSnapshots(source, {
+        ...target,
+        balances: [{ ...target.balances[0]!, debitsPostedMinor: "101" }],
+      })
+      assert.isFalse(balanceMismatch.ok)
+      assert.strictEqual(balanceMismatch.mismatches[0]!.kind, "balance_mismatch")
+
+      const projectionMismatch = compareFinancialFactSnapshots(source, {
+        ...target,
+        projections: [{ ...target.projections[0]!, journalStatus: "reversed" }],
+      })
+      assert.isFalse(projectionMismatch.ok)
+      assert.strictEqual(projectionMismatch.mismatches[0]!.kind, "projection_mismatch")
     }))
 
   it("requires exact account-level opening-balance equality", () => {

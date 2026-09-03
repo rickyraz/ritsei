@@ -1256,6 +1256,22 @@ it.effect.skipIf(databaseUrl === undefined)(
           })
           assert.deepStrictEqual(checkpointReplay, checkpoint)
 
+          const invalidWatermark = yield* Effect.flip(
+            service.reconcileFinancialCheckpoint({
+              principal,
+              tenantId: tenant!.id,
+              legalEntityId: legalEntity!.id,
+              recoveryWatermark: `invalid-watermark-${uuidv7()}`,
+              sourceWatermark: "postgres:unobserved-watermark",
+              targetWatermark: observedTargetWatermark.value,
+              sourceSnapshotRef: "postgres:unobserved-snapshot",
+              targetSnapshotRef: observedTargetWatermark.snapshotRef,
+              evidenceArtifactId: null,
+            }),
+          )
+          assert.instanceOf(invalidWatermark, FinancialStoreObservationFailure)
+          assert.strictEqual(invalidWatermark.reason, "invalid_watermark")
+
           const concurrentSourceWatermark = {
             ...observedSourceWatermark,
             value: "postgres:concurrent-checkpoint",
@@ -1354,13 +1370,21 @@ it.effect.skipIf(databaseUrl === undefined)(
           assert.instanceOf(checkpointConflict, FinancialReconciliationCheckpointConflict)
           const checkpointMismatchLedger = {
             ...ledger,
-            reconcileJournal: (input: unknown) =>
-              ledger.reconcileJournal(input).pipe(
-                Effect.map((outcome) =>
-                  outcome._tag === "accepted"
-                    ? { ...outcome, mappingVersion: outcome.mappingVersion + 1 }
-                    : outcome
-                ),
+            reconcileJournal: (journalInput: unknown) =>
+              ledger.reconcileJournal(journalInput).pipe(
+                Effect.map((outcome) => {
+                  if (outcome._tag !== "accepted") return outcome
+                  const operationId =
+                    (journalInput as { readonly operationId?: string }).operationId
+                  return operationId === input.operationId
+                    ? {
+                      ...outcome,
+                      mappingVersion: outcome.mappingVersion + 1,
+                      transferCount: outcome.transferCount + 1,
+                      transferIds: [...outcome.transferIds, "orphan-transfer"],
+                    }
+                    : { ...outcome, mappingVersion: outcome.mappingVersion + 1 }
+                }),
               ),
           }
           const mismatchSourceWatermark = {
@@ -1407,6 +1431,21 @@ it.effect.skipIf(databaseUrl === undefined)(
             })
           assert.strictEqual(mismatchedCheckpoint.status, "blocked")
           assert.isAbove(mismatchedCheckpoint.mismatchCount, 0)
+          assert.strictEqual(mismatchedCheckpoint.orphanCount, 1)
+          const mismatchedCheckpointReplay = yield* checkpointMismatchService
+            .reconcileFinancialCheckpoint({
+              principal,
+              tenantId: tenant!.id,
+              legalEntityId: legalEntity!.id,
+              recoveryWatermark: mismatchRecoveryWatermark,
+              sourceWatermark: mismatchSourceWatermark.value,
+              targetWatermark: mismatchTargetWatermark.value,
+              sourceSnapshotRef: mismatchSourceWatermark.snapshotRef,
+              targetSnapshotRef: mismatchTargetWatermark.snapshotRef,
+              evidenceArtifactId: null,
+            })
+          assert.deepStrictEqual(mismatchedCheckpointReplay, mismatchedCheckpoint)
+
           const checkpointMutation = yield* postgresFailure(() =>
             client`
               update accounting.financial_reconciliation_checkpoints
