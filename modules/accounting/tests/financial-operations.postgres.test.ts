@@ -14,6 +14,7 @@ import {
   FinancialOperationFenceRejected,
   FinancialOperationInjectedFailure,
   FinancialOperationsPending,
+  FinancialProjectionRebuildBlocked,
   FinancialReconciliationCheckpointConflict,
   FinancialReversalAlreadyExists,
   makeAccountingService,
@@ -38,7 +39,11 @@ import {
   hashFinancialStoreWatermarks,
 } from "../mod.ts"
 import { makePostgresDatabase, runMigrations } from "../../../platform/mod.ts"
-import { makeMessagingService, MessagingService } from "../../messaging/mod.ts"
+import {
+  EventIdempotencyConflict,
+  makeMessagingService,
+  MessagingService,
+} from "../../messaging/mod.ts"
 import { SalesService } from "../../sales/mod.ts"
 import { makeProcessJobEnqueuer } from "../../process/mod.ts"
 import { withTemporaryDatabase } from "../../../tests/support/postgres-database.ts"
@@ -1741,6 +1746,242 @@ it.effect.skipIf(databaseUrl === undefined)(
           }))
           assert.strictEqual(unblockedRevenue.status, "reconciled")
           assert.strictEqual(providerCalls, 1)
+
+          const unexpectedOperationDbId = revenueOnlyPosted.id
+          const identityOperationDbId = concurrentPosted.id
+          const identityOperationId = concurrentPosted.operationId
+          const rejectedOperationDbId = unblockedRevenue.id
+          const rejectedOperationId = unblockedRevenue.operationId
+          const manualRecoveryOperationDbId = reversed.id
+          const manualRecoveryOperationId = reversed.operationId
+          const eventConflictOperationDbId = posted.id
+          const unknownIntent = yield* service.createJournalIntent({
+            ...input,
+            operationId: `rebuild-unknown-${uuidv7()}`,
+            reference: `rebuild-unknown-${uuidv7()}`,
+          })
+          const unknownPosted = yield* service.submitFinancialOperation({
+            tenantId: tenant!.id,
+            operationId: unknownIntent.operationId,
+          })
+          const unknownOperationDbId = unknownPosted.id
+          const unknownOperationId = unknownPosted.operationId
+          yield* Effect.promise(() =>
+            client`
+              insert into accounting.financial_operation_transfers (
+                tenant_id, operation_id, position, debit_account_id, credit_account_id,
+                amount_minor, engine_transfer_id, status
+              ) values (
+                ${tenant!.id}, ${unexpectedOperationDbId}, 1, ${debitAccount!.id},
+                ${creditAccount!.id}, '1', 'unexpected-transfer', 'unresolved'
+              )
+            `
+          )
+          type RebuildLedgerBehavior = Readonly<{
+            readonly identityOperationId?: string
+            readonly rejectedOperationId?: string
+            readonly manualRecoveryOperationId?: string
+            readonly unknownOperationId?: string
+            readonly unknownReason?: "unavailable" | "not_found"
+          }>
+          const makeRebuildLedger = (behavior: RebuildLedgerBehavior = {}) => {
+            const acceptedOutcome = (journalInput: unknown) => {
+              const request = journalInput as {
+                readonly operationId: string
+                readonly mappingVersion: number
+              }
+              return ledger.expectedTransferIds(journalInput).pipe(
+                Effect.map((transferIds) => ({
+                  _tag: "accepted" as const,
+                  operationId: request.operationId,
+                  mappingVersion: request.mappingVersion,
+                  acceptedAt: "0",
+                  transferCount: transferIds.length,
+                  transferIds,
+                })),
+              )
+            }
+            return {
+              authority: "tigerbeetle" as const,
+              createExecutionAccount: ledger.createExecutionAccount,
+              postJournal: ledger.postJournal,
+              expectedTransferIds: ledger.expectedTransferIds,
+              getBalance: (balanceInput: unknown) => {
+                const target = balanceInput as {
+                  readonly accountId: string
+                  readonly mappingVersion: number
+                }
+                return Effect.succeed({
+                  _tag: "available" as const,
+                  accountId: target.accountId,
+                  mappingVersion: target.mappingVersion,
+                  debitsPendingMinor: "0",
+                  debitsPostedMinor: "0",
+                  creditsPendingMinor: "0",
+                  creditsPostedMinor: "0",
+                })
+              },
+              reconcileJournal: (journalInput: unknown) => {
+                const operationId = (journalInput as { readonly operationId: string }).operationId
+                if (operationId === behavior.identityOperationId) {
+                  return acceptedOutcome(journalInput).pipe(
+                    Effect.map((outcome) => ({
+                      ...outcome,
+                      transferIds: outcome.transferIds.map((id) => `${id}:identity-mismatch`),
+                    })),
+                  )
+                }
+                if (operationId === behavior.rejectedOperationId) {
+                  return Effect.succeed({
+                    _tag: "rejected" as const,
+                    operationId,
+                    reason: "invalid_amount" as const,
+                  })
+                }
+                if (operationId === behavior.manualRecoveryOperationId) {
+                  return Effect.succeed({
+                    _tag: "manual_recovery" as const,
+                    operationId,
+                    reason: "reconciliation_required" as const,
+                  })
+                }
+                if (
+                  operationId === behavior.unknownOperationId &&
+                  behavior.unknownReason !== undefined
+                ) {
+                  return Effect.succeed({
+                    _tag: "unknown" as const,
+                    operationId,
+                    reason: behavior.unknownReason,
+                  })
+                }
+                return acceptedOutcome(journalInput)
+              },
+            } satisfies FinancialLedgerPort
+          }
+          const rebuildVariantsLedger = makeRebuildLedger({
+            identityOperationId,
+            rejectedOperationId,
+            manualRecoveryOperationId,
+          })
+          const eventConflictMessaging = {
+            ...messaging,
+            append: (event: unknown) => {
+              const candidate = event as {
+                readonly aggregateId: string
+                readonly eventId: string
+                readonly eventType: string
+                readonly eventVersion: number
+                readonly tenantId: string
+                readonly idempotencyKey: string
+              }
+              if (candidate.aggregateId !== eventConflictOperationDbId) {
+                return messaging.append(event)
+              }
+              return Effect.fail(
+                new EventIdempotencyConflict({
+                  tenantId: candidate.tenantId,
+                  eventId: candidate.eventId,
+                  eventType: candidate.eventType,
+                  eventVersion: candidate.eventVersion,
+                  idempotencyKey: candidate.idempotencyKey,
+                }),
+              )
+            },
+          } as typeof messaging
+          const makeRebuildService = (
+            rebuildLedger: FinancialLedgerPort,
+            rebuildMessaging: typeof messaging = messaging,
+          ) =>
+            Effect.provide(
+              makeFinancialOperationService,
+              Layer.mergeAll(
+                Layer.succeed(Database, database),
+                authorization,
+                Layer.succeed(MessagingService, rebuildMessaging),
+                Layer.succeed(DurableJobEnqueuer, jobs),
+                Layer.succeed(SalesService, sales),
+                Layer.succeed(FinancialLedgerPort, rebuildLedger),
+              ),
+            )
+          const rebuildVariantsService = yield* makeRebuildService(
+            rebuildVariantsLedger,
+            eventConflictMessaging,
+          )
+          const variantsRebuild = yield* rebuildVariantsService.rebuildFinancialProjections({
+            principal,
+            tenantId: tenant!.id,
+            legalEntityId: legalEntity!.id,
+          })
+          assert.isAtLeast(variantsRebuild.rebuiltOperations, 1)
+          assert.isAtLeast(variantsRebuild.quarantinedOperations, 5)
+          const readOperationStatus = (operationId: string) =>
+            Effect.promise(() =>
+              client<{ status: string }[]>`
+                select status
+                from accounting.financial_operations
+                where tenant_id = ${tenant!.id} and id = ${operationId}
+              `
+            )
+          for (
+            const operationId of [
+              unexpectedOperationDbId,
+              identityOperationDbId,
+              rejectedOperationDbId,
+              manualRecoveryOperationDbId,
+              eventConflictOperationDbId,
+            ]
+          ) {
+            const [operation] = yield* readOperationStatus(operationId)
+            assert.strictEqual(operation!.status, "manual_recovery")
+          }
+          const [unknownAfterVariants] = yield* readOperationStatus(unknownOperationDbId)
+          assert.strictEqual(unknownAfterVariants!.status, "reconciled")
+
+          const notFoundService = yield* makeRebuildService(
+            makeRebuildLedger({
+              unknownOperationId,
+              unknownReason: "not_found",
+            }),
+          )
+          const notFoundRebuild = yield* Effect.flip(
+            notFoundService.rebuildFinancialProjections({
+              principal,
+              tenantId: tenant!.id,
+              legalEntityId: legalEntity!.id,
+            }),
+          )
+          assert.instanceOf(notFoundRebuild, FinancialProjectionRebuildBlocked)
+          assert.strictEqual(notFoundRebuild.reason, "not_found")
+          const unavailableService = yield* makeRebuildService(
+            makeRebuildLedger({
+              unknownOperationId,
+              unknownReason: "unavailable",
+            }),
+          )
+          const unavailableRebuild = yield* Effect.flip(
+            unavailableService.rebuildFinancialProjections({
+              principal,
+              tenantId: tenant!.id,
+              legalEntityId: legalEntity!.id,
+            }),
+          )
+          assert.instanceOf(unavailableRebuild, FinancialProjectionRebuildBlocked)
+          assert.strictEqual(unavailableRebuild.reason, "unavailable")
+
+          const stableRebuildService = yield* makeRebuildService(makeRebuildLedger())
+          const firstRerun = yield* stableRebuildService.rebuildFinancialProjections({
+            principal,
+            tenantId: tenant!.id,
+            legalEntityId: legalEntity!.id,
+          })
+          const secondRerun = yield* stableRebuildService.rebuildFinancialProjections({
+            principal,
+            tenantId: tenant!.id,
+            legalEntityId: legalEntity!.id,
+          })
+          assert.strictEqual(firstRerun.reportSnapshotHash, secondRerun.reportSnapshotHash)
+          assert.strictEqual(firstRerun.checkedOperations, secondRerun.checkedOperations)
         }),
     ),
 )
