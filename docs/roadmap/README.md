@@ -22,6 +22,9 @@
 > - Product SemVer ADR:
 >   [`../decisions/0066-adopt-single-product-semver-authority.md`](../decisions/0066-adopt-single-product-semver-authority.md)
 
+- Reference analysis and deferred-stage review:
+  [`../architecture/reference/roadmap-track-considerations.md`](../architecture/reference/roadmap-track-considerations.md)
+
 ## How to read this folder
 
 - This index owns the dependency graph and global exit conditions.
@@ -47,7 +50,7 @@ Roadmap status uses distinct evidence classes:
   [`../development/releasing.md`](../development/releasing.md); open roadmap gates do not prevent a
   source-only pre-release.
 
-`roadmap.global-exit` means every gate registered in the current seven tracks passes. It does not by
+`roadmap.global-exit` means every gate registered in the current ten tracks passes. It does not by
 itself publish a product release, activate an unregistered connector provider, or approve a
 particular deployment profile. Numeric labels such as `0.8` and `1.0` are historical roadmap
 milestones and gate IDs, not product SemVer.
@@ -57,17 +60,20 @@ measures are required exit or activation evidence until a named evaluator emits 
 
 ## Current position
 
-This snapshot was reviewed on September 2, 2026. Run `deno task roadmap:measure` for the live state.
+This snapshot was updated on September 3, 2026. Run `deno task roadmap:measure` for the live state.
 
-| Area                | Measured position                                                              | Next decision                                                            |
-| ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| ERP primitives      | P0–P3 pass; open unknown decisions: `0`                                        | Expand only when a requested capability needs a new primitive            |
-| Domain providers    | Six bounded Level 3 slices; six provider domains plus Process remain `PARTIAL` | Mature only requested actions, not whole packages                        |
-| Financial execution | `2/16` activation gates pass; production decision is **NO-GO**                 | Close outage, restore, replay, and bounded-cutover evidence              |
-| Process Studio      | Pre-0.8 through governed 1.0 mechanical gates pass                             | Keep production activation behind global and operational gates           |
-| Integrations        | Contract through governed-surface mechanical gates pass                        | Activate providers only with owner, credentials, recovery, and runbooks  |
-| Business Packs      | Contract-only Distribution slice passes                                        | Add catalog-backed resolution before installation or onboarding mutation |
-| PostgreSQL 19       | Minimum version and bounded capability pilots implemented; GA is open          | Finish GA, failover, workload, and production evidence                   |
+| Area                | Measured position                                                                 | Next decision                                                            |
+| ------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| ERP primitives      | P0–P3 plus exact legacy-mapping evidence are registered                          | Expand only when a requested capability needs a new primitive            |
+| Domain providers    | Identity lifecycle is covered; relationship/SoD foundation gates Level 3 slices | Close D0 evidence before broadening provider readiness                   |
+| Financial execution | `2/16` activation gates pass; production decision is **NO-GO**                    | Close outage, restore, replay, and bounded-cutover evidence              |
+| Process Studio      | Runtime/designer evidence exists; chain is gated by D0 and lease fencing        | Close domain and fencing dependencies before governed release            |
+| Integrations        | Governed surface evidence exists; readiness follows the Process dependency       | Activate providers only with owner, credentials, recovery, and runbooks  |
+| Business Packs      | Contract slice exists; catalog-backed resolution remains unregistered            | Add a named owner before installation or onboarding mutation             |
+| PostgreSQL 19       | Minimum version and bounded capability pilots implemented; GA is open             | Finish GA, failover, workload, and production evidence                   |
+| Workload isolation  | Newly registered; classification and command-reserve evidence are open            | Implement bounded admission before a protected-reserve claim             |
+| Frontend readiness  | Newly registered; shell, application-boundary, and accessibility evidence are open | Build the SPA shell and representative workflow                          |
+| Production profile  | Newly registered; artifact, upgrade, and profile-approval evidence are open       | Produce artifacts and rehearse the selected entry profile                 |
 
 The current product releases are pre-release, source-only snapshots. Release status and upgrade
 caveats are owned by [`../development/releasing.md`](../development/releasing.md).
@@ -76,15 +82,18 @@ caveats are owned by [`../development/releasing.md`](../development/releasing.md
 
 | ID            | Track                 | Owns                                                                              | Gate set          | Source                                                             |
 | ------------- | --------------------- | --------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------ |
-| `erp`         | ERP primitives        | reusable scope, product, document, quantity, money, audit, and event decisions    | `erp.p0`–`erp.p3` | [`erp-primitives.md`](./erp-primitives.md)                         |
-| `domain`      | Domain maturity       | package/provider readiness and Level 3 action/event evidence                      | `domain.*`        | [`domain-maturity.md`](./domain-maturity.md)                       |
+| `erp`         | ERP primitives        | reusable scope, product, document, quantity, money, audit, and event decisions    | `erp.*`           | [`erp-primitives.md`](./erp-primitives.md)                         |
+| `domain`      | Domain maturity       | D0 identity/AuthZ foundations and Level 3 action/event evidence                   | `domain.*`        | [`domain-maturity.md`](./domain-maturity.md)                       |
 | `financial`   | Financial execution   | TigerBeetle transition, reconciliation, rehearsal, and activation                 | `financial.*`     | [`financial-ledger-execution.md`](./financial-ledger-execution.md) |
-| `process`     | Process Studio        | catalog, runtime, operations, designer, and governed release gates                | `process.*`       | [`process-studio.md`](./process-studio.md)                         |
+| `process`     | Process Studio        | catalog, runtime, fencing, operations, designer, and governed release gates      | `process.*`       | [`process-studio.md`](./process-studio.md)                         |
 | `integration` | External integration  | connector contracts, delivery, reliability, Process Studio bridge, and governance | `integration.*`   | [`integration-surface.md`](./integration-surface.md)               |
 | `packs`       | Business Pack Library | pack resolution, draft materialization, onboarding, and governed upgrades         | `packs.contract`  | [`process-pack-library.md`](./process-pack-library.md)             |
 | `postgres19`  | PostgreSQL 19         | version floor, consistency, SQL/PGQ, and operational capability evidence          | `postgres19.*`    | [`postgresql-19.md`](./postgresql-19.md)                           |
+| `workload`    | Workload isolation    | workload classification and protected command-reserve evidence                    | `workload.*`      | [`workload.md`](./workload.md)                                     |
+| `frontend`    | Frontend readiness    | SPA shell, application boundaries, design system, and user-workflow evidence      | `frontend.*`      | [`frontend.md`](./frontend.md)                                     |
+| `production`  | Production profile    | artifacts, install/upgrade rehearsal, and reviewed profile manifests              | `production.*`    | [`production.md`](./production.md)                                 |
 
-There are seven subdocuments and seven measured tracks. `README.md` is the index, not an eighth
+There are ten subdocuments and ten measured tracks. `README.md` is the index, not an eleventh
 track. They remain separate because primitive decisions, provider maturity, financial authority,
 process execution, external providers, pack distribution, and database activation have independent
 owners and stop conditions. A new track requires a registry entry, a measured gate, and a documented
@@ -93,31 +102,45 @@ owner.
 ## Dependency graph
 
 ```text
-ERP primitive decisions
+ERP primitives → exact legacy-cohort migration
         ↓
-Domain contracts and Level 3 providers
+Identity/AuthZ foundations → Level 3 providers
         ↓
-Typed Action/Event Catalog
-        ↓
-Headless Process IR runtime
-        ↓
-Recovery, compensation, and operations
-        ↓
-Validated designer
-        ↓
-Governed Process Studio release
+Process pre-0.8 → catalog → runtime → lease fencing → operations → designer
+        │                                                     │
+        └── PostgreSQL 19 minimum → workload classification → command reserve
+                                                              │
+                                      designer ───────────────┘
+                                                              ↓
+                                             frontend shell ──┬→ boundaries/design system → accessibility/performance
+                                                              │
+                                      PostgreSQL 19 minimum ──┴→ artifacts → install/upgrade → profile approval
 ```
 
 Registered cross-track dependencies are explicit:
 
-| Gate or chain              | Registered dependency                                                             |
-| -------------------------- | --------------------------------------------------------------------------------- |
-| `process.pre08`            | `erp.p0`–`erp.p3`, `domain.inventory.level3`, and `domain.sales.level3`           |
-| later `process.*` gates    | the preceding Process Studio gate                                                 |
-| `integration.contract08`   | `process.pre08`; later integration gates depend on the preceding integration gate |
-| `packs.contract`           | `process.pre08`                                                                   |
-| `postgres19.production-ga` | minimum-version, `WAIT FOR`, property-graph, and operational-rehearsal gates      |
-| `roadmap.global-exit`      | every gate assigned to all seven registered tracks                                |
+| Gate or chain                         | Registered dependency                                                               |
+| ------------------------------------- | ----------------------------------------------------------------------------------- |
+| `erp.p0-migration`                    | `erp.p0`                                                                            |
+| `erp.p1` → `erp.p3`                   | preceding ERP gate                                                                  |
+| `domain.identity-lifecycle`           | `erp.p0-migration`                                                                  |
+| `domain.authorization-foundation`     | `domain.identity-lifecycle`                                                         |
+| `domain.capability-grammar`           | `domain.authorization-foundation`                                                  |
+| `domain.*.level3`                     | `domain.capability-grammar`                                                         |
+| `process.pre08`                       | ERP baseline plus Inventory and Sales Level 3 slices                                |
+| `process.fencing087`                  | `process.runtime085`; `process.ops09` follows fencing                              |
+| later `process.*` gates               | the preceding Process Studio gate                                                  |
+| `integration.contract08`              | `process.pre08`; later integration gates follow the preceding integration gate      |
+| `packs.contract`                      | `process.pre08`                                                                     |
+| `postgres19.production-ga`            | minimum-version, `WAIT FOR`, property-graph, and operational-rehearsal gates        |
+| `workload.classify`                   | `process.pre08` and `postgres19.minimum-version`                                    |
+| `workload.command-reserve`            | `workload.classify`                                                                 |
+| `frontend.shell`                      | `workload.command-reserve` and `process.designer095`                                |
+| later `frontend.*` gates              | the required preceding frontend gate(s)                                             |
+| `production.artifacts`                | `frontend.shell` and `postgres19.minimum-version`                                   |
+| `production.install-upgrade`          | `production.artifacts` and `postgres19.production-ga`                               |
+| `production.entry-profile`            | `production.install-upgrade`                                                        |
+| `roadmap.global-exit`                 | every gate assigned to all ten registered tracks                                    |
 
 Financial execution remains a parallel activation track over the bounded Accounting port. Provider
 activation, deployment-profile approval, and source publication are not inferred from this graph;
@@ -138,13 +161,13 @@ The registered roadmap remains open until all of these are true:
 [ ] authentication, current tenant membership, scope, relationship/SoD, and revocation fail closed
 [ ] authorization and audit are enforced outside the browser
 [ ] visual behavior is only a projection over validated runtime semantics
-[ ] every gate assigned to the seven registered tracks has accepted evidence
+[ ] every gate assigned to the ten registered tracks has accepted evidence
 ```
 
-The global gate is composite: an open financial activation or PostgreSQL 19 production gate keeps
-the global result open even when the Process Studio or integration track has passed its own
-mechanical gates. A passing global gate still does not activate a particular connector provider,
-approve a deployment profile, or publish a product release.
+The global gate is composite: an open financial activation, PostgreSQL 19 production gate, workload
+reserve, frontend readiness gate, or production profile gate keeps the global result open even when
+another track has passed its own mechanical gates. A passing global gate still does not activate a
+particular connector provider, approve a deployment profile, or publish a product release.
 
 ## Measures
 
@@ -158,7 +181,7 @@ The command reports the following stable measures:
 
 | Metric                                      | Desired condition                                                    |
 | ------------------------------------------- | -------------------------------------------------------------------- |
-| `roadmap_tracks`                            | equals the seven registered tracks                                   |
+| `roadmap_tracks`                            | equals the ten registered tracks                                    |
 | `unregistered_roadmap_tracks`               | `0`                                                                  |
 | `unassigned_roadmap_gates`                  | `0`                                                                  |
 | `roadmap_global_exit`                       | `PASS` before claiming all registered roadmap work is complete       |
@@ -172,6 +195,9 @@ The command reports the following stable measures:
 | `integration_surface_gates_remaining`       | `0` means the governed surface proof passes, not provider activation |
 | `business_pack_contract_gates_remaining`    | `0` means the contract slice passes, not installation readiness      |
 | `postgres19_capability_gates_remaining`     | `0` after the final PostgreSQL 19 GA activation review               |
+| `workload_gates_remaining`                  | `0` before claiming protected command non-interference                |
+| `frontend_gates_remaining`                  | `0` before claiming frontend support                                  |
+| `production_gates_remaining`                | `0` before claiming a supported deployment profile                    |
 
 The command may report open gates without failing; open gates are the roadmap status. Missing files,
 unknown dependencies, invalid financial evidence, or unregistered roadmap tracks fail the command.

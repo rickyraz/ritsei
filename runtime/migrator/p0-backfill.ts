@@ -53,7 +53,8 @@ const duplicateKeys = (values: readonly { tenantId: string; id: string }[]) => {
   const duplicates = new Set<string>()
   for (const value of values) {
     const valueKey = key(value.tenantId, value.id)
-    if (!seen.add(valueKey)) duplicates.add(valueKey)
+    if (seen.has(valueKey)) duplicates.add(valueKey)
+    else seen.add(valueKey)
   }
   return [...duplicates]
 }

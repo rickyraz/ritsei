@@ -56,6 +56,7 @@
 - [`./architecture/reference/analytical-isolation-and-semantic-projection-patterns.md`](./architecture/reference/analytical-isolation-and-semantic-projection-patterns.md)
 - [`./architecture/reference/cartographic-renderer-selection.md`](./architecture/reference/cartographic-renderer-selection.md)
 - [`./architecture/reference/cartographic-archetypes-and-semantic-depth.md`](./architecture/reference/cartographic-archetypes-and-semantic-depth.md)
+- [`./architecture/reference/roadmap-track-considerations.md`](./architecture/reference/roadmap-track-considerations.md)
 
 ## Roadmaps
 
@@ -67,6 +68,9 @@
 - [`./roadmap/process-studio.md`](./roadmap/process-studio.md)
 - [`./roadmap/process-pack-library.md`](./roadmap/process-pack-library.md)
 - [`./roadmap/postgresql-19.md`](./roadmap/postgresql-19.md)
+- [`./roadmap/workload.md`](./roadmap/workload.md)
+- [`./roadmap/frontend.md`](./roadmap/frontend.md)
+- [`./roadmap/production.md`](./roadmap/production.md)
 
 ## Deployment Notes
 

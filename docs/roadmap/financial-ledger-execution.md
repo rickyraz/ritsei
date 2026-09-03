@@ -126,6 +126,13 @@ recovery measures. Corrections use authorized reversals; reconciliation never in
 **Exit:** operation projections rebuild, reconciliation is idempotent and fail-closed, and
 PostgreSQL is not a competing balance authority. Complete report/balance rebuild remains open.
 
+### Staging decision hold (not registered)
+
+Provider-neutral staging preparation remains inside this track, but its gates are intentionally not
+registered while ADR-0064 and ADR-0065 are still Proposed. Before F6, accept, reject, or replace the
+primary staging decision and record an explicit disposition for the optional edge/evidence plane.
+Staging must not silently select custody, retention, topology, or a second authority.
+
 ### F6 — Replay and cutover rehearsal
 
 For a bounded Legal Entity or tenant cohort:
@@ -184,6 +191,7 @@ adapter compatibility is not production recovery, quorum, restore, replay, or cu
 | Measure                                | Target before activation                     |
 | -------------------------------------- | -------------------------------------------- |
 | `financial_activation_gates_remaining` | `0`                                          |
+| staging primary decision               | accepted before F6                         |
 | accepted duplicate transfers           | `0`                                          |
 | unresolved operation identities        | `0`                                          |
 | restore/replay/cutover rehearsals      | signed and executable for the bounded cohort |
@@ -192,7 +200,8 @@ adapter compatibility is not production recovery, quorum, restore, replay, or cu
 
 ## Stop conditions
 
-Stop activation when any P0 evidence is missing, a store can be restored independently without
-fencing, an unknown outcome has no deterministic recovery path, projections cannot be rebuilt, or
-any route can select PostgreSQL/TigerBeetle per request. Do not add a generic TigerBeetle API,
-warehouse, payment model, or second ledger authority from this roadmap.
+Stop activation when any P0 evidence is missing, the staging authority is not explicitly decided,
+a proposed edge/evidence provider is treated as mandatory without disposition, a store can be
+restored independently without fencing, an unknown outcome has no deterministic recovery path,
+projections cannot be rebuilt, or any route can select PostgreSQL/TigerBeetle per request. Do not add a
+generic TigerBeetle API, warehouse, payment model, or second ledger authority from this roadmap.

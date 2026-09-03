@@ -85,9 +85,31 @@ Process Studio-ready.
 ### D0 — Stabilize foundations
 
 `kernel`, `identity`, `auth`, `authorization`, and `party` establish scope, principals, permission
-ownership, party roles, identifiers, transactions, failure mapping, and audit/correlation.
+ownership, party roles, identifiers, transactions, failure mapping, and audit/correlation. The
+registered D0 gates make the identity and authorization evidence explicit before Level 3 provider
+counts can unlock later Process Studio work.
 
-**Exit:** owner-local contracts, scope constraints, authorization proofs, and boundary checks pass.
+#### D0.1 — Identity lifecycle (`domain.identity-lifecycle`)
+
+Prove disabled-account behavior, session invalidation, active/suspended tenant membership, membership
+revocation, and fail-closed authentication/tenant mapping. Provider-local identity remains separate
+from the RITSEI UserAccount and tenant membership.
+
+#### D0.2 — Authorization foundation (`domain.authorization-foundation`)
+
+Prove the ordered authorization boundary beyond direct grants: scoped capability, relationship/object
+checks, domain policy, Separation of Duties, explainable denial, and fail-closed handling for unknown,
+stale, or unavailable results. The current direct-grant baseline does not silently satisfy these
+additional target layers.
+
+#### D0.3 — Capability grammar (`domain.capability-grammar`)
+
+Keep the owner/resource/business-verb grammar canonical, migrate legacy identifiers explicitly, and
+reject topology, broad, nested, or provider-shaped capability names. Workload class and deployment
+metadata never enter capability IDs.
+
+**Exit:** the three D0 gates pass with owner-local contracts, scope constraints, authorization proofs,
+and boundary checks before Level 3 provider registration proceeds.
 
 ### D1 — Complete the economic core
 
@@ -102,6 +124,13 @@ returns, invoice match, payables, and settlement remain gated.
 
 **Exit:** every selected action passes the primitive readiness test and has a narrow public
 contract.
+
+#### Procurement follow-on gates (unregistered)
+
+Purchase-order confirmation does not imply Goods Receipt maturity. Register separate provider gates
+when requested and owned for receipt correction, returns, committed event publication, and a
+Procurement Level 3 action/event pair. Each gate must add its own transaction, authorization,
+correction/recovery, compatibility, and database evidence.
 
 ### D2 — Publish catalog providers
 
@@ -141,6 +170,7 @@ activate the external connector or workflow runtime.
 
 | Measure                                | Target                                              |
 | -------------------------------------- | --------------------------------------------------- |
+| `domain.*` foundation and Level 3 gates | `PASS` before Process Studio catalog work          |
 | `level3_capabilities`                  | `>= 2` before Process Studio catalog work           |
 | selected action contract/test coverage | `100%`                                              |
 | provider boundary violations           | `0`                                                 |
@@ -149,5 +179,7 @@ activate the external connector or workflow runtime.
 ## Stop conditions
 
 Stop provider registration when the action lacks an owner, public failure model, authorization,
-transaction/idempotency proof, typed event, correction/recovery path, or compatibility test. Do not
-turn the package table into a promise to implement every ERP functional area.
+transaction/idempotency proof, typed event, correction/recovery path, or compatibility test. Stop D0
+promotion when relationship/object, Separation of Duties, explainable denial, or stale/unknown
+fail-closed evidence is missing. Do not turn the package table into a promise to implement every ERP
+functional area.

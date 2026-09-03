@@ -3,7 +3,7 @@ import * as Effect from "effect/Effect"
 
 import { withTemporaryDatabase } from "../../tests/support/postgres-database.ts"
 import { runMigrations } from "../../platform/mod.ts"
-import { applyP0Backfill } from "./p0-backfill.ts"
+import { applyP0Backfill, P0BackfillFailure } from "./p0-backfill.ts"
 
 const databaseUrl = Deno.env.get("DATABASE_URL")
 
@@ -88,5 +88,59 @@ it.effect.skipIf(databaseUrl === undefined)(
         assert.strictEqual(warehouse?.legal_entity_id, secondLegalEntityId)
         assert.strictEqual(identifier?.provider, "REGISTRY")
         assert.strictEqual(identifier?.legal_entity_id, secondLegalEntityId)
+
+        const missing = yield* Effect.flip(applyP0Backfill(client, {
+          warehouseScopes: [],
+          stockTransferScopes: [],
+          identifierScopes: [{
+            tenantId,
+            identifierId,
+            provider: "registry",
+            legalEntityId: secondLegalEntityId,
+          }],
+        }))
+        assert.instanceOf(missing, P0BackfillFailure)
+        assert.match(missing.detail, /missing=/)
+
+        const unknown = yield* Effect.flip(applyP0Backfill(client, {
+          warehouseScopes: [{
+            tenantId,
+            warehouseId: "00000000-0000-4000-8000-000000000008",
+            legalEntityId: secondLegalEntityId,
+            primaryBranchId: null,
+          }],
+          stockTransferScopes: [],
+          identifierScopes: [{
+            tenantId,
+            identifierId,
+            provider: "registry",
+            legalEntityId: secondLegalEntityId,
+          }],
+        }))
+        assert.instanceOf(unknown, P0BackfillFailure)
+        assert.match(unknown.detail, /unknown=/)
+
+        const duplicate = yield* Effect.flip(applyP0Backfill(client, {
+          warehouseScopes: [{
+            tenantId,
+            warehouseId,
+            legalEntityId: secondLegalEntityId,
+            primaryBranchId: null,
+          }, {
+            tenantId,
+            warehouseId,
+            legalEntityId: secondLegalEntityId,
+            primaryBranchId: null,
+          }],
+          stockTransferScopes: [],
+          identifierScopes: [{
+            tenantId,
+            identifierId,
+            provider: "registry",
+            legalEntityId: secondLegalEntityId,
+          }],
+        }))
+        assert.instanceOf(duplicate, P0BackfillFailure)
+        assert.match(duplicate.detail, /duplicates=/)
       })),
 )

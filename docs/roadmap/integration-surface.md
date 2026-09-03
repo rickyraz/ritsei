@@ -94,6 +94,15 @@ The bounded provider-neutral proof covers tenant-scoped replay protection, norma
 retry/dead-letter outcomes, redaction, compatibility/payload checks, health/lag metrics, and the
 Process Studio bridge. It does not activate a provider or claim production readiness.
 
+## Provider activation (not registered)
+
+The governed surface is provider-neutral. Do not add a provider gate until one provider has a named
+owner and a committed deployment profile. The selected provider gate must require its compatibility
+range, credentials boundary, production endpoint, outage and unknown-outcome rehearsal, duplicate
+effect proof, secret rotation, redaction, and reviewed runbook. A provider gate is downstream of
+`integration.governed10`; it never becomes a universal dependency merely because the integration
+surface is complete.
+
 ## Measures
 
 | Measure                                                   | Target for governed-surface proof |
@@ -114,5 +123,5 @@ production endpoint, recovery rehearsal, and reviewed runbook.
 
 Stop exposure when a provider operation lacks idempotency or unknown-outcome handling, OAuth scope
 is used as domain authorization, arbitrary script/SQL/unrestricted HTTP is required, retry semantics
-are undocumented, credentials enter Process IR, no adapter owner exists, or compensation/manual
-recovery is undefined.
+are undocumented, credentials enter Process IR, no adapter owner exists, provider activation lacks
+an explicit profile and runbook, or compensation/manual recovery is undefined.

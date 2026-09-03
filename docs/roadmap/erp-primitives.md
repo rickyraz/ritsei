@@ -108,6 +108,18 @@ operator-supplied mapping and no migration infers ownership. The bootstrap proof
 and typed failures, not cross-domain atomic provisioning, which remains outside the P0 slice under
 [`ADR-0028`](../decisions/0028-complete-p0-identity-party-and-branch-metadata.md).
 
+### P0 migration cohort gate
+
+**Registry gate:** `erp.p0-migration`
+
+Clean installs may have no legacy rows. An upgrade cohort must use an operator-supplied mapping file
+with exact tenant/resource coverage. The backfill rejects missing, duplicate, and unknown mappings
+before changing any row, runs in one transaction, preserves row identity, and never infers Legal
+Entity ownership.
+
+**Exit:** `runtime/migrator/p0-backfill.ts` and its executable test prove exact coverage and typed
+failure for each mapping error; the reviewed vocabulary and ownership decisions remain stable.
+
 ### P1 — Product, Quantity, and Location
 
 The baseline is decided by
@@ -167,7 +179,7 @@ Exit criteria:
 
 | Measure                                             | Target                     |
 | --------------------------------------------------- | -------------------------- |
-| `erp.p0`–`erp.p3`                                   | `PASS`                     |
+| `erp.p0`–`erp.p3` and `erp.p0-migration`             | `PASS`                     |
 | `open_unknown_decisions`                            | `0` for the selected scope |
 | primitive packages created only for new invariants  | `100%`                     |
 | selected public actions with executable owner proof | `100%`                     |
@@ -177,5 +189,5 @@ Run `deno task roadmap:measure`; do not use a prose checkbox as proof.
 ## Stop conditions
 
 Stop dependent work when a material primitive is `UNKNOWN`, ownership is ambiguous, a cross-scope
-constraint is missing, a committed effect has no correction path, or a new package would only mirror
-an existing owner.
+constraint is missing, a legacy mapping is inferred or not exact, a committed effect has no correction
+path, or a new package would only mirror an existing owner.

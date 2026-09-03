@@ -67,10 +67,12 @@ command execution.
 **Exit:** `packs.contract` passes. This is complete for the contract-only slice, not for production
 installation.
 
-### Phase 1 — Catalog-backed resolution
+### Phase 1 — Catalog-backed resolution (unregistered)
 
 Resolve required/optional references through the versioned Process Catalog. Report owner, stability,
 scope, compatibility, missing, retired, and tenant-availability reasons without granting authority.
+Register this phase only after a named owner adds a catalog-backed resolver and executable contract
+proof; the current in-memory pack contract is not enough.
 
 **Dependency:** Process Studio 0.8, public domain contracts, authorization metadata, and release
 governance.
@@ -92,9 +94,10 @@ definitions or business facts.
 
 ### Phase 3 — Distribution vertical pack
 
-Deliver one owner-reviewed profile with Order-to-Cash, Stock Correction, Revenue Posting, required
-capabilities, configuration guidance, static validation, and an operator guide. Use a representative
-tenant fixture, not only frontend data.
+Deliver one owner-reviewed bounded Distribution flow with order confirmation, stock correction, and
+revenue posting, plus required capabilities, configuration guidance, static validation, and an
+operator guide. This scope does not imply Billing, invoicing, payments, settlement, tax, or
+receivables ownership. Use a representative tenant fixture, not only frontend data.
 
 **Exit:** a new tenant reaches a valid editable `DRAFT`; every missing prerequisite has an
 actionable explanation.

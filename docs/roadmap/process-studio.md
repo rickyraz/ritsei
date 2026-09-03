@@ -32,7 +32,7 @@ is:
 
 ```text
 primitive decisions → mature providers → typed catalogs → headless Process IR
-→ recovery/operations → validated designer → governed release
+→ lease fencing → recovery/operations → validated designer → governed release
 ```
 
 The designer is a projection over validated runtime semantics. It does not execute commands, provide
@@ -89,6 +89,17 @@ decisions, timers, typed event waits, human tasks, execution context, and persis
 pinning, and observable task/timer/event/compensation state pass. Process IR contains no model call,
 prompt, dynamic action, or nondeterministic AI binding.
 
+### 0.87 — Lease fencing boundary (`process.fencing087`)
+
+Before operational recovery can claim safe leased work, enforce a monotonic generation at the actual
+side-effect mutation boundary. A lease capability token proves possession only; the fencing
+generation proves freshness within an explicit shared fence scope. Fencing and idempotency identity
+remain separate.
+
+**Exit:** concurrent claims receive distinct generations, stale workers are rejected before side
+effects, the generation cannot reset or decrease, and the shared-scope tests cover lease expiry,
+reacquisition, and stale completion.
+
 ### 0.9 — Operational maturity (`process.ops09`)
 
 Add bounded retry, cancellation, recovery, compensation, audit correlation, SoD context, monitoring,
@@ -97,6 +108,13 @@ operator controls, release/deployment promotion, and capability retirement.
 **Exit:** operators distinguish business failure, technical retry, unknown external outcome,
 compensation, and manual recovery; compensation is authorized and idempotent; load, crash,
 migration, and upgrade proofs pass; `pg_durable` gates remain enforced.
+
+### Conditional execution engines (not registered)
+
+Activate PgQue only when real committed-event fan-out or throughput requires it. Activate
+`pg_durable` only when its compatibility, recovery, observability, and production evidence is
+accepted for the selected workflow category. Event, job, and workflow semantics remain separate;
+neither engine becomes a universal Process Studio dependency by roadmap wording alone.
 
 ### 0.95 — Validated designer (`process.designer095`)
 
@@ -132,7 +150,7 @@ Process Studio architecture and ADR-0063.
 
 | Measure                                         | Target                                       |
 | ----------------------------------------------- | -------------------------------------------- |
-| `process.*` mechanical gates                    | all six pass before governed-release review  |
+| `process.*` mechanical gates                    | all seven pass before governed-release review |
 | deterministic IR equivalence                    | `100%` between visual and structured editors |
 | browser-side business mutation                  | `0`                                          |
 | unregistered or unauthorized executable actions | `0`                                          |
@@ -146,6 +164,7 @@ production rehearsal or financial activation approval.
 ## Stop conditions
 
 Stop the next phase when a primitive is `UNKNOWN`, a provider lacks executable proof, catalog
-metadata is hand-maintained, compensation is inferred, a workflow transaction spans durable
-checkpoints, a visual feature hides missing runtime semantics, or `pg_durable` lacks its
+metadata is hand-maintained, compensation is inferred, a fence generation is missing at the
+side-effect boundary, stale work can mutate after reacquisition, a workflow transaction spans
+durable checkpoints, a visual feature hides missing runtime semantics, or `pg_durable` lacks its
 compatibility and production gates.
