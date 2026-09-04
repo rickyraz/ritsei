@@ -40,6 +40,11 @@ ADR-0010  Vite-based SolidJS SPA
                         +--> Table, Virtual, and Form are headless ERP engines
                         +--> Pacer is optional; DB remains research-only
               |
+              +--> ADR-0072 native Solid 2 and Effect integration
+                        +--> Solid owns the default reactive graph and ownership tree
+                        +--> Solid Context carries the scoped Effect ManagedRuntime and `R`
+                        +--> Effect Atom is opt-in for shared or portable reactive graphs
+              |
               +--> ADR-0069 cartographic enterprise visual grammar
                         +--> HTML owns semantics and interaction
                         +--> WebGPU is optional and fallback-first
@@ -96,7 +101,8 @@ ADR-0046  Owner-local business surface + generated structural ergonomics
 ADR-0046 amends the current architectural interpretation of ADR-0015 and ADR-0036. ADR-0047
 amends the receipt and cancellation boundary of ADR-0044 and ADR-0045. ADR-0056 amends only the
 frontend primitive and styling selection recorded by ADR-0010; ADR-0057 clarifies the role and
-adoption scope of the TanStack frontend engines; ADR-0058 amends only the authentication/session
+adoption scope of the TanStack frontend engines; ADR-0072 defines the native Solid 2 and Effect
+integration boundary without rejecting optional Atom use; ADR-0058 amends only the authentication/session
 provider boundary in ADR-0030; ADR-0059 defines the replaceable RelationshipEngine boundary in
 ADR-0006; ADR-0070 concretizes the optional cartographic renderer selected by ADR-0069 without
 changing its HTML-first, fallback-first semantics; and ADR-0071 replaces coarse industry categories
@@ -118,6 +124,7 @@ historical decisions, and ADR-0047 does not change the financial authority recor
 | [ADR-0047](./0047-define-procurement-goods-receipt-boundary.md) | Current amendment | Procurement evidence plus Inventory movement in one bounded receipt transaction |
 | [ADR-0056](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Current frontend amendment | Product Patterns, Visual Grammar, Ark UI, and constrained Panda styling boundaries |
 | [ADR-0057](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Current frontend clarification | Selective Query cache plus headless Table, Virtual, Form, and optional Pacer/DB boundaries |
+| [ADR-0072](./0072-prefer-native-solid-reactivity-for-effect-integration.md) | Current frontend integration boundary | Native Solid graph/context for Effect by default; Atom remains opt-in for shared or portable reactive graphs |
 | [ADR-0069](./0069-adopt-cartographic-enterprise-visual-grammar.md) | Current frontend visual grammar | Cartographic Enterprise UI, HTML-first rendering, optional WebGPU, and governed material tokens |
 | [ADR-0070](./0070-select-vgpu-and-defer-typegpu.md) | Current cartographic renderer selection | `vgpu` behind a RITSEI adapter; TypeGPU deferred for measured GPU-compute workloads |
 | [ADR-0071](./0071-adopt-universal-cartographic-archetypes.md) | Current cartographic semantic model | Seven universal archetypes, context-aware mappings, deterministic variation, and semantic depth |
@@ -148,6 +155,7 @@ The current architecture is summarized here for navigation; the canonical rule r
 - Goods Receipt evidence belongs to Procurement; physical receipt movement belongs to Inventory.
 - The logical database contract hides PostgreSQL placement; physical data topology remains infrastructure, not domain semantics.
 - Foundation contains generic contracts, modules contain business capabilities, platform contains concrete adapters, and runtime contains composition roots.
+- Solid owns the default frontend reactive graph and ownership tree; Effect `R` is carried by scoped Solid Context runtimes, while Atom is an explicit shared/portable opt-in.
 - Cartographic is a grammar for structure, relationship, pressure, movement, boundary, and state—not a requirement for topographic maps on every page.
 - The seven visual archetypes are Stock, Flow, Capacity, Value, Relationship, Progress, and Asset / Space; industries compose them rather than receiving separate visual themes.
 - Material variation is deterministic and context-aware; semantic depth complements, but never replaces, semantic HTML, labels, contrast, or accessible alternatives.

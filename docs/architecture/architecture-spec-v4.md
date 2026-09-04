@@ -38,6 +38,8 @@
 >   [`../decisions/0010-use-vite-solidjs-spa.md`](../decisions/0010-use-vite-solidjs-spa.md)
 > - Effect application architecture:
 >   [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
+> - Native Solid 2 and Effect integration:
+>   [`../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md`](../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md)
 > - Solid compiler boundary:
 >   [`../decisions/0049-keep-solid-compiler-at-rendering-boundary.md`](../decisions/0049-keep-solid-compiler-at-rendering-boundary.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
@@ -617,9 +619,13 @@ SolidJS 2.0 renderer and presentation runtime
 SolidJS owns rendering and presentation-local reactivity. Its JSX/compiler transform is a
 rendering-boundary implementation detail, not the owner of application semantics. Effect owns
 explicit frontend application coordination through typed Models, Messages, transitions, Commands,
-Subscriptions, and scoped Resources where a workflow needs them. TanStack Query remains the owner
-of remote server state; presentation-only signals must not become a shadow domain model or query
-cache.
+Subscriptions, and scoped Resources where a workflow needs them. The default Solid 2 integration
+carries Effect's `R` channel through a scoped Solid Context `ManagedRuntime`; Effect Atom is an
+optional shared/portable reactive graph, not a second default store or lifecycle owner. TanStack
+Query remains the owner of remote server state; presentation-only signals must not become a shadow
+domain model or query cache. Detailed rationale and runnable references are owned by
+[ADR-0072](../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md) and
+[`frontend.md`](./frontend.md).
 
 The router owns navigation and validated URL state. It must not own business policy or backend
 transaction behavior. UI intent invokes a public command; only the owning backend domain can

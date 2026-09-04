@@ -25,6 +25,8 @@
 > - Workload isolation: [`./workload.md`](./workload.md)
 > - Effect application architecture:
 >   [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
+> - Native Solid 2 and Effect integration:
+>   [`../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md`](../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md)
 > - Semantic design system:
 >   [`../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md`](../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md)
 > - Cartographic visual grammar:

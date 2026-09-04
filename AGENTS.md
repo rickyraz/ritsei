@@ -236,6 +236,11 @@ document and summarize only what is necessary for navigation or context.
 - Use Solid Router by default.
 - Keep router-specific types behind frontend routing abstractions.
 - Use TanStack Solid Query for remote server state.
+- Use Solid's native reactive graph and Solid Context-carried `ManagedRuntime`
+  as the default Effect integration; use Effect Atom only as an explicit opt-in
+  for shared or portable reactive graphs, and never mirror the same fact across
+  both systems. See [`docs/architecture/frontend.md`](./docs/architecture/frontend.md)
+  and [ADR-0072](./docs/decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md).
 - Do not mirror query results into unrelated signals or global stores.
 - Use TanStack Solid Table, Virtual, and Form for their specific concerns.
 - Keep route loaders thin: parse input, invoke feature logic, and render.

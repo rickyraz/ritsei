@@ -95,5 +95,6 @@ current system; ADRs preserve decision history.
 | [`0069`](./0069-adopt-cartographic-enterprise-visual-grammar.md) | Adopt the cartographic enterprise visual grammar | Accepted |
 | [`0070`](./0070-select-vgpu-and-defer-typegpu.md) | Select `vgpu` as the optional cartographic renderer and defer TypeGPU compute | Accepted |
 | [`0071`](./0071-adopt-universal-cartographic-archetypes.md) | Adopt seven universal cartographic visual archetypes | Accepted |
+| [`0072`](./0072-prefer-native-solid-reactivity-for-effect-integration.md) | Prefer native Solid 2 reactivity for Effect integration | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

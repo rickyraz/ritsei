@@ -13,6 +13,7 @@
 > - SPA architecture decision: [`../decisions/0010-use-vite-solidjs-spa.md`](../decisions/0010-use-vite-solidjs-spa.md)
 > - Contract schema decision: [`../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md`](../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md)
 > - Effect application architecture: [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
+> - Native Solid 2 and Effect integration: [`../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md`](../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md)
 > - Design system and Visual Grammar: [`./design-system.md`](./design-system.md)
 > - Cartographic visual grammar: [`../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md`](../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md)
 > - Cartographic renderer selection: [`../decisions/0070-select-vgpu-and-defer-typegpu.md`](../decisions/0070-select-vgpu-and-defer-typegpu.md)
@@ -132,6 +133,59 @@ ApprovePurchaseOrder
 Components must not mutate authoritative business state with local setters such
 as `setStatus("approved")`. They dispatch an intention or invoke the owning
 public command, then render the returned state or failure.
+
+### Solid 2 × Effect integration boundary
+
+RITSEI uses Solid's native fine-grained reactive graph as the default integration
+surface for Effect. Effect remains the application runtime; Solid remains the
+renderer, presentation graph, and ownership tree.
+
+The default composition is:
+
+```text
+Solid Context
+    -> scoped ManagedRuntime
+        -> Effect services, Layers, typed failures, and cancellation
+            -> Solid async read/action boundary
+```
+
+- `R` is carried by the nearest `ManagedRuntime` in Solid Context, not by a
+  global registry.
+- Runtime and Layer cleanup follows the Solid owner that created the provider;
+  nested providers override services for their subtree only.
+- A read adapter must propagate Solid superseding/disposal into Effect fiber
+  interruption and preserve Effect failure/finalization on the way back.
+- An action adapter must preserve typed failures, interruption, compensation,
+  and service scope without moving business authority into the browser.
+- Solid signals, memos, stores, and context own local presentation state.
+- TanStack Solid Query owns shared remote server-state cache policy; its results
+  must not be mirrored into Atom or an unrelated store.
+- Effect Atom is an explicit opt-in for a shared or portable Effect-native
+  reactive graph. It is not the default local-state store, DI container, cache,
+  or business authority.
+
+Do not represent the same reactive fact in both Solid and Atom. If a feature
+opts into Atom, Atom owns that fact and the Solid adapter is only its projection.
+Keep the decision at the frontend boundary; public domain contracts must remain
+independent of Solid and Atom.
+
+The runnable reference is the non-production experiment at
+[`apps/web/src/experiments/solid-effect/`](../../apps/web/src/experiments/solid-effect/):
+
+- [`src/solid-effect.ts`](../../apps/web/src/experiments/solid-effect/src/solid-effect.ts)
+  demonstrates `RuntimeContext`, `ManagedRuntime`, `runEffect`, and `effectAction`;
+- [`src/app.tsx`](../../apps/web/src/experiments/solid-effect/src/app.tsx) composes the
+  scoped runtime;
+- [`src/typeahead.tsx`](../../apps/web/src/experiments/solid-effect/src/typeahead.tsx)
+  demonstrates the native interruptible read path;
+- [`src/checkout.tsx`](../../apps/web/src/experiments/solid-effect/src/checkout.tsx)
+  demonstrates the native action path with typed failure and compensation; and
+- [`src/atom.tsx`](../../apps/web/src/experiments/solid-effect/src/atom.tsx) is the
+  comparison-only Atom registry/`AsyncResult` path, not the production default.
+
+The current Atom binding is a Solid 1.x compatibility reference only; it is
+not a Solid 2 integration template. See ADR-0072 for the compatibility evidence
+and the repository-local source path.
 
 ### State ownership
 
