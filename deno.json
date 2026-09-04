@@ -6,7 +6,8 @@
   "nodeModulesDir": "auto",
   "exclude": [
     "node_modules/",
-    "vendor/"
+    "vendor/",
+    "apps/web/src/experiments/solid-effect/"
   ],
   "tasks": {
     "dev": "deno run --watch --allow-read --allow-env --allow-net runtime/api/mod.ts",

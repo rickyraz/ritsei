@@ -1,32 +1,34 @@
-const roots = ["apps", "foundation", "modules", "platform", "runtime", "tests"]
+const roots = ["apps", "foundation", "modules", "platform", "runtime", "tests"];
 const allowedEphemeralUses = new Map([
   ["modules/process/src/postgres.ts", "leaseToken"],
-])
+]);
+const ignoredDirectories = new Set(["node_modules", "vendor"]);
 
-const isSourceFile = (path: string) => /\.(?:c|m)?tsx?$/.test(path)
+const isSourceFile = (path: string) => /\.(?:c|m)?tsx?$/.test(path);
 
 async function* sourceFiles(path: string): AsyncGenerator<string> {
   for await (const entry of Deno.readDir(path)) {
-    const child = `${path}/${entry.name}`
-    if (entry.isDirectory) yield* sourceFiles(child)
-    else if (entry.isFile && isSourceFile(child)) yield child
+    const child = `${path}/${entry.name}`;
+    if (entry.isDirectory && !ignoredDirectories.has(entry.name)) {
+      yield* sourceFiles(child);
+    } else if (entry.isFile && isSourceFile(child)) yield child;
   }
 }
 
 for (const root of roots) {
   for await (const path of sourceFiles(root)) {
-    const allowedName = allowedEphemeralUses.get(path)
-    const lines = (await Deno.readTextFile(path)).split("\n")
+    const allowedName = allowedEphemeralUses.get(path);
+    const lines = (await Deno.readTextFile(path)).split("\n");
     for (const [index, line] of lines.entries()) {
-      if (!line.includes("crypto.randomUUID()")) continue
-      if (allowedName !== undefined && line.includes(allowedName)) continue
+      if (!line.includes("crypto.randomUUID()")) continue;
+      if (allowedName !== undefined && line.includes(allowedName)) continue;
       throw new Error(
         `${path}:${
           index + 1
         } uses crypto.randomUUID(); use the foundation uuidv7() helper for persistent identities`,
-      )
+      );
     }
   }
 }
 
-console.log("UUID identity policy valid")
+console.log("UUID identity policy valid");
