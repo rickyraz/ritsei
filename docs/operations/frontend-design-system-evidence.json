@@ -4,8 +4,42 @@
   "reviewDate": "2026-09-05",
   "checks": {
     "kobalte-solid2-compatibility": {
-      "status": "blocked",
-      "proof": "docs/operations/frontend-implementation.md"
+      "status": "approved_with_risk",
+      "proof": "docs/operations/frontend-implementation.md",
+      "compatibility": {
+        "bundle": "passed",
+        "build": "passed",
+        "peerRange": "accepted_risk"
+      },
+      "behavior": {
+        "status": "passed",
+        "browserTest": "tests/frontend/kobalte.test.ts",
+        "scope": [
+          "dialog semantics",
+          "keyboard opening and focus containment",
+          "Escape and explicit close",
+          "focus restoration",
+          "reduced motion",
+          "forced colors",
+          "axe WCAG 2A/AA"
+        ]
+      },
+      "riskAcceptance": {
+        "status": "accepted",
+        "id": "solid2-peer-range-mismatch",
+        "acceptedBy": "RITSEI frontend and design-system owners",
+        "acceptedDate": "2026-09-05",
+        "rollback": "Remove Kobalte imports and use the existing semantic HTML fallback."
+      },
+      "dependencyPolicy": {
+        "pinned": true,
+        "automaticUpgrades": false,
+        "lockfile": "deno.lock"
+      },
+      "productionApproval": {
+        "status": "not_activated",
+        "primitives": []
+      }
     },
     "tokens": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
     "focus": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },

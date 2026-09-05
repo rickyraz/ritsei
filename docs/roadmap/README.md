@@ -40,6 +40,12 @@ in this folder.
 
 ## Gate semantics
 
+ADR-0061 requires executable evidence, not a new evaluator for each change. Reuse existing focused
+tests and validation commands. Registry maintenance is needed only when the registered gate contract
+actually changes; ordinary feature work and owner risk acceptance do not imply a roadmap redesign.
+Keep manual approval distinct from automated results. Agent scope rules belong in
+[`AGENTS.md`](../../AGENTS.md#working-rules).
+
 Roadmap status uses distinct evidence classes:
 
 - **Mechanical gate:** repository artifacts and focused executable checks pass.

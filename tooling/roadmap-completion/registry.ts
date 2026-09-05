@@ -958,6 +958,7 @@ export const gates: readonly Gate[] = [
       task(
         "test",
         "apps/web/src/ui/accessibility.test.ts",
+        "tests/frontend/kobalte.test.ts",
         "tests/architecture/roadmap-track-contracts.test.ts",
       ),
     ],

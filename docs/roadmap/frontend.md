@@ -105,7 +105,7 @@ shared contracts rather than feature-local vendor usage.
 
 - `apps/web/src/ui/` owns shared controls and Product Patterns;
 - `docs/operations/frontend-design-system-evidence.json` records token, focus, keyboard, contrast,
-  density, theme, and reduced-motion review; and
+  density, theme, reduced-motion review, and any explicitly accepted Kobalte prerelease risk; and
 - feature code does not import headless or styling vendors directly.
 
 ### F3 — Accessibility and performance (`frontend.accessibility-performance`)
@@ -128,8 +128,10 @@ roadmap completion:
 
 - **Compatibility spike:** Vite, SolidJS 2, Panda CSS, the generated semantic recipe surface,
   TanStack Solid Query, Playwright, and axe run from the root dependency manifest. The Kobalte Solid 2
-  probe bundles successfully with `@kobalte/core@2.0.0-alpha.1`; behavior remains unreviewed and the
-  package's RC peer-range mismatch remains an explicit risk. Kobalte is not yet activated in production UI.
+  probe bundles successfully with `@kobalte/core@2.0.0-alpha.1`, and the browser probe covers the
+  exercised Dialog contract. The package's RC peer-range mismatch is explicitly accepted as
+  `approved_with_risk` with exact pins and rollback; no Kobalte primitive is currently active in
+  production UI.
 - **F0:** `deno task --cwd apps/web build` produces the separate SPA, and the browser shell test verifies boot,
   routing, invalid connection input, theme switching, responsive layout, and in-memory credentials.
 - **F1/F2 vertical slice:** generated browser contracts preserve the canonical Identity schemas and
@@ -141,11 +143,12 @@ roadmap completion:
   visibility, narrow layout, error association, and semantic fallback. These checks do not claim
   screen-reader review, localization review, or long-session operational evidence.
 
-The implementation deliberately leaves the F2 and F3 evidence manifests `blocked`. Upstream
+The implementation deliberately leaves the F2 and F3 evidence manifests `blocked`. The Kobalte
+compatibility risk is accepted only for the exact pinned dependency and does not globally approve
+unused or untested primitives; the current production-approval list is empty. Upstream
 `workload.command-reserve` and `process.designer095` dependencies also remain open, so no frontend
-readiness or production-support claim is implied. The next legitimate work is to complete reviewed
-Kobalte accessibility/performance evidence and resolve its alpha peer-range risk, not to add more
-generic components.
+readiness or production-support claim is implied. The next legitimate work is to complete the
+remaining reviewed accessibility/performance evidence, not to add more generic components.
 
 ## Conditional stages (not registered)
 

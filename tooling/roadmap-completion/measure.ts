@@ -210,7 +210,10 @@ const frontendResults = new Map<string, boolean>()
 for (const [id, evidence] of Object.entries(frontendEvidence)) {
   frontendResults.set(
     id,
-    evaluateFrontendEvidence(await readText(evidence.path), evidence.checks, frontendProofExists),
+    evaluateFrontendEvidence(await readText(evidence.path), evidence.checks, frontendProofExists, {
+      riskPolicy: evidence.riskPolicy,
+      fileExists: frontendProofExists,
+    }),
   )
 }
 
