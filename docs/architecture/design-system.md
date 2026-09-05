@@ -1445,12 +1445,12 @@ this specification, and code MUST be resolved with the relevant owner, not silen
 new rule. Update usage guidance and regression evidence with the implementation; document breaking
 contract changes and their consumer migration.
 
-Storybook is a possible development tool, not a selected dependency or prerequisite for reuse.
-Start with the required usage documentation and runnable component/interaction tests. Introduce a
-catalog only for a demonstrated review or testing need, after verifying the repository's SolidJS 2,
-Vite, and styling integration. A catalog uses the production components and controlled fixtures,
-not real tenant data, credentials, or a forked token set. Its presence does not replace accessibility,
-interaction, visual-regression, or representative workflow evidence.
+Storybook is a development-only documentation and review tool, not a prerequisite for reuse.
+The current setup under `apps/web/.storybook/` is intentionally small: it verifies the repository's
+SolidJS 2, Vite, and styling integration with production UI recipes and controlled fixtures. It must
+not use real tenant data or credentials, fork token sources, or become a second component
+implementation. Its presence does not replace accessibility, interaction, visual-regression, or
+representative workflow evidence.
 
 ## 24. Non-goals
 
