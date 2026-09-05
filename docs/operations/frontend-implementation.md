@@ -66,7 +66,7 @@ production component catalog.
 | `deno task boundary:test` | passed |
 | `deno task boundary:lint` | passed |
 | `deno task roadmap:measure` | passed mechanically; frontend gates remain open by dependency/evidence policy |
-| `deno task fallow:audit` | not green; Fallow reports expected Storybook config entrypoints as unused, the dev adapter as unlisted, and inherited frontend dependency classification findings |
+| `deno task fallow:audit` | warning only; one inherited `@solidjs/vite-plugin` dev-dependency classification remains |
 
 ## Remaining blockers
 

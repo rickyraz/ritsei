@@ -57,8 +57,10 @@
 >   [`../decisions/0021-define-p0-scope-and-identity-model.md`](../decisions/0021-define-p0-scope-and-identity-model.md)
 > - Effect v4 beta.103 update:
 >   [`../decisions/0022-update-effect-v4-to-beta-103.md`](../decisions/0022-update-effect-v4-to-beta-103.md)
-> - Deno package dependency resolution:
+> - Deno package dependency resolution (historical):
 >   [`../decisions/0050-use-package-json-for-deno-dependency-resolution.md`](../decisions/0050-use-package-json-for-deno-dependency-resolution.md)
+> - Dependency ownership by application boundary:
+>   [`../decisions/0075-partition-dependency-ownership-by-application-boundary.md`](../decisions/0075-partition-dependency-ownership-by-application-boundary.md)
 > - UUIDv7 persistent identities:
 >   [`../decisions/0051-adopt-uuidv7-for-persistent-identities.md`](../decisions/0051-adopt-uuidv7-for-persistent-identities.md)
 > - Jurisdiction localization:
@@ -114,51 +116,45 @@ relationship coordination, SoD, and final authorization evidence. Owning domains
 policy, current-state validation, and command semantics; the financial ledger engine enforces the
 accepted transfer-level constraints through the FinancialLedgerPort.
 
-Deno remains the runtime and primary toolchain. npm ecosystem dependencies are canonical in the root
-`package.json`; Deno uses `preferPackageJson: true` and `nodeModulesDir: "auto"` so package exports and
-peers resolve through the conventional local `node_modules` topology. The Effect and Deno adapter
-packages are aligned on `4.0.0-rc.111`; vendored Effect source and the Drizzle subtree remain
-reference-only.
+Deno remains the runtime and primary toolchain. npm ecosystem dependencies are declared by the
+workspace boundary that owns their consumption: the root `package.json` owns repository-wide packages
+and tooling, while `apps/web/package.json` owns dependencies used exclusively by the web application.
+Each owner keeps its exact dependency versions; Deno uses `preferPackageJson: true` and
+`nodeModulesDir: "auto"` so package exports and peers resolve through the conventional local
+`node_modules` topology. The Effect and Deno adapter packages are aligned on `4.0.0-rc.111`; vendored
+Effect source and the Drizzle subtree remain reference-only.
 
 ### Dependency Ownership
 
 ```text
              Dependency ownership
 
-             ┌─────────────────────┐
-             │    package.json     │
-             │                     │
-             │ npm dependencies    │
-             │ JSR dependencies    │
-             │ dev dependencies    │
-             └──────────┬──────────┘
-                        │
-                        ▼
-                  deno install
-                        │
-              ┌─────────┴─────────┐
-              ▼                   ▼
-         node_modules         deno.lock
+       package.json                 apps/web/package.json
+       repo-wide npm/JSR             web-only runtime/dev deps
+       deps and tooling              (exact pins live here)
+                │                              │
+                └──────────────┬───────────────┘
+                               ▼
+                         deno install
+                               │
+                    ┌──────────┴──────────┐
+                    ▼                     ▼
+               node_modules           deno.lock
 
-
-             ┌─────────────────────┐
-             │      deno.json      │
-             │                     │
-             │ runtime             │
-             │ permissions         │
-             │ compiler            │
-             │ fmt / lint          │
-             │ tasks               │
-             └─────────────────────┘
+             deno.json owns workspace orchestration,
+             runtime, compiler, tasks, formatting,
+             linting, and permissions.
 ```
 
-`package.json` is the canonical dependency manifest for npm, JSR, and development
-dependencies. `deno.lock` records the resolved dependency graph, while `node_modules`
-provides the conventional local package topology required by npm ecosystem dependencies.
+The root `package.json` owns repository-wide npm, JSR, and development dependencies. The
+`apps/web/package.json` manifest owns dependencies exclusively consumed by the web application, with
+exact versions kept next to the application boundary. `deno.lock` records the single resolved
+dependency graph, while `node_modules` provides the conventional local package topology required by
+npm ecosystem dependencies.
 
-`deno.json` owns Deno runtime and toolchain behavior rather than package-version ownership.
-It defines compiler behavior, runtime permissions, tasks, formatting, linting, and related
-Deno-specific configuration.
+`deno.json` owns Deno runtime and toolchain behavior: workspace membership, compiler behavior, runtime
+permissions, tasks, formatting, and linting. Internal `modules/*` directories remain modular-monolith
+boundaries, not workspace package boundaries by default.
 
 ## Repository Shape
 

@@ -127,11 +127,11 @@ As of September 5, 2026, the currently feasible frontend slice is implemented wi
 roadmap completion:
 
 - **Compatibility spike:** Vite, SolidJS 2, Panda CSS, the generated semantic recipe surface,
-  TanStack Solid Query, Playwright, and axe run from the root dependency manifest. The Kobalte Solid 2
-  probe bundles successfully with `@kobalte/core@2.0.0-alpha.1`, and the browser probe covers the
-  exercised Dialog contract. The package's RC peer-range mismatch is explicitly accepted as
-  `approved_with_risk` with exact pins and rollback; no Kobalte primitive is currently active in
-  production UI.
+  TanStack Solid Query, Playwright, and axe run through the web-owned manifest plus shared repository
+  tooling. The Kobalte Solid 2 probe bundles successfully with `@kobalte/core@2.0.0-alpha.1`, and the
+  browser probe covers the exercised Dialog contract. The package's RC peer-range mismatch is
+  explicitly accepted as `approved_with_risk` with exact pins and rollback; no Kobalte primitive is
+  currently active in production UI.
 - **F0:** `deno task --cwd apps/web build` produces the separate SPA, and the browser shell test verifies boot,
   routing, invalid connection input, theme switching, responsive layout, and in-memory credentials.
 - **F1/F2 vertical slice:** generated browser contracts preserve the canonical Identity schemas and

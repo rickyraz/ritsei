@@ -73,7 +73,7 @@ current system; ADRs preserve decision history.
 | [`0047`](./0047-define-procurement-goods-receipt-boundary.md) | Define the Procurement Goods Receipt boundary | Accepted |
 | [`0048`](./0048-define-effect-application-architecture-and-frontend-state-ownership.md) | Define Effect application architecture and frontend state ownership | Accepted |
 | [`0049`](./0049-keep-solid-compiler-at-rendering-boundary.md) | Keep the Solid compiler at the rendering boundary | Accepted |
-| [`0050`](./0050-use-package-json-for-deno-dependency-resolution.md) | Use package.json and npm exports for Deno dependency resolution | Accepted |
+| [`0050`](./0050-use-package-json-for-deno-dependency-resolution.md) | Use package.json and npm exports for Deno dependency resolution | Superseded |
 | [`0051`](./0051-adopt-uuidv7-for-persistent-identities.md) | Adopt UUIDv7 for persistent identities | Accepted |
 | [`0052`](./0052-separate-lease-capability-and-fencing-generation.md) | Separate lease capability from fencing generation | Accepted |
 | [`0053`](./0053-clarify-per-job-lease-generation-invariants.md) | Clarify per-job lease-generation invariants | Accepted |
@@ -98,5 +98,6 @@ current system; ADRs preserve decision history.
 | [`0072`](./0072-prefer-native-solid-reactivity-for-effect-integration.md) | Prefer native Solid 2 reactivity for Effect integration | Accepted |
 | [`0073`](./0073-simplify-repository-enforcement-tooling.md) | Simplify repository enforcement tooling | Accepted |
 | [`0074`](./0074-switch-to-kobalte-for-solid2-accessible-primitives.md) | Use Kobalte for Solid 2 accessible primitives | Accepted |
+| [`0075`](./0075-partition-dependency-ownership-by-application-boundary.md) | Partition dependency ownership by application boundary | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

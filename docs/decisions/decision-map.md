@@ -16,7 +16,7 @@
 ADRs preserve the decisions and trade-offs that were accepted at a point in time. This map explains
 how related decisions fit together without rewriting their historical text. ADR-0074 is the current
 accessible-primitive selection; ADR-0056 remains the historical design-system decision for its other
-active boundaries.
+active boundaries. ADR-0075 is the current dependency-ownership boundary for workspace members.
 
 ## Current decision lineage
 
@@ -28,6 +28,13 @@ ADR-0015  One semantic owner per invariant
               +--> ADR-0044  Procurement Purchase Order baseline
               |
               +--> ADR-0045  Procurement Purchase Order confirmation
+
+ADR-0050  Package.json-based Deno dependency resolution
+    |
+    +--> ADR-0075  Dependency ownership follows application boundaries
+              +--> root package.json owns repository-wide dependencies and tooling
+              +--> apps/web/package.json owns web-only dependencies and exact pins
+              +--> deno.lock remains the single resolved workspace graph
 
 ADR-0010  Vite-based SolidJS SPA
     |
@@ -113,10 +120,13 @@ ADR-0006; ADR-0070 concretizes the optional cartographic renderer selected by AD
 changing its HTML-first, fallback-first semantics; and ADR-0071 replaces coarse industry categories
 with seven universal cartographic archetypes, context-aware semantic mappings, deterministic
 variation, and semantic depth. ADR-0073 supersedes the custom-checker selection portion of ADR-0062;
-Fallow and ast-grep remain the generic enforcement owners while only path-sensitive RITSEI checks
-remain custom. Both providers remain optional adapters; the RITSEI contracts and authority remain
-active. The rest of those decisions remains active. None of these amendments rewrite historical
-decisions, and ADR-0047 does not change the financial authority recorded by ADR-0040.
+ADR-0075 supersedes the dependency-manifest ownership portion of ADR-0050 while retaining package.json
+and deno.lock-based resolution; it deliberately defers a root catalog until multiple workspace members
+share a version invariant. Fallow and ast-grep remain the generic enforcement owners while only
+path-sensitive RITSEI checks remain custom. Both providers remain optional adapters; the RITSEI
+contracts and authority remain active. The rest of those decisions remains active. None of these
+amendments rewrite historical decisions, and ADR-0047 does not change the financial authority recorded
+by ADR-0040.
 
 ## Relationship matrix
 
@@ -143,6 +153,7 @@ decisions, and ADR-0047 does not change the financial authority recorded by ADR-
 | [ADR-0068](./0068-establish-foundation-modules-platform-runtime-taxonomy.md) | Current repository taxonomy | Foundation, modules, platform, and runtime have explicit dependency direction |
 | [ADR-0073](./0073-simplify-repository-enforcement-tooling.md) | Current enforcement tooling | Fallow and ast-grep own generic checks; one architecture checker owns path-sensitive boundaries |
 | [ADR-0074](./0074-switch-to-kobalte-for-solid2-accessible-primitives.md) | Current frontend primitive selection | Kobalte 2.0 alpha behind RITSEI-owned UI contracts; native HTML remains the default and fallback |
+| [ADR-0075](./0075-partition-dependency-ownership-by-application-boundary.md) | Current dependency ownership | Repository-wide dependencies stay at root; web-only dependencies and exact pins belong to `apps/web/package.json` |
 
 ## Current canonical rules
 

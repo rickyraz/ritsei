@@ -13,6 +13,6 @@ export default defineConfig({
     setupFiles: ["./tooling/load-env.ts"],
     testTimeout: 30_000,
     hookTimeout: 30_000,
-    exclude: ["vendor/**", "node_modules/**", ".auto/**"],
+    exclude: ["vendor/**", "**/node_modules/**", ".auto/**"],
   },
 })

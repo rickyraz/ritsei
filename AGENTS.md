@@ -106,49 +106,42 @@ repository ownership, tooling, or validation rules.
 
 ## Dependency Ownership
 
-Dependency and Deno configuration ownership is intentionally split:
+Dependency and Deno configuration ownership follows application boundaries:
 
 ```text
              Dependency ownership
 
-             ┌─────────────────────┐
-             │    package.json     │
-             │                     │
-             │ npm dependencies    │
-             │ JSR dependencies    │
-             │ dev dependencies    │
-             └──────────┬──────────┘
-                        │
-                        ▼
-                  deno install
-                        │
-              ┌─────────┴─────────┐
-              ▼                   ▼
-         node_modules         deno.lock
+       package.json                 apps/web/package.json
+       repo-wide npm/JSR             web-only runtime/dev deps
+       deps and tooling              (exact pins live here)
+                │                              │
+                └──────────────┬───────────────┘
+                               ▼
+                         deno install
+                               │
+                    ┌──────────┴──────────┐
+                    ▼                     ▼
+               node_modules           deno.lock
 
-
-             ┌─────────────────────┐
-             │      deno.json      │
-             │                     │
-             │ runtime             │
-             │ permissions         │
-             │ compiler            │
-             │ fmt / lint          │
-             │ tasks               │
-             └─────────────────────┘
+             deno.json owns workspace orchestration,
+             runtime, compiler, tasks, formatting,
+             linting, and permissions.
 ```
 
 Rules:
 
-- Add npm, JSR, and development dependencies to the root `package.json`.
-- Keep dependency versions in one manifest; do not repeat versions in
-  `deno.json`, source imports, task commands, CI configuration, or Dockerfiles
-  unless a tool contract requires an explicit version.
-- Commit `deno.lock` so dependency resolution remains reproducible.
+- Declare a dependency in the application boundary that exclusively consumes it:
+  repository-wide dependencies and tooling belong in the root `package.json`; web-only
+  runtime and development dependencies belong in `apps/web/package.json`.
+- Keep exact dependency versions in the owning manifest: repository-wide packages in the root
+  `package.json`, and web-only packages in `apps/web/package.json`. Do not duplicate versions in
+  source imports, task commands, CI configuration, or Dockerfiles.
+- Keep dependencies used by root tests, tooling, runtime, or more than one boundary in
+  the root `package.json`, even when their names are frontend-oriented.
+- Commit the single `deno.lock` so dependency resolution remains reproducible.
 - Keep `nodeModulesDir: "auto"` and `preferPackageJson: true` in `deno.json`.
-- Use `deno install` after dependency-manifest changes.
-- Treat `vendor/` as reference material, not as the application dependency
-  source.
+- Use `deno install` after root or member manifest changes.
+- Treat `vendor/` as reference material, not as the application dependency source.
 
 ## Effect v4 Reference
 
@@ -205,19 +198,18 @@ Integration rules:
   never expose raw PostgreSQL or Drizzle errors to callers.
 - Do not copy integration examples verbatim. Adapt them to this repository's
   `DatabaseLayer`, public module contracts, schema ownership, and test layers.
-- Application dependencies resolve from the root `package.json`; vendored
+- Application dependencies resolve from their owning workspace manifest; vendored
   subtrees are reference-only and must not be used as runtime dependencies.
-- The root `package.json` is the canonical dependency manifest for npm, JSR, and
-  development dependencies. `deno.lock` owns the resolved dependency graph.
-- `deno.json` owns Deno runtime and toolchain behavior such as compiler options,
-  permissions, tasks, formatting, linting, and `nodeModulesDir`; do not duplicate
-  package-version ownership there.
-- Do not introduce raw GitHub, `raw.githubusercontent.com`, or other HTTPS source
-  imports as package substitutes unless an accepted ADR explicitly requires the
-  exception.
-- `drizzle-orm/effect-postgres` and its `effect` / `@effect/sql-pg` peer path are
-  covered by the foundation/platform import smoke test. Keep required peer dependencies in
-  the root `package.json`.
+- The root `package.json` owns repository-wide npm/JSR dependencies and tooling; `apps/web/package.json`
+  owns dependencies exclusively consumed by the web application. Both manifests resolve into the single
+  `deno.lock` dependency graph.
+- `deno.json` owns Deno runtime and toolchain behavior such as compiler options, permissions, tasks,
+  formatting, linting, and workspace membership; it does not own web dependency versions.
+- Do not introduce raw GitHub, `raw.githubusercontent.com`, or other HTTPS source imports as package
+  substitutes unless an accepted ADR explicitly requires the exception.
+- `drizzle-orm/effect-postgres` and its `effect` / `@effect/sql-pg` peer path are covered by the
+  foundation/platform import smoke test. Keep required repository-wide peer dependencies in the root
+  `package.json`.
 - Generate every migration with pinned Drizzle Kit `1.0.0-rc.4`. Custom SQL must
   start from `drizzle-kit generate --custom`; every migration directory must
   contain `migration.sql` and `snapshot.json`.
@@ -634,7 +626,7 @@ All TypeScript tests MUST use `@effect/vitest`:
 - Run worktree-local tests through `deno task check:affected`; reserve `deno task
   test` for the full suite and CI. Do not introduce a second test command path.
 - Test discovery MUST be allowlisted to `apps/**`, `foundation/**`, `modules/**`, `platform/**`, `runtime/**`, and `tests/**`.
-  Exclude `vendor/**` and `node_modules/**` from tests, coverage, watch mode,
+  Exclude `vendor/**` and `**/node_modules/**` from tests, coverage, watch mode,
   formatting, linting, type checking, and boundary scans. Vendored subtrees are
   reference material and keep their own upstream validation workflows.
 
