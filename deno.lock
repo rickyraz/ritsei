@@ -15,6 +15,7 @@
     "npm:@jsr/std__uuid@^1.1.1": "1.1.1",
     "npm:@kobalte/core@2.0.0-alpha.1": "2.0.0-alpha.1_@solidjs+web@2.0.0-rc.6_solid-js@2.0.0-rc.6",
     "npm:@pandacss/dev@1.12.0": "1.12.0_typescript@6.0.3",
+    "npm:@phosphor-icons/web@2.1.2": "2.1.2",
     "npm:@solidjs/router@2.0.0-next.21": "2.0.0-next.21_@solidjs+web@2.0.0-rc.6_solid-js@2.0.0-rc.6",
     "npm:@solidjs/vite-plugin@3.0.0-next.38": "3.0.0-next.38_@solidjs+web@2.0.0-rc.6_solid-js@2.0.0-rc.6_vite@8.2.2",
     "npm:@solidjs/web@2.0.0-rc.6": "2.0.0-rc.6_solid-js@2.0.0-rc.6",
@@ -1162,6 +1163,9 @@
     },
     "@pandacss/types@1.12.0": {
       "integrity": "sha512-PtlEIOBEV3RzWffeu1zH+/YFmP+fn24M63STGEbgTwjEBMhyo/FfT2sfZGB8oWAbWUBKBp69OMg25E+/rY3klQ=="
+    },
+    "@phosphor-icons/web@2.1.2": {
+      "integrity": "sha512-rPAR9o/bEcp4Cw4DEeZHXf+nlGCMNGkNDRizYHM47NLxz9vvEHp/Tt6FMK1NcWadzw/pFDPnRBGi/ofRya958A=="
     },
     "@rolldown/binding-android-arm-eabi@1.2.7": {
       "integrity": "sha512-EypzgnYCwyVY4NDHKzGmNJT5b+XaQEBniHxsMdeIQLB/tcCzZnhqrzHpZFbX9iaxx+5RiB8caATBtfvZP7zVxQ==",
@@ -3573,6 +3577,7 @@
             "npm:@fontsource/pretendard@5.3.0",
             "npm:@kobalte/core@2.0.0-alpha.1",
             "npm:@pandacss/dev@1.12.0",
+            "npm:@phosphor-icons/web@2.1.2",
             "npm:@solidjs/router@2.0.0-next.21",
             "npm:@solidjs/web@2.0.0-rc.6",
             "npm:@tanstack/solid-query@6.0.0-rc.2",

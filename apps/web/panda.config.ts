@@ -36,6 +36,12 @@ export default defineConfig({
           "2xl": { value: "20px" },
           "3xl": { value: "24px" },
           "4xl": { value: "32px" },
+          iconXs: { value: "14px" },
+          iconSm: { value: "16px" },
+          iconMd: { value: "18px" },
+          iconLg: { value: "20px" },
+          iconXl: { value: "24px" },
+          iconDisplay: { value: "32px" },
         },
         fontWeights: {
           regular: { value: "400" },
@@ -59,6 +65,14 @@ export default defineConfig({
           normal: { value: "0" },
           label: { value: "0.04em" },
         },
+        sizes: {
+          iconXs: { value: "14px" },
+          iconSm: { value: "16px" },
+          iconMd: { value: "18px" },
+          iconLg: { value: "20px" },
+          iconXl: { value: "24px" },
+          iconDisplay: { value: "32px" },
+        },
       },
       semanticTokens: {
         colors: {
@@ -72,6 +86,17 @@ export default defineConfig({
           },
           boundary: { value: { base: "#738089", _dark: "#8A9AA5" } },
           danger: { value: { base: "#A52C22", _dark: "#FFAEA5" } },
+          icon: {
+            default: { value: { base: "{colors.ink}", _dark: "{colors.paper}" } },
+            muted: { value: { base: "{colors.slate}", _dark: "#BDC9D0" } },
+            subtle: { value: { base: "#738089", _dark: "#8A9AA5" } },
+            success: { value: { base: "#2E7D5B", _dark: "#8FD1AE" } },
+            warning: { value: { base: "#9A6500", _dark: "#F3C55E" } },
+            danger: { value: { base: "#A52C22", _dark: "#FFAEA5" } },
+            info: { value: { base: "#3862B6", _dark: "#9AB7FF" } },
+            disabled: { value: { base: "#8B959B", _dark: "#6F7B83" } },
+            inverse: { value: { base: "{colors.surface}", _dark: "{colors.ink}" } },
+          },
         },
       },
       textStyles: {

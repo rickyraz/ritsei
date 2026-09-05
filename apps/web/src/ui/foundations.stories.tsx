@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
-import { control, layout, surface, typography } from "./index.ts"
+import { control, Icon, layout, surface, typography } from "./index.ts"
 
 function FoundationsStory() {
   return (
@@ -24,6 +24,26 @@ function FoundationsStory() {
             <p class={typography.metadata}>Metadata · 2026-09-05 · reviewed</p>
             <p class={typography.code}>INV-2026-001289</p>
             <p class={typography.numeric}>Rp 204.517.500</p>
+          </div>
+        </section>
+
+        <section class={surface()} aria-labelledby="icons-heading">
+          <div class={layout.stack}>
+            <h2 id="icons-heading">Iconography</h2>
+            <div class={layout.row}>
+              <span>
+                <Icon name="action.add" /> Create
+              </span>
+              <span>
+                <Icon name="action.refresh" size="sm" /> Refresh
+              </span>
+              <span>
+                <Icon name="status.warning" tone="warning" /> Needs review
+              </span>
+              <span>
+                <Icon name="object.invoice" variant="duotone" size="display" />
+              </span>
+            </div>
           </div>
         </section>
 

@@ -20,6 +20,7 @@
 > - Active architecture: [`./architecture-spec-v4.md`](./architecture-spec-v4.md)
 > - Design-system decision: [`../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md`](../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md)
 > - Typography decision: [`../decisions/0076-adopt-ritsei-typography-system.md`](../decisions/0076-adopt-ritsei-typography-system.md)
+> - Iconography decision: [`../decisions/0077-adopt-ritsei-iconography-system.md`](../decisions/0077-adopt-ritsei-iconography-system.md)
 > - Solid 2 primitive selection: [`../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md`](../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md)
 > - Cartographic UI decision: [`../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md`](../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md)
 > - Cartographic renderer selection: [`../decisions/0070-select-vgpu-and-defer-typegpu.md`](../decisions/0070-select-vgpu-and-defer-typegpu.md)
@@ -429,6 +430,29 @@ percentages MUST use locale-aware formatting and MUST NOT depend on glyph shape 
 The system MUST remain usable under zoom, OS text scaling, long labels, and localization.
 
 See [ADR-0076](../decisions/0076-adopt-ritsei-typography-system.md) for the decision record.
+
+### Iconography
+
+Iconography is a semantic information layer, not decoration. Phosphor is the current provider;
+Nucleo UI is a future provider option. Application code MUST use the RITSEI `Icon` API and semantic
+registry names such as `action.delete`, `object.invoice`, and `status.warning`; provider names and
+imports remain inside `apps/web/src/ui/icons/providers/`.
+
+Canonical usage is:
+
+```text
+Regular   default utility UI
+Fill      selected or active state, selectively
+Duotone   empty states, onboarding, and expressive contextual surfaces
+```
+
+The canonical scale is 14, 16, 18, 20, 24, and 32px. The default is 18px; dense controls use 16px.
+Glyph size MUST NOT be confused with the containing control's interactive target. Icons default to
+`currentColor`, with semantic tones for status and emphasis. Critical state MUST combine icon, text,
+and color; icon-only controls MUST have an accessible name. Cartographic Identity remains a brand
+and illustration layer, not a reason to stylize every utility icon.
+
+See [ADR-0077](../decisions/0077-adopt-ritsei-iconography-system.md) for the decision record.
 
 ## 11. Grid, geometry, and density
 
