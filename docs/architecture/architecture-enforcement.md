@@ -3,8 +3,8 @@
 > **Status:** Canonical
 >
 > **Owns:** Automated enforcement of module and technical boundaries, schema ownership,
-> forbidden cross-domain imports, dependency cycles, and conservative public
-> call-graph checks.
+> forbidden cross-domain imports, dependency cycles, and the distinction between static
+> checks and behavioral evidence.
 >
 > **Related documents**
 >
@@ -153,28 +153,21 @@ and allow imports such as:
 import { InventoryService } from "@ritsei/inventory"
 ```
 
-The current scaffold enforces these checks with:
+The current scaffold deliberately uses only three enforcement layers:
 
-- generic repository graph analysis in Fallow, configured by
-  [`../../.fallowrc.json`](../../.fallowrc.json) and its
+- Fallow owns generic graph, dependency direction, circular-dependency, dead-code, duplication,
+  health, and policy analysis through `.fallowrc.json` and
   [`../../tooling/fallow/rules/ritsei-static-policy.json`](../../tooling/fallow/rules/ritsei-static-policy.json);
-- Fallow boundary, circular-dependency, dead-code, duplication, and health tasks through
-  `deno task fallow:*`;
-- the remaining `ast-grep` structural rule and tests in
-  [`../../sgconfig.yml`](../../sgconfig.yml) and
-  [`../../tooling/boundary-linter/`](../../tooling/boundary-linter/);
-- RITSEI-specific schema ownership and migration validation:
-  [`../../tooling/boundary-linter/check-ownership.ts`](../../tooling/boundary-linter/check-ownership.ts);
-- RITSEI-specific public module-entrypoint validation:
-  [`../../tooling/public-contract/check.ts`](../../tooling/public-contract/check.ts);
-- foundation/module/platform/runtime dependency-direction validation:
-  [`../../tooling/dependency-direction/check.ts`](../../tooling/dependency-direction/check.ts);
-- conservative public call-graph validation:
-  [`../../tooling/call-graph/check.ts`](../../tooling/call-graph/check.ts).
+- ast-grep owns syntax-level policies and their rule tests in
+  [`../../sgconfig.yml`](../../sgconfig.yml) and [`../../tooling/ast-grep/`](../../tooling/ast-grep/);
+- the small TypeScript checker at
+  [`../../tooling/architecture.ts`](../../tooling/architecture.ts) owns only path-sensitive
+  public-package, frontend, and AI/provider boundaries;
+- [`../../tooling/schema-ownership.ts`](../../tooling/schema-ownership.ts) owns database schema,
+  migration, and ownership-registry semantics.
 
-Fallow is a generic static-analysis engine, not an authority for schema ownership, SQL and
-migration semantics, financial-ledger behavior, authorization policy, Effect-specific contracts, or
-workload isolation. Those RITSEI checks remain owner-controlled.
+Financial, authorization, Effect, workload, and other business claims are proven by owner-domain
+contracts, tests, deployment checks, and operational evidence—not by another generic source scanner.
 
 ## Schema Ownership
 
@@ -211,9 +204,9 @@ integration = "modules/integrations"
 ```
 
 The active registry is [`../../db/ownership.toml`](../../db/ownership.toml). It is
-validated by [`../../tooling/boundary-linter/check-ownership.ts`](../../tooling/boundary-linter/check-ownership.ts)
-and consumed by architecture tests. Future migration and privilege tooling must
-use the same registry instead of defining a second ownership map.
+validated by [`../../tooling/schema-ownership.ts`](../../tooling/schema-ownership.ts) and
+consumed by architecture tests. Future migration and privilege tooling must use the same
+registry instead of defining a second ownership map.
 
 ## SQL Ownership Checks
 
@@ -274,7 +267,7 @@ When AI or model-provider code is introduced, static and deployment checks must 
 - AI workers and provider adapters receive no command-plane database credential or hidden primary
   fallback.
 
-The executable evidence is intentionally layered: `tooling/ai-boundary/check.ts` catches provider and
+The executable evidence is intentionally layered: `tooling/architecture.ts` catches provider and
 private-persistence import violations; Process IR and public-contract tests reject untyped or dynamic
 proposals; authorization and owner-domain tests prove current capability, scope, relationship, SoD,
 idempotency, transaction, and reconciliation checks; deployment tests prove credential and network
@@ -294,27 +287,9 @@ deno task fallow:dead-code
 deno task fallow:boundaries
 ```
 
-`deno task boundary:lint` includes the focused Fallow boundary check. RITSEI's public module
-entrypoint and dependency-direction rules remain separate because they prove the stronger
-requirement that cross-module imports resolve through `mod.ts` and that foundation, modules,
-platform, and runtime keep their declared direction.
-
-## Public Call Graph
-
-The repository records a conservative static call graph for `apps/`, `foundation/`, `modules/`,
-`platform/`, `runtime/`, `tests/`, and `tooling/`. It tracks:
-
-- direct calls between locally defined functions;
-- calls to callable names imported through another module's public `mod.ts`;
-- the public module symbol used by each cross-module edge.
-
-The checker rejects a tracked cross-module call when the imported symbol is not
-exported by the target module. It is a boundary aid, not proof of every runtime
-call: Effect dependency injection, callbacks, reflection, dynamic property
-access, and generated code remain outside its static resolution model.
-
-Run it directly with `deno task callgraph:check`; it also runs as part of
-`deno task boundary:lint`.
+`deno task boundary:lint` runs the Fallow boundary check and the two focused RITSEI checks. Fallow
+owns generic dependency direction; `tooling/architecture.ts` adds only the stronger public-entry,
+frontend, and AI/provider rules that need repository-specific path or syntax context.
 
 ## Workload-Isolation Enforcement
 
@@ -364,11 +339,11 @@ The default branch must reject changes when any of these fail:
 
 ```text
 Fallow generic graph, boundary, dead-code, and policy validation
-RITSEI public module-entrypoint and dependency-direction validation
-conservative public call-graph validation
-schema-ownership validation
+ast-grep syntax policies and rule tests
+RITSEI path-sensitive architecture and public-entry validation
+schema-ownership and migration validation
 Drizzle migration-graph validation
-Effect-native HTTP validation
+owner-domain and Effect-native HTTP tests
 architecture tests
 relative-link validation for documentation
 workload-metadata and topology-leak validation when implemented
@@ -379,13 +354,13 @@ AI/provider import and mutation-boundary validation
 
 ```text
 tooling/
-├── ai-boundary/
-├── boundary-linter/
-├── call-graph/
-├── financial-readiness/
-├── public-contract/
+├── ast-grep/
+├── fallow/
+├── architecture.ts
+├── schema-ownership.ts
+├── financial-gate.ts
 ├── roadmap-completion/
-└── focused check scripts
+└── focused operational scripts
 
 tests/
 └── architecture/
@@ -402,7 +377,7 @@ Architecture enforcement is complete only when:
 - every PostgreSQL schema has one registered owner;
 - forbidden imports fail locally and in CI;
 - dependency cycles fail CI;
-- tracked public call edges resolve through public module contracts;
+- cross-package imports resolve through public module contracts;
 - architecture exceptions are explicit and reviewable;
 - database privileges reinforce the same ownership model;
 - query, async, and command composition roots cannot acquire one another's protected credentials;

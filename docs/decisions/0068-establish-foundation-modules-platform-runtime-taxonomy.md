@@ -82,16 +82,16 @@ local to the product runtime.
 ### Risks
 
 A path move can appear complete while stale tooling or documentation still encodes the old taxonomy.
-The dependency-direction check, public-contract check, ownership check, and boundary tests are the
-regression controls.
+Fallow, the architecture boundary check, the ownership check, and boundary tests are the regression
+controls.
 
 ## Validation
 
 The repository must pass `deno check .`, `deno task test`, `deno task boundary:test`,
-`deno task boundary:lint`, and the foundation/module/platform/runtime dependency-direction test.
+`deno task boundary:lint`, and the architecture-boundary tests.
 
 ## Related Documents
 
 - [`../architecture/architecture-spec-v4.md`](../architecture/architecture-spec-v4.md)
 - [`../architecture/architecture-enforcement.md`](../architecture/architecture-enforcement.md)
-- [`../../tooling/dependency-direction/check.ts`](../../tooling/dependency-direction/check.ts)
+- [`../../tooling/architecture.ts`](../../tooling/architecture.ts)

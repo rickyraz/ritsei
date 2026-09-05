@@ -1,4 +1,4 @@
-import { evaluateFinancialManifest } from "../financial-readiness/evaluate.ts"
+import { evaluateFinancialManifest } from "../financial-gate.ts"
 import { collectSourceFiles } from "../source-files.ts"
 import {
   type Gate,

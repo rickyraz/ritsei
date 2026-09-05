@@ -192,38 +192,6 @@
         "count": 1
       }
     },
-    "tooling/affected-check.ts": {
-      "crap_high": {
-        "count": 1
-      }
-    },
-    "tooling/boundary-linter/check-ownership.ts": {
-      "complexity_high": {
-        "count": 1
-      },
-      "complexity_moderate": {
-        "count": 1
-      },
-      "crap_high": {
-        "count": 1
-      },
-      "crap_moderate": {
-        "count": 1
-      }
-    },
-    "tooling/call-graph/check.ts": {
-      "complexity_high": {
-        "count": 1
-      },
-      "complexity_moderate": {
-        "count": 1
-      }
-    },
-    "tooling/capabilities/check.ts": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
     "tooling/domain-maturity/measure.ts": {
       "crap_moderate": {
         "count": 1
@@ -237,7 +205,24 @@
         "count": 2
       }
     },
-    "tooling/uuid-policy/check.ts": {
+    "tooling/architecture.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      },
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "tooling/schema-ownership.ts": {
+      "complexity_high": {
+        "count": 2
+      },
+      "crap_high": {
+        "count": 1
+      },
       "crap_moderate": {
         "count": 1
       }
@@ -250,8 +235,10 @@
     "runtime/api/handlers.ts:dead code",
     "modules/accounting/src/financial-operations.ts:complexity",
     "apps/web/src/features/process-studio/designer-model.ts:complexity",
-    "tooling/boundary-linter/check-ownership.ts:untested risk",
     "platform/postgres/migrations.ts:complexity",
-    "modules/accounting/src/financial-readiness.ts:complexity"
+    "modules/accounting/src/financial-readiness.ts:complexity",
+    "tooling/source-files.ts:high impact",
+    "tooling/architecture.ts:high impact",
+    "tooling/schema-ownership.ts:untested risk"
   ]
 }

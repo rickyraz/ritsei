@@ -1,0 +1,5 @@
+id: no-random-uuid
+valid:
+  - const id = uuidv7()
+invalid:
+  - crypto.randomUUID()

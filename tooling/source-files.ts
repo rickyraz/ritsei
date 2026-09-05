@@ -3,7 +3,22 @@ export interface SourceFile {
   readonly source: string
 }
 
-const ignoredDirectories = new Set(["node_modules", "vendor"])
+const ignoredDirectories = new Set(["node_modules", "vendor", ".auto"])
+const ignoredPaths = [
+  "apps/web/src/ui/generated",
+  "apps/web/src/shared/contracts/generated",
+  "apps/web/dist",
+  "apps/web/src/experiments/solid-effect",
+]
+
+export const isIgnoredSourcePath = (path: string): boolean => {
+  const normalized = path.replaceAll("\\", "/").replace(/^\.\//, "").replace(/\/$/, "")
+  return normalized.split("/").some((part) => ignoredDirectories.has(part)) ||
+    ignoredPaths.some((ignored) =>
+      normalized === ignored || normalized.startsWith(`${ignored}/`) ||
+      normalized.endsWith(`/${ignored}`) || normalized.includes(`/${ignored}/`)
+    )
+}
 
 export const collectSourceFiles = async (
   directory: string,
@@ -11,9 +26,10 @@ export const collectSourceFiles = async (
 ): Promise<readonly SourceFile[]> => {
   const files: SourceFile[] = []
   const visit = async (path: string): Promise<void> => {
+    if (isIgnoredSourcePath(path)) return
     for await (const entry of Deno.readDir(path)) {
       const child = `${path}/${entry.name}`
-      if (entry.isDirectory && !ignoredDirectories.has(entry.name)) {
+      if (entry.isDirectory) {
         await visit(child)
       } else if (
         entry.isFile &&

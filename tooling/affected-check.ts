@@ -12,6 +12,7 @@ const broadTestTriggers = new Set([
 const normalizePath = (path: string) => path.replaceAll("\\", "/")
 const isTestFile = (path: string) => testFilePattern.test(path)
 const isSourceFile = (path: string) => sourceFilePattern.test(path)
+const isExperiment = (path: string) => path.startsWith("apps/web/src/experiments/solid-effect/")
 
 const gitFiles = async (args: readonly string[]): Promise<readonly string[]> => {
   const result = await new Deno.Command("git", {
@@ -31,7 +32,7 @@ const changedFiles = async (provided: readonly string[]): Promise<readonly strin
   if (provided.length > 0) return [...new Set(provided.map(normalizePath))].toSorted()
 
   const [tracked, untracked] = await Promise.all([
-    gitFiles(["diff", "--name-only", "--diff-filter=ACMRT", "HEAD", "--"]),
+    gitFiles(["diff", "--name-only", "--diff-filter=ACDMRT", "HEAD", "--"]),
     gitFiles(["ls-files", "--others", "--exclude-standard"]),
   ])
   return [...new Set([...tracked, ...untracked])].toSorted()
@@ -44,6 +45,7 @@ const collectTests = async (root: string): Promise<readonly string[]> => {
     try {
       for await (const entry of Deno.readDir(directory)) {
         const path = `${directory}/${entry.name}`
+        if (isExperiment(path + "/")) continue
         if (entry.isDirectory) await visit(path)
         else if (entry.isFile && isTestFile(path)) result.push(path)
       }
@@ -90,6 +92,8 @@ let fullSuite = false
 let skillsChanged = false
 
 for (const path of files) {
+  if (isExperiment(path)) continue
+
   if (
     path === "AGENTS.md" ||
     path === "tooling/check-agent-skills.ts" ||
@@ -120,6 +124,12 @@ for (const path of files) {
   ) {
     if (isTestFile(path)) tests.add(path)
     else componentRoots.add(path.split("/")[0]!)
+    continue
+  }
+
+  if (path.startsWith("apps/web/")) {
+    appNames.add("web")
+    for (const test of await collectTests("tests/frontend")) tests.add(test)
     continue
   }
 
@@ -166,6 +176,16 @@ if (rootAppChanged) {
 
 for (const root of componentRoots) {
   for (const path of await collectTests(root)) tests.add(path)
+}
+
+// Deleted tests can select a scope, but must never become Vitest file filters.
+for (const test of tests) {
+  try {
+    await Deno.stat(test)
+  } catch (cause) {
+    if (!(cause instanceof Deno.errors.NotFound)) throw cause
+    tests.delete(test)
+  }
 }
 
 if (skillsChanged) await run(["deno", "task", "skills:check"], dryRun)

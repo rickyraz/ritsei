@@ -1,4 +1,4 @@
 ruleDirs:
-  - tooling/boundary-linter/rules
+  - tooling/ast-grep/rules
 testConfigs:
-  - testDir: tooling/boundary-linter/rule-tests
+  - testDir: tooling/ast-grep/rule-tests

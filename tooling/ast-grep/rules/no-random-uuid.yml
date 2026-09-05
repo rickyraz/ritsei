@@ -1,0 +1,23 @@
+id: no-random-uuid
+language: TypeScript
+severity: error
+message: Persistent identities must use the foundation uuidv7() helper, not crypto.randomUUID().
+files:
+  - apps/**/*.ts
+  - apps/**/*.tsx
+  - foundation/**/*.ts
+  - foundation/**/*.tsx
+  - modules/**/*.ts
+  - modules/**/*.tsx
+  - platform/**/*.ts
+  - platform/**/*.tsx
+  - runtime/**/*.ts
+  - runtime/**/*.tsx
+  - tests/**/*.ts
+  - tests/**/*.tsx
+  - tooling/**/*.ts
+  - tooling/**/*.tsx
+ignores:
+  - modules/process/src/postgres.ts
+rule:
+  pattern: crypto.randomUUID()

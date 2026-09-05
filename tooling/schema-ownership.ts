@@ -1,4 +1,5 @@
-import { collectSourceFiles } from "../source-files.ts"
+import { extractModuleSpecifiers } from "./architecture.ts"
+import { collectSourceFiles } from "./source-files.ts"
 
 const ownershipFile = "db/ownership.toml"
 
@@ -108,8 +109,11 @@ export const checkOwnership = async (): Promise<readonly string[]> => {
     ] as const
   ) {
     for (const { path, source } of await collectSourceFiles(root, [".ts"])) {
-      for (const match of source.matchAll(/db\/schema\/([A-Za-z_][A-Za-z0-9_-]*)\.ts/g)) {
-        const importedSchema = match[1]!
+      for (const specifier of extractModuleSpecifiers({ path, source })) {
+        const importedSchema = specifier.match(
+          /(?:^|\/)db\/schema\/([A-Za-z_][A-Za-z0-9_-]*)\.ts$/,
+        )?.[1]
+        if (importedSchema === undefined) continue
         const importedOwner = schemas.get(importedSchema)
         if (importedOwner === undefined || isPlatformSchemaTest(path)) continue
         const owner = sourceOwner(path)

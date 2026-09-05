@@ -107,9 +107,11 @@ provider boundary in ADR-0030; ADR-0059 defines the replaceable RelationshipEngi
 ADR-0006; ADR-0070 concretizes the optional cartographic renderer selected by ADR-0069 without
 changing its HTML-first, fallback-first semantics; and ADR-0071 replaces coarse industry categories
 with seven universal cartographic archetypes, context-aware semantic mappings, deterministic
-variation, and semantic depth. Both providers remain optional adapters; the RITSEI contracts and
-authority remain active. The rest of those decisions remains active. None of these amendments rewrite
-historical decisions, and ADR-0047 does not change the financial authority recorded by ADR-0040.
+variation, and semantic depth. ADR-0073 supersedes the custom-checker selection portion of ADR-0062;
+Fallow and ast-grep remain the generic enforcement owners while only path-sensitive RITSEI checks
+remain custom. Both providers remain optional adapters; the RITSEI contracts and authority remain
+active. The rest of those decisions remains active. None of these amendments rewrite historical
+decisions, and ADR-0047 does not change the financial authority recorded by ADR-0040.
 
 ## Relationship matrix
 
@@ -134,6 +136,7 @@ historical decisions, and ADR-0047 does not change the financial authority recor
 | [ADR-0065](./0065-propose-cloudflare-financial-edge-evidence-plane.md) | Proposed adjacent edge/evidence plane | Cloudflare may provide edge protection and a hash-bound evidence copy; it is not financial authority |
 | [ADR-0067](./0067-separate-logical-database-and-physical-data-placement.md) | Current PostgreSQL topology boundary | Logical database contract hides physical placement; sharding and routing remain evidence-gated |
 | [ADR-0068](./0068-establish-foundation-modules-platform-runtime-taxonomy.md) | Current repository taxonomy | Foundation, modules, platform, and runtime have explicit dependency direction |
+| [ADR-0073](./0073-simplify-repository-enforcement-tooling.md) | Current enforcement tooling | Fallow and ast-grep own generic checks; one architecture checker owns path-sensitive boundaries |
 
 ## Current canonical rules
 

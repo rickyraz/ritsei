@@ -6,7 +6,7 @@ files:
   - modules/*/mod.ts
 ignores:
   - vendor/**
-  - tooling/boundary-linter/rule-tests/**
+  - tooling/ast-grep/rule-tests/**
 rule:
   any:
     - pattern: export { $$$ITEMS } from "$SOURCE"

@@ -124,12 +124,12 @@ contract test
     → in-memory test layer
 ```
 
-This explanatory trace complements, but does not replace, `deno task callgraph:check`.
+This explanatory trace complements repository boundary checks; it is not a substitute for tests.
 
 # Deterministic Tools
 
 ```sh
-deno task callgraph:check
+deno task architecture:check
 deno task boundary:lint
 deno task check
 ```

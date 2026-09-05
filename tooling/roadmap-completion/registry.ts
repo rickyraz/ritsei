@@ -1,4 +1,4 @@
-import { requiredFinancialGateIds } from "../financial-readiness/evaluate.ts"
+import { requiredFinancialGateIds } from "../financial-gate.ts"
 
 export type GateKind = "markers" | "domain" | "financial" | "composite"
 
@@ -290,7 +290,7 @@ export const gates: readonly Gate[] = [
   ...financialGateIds.map((financialId) => ({
     id: `financial.${financialId}`,
     title: `Financial readiness: ${financialId}`,
-    source: "tooling/financial-readiness/release-gate.ts",
+    source: "tooling/financial-gate.ts",
     kind: "financial" as const,
     financialId,
   })),
