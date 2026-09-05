@@ -35,7 +35,7 @@ The decisive distinction is:
 The choice is therefore:
 
 ```text
-Solid + Ark UI + semantic HTML
+Solid + Kobalte + semantic HTML
         │
         ├── CSS / SVG as the default renderer
         │
@@ -68,7 +68,7 @@ It is:
         │              │              │
         ▼              ▼              ▼
 
-     Solid           Ark UI       Design Tokens
+     Solid          Kobalte       Design Tokens
    reactivity       interaction       CSS
         │              │              │
         └──────────────┼──────────────┘
@@ -99,16 +99,16 @@ It is:
                                    WebGPU
 ```
 
-[Ark UI][1] is a headless foundation for complex, interactive, accessible components, built on Zag.js
-finite-state-machine behavior and offering a Solid integration. Its component contracts cover the
-WAI-ARIA and keyboard behavior needed by controls such as Select, Menu, and Tabs. [Solid's
+[Kobalte][1] is a headless foundation for complex, interactive, accessible components offering a
+Solid integration. Its component contracts cover the WAI-ARIA and keyboard behavior needed by
+controls such as Select, Menu, and Tabs. [Solid's
 fine-grained reactivity][6] is appropriate for updating only the presentation dependencies that
 changed. A [Solid effect][2] may synchronize a changed semantic input with a renderer resource, but
 it must not turn Solid into the GPU scheduler or business state machine.
 
 The boundary is healthy because:
 
-- Ark UI owns accessible interaction behavior behind RITSEI-owned components;
+- Kobalte owns accessible interaction behavior behind RITSEI-owned components;
 - Solid owns presentation reactivity and local interaction state;
 - semantic HTML owns labels, forms, tables, controls, focus, and text alternatives;
 - CSS and SVG handle most material and visual work; and
@@ -364,7 +364,7 @@ Recovered     → contour relaxes
 Material variation never overrides semantic color, explicit labels, contrast, reduced-motion
 behavior, or the accessible fallback.
 
-## 9. Ark UI owns interaction, not the canvas
+## 9. Kobalte owns interaction, not the canvas
 
 A warehouse visualization must not become a canvas full of fake controls:
 
@@ -382,11 +382,11 @@ The intended composition is:
 ```text
 <section>
     │
-    ├── Ark Select
-    ├── Ark Combobox
-    ├── Ark Tooltip
-    ├── Ark Popover
-    ├── Ark Dialog
+    ├── Kobalte Select
+    ├── Kobalte Combobox
+    ├── Kobalte Tooltip
+    ├── Kobalte Popover
+    ├── Kobalte Dialog
     │
     └── canvas
           │
@@ -394,7 +394,7 @@ The intended composition is:
 ```
 
 A tooltip over a canvas remains a DOM tooltip. A selected warehouse cell remains a Solid selection
-state, and the explanation remains an Ark UI popover or dialog. Pointer picking is an input method,
+state, and the explanation remains a Kobalte popover or dialog. Pointer picking is an input method,
 not a replacement for keyboard navigation, labels, focus management, or screen-reader output.
 
 A hybrid inventory map may therefore look like:
@@ -434,7 +434,7 @@ For analytical visualization, the canonical structure is:
     Solid selection
           │
           ▼
-   Ark UI popover
+   Kobalte popover
 ```
 
 Decorative canvas output may be marked `aria-hidden="true"`. A business visualization must expose
@@ -608,7 +608,7 @@ A possible stack then becomes:
 ```text
 Solid compiler
 + Vite (SolidStart is not the RITSEI default)
-+ Ark UI
++ Kobalte
 + TypeScript
 + optional TypeGPU transform
 + WGSL generation
@@ -622,7 +622,7 @@ The restrained current stack is:
 
 ```text
 Solid
-+ Ark UI
++ Kobalte
 + semantic HTML
 + CSS / SVG
 + WGSL where needed
@@ -669,7 +669,7 @@ packages/
 │       vgpu
 │
 └── ui/
-    └── Solid + Ark UI
+    └── Solid + Kobalte
 ```
 
 This is a conceptual future extraction shape, not an instruction to create packages immediately.
@@ -782,7 +782,7 @@ Solid
 │ reactive application state
 │
 ▼
-Ark UI
+Kobalte
 │
 │ accessible interaction/state machines
 │
@@ -845,7 +845,7 @@ The owners are:
 ```text
 Business semantics → domain/application
 
-Accessibility → HTML + Ark UI
+Accessibility → HTML + Kobalte
 
 Reactive state → Solid
 
@@ -854,7 +854,7 @@ Material rendering → vgpu/WebGPU
 
 The final decision is therefore:
 
-> **Solid + Ark UI + semantic HTML as the primary platform, CSS/SVG as the default renderer, and
+> **Solid + Kobalte + semantic HTML as the primary platform, CSS/SVG as the default renderer, and
 > `vgpu` as the optional high-performance cartographic renderer behind a RITSEI adapter.**
 
 TypeGPU answers a different question:
@@ -876,11 +876,11 @@ The external sources below support the comparative facts in this reference. They
 sources, not RITSEI authority; the repository's ADRs and canonical architecture documents govern
 implementation.
 
-[1]: https://ark-ui.com/docs/overview/about "About Ark UI"
+[1]: https://kobalte.dev/docs/core/overview/introduction "About Kobalte"
 [2]: https://docs.solidjs.com/reference/basic-reactivity/create-effect "SolidJS createEffect"
 [3]: https://github.com/vercel-labs/vgpu "vgpu repository and README"
 [4]: https://docs.swmansion.com/TypeGPU/why-typegpu/ "Why TypeGPU?"
-[5]: https://ark-ui.com/docs/components/select "Ark UI Select"
+[5]: https://kobalte.dev/docs/core/components/select "Kobalte Select"
 [6]: https://docs.solidjs.com/advanced-concepts/fine-grained-reactivity "SolidJS fine-grained reactivity"
 [7]: https://github.com/vercel-labs/vgpu/blob/main/docs/topics/performance-playbook.docs.md "vgpu performance playbook"
 [8]: https://docs.swmansion.com/TypeGPU/apis/pipelines/ "TypeGPU pipelines"

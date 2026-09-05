@@ -132,7 +132,7 @@ export const analyzePublicPackageImports = (
 }
 
 const rendererSpecifier =
-  /^(?:@ark-ui\/|@pandacss\/|@dnd-kit\/|@vgpu\/|vgpu(?:\/|$)|typegpu(?:\/|$)|three(?:\/|$)|pixi\.js(?:\/|$)|echarts(?:\/|$)|chart\.js(?:\/|$)|styled-system(?:\/|$))/
+  /^(?:@kobalte\/|@pandacss\/|@dnd-kit\/|@vgpu\/|vgpu(?:\/|$)|typegpu(?:\/|$)|three(?:\/|$)|pixi\.js(?:\/|$)|echarts(?:\/|$)|chart\.js(?:\/|$)|styled-system(?:\/|$))/
 const uiApplicationPath = /^apps\/web\/src\/(?:features|app|routes|domains)\//
 const uiSharedApplicationPath = /^apps\/web\/src\/shared\/(?:api|contracts\/generated)\//
 

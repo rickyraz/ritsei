@@ -104,7 +104,7 @@ The canonical frontend visual and interaction rules live in
 [`./design-system.md`](./design-system.md). Once production UI activation begins, static and
 contract checks must enforce the boundary rather than relying on review alone:
 
-- Ark UI, Panda-generated artifacts, dnd-kit, chart adapters, Canvas, WebGPU, and `vgpu` imports
+- Kobalte, Panda-generated artifacts, dnd-kit, chart adapters, Canvas, WebGPU, and `vgpu` imports
   (including `vgpu/node`, `vgpu/mock`, and `vgpu/scene`) are limited to the internal
   `apps/web/src/ui/` layer;
 - feature UI consumes semantic RITSEI variants and approved recipes, not raw primitive colors,

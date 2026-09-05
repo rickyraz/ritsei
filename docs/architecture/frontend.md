@@ -15,6 +15,7 @@
 > - Effect application architecture: [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
 > - Native Solid 2 and Effect integration: [`../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md`](../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md)
 > - Design system and Visual Grammar: [`./design-system.md`](./design-system.md)
+> - Solid 2 accessible primitive selection: [`../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md`](../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md)
 > - Cartographic visual grammar: [`../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md`](../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md)
 > - Cartographic renderer selection: [`../decisions/0070-select-vgpu-and-defer-typegpu.md`](../decisions/0070-select-vgpu-and-defer-typegpu.md)
 > - Cartographic renderer reference: [`./reference/cartographic-renderer-selection.md`](./reference/cartographic-renderer-selection.md)
@@ -45,13 +46,13 @@ Vite
     ├── TanStack Solid Form
     ├── Effect application model
     ├── Effect Schema
-    └── RITSEI Design System (Ark UI + constrained Panda CSS)
+    └── RITSEI Design System (Kobalte + constrained Panda CSS)
 ```
 
 SolidStart is not the default application foundation.
 
 The RITSEI Design System owns Product Patterns, Interaction Grammar, Visual Grammar, semantic tokens,
-component contracts, density, and frontend styling boundaries. Ark UI is the single headless behavior
+component contracts, density, and frontend styling boundaries. Kobalte is the single headless behavior
 primitive source behind RITSEI-owned components. Panda CSS is the constrained styling substrate. See
 [`design-system.md`](./design-system.md).
 
@@ -211,7 +212,7 @@ and frame submission remain behind the renderer adapter. Static scenes render on
 inputs; bounded loops run only for visible interaction or declared operational activity and stop
 when that activity settles.
 
-Ark UI controls and overlays remain DOM-owned. Canvas or WebGPU may provide pointer picking, but
+Kobalte controls and overlays remain DOM-owned. Canvas or WebGPU may provide pointer picking, but
 selection is presentation state and explanations remain accessible through RITSEI-owned components,
 text, and data/table alternatives.
 
@@ -318,7 +319,7 @@ PostgreSQL
 | Forms | TanStack Solid Form |
 | Runtime validation | Effect Schema |
 | Design system | RITSEI Product Patterns, Interaction Grammar, and Visual Grammar |
-| Accessible UI primitives | Ark UI behind RITSEI-owned components |
+| Accessible UI primitives | Kobalte behind RITSEI-owned components |
 | Styling foundation | Constrained Panda CSS profile |
 | Backend | Separate Effect-on-Deno API |
 | Transactional database | PostgreSQL |
@@ -815,7 +816,7 @@ Core workflows must support:
 - screen-reader-compatible tables and forms; and
 - semantic summaries or data/table alternatives for analytical visualizations.
 
-Ark UI provides headless accessible behavior behind RITSEI-owned components, but feature
+Kobalte provides headless accessible behavior behind RITSEI-owned components, but feature
 composition must still be tested. Decorative canvas output may be `aria-hidden="true"`; it must not
 be the only channel for a business value, status, relationship, or action.
 

@@ -14,7 +14,9 @@
 > - Documentation boundaries: [`../documentation-boundaries.md`](../documentation-boundaries.md)
 
 ADRs preserve the decisions and trade-offs that were accepted at a point in time. This map explains
-how related decisions fit together without rewriting their historical text.
+how related decisions fit together without rewriting their historical text. ADR-0074 is the current
+accessible-primitive selection; ADR-0056 remains the historical design-system decision for its other
+active boundaries.
 
 ## Current decision lineage
 
@@ -31,9 +33,11 @@ ADR-0010  Vite-based SolidJS SPA
     |
     +--> ADR-0056  RITSEI semantic frontend design system
               |
-              +--> Ark UI replaces the Kobalte primitive selection only
+              +--> Ark UI was the historical primitive selection
               +--> Panda CSS is a constrained styling substrate
               +--> Product Patterns and Visual Grammar become canonical
+              |
+              +--> ADR-0074 selects Kobalte for the Solid 2 primitive boundary
               |
               +--> ADR-0057 layered TanStack frontend engine boundaries
                         +--> Query is selective server-state cache policy
@@ -99,8 +103,9 @@ ADR-0046  Owner-local business surface + generated structural ergonomics
 ```
 
 ADR-0046 amends the current architectural interpretation of ADR-0015 and ADR-0036. ADR-0047
-amends the receipt and cancellation boundary of ADR-0044 and ADR-0045. ADR-0056 amends only the
-frontend primitive and styling selection recorded by ADR-0010; ADR-0057 clarifies the role and
+amends the receipt and cancellation boundary of ADR-0044 and ADR-0045. ADR-0056 historically amended only the
+frontend primitive and styling selection recorded by ADR-0010; ADR-0074 now supersedes its
+accessible-primitive selection while retaining its Panda and Product Pattern boundaries. ADR-0057 clarifies the role and
 adoption scope of the TanStack frontend engines; ADR-0072 defines the native Solid 2 and Effect
 integration boundary without rejecting optional Atom use; ADR-0058 amends only the authentication/session
 provider boundary in ADR-0030; ADR-0059 defines the replaceable RelationshipEngine boundary in
@@ -124,7 +129,7 @@ decisions, and ADR-0047 does not change the financial authority recorded by ADR-
 | [ADR-0045](./0045-define-procurement-purchase-order-confirmation.md) | Compatible | Purchase Order confirmation remains an explicit owner action |
 | [ADR-0046](./0046-adopt-owner-local-business-surface-and-generated-ergonomics.md) | Current amendment | Concrete surface, explicit actions, owner facts, and structural tooling boundary |
 | [ADR-0047](./0047-define-procurement-goods-receipt-boundary.md) | Current amendment | Procurement evidence plus Inventory movement in one bounded receipt transaction |
-| [ADR-0056](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Current frontend amendment | Product Patterns, Visual Grammar, Ark UI, and constrained Panda styling boundaries |
+| [ADR-0056](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Superseded frontend amendment | Product Patterns, Visual Grammar, and constrained Panda styling boundaries; Ark UI selection superseded |
 | [ADR-0057](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Current frontend clarification | Selective Query cache plus headless Table, Virtual, Form, and optional Pacer/DB boundaries |
 | [ADR-0072](./0072-prefer-native-solid-reactivity-for-effect-integration.md) | Current frontend integration boundary | Native Solid graph/context for Effect by default; Atom remains opt-in for shared or portable reactive graphs |
 | [ADR-0069](./0069-adopt-cartographic-enterprise-visual-grammar.md) | Current frontend visual grammar | Cartographic Enterprise UI, HTML-first rendering, optional WebGPU, and governed material tokens |
@@ -137,6 +142,7 @@ decisions, and ADR-0047 does not change the financial authority recorded by ADR-
 | [ADR-0067](./0067-separate-logical-database-and-physical-data-placement.md) | Current PostgreSQL topology boundary | Logical database contract hides physical placement; sharding and routing remain evidence-gated |
 | [ADR-0068](./0068-establish-foundation-modules-platform-runtime-taxonomy.md) | Current repository taxonomy | Foundation, modules, platform, and runtime have explicit dependency direction |
 | [ADR-0073](./0073-simplify-repository-enforcement-tooling.md) | Current enforcement tooling | Fallow and ast-grep own generic checks; one architecture checker owns path-sensitive boundaries |
+| [ADR-0074](./0074-switch-to-kobalte-for-solid2-accessible-primitives.md) | Current frontend primitive selection | Kobalte 2.0 alpha behind RITSEI-owned UI contracts; native HTML remains the default and fallback |
 
 ## Current canonical rules
 

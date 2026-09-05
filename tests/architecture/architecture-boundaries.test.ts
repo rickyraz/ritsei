@@ -9,7 +9,7 @@ describe("architecture boundaries", () => {
   it("contains primitive, generated styling, and renderer vendors inside UI", () => {
     for (
       const specifier of [
-        "@ark-ui/solid/button",
+        "@kobalte/core/dialog",
         "@pandacss/dev",
         "@dnd-kit/solid",
         "vgpu/client",
@@ -27,7 +27,7 @@ describe("architecture boundaries", () => {
     }
     assert.deepStrictEqual(
       frontend(
-        'import { Button } from "@ark-ui/solid/button"; import { css } from "./generated/css"',
+        'import { Dialog } from "@kobalte/core/dialog"; import { css } from "./generated/css"',
         "apps/web/src/ui/button.tsx",
       ),
       [],

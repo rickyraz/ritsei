@@ -612,7 +612,7 @@ SolidJS 2.0 renderer and presentation runtime
 + TanStack Solid Form
 + Effect Schema
 + RITSEI Design System
-+ Ark UI behind RITSEI-owned components
++ Kobalte behind RITSEI-owned components
 + constrained Panda CSS
 ```
 

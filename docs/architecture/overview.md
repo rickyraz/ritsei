@@ -89,7 +89,7 @@ Vite
 + TanStack Solid Form
 + Effect Schema
 + RITSEI Design System
-+ Ark UI behind RITSEI-owned components
++ Kobalte behind RITSEI-owned components
 + constrained Panda CSS
 ```
 

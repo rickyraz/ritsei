@@ -3,7 +3,7 @@
 > **Status:** Canonical and active design-system specification
 >
 > **Implementation status:** The design-system contract is approved. `apps/web` is still in
-> frontend activation and does not yet contain the production Panda, Ark UI, renderer, or token
+> frontend activation and does not yet contain the production Panda, Kobalte, renderer, or token
 > runtime. `vgpu` is the selected optional cartographic renderer behind a RITSEI-owned adapter, but
 > it is not activated as a runtime dependency yet. This document therefore defines the target
 > contract and its activation gates; it does not claim that WebGPU, glass recipes, visual regression,
@@ -18,6 +18,7 @@
 > - Frontend architecture: [`./frontend.md`](./frontend.md)
 > - Active architecture: [`./architecture-spec-v4.md`](./architecture-spec-v4.md)
 > - Design-system decision: [`../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md`](../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md)
+> - Solid 2 primitive selection: [`../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md`](../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md)
 > - Cartographic UI decision: [`../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md`](../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md)
 > - Cartographic renderer selection: [`../decisions/0070-select-vgpu-and-defer-typegpu.md`](../decisions/0070-select-vgpu-and-defer-typegpu.md)
 > - Cartographic renderer reference: [`./reference/cartographic-renderer-selection.md`](./reference/cartographic-renderer-selection.md)
@@ -1005,15 +1006,15 @@ operations where editing is required. Focus restoration, announcements, collisio
 undo/redo, and cancellation are part of the contract. DOM coordinates MUST NOT become Process IR,
 authorization, or persistence state.
 
-Ark UI is the single headless accessibility source behind RITSEI-owned components. Feature code MUST
-NOT import Ark UI, dnd-kit, Panda-generated artifacts, or renderer libraries directly.
+Kobalte is the single headless accessibility source behind RITSEI-owned components. Feature code MUST
+NOT import Kobalte, dnd-kit, Panda-generated artifacts, or renderer libraries directly.
 
 The material layer MUST NOT carry information by itself. Canvas and WebGPU are never substitutes for
 semantic DOM, accessible labels, keyboard access, or text/table alternatives.
 
 Analytical visualizations SHOULD use a hybrid composition: a visual canvas or SVG scene, a DOM
 summary, and an accessible data or table view. Pointer picking MAY update a Solid selection, but the
-explanation, tooltip, popover, or dialog remains DOM-owned and uses the RITSEI/Ark UI interaction
+explanation, tooltip, popover, or dialog remains DOM-owned and uses the RITSEI/Kobalte interaction
 boundary. Decorative canvas output SHOULD be marked `aria-hidden="true"`.
 
 All interactive controls MUST provide:
@@ -1341,7 +1342,7 @@ Use these promotion rules:
   under `shared/`, not in UI or a catch-all `frontend-utils` library.
 
 Feature UI imports RITSEI UI contracts through intentional public entry points, not private adapter
-or recipe files. Only the internal UI layer imports Ark UI, Panda-generated artifacts, dnd-kit,
+or recipe files. Only the internal UI layer imports Kobalte, Panda-generated artifacts, dnd-kit,
 chart adapters, Canvas, or WebGPU renderers. Shared UI MUST NOT import features, routes, application
 composition, domain API clients, or domain-specific DTOs. It may consume frontend-safe shared value
 contracts, but MUST NOT own fetching, query-cache policy, or business command execution. Those
@@ -1371,7 +1372,7 @@ infrastructure.
 
 The current Process Studio model and prototype files are exploratory application material. They do
 not activate the production design-system contract and MUST NOT be treated as evidence that Panda,
-Ark UI, or WebGPU is already available.
+Kobalte, or WebGPU is already available.
 
 ## 23. Activation, validation, and governance
 
@@ -1392,7 +1393,7 @@ until it has:
 Frontend activation gates include:
 
 - Vite and SolidJS 2 compatibility;
-- Ark UI focus, keyboard, and screen-reader behavior;
+- Kobalte focus, keyboard, and screen-reader behavior;
 - constrained Panda token, recipe, slot, density, theme, reduced-motion, and high-contrast
   enforcement;
 - dnd-kit pointer/keyboard parity where used;

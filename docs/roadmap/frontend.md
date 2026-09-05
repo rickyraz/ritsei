@@ -97,7 +97,7 @@ recovery states. Do not mirror authoritative query results into unrelated browse
 
 ### F2 — RITSEI design system (`frontend.design-system`)
 
-Activate RITSEI-owned UI wrappers around the approved Ark UI and constrained Panda CSS boundaries.
+Activate RITSEI-owned UI wrappers around the approved Kobalte and constrained Panda CSS boundaries.
 Product Patterns, semantic tokens, density, theme, responsive behavior, and visual grammar remain
 shared contracts rather than feature-local vendor usage.
 
@@ -120,6 +120,32 @@ route splitting, bundle size, interaction latency, and long-session stability.
 - `docs/operations/frontend-readiness-evidence.json` records the reviewed workflow and thresholds;
 - critical actions have semantic DOM and accessible alternatives; and
 - performance or visual acceleration never removes the semantic fallback.
+
+## Current implementation progress
+
+As of September 5, 2026, the currently feasible frontend slice is implemented without claiming
+roadmap completion:
+
+- **Compatibility spike:** Vite, SolidJS 2, Panda CSS, the generated semantic recipe surface,
+  TanStack Solid Query, Playwright, and axe run from the root dependency manifest. The Kobalte Solid 2
+  probe bundles successfully with `@kobalte/core@2.0.0-alpha.1`; behavior remains unreviewed and the
+  package's RC peer-range mismatch remains an explicit risk. Kobalte is not yet activated in production UI.
+- **F0:** `deno task --cwd apps/web build` produces the separate SPA, and the browser shell test verifies boot,
+  routing, invalid connection input, theme switching, responsive layout, and in-memory credentials.
+- **F1/F2 vertical slice:** generated browser contracts preserve the canonical Identity schemas and
+  HTTP paths. The connected User Accounts screen owns Query cache policy, typed loading/error states,
+  tenant-scoped headers, email editing, refetch, focus restoration, and unknown-outcome recovery.
+  The shared UI surface is limited to the controls, semantic recipes, and layouts proven by this
+  workflow; domain presentation remains under `features/identity/`.
+- **F3 evidence:** automated browser checks cover axe, keyboard focus, reduced motion, forced-colors
+  visibility, narrow layout, error association, and semantic fallback. These checks do not claim
+  screen-reader review, localization review, or long-session operational evidence.
+
+The implementation deliberately leaves the F2 and F3 evidence manifests `blocked`. Upstream
+`workload.command-reserve` and `process.designer095` dependencies also remain open, so no frontend
+readiness or production-support claim is implied. The next legitimate work is to complete reviewed
+Kobalte accessibility/performance evidence and resolve its alpha peer-range risk, not to add more
+generic components.
 
 ## Conditional stages (not registered)
 

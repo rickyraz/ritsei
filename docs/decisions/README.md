@@ -79,7 +79,7 @@ current system; ADRs preserve decision history.
 | [`0053`](./0053-clarify-per-job-lease-generation-invariants.md) | Clarify per-job lease-generation invariants | Accepted |
 | [`0054`](./0054-keep-fencing-and-idempotency-identities-orthogonal.md) | Keep fencing and idempotency identities orthogonal | Accepted |
 | [`0055`](./0055-use-explicit-fence-scopes-for-shared-job-streams.md) | Use explicit fence scopes for shared job streams | Accepted |
-| [`0056`](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Adopt the RITSEI semantic frontend design system | Accepted |
+| [`0056`](./0056-adopt-ritsei-semantic-frontend-design-system.md) | Adopt the RITSEI semantic frontend design system | Superseded |
 | [`0057`](./0057-define-layered-tanstack-frontend-engine-boundaries.md) | Define layered TanStack frontend engine boundaries | Accepted |
 | [`0058`](./0058-define-provider-neutral-identity-and-authentication-boundary.md) | Define provider-neutral identity and authentication boundary; recommend ZITADEL | Accepted |
 | [`0059`](./0059-define-replaceable-relationship-authorization-engine.md) | Define replaceable relationship authorization engine; support SpiceDB | Accepted |
@@ -97,5 +97,6 @@ current system; ADRs preserve decision history.
 | [`0071`](./0071-adopt-universal-cartographic-archetypes.md) | Adopt seven universal cartographic visual archetypes | Accepted |
 | [`0072`](./0072-prefer-native-solid-reactivity-for-effect-integration.md) | Prefer native Solid 2 reactivity for Effect integration | Accepted |
 | [`0073`](./0073-simplify-repository-enforcement-tooling.md) | Simplify repository enforcement tooling | Accepted |
+| [`0074`](./0074-switch-to-kobalte-for-solid2-accessible-primitives.md) | Use Kobalte for Solid 2 accessible primitives | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.
