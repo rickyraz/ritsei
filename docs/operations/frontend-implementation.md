@@ -1,6 +1,6 @@
 # Frontend implementation evidence
 
-> **Status:** In progress; not production activation approval.
+> **Status:** In progress; Kobalte dependency approval is bounded and risk-accepted; no Kobalte primitive is active in production.
 >
 > **Evidence date:** September 5, 2026
 >
@@ -37,8 +37,11 @@ added.
 - The accessibility test runs axe WCAG 2A/AA checks and exercises narrow layout, reduced motion,
   forced colors, skip-link focus, labeled controls, and keyboard traversal.
 - `deno task --cwd apps/web compatibility` passes the Kobalte Solid 2 bundle probe with
-  `@kobalte/core@2.0.0-alpha.1`. Its behavior is still unreviewed, and Deno reports the package's
-  exact Solid 2 RC peer-range mismatch. Kobalte is not yet activated in production UI.
+  `@kobalte/core@2.0.0-alpha.1`. `tests/frontend/kobalte.test.ts` covers the exercised Dialog
+  probe's semantics, keyboard opening/focus containment, Escape and explicit close, focus
+  restoration, reduced motion, forced colors, and axe WCAG 2A/AA checks. The exact Solid 2 RC
+  peer-range mismatch is an explicitly accepted prerelease risk; no Kobalte primitive is active
+  in production UI.
 
 ## Validation performed
 
@@ -57,11 +60,13 @@ added.
 
 ## Remaining blockers
 
-The evidence manifests intentionally remain `blocked`. Automated browser checks are not a
+The evidence manifests intentionally remain `blocked` for the full roadmap gates. The Kobalte
+compatibility check is `approved_with_risk`, but the design-system manifest still lacks the other
+required checks and no production primitive is approved. Automated browser checks are not a
 substitute for reviewed screen-reader, localization/zoom, long-session, interaction-latency, or
 production performance evidence. Chrome DevTools performance tracing was unavailable in this
 workspace, so no Core Web Vitals claim is recorded.
 
 The roadmap also remains gated by upstream `workload.command-reserve` and `process.designer095`.
-The next legitimate promotion step is to review Kobalte behavior and obtain the required human
-accessibility/performance evidence, not to add more generic UI abstractions.
+The next legitimate promotion step is to complete the remaining design-system and accessibility
+review, not to resolve the already-accepted peer-range risk or add more generic UI abstractions.

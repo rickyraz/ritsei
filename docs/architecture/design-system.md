@@ -1009,6 +1009,13 @@ authorization, or persistence state.
 Kobalte is the single headless accessibility source behind RITSEI-owned components. Feature code MUST
 NOT import Kobalte, dnd-kit, Panda-generated artifacts, or renderer libraries directly.
 
+The pinned Kobalte Solid 2 alpha is permitted under an explicit `approved_with_risk` evidence record.
+The known RC peer-range mismatch is accepted only while the compatibility/build checks and the
+browser behavior test pass; a failed compatibility or behavior check remains blocked. Production
+approval is per exercised primitive, not global: each activated primitive requires a RITSEI wrapper,
+an application usage path, and a browser interaction/accessibility test. Unused or untested Kobalte
+primitives are not approved. Native semantic HTML remains the fallback and rollback path.
+
 The material layer MUST NOT carry information by itself. Canvas and WebGPU are never substitutes for
 semantic DOM, accessible labels, keyboard access, or text/table alternatives.
 

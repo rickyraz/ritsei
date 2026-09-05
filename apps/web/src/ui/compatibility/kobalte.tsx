@@ -1,5 +1,21 @@
 // Compatibility probe only: never imported by the application.
-import { Dialog } from "@kobalte/core/dialog"
+import { Dialog, useDialogContext } from "@kobalte/core/dialog"
+
+function KobalteDialogContent() {
+  const dialog = useDialogContext()
+  return (
+    <Dialog.Content
+      onEscapeKeyDown={() => dialog.close()}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") dialog.close()
+      }}
+    >
+      <Dialog.Title>Compatibility check</Dialog.Title>
+      <Dialog.Description>Verify keyboard focus and dismissal.</Dialog.Description>
+      <Dialog.CloseButton>Close</Dialog.CloseButton>
+    </Dialog.Content>
+  )
+}
 
 export function KobalteDialogProbe() {
   return (
@@ -7,11 +23,7 @@ export function KobalteDialogProbe() {
       <Dialog.Trigger>Open compatibility dialog</Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay />
-        <Dialog.Content>
-          <Dialog.Title>Compatibility check</Dialog.Title>
-          <Dialog.Description>Verify keyboard focus and dismissal.</Dialog.Description>
-          <Dialog.CloseButton>Close</Dialog.CloseButton>
-        </Dialog.Content>
+        <KobalteDialogContent />
       </Dialog.Portal>
     </Dialog>
   )

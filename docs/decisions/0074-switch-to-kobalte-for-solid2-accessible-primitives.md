@@ -23,23 +23,31 @@ runtime shim.
 
 Kobalte's stable `0.13.x` line targets Solid 1. The Kobalte `2.0.0-alpha.1` line is the available
 Solid 2-oriented release and bundles the dialog probe successfully with RITSEI's pinned Solid 2
-RC.6 packages. Its exact peer range still names earlier Solid 2 RCs, so the package remains an
-explicit compatibility risk rather than a production-readiness claim.
+RC.6 packages. Its exact peer range still names earlier Solid 2 RCs. That mismatch is an explicit,
+named prerelease risk that RITSEI accepts under the bounded policy below; it is not treated as a
+silent compatibility pass.
 
 ## Decision
 
 RITSEI uses **Kobalte** as the single headless accessible primitive source behind RITSEI-owned UI
 contracts.
 
-- Pin `@kobalte/core@2.0.0-alpha.1` from the root `package.json`; do not use the stable Solid 1
-  line while the application targets Solid 2.
+- Pin `@kobalte/core@2.0.0-alpha.1` from the root `package.json` and retain the committed
+  `deno.lock`; do not use the stable Solid 1 line while the application targets Solid 2.
+- Automatic dependency upgrades are not allowed for this boundary. A version change requires a
+  deliberate pin update, compatibility/build validation, browser evidence, and rollback review.
 - Keep Kobalte imports inside `apps/web/src/ui/`. Feature code consumes RITSEI-owned UI contracts.
 - Keep native semantic HTML as the default and fallback for controls that do not need a headless
   primitive.
+- Accept the Solid 2 RC peer-range mismatch only as `approved_with_risk` when the bundle/build
+  checks and the RITSEI-owned browser behavior test pass. A compatibility or behavior failure is
+  `blocked`, not an accepted risk.
+- Approve production use per exercised primitive, never globally. Each activated primitive must
+  have a RITSEI wrapper, an application usage path, and a browser interaction/accessibility test.
+  Unused or untested Kobalte primitives are not approved. The current evidence activates none.
 - Do not alias or shim `solid-js/web` to conceal incompatible packages.
-- Treat the compatibility probe as bundle evidence only. Focus, keyboard, screen-reader,
-  localization, contrast, reduced-motion, and long-session review remain required before design
-  system activation.
+- Focus, keyboard, screen-reader, localization, contrast, reduced-motion, zoom, and long-session
+  review remain required for the relevant design-system and accessibility gates.
 
 Panda CSS remains the styling substrate. This decision does not create a separate design-system
 package, component catalog, or new frontend dependency boundary.
@@ -67,20 +75,24 @@ composite controls that need tested headless behavior.
 
 ## Consequences
 
-- The Kobalte dialog probe passes the Vite/Solid 2 bundle check.
-- The selected Kobalte package is alpha software with an RC peer-range mismatch; upgrades require
-  rerunning the compatibility and browser evidence before adoption.
-- No production Kobalte wrapper is activated by this ADR alone. Existing native controls remain
-  valid until a shared control has demonstrated reuse and reviewed behavior.
-- The design-system and frontend roadmap gates remain blocked until human accessibility and
-  performance evidence, plus their upstream dependencies, are complete.
+- The Kobalte dialog probe passes the Vite/Solid 2 bundle check and the browser-level dialog
+  behavior/accessibility check.
+- The selected Kobalte package is alpha software with an RC peer-range mismatch. The mismatch is
+  accepted only within the named `approved_with_risk` evidence record; it no longer blocks the
+  dependency boundary by itself.
+- No production Kobalte primitive is activated by this ADR alone. Existing native controls remain
+  valid, and the current evidence lists no production primitive.
+- Rollback is removing the Kobalte import and returning to the existing semantic HTML fallback.
+- The design-system and frontend roadmap gates remain blocked until their other evidence and
+  upstream dependencies are complete.
 
 ## Validation
 
 The implementation currently proves:
 
 ```text
-deno task --cwd apps/web compatibility  -> build passed; behavior unreviewed
+deno task --cwd apps/web compatibility  -> build passed; bundle behavior is not run by this task
+deno task test tests/frontend/kobalte.test.ts -> browser behavior/accessibility passed
 deno task --cwd apps/web check           -> passed
 ```
 
