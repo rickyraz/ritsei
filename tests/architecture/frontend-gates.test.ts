@@ -28,6 +28,7 @@ describe("frontend gate evidence", () => {
         ["frontend.shell", "tests/frontend/shell.test.ts"],
         ["frontend.application-boundaries", "tests/frontend/workflow.test.ts"],
         ["frontend.design-system", "apps/web/src/ui/accessibility.test.ts"],
+        ["frontend.design-system", "tests/frontend/kobalte.test.ts"],
         ["frontend.accessibility-performance", "apps/web/src/ui/accessibility.test.ts"],
       ]
     ) {
@@ -105,6 +106,89 @@ describe("frontend gate evidence", () => {
       assert.isFalse(evaluateFrontendEvidence(undefined, checks, () => true))
       assert.isFalse(evaluateFrontendEvidence("broken json", checks, () => true))
     }
+  })
+
+  it("accepts only the configured Kobalte risk with explicit non-global activation", () => {
+    const evidence = frontendEvidence["frontend.design-system"]
+    const checks: Record<string, Record<string, unknown>> = Object.fromEntries(
+      evidence.checks.map((name) => [name, { status: "passed", proof }]),
+    )
+    checks["kobalte-solid2-compatibility"] = {
+      status: "approved_with_risk",
+      proof,
+      compatibility: { bundle: "passed", build: "passed", peerRange: "accepted_risk" },
+      behavior: {
+        status: "passed",
+        browserTest: "tests/frontend/kobalte.test.ts",
+      },
+      riskAcceptance: {
+        status: "accepted",
+        id: "solid2-peer-range-mismatch",
+        acceptedBy: "Frontend reviewer",
+        acceptedDate: "2026-09-05",
+        rollback: "Use the semantic HTML fallback.",
+      },
+      dependencyPolicy: {
+        pinned: true,
+        automaticUpgrades: false,
+        lockfile: "deno.lock",
+      },
+      productionApproval: {
+        status: "not_activated",
+        primitives: [],
+      },
+    }
+    const value = {
+      status: "approved_with_risk",
+      reviewer: "Frontend reviewer",
+      reviewDate: "2026-09-05",
+      checks,
+    }
+    const options = {
+      riskPolicy: evidence.riskPolicy,
+      fileExists: (path: string) => path === proof || path === "tests/frontend/kobalte.test.ts",
+    }
+    const evaluate = (candidate: unknown) =>
+      evaluateFrontendEvidence(
+        JSON.stringify(candidate),
+        evidence.checks,
+        (path) => path === proof,
+        options,
+      )
+
+    assert.isTrue(evaluate(value))
+    assert.isFalse(evaluate({ ...value, status: "passed" }))
+    assert.isFalse(evaluate({
+      ...value,
+      checks: {
+        ...checks,
+        "kobalte-solid2-compatibility": {
+          ...checks["kobalte-solid2-compatibility"],
+          riskAcceptance: {
+            ...(checks["kobalte-solid2-compatibility"].riskAcceptance as Record<string, unknown>),
+            id: "other-risk",
+          },
+        },
+      },
+    }))
+    assert.isFalse(evaluate({
+      ...value,
+      checks: {
+        ...checks,
+        "kobalte-solid2-compatibility": {
+          ...checks["kobalte-solid2-compatibility"],
+          productionApproval: {
+            status: "approved_with_risk",
+            primitives: [{
+              name: "Select",
+              contract: "apps/web/src/ui/select.tsx",
+              usage: "apps/web/src/features/identity/accounts.tsx",
+              browserTest: "tests/frontend/kobalte.test.ts",
+            }],
+          },
+        },
+      },
+    }))
   })
 
   it("rejects unsafe proof paths before consulting the filesystem", () => {

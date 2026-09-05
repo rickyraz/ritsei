@@ -45,6 +45,19 @@ source of truth.
 - Inspect existing code and tests before introducing a new pattern.
 - Make the smallest change that fully solves the task.
 - Avoid unrelated refactoring.
+- Solve the requested outcome, not the surrounding roadmap. Required validation is not permission
+  to build new tooling. Reuse existing commands, tests, and harnesses first.
+- Do not add or generalize evaluators, registries, generators, policy schemas, CI gates, or browser
+  harnesses unless explicitly requested or an existing check demonstrably cannot validate a
+  task-required invariant. Explain that gap before expanding scope; keep any extension local.
+- Documentation or risk-acceptance changes do not automatically require executable policy models.
+  Preserve existing gates and distinguish owner approval from observed test results.
+- Stop when the requested change and relevant checks are complete. Report unrelated failures
+  separately; do not repair inherited debt or chase roadmap scores without authorization.
+- Load only task-relevant skills and notes. Autoresearch prompts and experiment objectives apply
+  only when explicitly activated, not as standing instructions for ordinary development.
+- Keep progress updates factual: report a result, blocker, or scope decision, not repeated planning
+  narration. Before handing off, remove speculative abstractions and review the diff for scope creep.
 - Preserve existing naming and directory conventions.
 - Do not add dependencies without a documented reason.
 - Do not weaken typing, validation, constraints, authorization, audit, or tests.
@@ -82,10 +95,11 @@ repository ownership, tooling, or validation rules.
 
 - **Reasoning authority:** agents may inspect broadly, identify owners, choose a
   documented workflow, and make bounded implementation decisions.
-- **Execution authority:** use repository tasks and generators for deterministic
-  mechanics; do not hand-simulate their output.
-- **Validation authority:** scripts, linters, type checking, tests, and CI decide
-  whether mechanical invariants hold.
+- **Execution authority:** use existing repository tasks and generators for deterministic
+  mechanics; do not hand-simulate their output or infer authority to create more tooling.
+- **Validation authority:** existing scripts, linters, type checking, tests, and CI decide
+  whether mechanical invariants hold. A focused regression test can supply executable evidence;
+  a new evaluator is not the default. Human review remains human review.
 - **Deployment authority:** destructive migrations, production changes, secrets,
   and break-glass operations remain subject to existing human review and runtime
   permissions.

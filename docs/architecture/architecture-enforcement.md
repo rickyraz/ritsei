@@ -335,6 +335,11 @@ Permanent undocumented allowlists are forbidden.
 
 ## Required CI Checks
 
+These are validation obligations, not a requirement to add a custom checker for each task. Reuse
+existing checks and focused tests before extending enforcement; agent scope limits are defined in
+[`AGENTS.md`](../../AGENTS.md#working-rules). Do not turn manual review into an automated approval
+claim or expand unrelated gates to complete a bounded change.
+
 The default branch must reject changes when any of these fail:
 
 ```text
