@@ -85,7 +85,7 @@ Run the primary validation workflow:
 ```sh
 deno task check
 DATABASE_URL=postgres://... deno task db:check
-deno task migrate
+deno task db:migrate
 deno task check:affected
 deno task boundary:test
 deno task boundary:lint
@@ -99,9 +99,10 @@ Fallow supplies generic dead-code, duplication, health, and boundary analysis:
 use `deno task fallow` for the full scan, focused `deno task fallow:*` tasks for
 review, and `deno task fallow:audit` for the baseline-backed changed-set gate.
 
-`deno task db:generate`, `deno task db:check`, and `deno task migrate` use the
+`deno task db:generate`, `deno task db:check`, and `deno task db:migrate` use the
 pinned Drizzle migration workflow and require `DATABASE_URL`, either directly
-or through `.env` / `.env.local`.
+or through `.env` / `.env.local`. `db:generate` creates migration files;
+`db:migrate` applies them.
 
 PostgreSQL integration tests are skipped only when `DATABASE_URL` is unset. If
 it is configured but the database is unreachable or invalid, the tests fail.

@@ -74,7 +74,7 @@ deno task test
 deno task check
 ```
 
-Use `deno task migrate` only with an explicitly selected database. Do not run destructive or production migration commands without the repository’s existing review and permission controls.
+Use `deno task db:migrate` only with an explicitly selected database. Do not run destructive or production migration commands without the repository’s existing review and permission controls.
 
 # Required Checks
 

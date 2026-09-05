@@ -61,7 +61,7 @@ jobs:
         run: deno install --frozen
 
       - name: Apply database migrations
-        run: deno task migrate
+        run: deno run --allow-read --allow-env --allow-net runtime/migrator/mod.ts
 
       - name: Fetch release refs
         env:

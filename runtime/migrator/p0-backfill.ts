@@ -175,7 +175,7 @@ if (import.meta.main) {
     Deno.exit(1)
   }
   if (inputPath === undefined || inputPath.trim() === "") {
-    console.error("Usage: deno task migrate:p0-backfill -- <mapping.json>")
+    console.error("Usage: deno run -A runtime/migrator/p0-backfill.ts -- <mapping.json>")
     Deno.exit(1)
   }
 

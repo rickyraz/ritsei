@@ -28,7 +28,7 @@ non-null columns and therefore cannot safely invent values for existing rows.
    mapping and applied transactionally by:
 
    ```text
-   deno task migrate:p0-backfill -- <mapping.json>
+   deno run -A runtime/migrator/p0-backfill.ts -- <mapping.json>
    ```
 
    The mapping contains `warehouseScopes`, `stockTransferScopes`, and

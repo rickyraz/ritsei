@@ -68,7 +68,7 @@ Run the full release gate with PostgreSQL 19 or newer available:
 
 ```sh
 export DATABASE_URL=postgres://postgres:postgres@localhost:5432/ritsei
-deno task migrate
+deno run --allow-read --allow-env --allow-net runtime/migrator/mod.ts
 deno task release:check
 ```
 

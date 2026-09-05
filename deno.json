@@ -1,23 +1,22 @@
 {
+  "workspace": ["./apps/web"],
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable", "deno.ns"]
   },
   "preferPackageJson": true,
   "nodeModulesDir": "auto",
   "exclude": [
     "node_modules/",
-    "vendor/",
-    "apps/web/src/experiments/solid-effect/"
+    "vendor/"
   ],
   "tasks": {
     "dev": "deno run --watch --allow-read --allow-env --allow-net runtime/api/mod.ts",
     "worker": "deno run -A runtime/worker/mod.ts",
-    "migrate": "deno run --allow-read --allow-env --allow-net runtime/migrator/mod.ts",
-    "migrate:p0-backfill": "deno run --allow-read --allow-env --allow-net runtime/migrator/p0-backfill.ts",
     "db:generate": "deno run -A npm:drizzle-kit@1.0.0-rc.4 generate --config=drizzle.config.ts",
     "db:migrate": "deno run -A npm:drizzle-kit@1.0.0-rc.4 migrate --config=drizzle.config.ts",
     "db:check": "deno run -A npm:drizzle-kit@1.0.0-rc.4 check --config=drizzle.config.ts",
-    "test": "vitest run",
+    "test": "deno task --cwd apps/web contracts && vitest run",
     "test:related": "vitest related --run",
     "check:affected": "deno run --allow-read --allow-run tooling/affected-check.ts",
     "test:coverage": "vitest run --coverage --coverage.provider=v8",
@@ -40,7 +39,7 @@
     "boundary:lint": "ast-grep scan apps foundation modules platform runtime tooling tests && deno task fallow:boundaries && deno task architecture:check && deno run --allow-read --allow-env tooling/schema-ownership.ts",
     "postgres19:rehearse": "deno run --allow-env --allow-net --allow-read --allow-write tooling/postgresql-19/rehearse.ts",
     "boundary:test": "ast-grep test --skip-snapshot-tests",
-    "check": "deno check ."
+    "check": "deno task --cwd apps/web contracts && deno check foundation modules platform runtime tooling tests db apps/web/src/features/process-studio *.config.ts && deno task --cwd apps/web check"
   },
   "fmt": {
     "include": [
