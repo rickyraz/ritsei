@@ -692,9 +692,11 @@ apps/web/src/
 ```
 
 RITSEI-owned shared UI and renderer adapters live under `apps/web/src/ui/`; feature-specific visual
-projections live under `apps/web/src/features/<domain>/projections/`. Avoid global directories where
-unrelated behavior accumulates inside generic
-hooks, services, stores, or utility files.
+projections live under `apps/web/src/features/<domain>/projections/`. Shared-control, composite,
+domain-component, and application-shell placement, including the cross-application extraction gate,
+are owned by [Design System §22](./design-system.md#22-frontend-location-and-dependency-boundaries).
+Avoid global directories where unrelated behavior accumulates inside generic components, hooks,
+services, stores, or utility files.
 
 ## Domain Logic
 

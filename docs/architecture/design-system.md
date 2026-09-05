@@ -1265,8 +1265,16 @@ variants and recipes rather than ad hoc feature overrides.
 
 ## 22. Frontend location and dependency boundaries
 
-The initial implementation remains inside the single frontend application. Do not create a separate
-`packages/design-system` package until measured cross-application reuse justifies it.
+The initial implementation remains inside the single frontend application. `apps/web/src/ui/` is a
+dedicated, RITSEI-owned internal library, not part of an individual feature. A library boundary does
+not require a separately published package. Do not create a separate `packages/design-system`
+package until measured cross-application reuse justifies it.
+
+This applies the ownership decisions in ADR-0056 and ADR-0057 without changing their engines or
+activation gates. The backend taxonomy in
+[`ADR-0068`](../decisions/0068-establish-foundation-modules-platform-runtime-taxonomy.md) remains
+unchanged: business modules live in `modules/`, not in new `packages/accounting`,
+`packages/procurement`, or `packages/inventory` directories.
 
 ```text
 apps/web/src/
@@ -1292,9 +1300,74 @@ apps/web/src/
     └── providers/
 ```
 
-Feature UI imports RITSEI UI contracts. Only the internal UI layer imports Ark UI, Panda-generated
-artifacts, dnd-kit, chart adapters, Canvas, or WebGPU renderers. Backend packages, Drizzle tables,
-repositories, and private services remain forbidden frontend dependencies.
+This is a target organization, not a requirement to scaffold every directory or component before a
+consumer needs it.
+
+### Component placement and promotion
+
+Visual reuse alone does not make a component part of the shared UI library. Classify it by the
+knowledge and behavior it owns:
+
+| Responsibility | Location | Examples and limits |
+|---|---|---|
+| Design foundations | `ui/foundations/`, with styling in `ui/recipes/` | Token definitions, typography, spacing, density, and approved icon assets; not business lifecycle enums |
+| Generic controls | `ui/primitives/` | `Button`, `Input`, `Dialog`, `Select`, `Tabs`, `Badge`, `FormField`; no domain lookup or command |
+| Reusable compositions and Product Patterns | `ui/patterns/` | `RitseiTable`, `FilterBar`, `EntityWorkspace`, generic approval composition; caller-supplied data, labels, slots, and intents |
+| Domain presentation | `features/<domain>/{ui,forms,tables,projections}/` | `JournalEntryTable`, `InvoicePaymentStatus`, `SupplierPicker`, `PurchaseOrderApprovalDialog`; compose shared UI rather than copy its behavior or styling |
+| Application composition | `app/shell/`, routes, and providers | Concrete navigation, tenant/workspace composition, and runtime wiring; generic navigation controls can remain in shared UI |
+
+The token → primitive → composite → domain component → application sequence describes composition,
+not five mandatory packages or a replacement for the semantic layers in Section 4. Product Patterns,
+Interaction Grammar, and Visual Grammar still govern how components are composed.
+
+“Domain-agnostic” means independent of a particular domain's facts, policy, and workflows; it does
+not mean devoid of business vocabulary. ADR-0057's `MoneyField`, `QuantityField`, and `PartyField`
+remain valid shared semantic controls when their value/formatting contracts and caller-supplied
+options are reusable. A `PartyField` does not silently become a `SupplierPicker` that fetches
+Procurement data or decides supplier eligibility. Likewise, a generic `Badge` renders a supplied
+label and semantic state; the feature owns the mapping from an invoice's public status to that
+presentation, without inventing new business truth.
+
+Use these promotion rules:
+
+- Reuse an existing shared control or Product Pattern before adding another one.
+- Keep a new domain composition with its owning feature even if several screens use it. Another
+  feature may consume an intentional public presentation export from that owner, not its private
+  files; dependencies MUST remain acyclic. Cross-feature use does not make it generic UI.
+- Promote a new generic composition only for demonstrated common behavior or an approved core
+  Product Pattern, with the contracts and evidence in Section 23. Similar markup alone is not
+  evidence; avoid a universal component with branches for each domain.
+- Keep non-visual transport, routing, and application helpers in their existing frontend owners
+  under `shared/`, not in UI or a catch-all `frontend-utils` library.
+
+Feature UI imports RITSEI UI contracts through intentional public entry points, not private adapter
+or recipe files. Only the internal UI layer imports Ark UI, Panda-generated artifacts, dnd-kit,
+chart adapters, Canvas, or WebGPU renderers. Shared UI MUST NOT import features, routes, application
+composition, domain API clients, or domain-specific DTOs. It may consume frontend-safe shared value
+contracts, but MUST NOT own fetching, query-cache policy, or business command execution. Those
+responsibilities remain at the frontend application/feature boundaries defined in
+[`frontend.md`](./frontend.md). Backend implementations, Drizzle tables, repositories, and private
+services remain forbidden frontend dependencies.
+
+### Cross-application extraction gate
+
+An additional screen, feature consumer, or component playground is not evidence of a second
+application. Before extracting a shared frontend package, record:
+
+- actual consuming applications and which stable contracts they share;
+- a named owner, public exports, compatibility expectations, and consumer migration plan;
+- Solid/compiler and Panda source-generation boundaries that work for every consumer; and
+- import-boundary, build, interaction, accessibility, and visual-regression checks for the shared
+  library and its consumers.
+
+Extract only the proven shared surface. Tokens and icons MAY remain part of that library; separate
+`tokens`, `icons`, or `<domain>-ui` packages require their own consumer and ownership justification.
+Domain presentation remains domain-owned even when extracted and MUST NOT be bundled into generic UI
+or a backend module's browser-unsafe entry point. Package paths and names such as `@ritsei/ui` are
+not activated by this document. An extraction proposal must reconcile ADR-0056's application-local
+Panda output and ADR-0049's compiler boundary through the existing ADR workflow before changing
+those decisions; it must not silently move generated artifacts or introduce independent release
+infrastructure.
 
 The current Process Studio model and prototype files are exploratory application material. They do
 not activate the production design-system contract and MUST NOT be treated as evidence that Panda,
@@ -1344,6 +1417,32 @@ Agents and feature teams MUST compose existing Product Patterns, use semantic va
 backend authority, and propose a new pattern when repeated decisions cannot be expressed. They MUST
 NOT create industry-specific dashboard families, use color alone for state, or bypass the renderer
 boundary because a local visual effect is convenient.
+
+### Design artifacts and implementation authority
+
+The design system is the governed language and its contracts, not a Figma file, component package,
+or component catalog alone:
+
+| Artifact | Role |
+|---|---|
+| This specification | Canonical semantic, interaction, visual, and usage rules |
+| Figma or another design tool, when used | Design exploration, specifications, and review; not executable implementation authority |
+| Version-controlled token and recipe sources | Machine-readable implementation of approved design decisions; generated Panda/CSS output is derived, not a separately edited source |
+| RITSEI-owned UI source and tests | Executable component contracts and behavior |
+| Component documentation/playground, when introduced | Demonstrates the actual shared implementation and its states; not an alternative implementation or a second specification |
+
+Design-system owners review shared token, recipe, and component changes; feature owners retain
+responsibility for domain presentation and semantic mappings. A mismatch between design artifacts,
+this specification, and code MUST be resolved with the relevant owner, not silently accepted as a
+new rule. Update usage guidance and regression evidence with the implementation; document breaking
+contract changes and their consumer migration.
+
+Storybook is a possible development tool, not a selected dependency or prerequisite for reuse.
+Start with the required usage documentation and runnable component/interaction tests. Introduce a
+catalog only for a demonstrated review or testing need, after verifying the repository's SolidJS 2,
+Vite, and styling integration. A catalog uses the production components and controlled fixtures,
+not real tenant data, credentials, or a forked token set. Its presence does not replace accessibility,
+interaction, visual-regression, or representative workflow evidence.
 
 ## 24. Non-goals
 
