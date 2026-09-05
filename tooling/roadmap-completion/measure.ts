@@ -1,5 +1,7 @@
 import { evaluateFinancialManifest } from "../financial-gate.ts"
 import { collectSourceFiles } from "../source-files.ts"
+import { evaluateFrontendEvidence, frontendEvidence } from "./frontend-evidence.ts"
+import { parsePassedTestFiles } from "./test-report.ts"
 import {
   type Gate,
   type GateCommand,
@@ -68,22 +70,6 @@ const collectTestFiles = (gates: readonly Gate[]) => {
   return { filesByGate, files }
 }
 
-type VitestReport = {
-  readonly testResults?: readonly { readonly name: string; readonly status: string }[]
-}
-
-const readPassedTestFiles = (
-  result: Deno.CommandOutput,
-): ReadonlySet<string> => {
-  if (!result.success) return new Set()
-  const report = JSON.parse(new TextDecoder().decode(result.stdout)) as VitestReport
-  return new Set(
-    (report.testResults ?? [])
-      .filter(({ status }) => status === "passed")
-      .map(({ name }) => name.replaceAll("\\\\", "/")),
-  )
-}
-
 const testFilePassed = (passedFiles: ReadonlySet<string>, file: string) =>
   [...passedFiles].some((name) => name === file || name.endsWith(`/${file}`))
 
@@ -97,7 +83,7 @@ const testGateResults = async (gates: readonly Gate[]): Promise<Map<string, bool
     stdout: "piped",
     stderr: "piped",
   }).output()
-  const passedFiles = readPassedTestFiles(result)
+  const passedFiles = parsePassedTestFiles(new TextDecoder().decode(result.stdout))
   return new Map(
     [...filesByGate].map(([id, testFiles]) => [
       id,
@@ -208,6 +194,26 @@ const readFinancialResults = async (): Promise<Map<string, boolean>> => {
   return new Map(evaluation.gates.map(({ gate, passes }) => [gate.id, passes]))
 }
 
+const frontendProofExists = (path: string): boolean => {
+  try {
+    const parts = path.split("/")
+    for (let index = 1; index <= parts.length; index++) {
+      if (Deno.lstatSync(parts.slice(0, index).join("/")).isSymlink) return false
+    }
+    return Deno.statSync(path).isFile && Deno.readTextFileSync(path).trim().length > 0
+  } catch {
+    return false
+  }
+}
+
+const frontendResults = new Map<string, boolean>()
+for (const [id, evidence] of Object.entries(frontendEvidence)) {
+  frontendResults.set(
+    id,
+    evaluateFrontendEvidence(await readText(evidence.path), evidence.checks, frontendProofExists),
+  )
+}
+
 const domainResults = await runDomainMeasure()
 const financialResults = await readFinancialResults()
 const executableGateResults = await testGateResults(gates)
@@ -239,7 +245,8 @@ for (const gate of gates) {
     const commands = markers &&
       (gate.commands === undefined || gate.commands.length === 0 ||
         executableGateResults.get(gate.id) === true)
-    const passed = markers && commands
+    const evidence = frontendResults.get(gate.id) ?? true
+    const passed = markers && commands && evidence
     results.set(gate.id, {
       gate,
       passed,
@@ -249,6 +256,8 @@ for (const gate of gates) {
         ? "required evidence is missing"
         : !commands
         ? "required executable checks failed"
+        : !evidence
+        ? "frontend review evidence is blocked or incomplete"
         : (gate.commands?.length ?? 0) > 0
         ? "required evidence and executable checks passed"
         : "required implementation evidence is present",

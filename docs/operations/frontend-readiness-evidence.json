@@ -1,0 +1,36 @@
+{
+  "status": "blocked",
+  "reviewer": "RITSEI frontend implementation",
+  "reviewDate": "2026-09-05",
+  "checks": {
+    "keyboard": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "screen-reader": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "focus-errors": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "contrast-high-contrast": {
+      "status": "blocked",
+      "proof": "docs/operations/frontend-implementation.md"
+    },
+    "reduced-motion": {
+      "status": "blocked",
+      "proof": "docs/operations/frontend-implementation.md"
+    },
+    "zoom-localization": {
+      "status": "blocked",
+      "proof": "docs/operations/frontend-implementation.md"
+    },
+    "route-splitting": {
+      "status": "blocked",
+      "proof": "docs/operations/frontend-implementation.md"
+    },
+    "bundle-size": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "interaction-latency": {
+      "status": "blocked",
+      "proof": "docs/operations/frontend-implementation.md"
+    },
+    "long-session": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "semantic-fallback": {
+      "status": "blocked",
+      "proof": "docs/operations/frontend-implementation.md"
+    }
+  }
+}

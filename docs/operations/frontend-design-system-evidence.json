@@ -1,0 +1,25 @@
+{
+  "status": "blocked",
+  "reviewer": "RITSEI frontend implementation",
+  "reviewDate": "2026-09-05",
+  "checks": {
+    "kobalte-solid2-compatibility": {
+      "status": "blocked",
+      "proof": "docs/operations/frontend-implementation.md"
+    },
+    "tokens": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "focus": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "keyboard": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "contrast": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "density": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "theme": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "reduced-motion": {
+      "status": "blocked",
+      "proof": "docs/operations/frontend-implementation.md"
+    },
+    "vendor-boundaries": {
+      "status": "blocked",
+      "proof": "docs/operations/frontend-implementation.md"
+    }
+  }
+}

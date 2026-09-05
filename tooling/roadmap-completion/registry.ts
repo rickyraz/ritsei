@@ -889,6 +889,7 @@ export const gates: readonly Gate[] = [
     commands: [
       task(
         "test",
+        "tests/frontend/shell.test.ts",
         "tests/architecture/roadmap-track-contracts.test.ts",
         "apps/web/src/features/process-studio/designer.test.ts",
       ),
@@ -925,6 +926,7 @@ export const gates: readonly Gate[] = [
     commands: [
       task(
         "test",
+        "tests/frontend/workflow.test.ts",
         "tests/architecture/roadmap-track-contracts.test.ts",
         "apps/web/src/features/process-studio/designer.test.ts",
       ),
@@ -952,7 +954,13 @@ export const gates: readonly Gate[] = [
     source: "docs/roadmap/frontend.md",
     kind: "markers",
     dependencies: ["frontend.shell"],
-    commands: [task("test", "tests/architecture/roadmap-track-contracts.test.ts")],
+    commands: [
+      task(
+        "test",
+        "apps/web/src/ui/accessibility.test.ts",
+        "tests/architecture/roadmap-track-contracts.test.ts",
+      ),
+    ],
     requirements: [
       marker(
         "docs/roadmap/frontend.md",
@@ -962,7 +970,7 @@ export const gates: readonly Gate[] = [
       ),
       marker(
         "docs/architecture/design-system.md",
-        "Ark UI",
+        "Kobalte",
         "Panda CSS",
         "Contrast checks are activation evidence",
       ),
@@ -983,6 +991,7 @@ export const gates: readonly Gate[] = [
     commands: [
       task(
         "test",
+        "apps/web/src/ui/accessibility.test.ts",
         "tests/architecture/roadmap-track-contracts.test.ts",
         "apps/web/src/features/process-studio/designer.test.ts",
       ),
