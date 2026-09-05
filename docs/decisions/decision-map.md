@@ -17,6 +17,7 @@ ADRs preserve the decisions and trade-offs that were accepted at a point in time
 how related decisions fit together without rewriting their historical text. ADR-0074 is the current
 accessible-primitive selection; ADR-0056 remains the historical design-system decision for its other
 active boundaries. ADR-0075 is the current dependency-ownership boundary for workspace members.
+ADR-0076 is the current typography direction and semantic text-style boundary.
 
 ## Current decision lineage
 
@@ -45,6 +46,9 @@ ADR-0010  Vite-based SolidJS SPA
               +--> Product Patterns and Visual Grammar become canonical
               |
               +--> ADR-0074 selects Kobalte for the Solid 2 primitive boundary
+              |
+              +--> ADR-0076 adopts Pretendard for product UI, IBM Plex Mono for technical values,
+              |           and semantic typography tokens with a future Söhne brand layer
               |
               +--> ADR-0057 layered TanStack frontend engine boundaries
                         +--> Query is selective server-state cache policy
@@ -122,7 +126,8 @@ with seven universal cartographic archetypes, context-aware semantic mappings, d
 variation, and semantic depth. ADR-0073 supersedes the custom-checker selection portion of ADR-0062;
 ADR-0075 supersedes the dependency-manifest ownership portion of ADR-0050 while retaining package.json
 and deno.lock-based resolution; it deliberately defers a root catalog until multiple workspace members
-share a version invariant. Fallow and ast-grep remain the generic enforcement owners while only
+share a version invariant. ADR-0076 amends the typography direction in ADR-0056 without changing
+its Panda styling boundary. Fallow and ast-grep remain the generic enforcement owners while only
 path-sensitive RITSEI checks remain custom. Both providers remain optional adapters; the RITSEI
 contracts and authority remain active. The rest of those decisions remains active. None of these
 amendments rewrite historical decisions, and ADR-0047 does not change the financial authority recorded
@@ -154,6 +159,7 @@ by ADR-0040.
 | [ADR-0073](./0073-simplify-repository-enforcement-tooling.md) | Current enforcement tooling | Fallow and ast-grep own generic checks; one architecture checker owns path-sensitive boundaries |
 | [ADR-0074](./0074-switch-to-kobalte-for-solid2-accessible-primitives.md) | Current frontend primitive selection | Kobalte 2.0 alpha behind RITSEI-owned UI contracts; native HTML remains the default and fallback |
 | [ADR-0075](./0075-partition-dependency-ownership-by-application-boundary.md) | Current dependency ownership | Repository-wide dependencies stay at root; web-only dependencies and exact pins belong to `apps/web/package.json` |
+| [ADR-0076](./0076-adopt-ritsei-typography-system.md) | Current typography direction | Pretendard is the product UI workhorse; IBM Plex Mono is semantic technical typography; Söhne is future brand/display only |
 
 ## Current canonical rules
 
@@ -179,6 +185,7 @@ The current architecture is summarized here for navigation; the canonical rule r
 - Cartographic is a grammar for structure, relationship, pressure, movement, boundary, and state—not a requirement for topographic maps on every page.
 - The seven visual archetypes are Stock, Flow, Capacity, Value, Relationship, Progress, and Asset / Space; industries compose them rather than receiving separate visual themes.
 - Material variation is deterministic and context-aware; semantic depth complements, but never replaces, semantic HTML, labels, contrast, or accessible alternatives.
+- Typography uses a small 12–32px scale, 400/500/600 weights, tabular numerals, and semantic text styles rather than arbitrary component values.
 
 ## Historical integrity
 

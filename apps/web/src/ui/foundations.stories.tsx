@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
-import { control, layout, surface } from "./index.ts"
+import { control, layout, surface, typography } from "./index.ts"
 
 function FoundationsStory() {
   return (
@@ -12,6 +12,20 @@ function FoundationsStory() {
             Semantic controls and surfaces stay usable in light and dark themes.
           </p>
         </header>
+
+        <section class={surface()} aria-labelledby="typography-heading">
+          <div class={layout.stack}>
+            <h2 id="typography-heading">Typography</h2>
+            <p class={typography.display}>Operational clarity</p>
+            <p class={typography.body}>
+              Pretendard carries product information; IBM Plex Mono is reserved for identifiers and
+              technical values.
+            </p>
+            <p class={typography.metadata}>Metadata · 2026-09-05 · reviewed</p>
+            <p class={typography.code}>INV-2026-001289</p>
+            <p class={typography.numeric}>Rp 204.517.500</p>
+          </div>
+        </section>
 
         <section class={surface()} aria-labelledby="actions-heading">
           <div class={layout.stack}>

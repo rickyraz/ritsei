@@ -2,12 +2,13 @@
 
 > **Status:** Canonical and active design-system specification
 >
-> **Implementation status:** The design-system contract is approved. `apps/web` is still in
-> frontend activation and does not yet contain the production Panda, Kobalte, renderer, or token
-> runtime. `vgpu` is the selected optional cartographic renderer behind a RITSEI-owned adapter, but
-> it is not activated as a runtime dependency yet. This document therefore defines the target
-> contract and its activation gates; it does not claim that WebGPU, glass recipes, visual regression,
-> or production accessibility evidence already exists.
+> **Implementation status:** The design-system contract is approved. `apps/web` contains the
+> current Panda token/text-style implementation, bundled Pretendard and IBM Plex Mono assets, and
+> controlled Storybook evidence. Kobalte, the cartographic renderer, visual regression, and full
+> production accessibility evidence remain activation-gated. `vgpu` is the selected optional
+> cartographic renderer behind a RITSEI-owned adapter, but it is not activated as a runtime dependency
+> yet. This document therefore defines the target contract and its activation gates; it does not claim
+> that those gated capabilities already exist.
 >
 > **Owns:** Product Patterns, Interaction Grammar, Visual Grammar, semantic design tokens, material
 > rules, component contracts, accessibility, density, renderer boundaries, and frontend design-system
@@ -18,6 +19,7 @@
 > - Frontend architecture: [`./frontend.md`](./frontend.md)
 > - Active architecture: [`./architecture-spec-v4.md`](./architecture-spec-v4.md)
 > - Design-system decision: [`../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md`](../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md)
+> - Typography decision: [`../decisions/0076-adopt-ritsei-typography-system.md`](../decisions/0076-adopt-ritsei-typography-system.md)
 > - Solid 2 primitive selection: [`../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md`](../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md)
 > - Cartographic UI decision: [`../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md`](../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md)
 > - Cartographic renderer selection: [`../decisions/0070-select-vgpu-and-defer-typegpu.md`](../decisions/0070-select-vgpu-and-defer-typegpu.md)
@@ -385,28 +387,48 @@ canvas.
 
 ## 10. Typography
 
-Use one sans-serif UI family consistently. Inter, Geist, or a Söhne-like grotesk are acceptable
-starting candidates; the activated application MUST select and measure one primary family rather
-than mixing defaults by feature.
-
-A display serif MAY be used for marketing, editorial reports, annual reviews, or empty-state heroes.
-It MUST NOT be used for primary operational UI.
-
-Reference hierarchy:
+RITSEI typography is information infrastructure: quiet, precise, readable in dense enterprise
+surfaces, and durable beyond short-lived SaaS trends. The active stack is:
 
 ```text
-Display      36–48px
-Page Title   28–32px
-Section      20–24px
-Card Title   15–18px
-Body         14–16px
-Metadata     12–13px
-Micro        11–12px
+Product UI and marketing  Pretendard
+Technical values           IBM Plex Mono
+Future brand/display       Söhne, only after brand investment is justified
 ```
 
-Typography MUST remain scannable at dense enterprise layouts. Numeric values MUST use tabular
-numerals. Dates, currencies, quantities, and percentages MUST use locale-aware formatting and MUST
-NOT depend on glyph shape alone for meaning.
+Söhne is an identity layer, not a replacement requirement for Pretendard. IBM Plex Mono MUST be
+limited to identifiers, code-like values, and technical information where character-by-character
+comparison has semantic value.
+
+The application implementation is owned by `apps/web/panda.config.ts` and
+`apps/web/src/ui/typography.ts`. The shared UI surface loads the approved static WOFF2 weights from `@fontsource/pretendard`
+and `@fontsource/ibm-plex-mono`; a future approved variable Pretendard asset may replace them
+without changing the semantic contract. Components MUST use the semantic text styles rather than
+arbitrary font sizes or weights.
+
+Foundation tokens:
+
+```text
+12 / 16   xs       metadata, helper text
+13 / 18   sm       labels, dense tables, status
+14 / 20   md       default application text
+16 / 24   lg       prominent body text
+18 / 26   xl       section headings
+20 / 28   2xl      subsection headings
+24 / 32   3xl      page titles
+32 / 40   4xl      restrained display
+```
+
+The default application size is 14px. Supported weights are 400 regular, 500 medium, and 600
+semibold. Primary information MUST NOT fall below 12px. Tables and financial values MUST use
+`font-variant-numeric: tabular-nums`; numeric columns SHOULD be right-aligned, while identifiers
+MAY use IBM Plex Mono. Labels and navigation use sentence case by default.
+
+Typography MUST remain scannable at dense enterprise layouts. Dates, currencies, quantities, and
+percentages MUST use locale-aware formatting and MUST NOT depend on glyph shape alone for meaning.
+The system MUST remain usable under zoom, OS text scaling, long labels, and localization.
+
+See [ADR-0076](../decisions/0076-adopt-ritsei-typography-system.md) for the decision record.
 
 ## 11. Grid, geometry, and density
 

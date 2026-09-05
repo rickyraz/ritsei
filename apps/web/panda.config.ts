@@ -18,7 +18,47 @@ export default defineConfig({
           surface: { value: "#FAF8F2" },
           terrain: { value: "#365A72" },
         },
-        fonts: { body: { value: "Arial, Helvetica, sans-serif" } },
+        fonts: {
+          body: {
+            value:
+              '"Pretendard Variable", "Pretendard", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+          },
+          mono: {
+            value: '"IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace',
+          },
+        },
+        fontSizes: {
+          xs: { value: "12px" },
+          sm: { value: "13px" },
+          md: { value: "14px" },
+          lg: { value: "16px" },
+          xl: { value: "18px" },
+          "2xl": { value: "20px" },
+          "3xl": { value: "24px" },
+          "4xl": { value: "32px" },
+        },
+        fontWeights: {
+          regular: { value: "400" },
+          medium: { value: "500" },
+          semibold: { value: "600" },
+        },
+        lineHeights: {
+          xs: { value: "16px" },
+          sm: { value: "18px" },
+          md: { value: "20px" },
+          lg: { value: "24px" },
+          xl: { value: "26px" },
+          "2xl": { value: "28px" },
+          "3xl": { value: "32px" },
+          "4xl": { value: "40px" },
+        },
+        letterSpacings: {
+          display: { value: "-0.02em" },
+          pageHeading: { value: "-0.015em" },
+          heading: { value: "-0.01em" },
+          normal: { value: "0" },
+          label: { value: "0.04em" },
+        },
       },
       semanticTokens: {
         colors: {
@@ -34,10 +74,140 @@ export default defineConfig({
           danger: { value: { base: "#A52C22", _dark: "#FFAEA5" } },
         },
       },
+      textStyles: {
+        body: {
+          value: {
+            fontFamily: "body",
+            fontSize: "md",
+            fontWeight: "regular",
+            lineHeight: "md",
+            letterSpacing: "normal",
+          },
+        },
+        bodyCompact: {
+          value: {
+            fontFamily: "body",
+            fontSize: "sm",
+            fontWeight: "regular",
+            lineHeight: "sm",
+            letterSpacing: "normal",
+          },
+        },
+        label: {
+          value: {
+            fontFamily: "body",
+            fontSize: "sm",
+            fontWeight: "medium",
+            lineHeight: "sm",
+            letterSpacing: "normal",
+          },
+        },
+        helper: {
+          value: {
+            fontFamily: "body",
+            fontSize: "xs",
+            fontWeight: "regular",
+            lineHeight: "xs",
+            letterSpacing: "normal",
+          },
+        },
+        metadata: {
+          value: {
+            fontFamily: "body",
+            fontSize: "xs",
+            fontWeight: "regular",
+            lineHeight: "xs",
+            letterSpacing: "normal",
+          },
+        },
+        tableHeader: {
+          value: {
+            fontFamily: "body",
+            fontSize: "sm",
+            fontWeight: "medium",
+            lineHeight: "sm",
+            letterSpacing: "normal",
+          },
+        },
+        tableCell: {
+          value: {
+            fontFamily: "body",
+            fontSize: "md",
+            fontWeight: "regular",
+            lineHeight: "md",
+            letterSpacing: "normal",
+          },
+        },
+        pageTitle: {
+          value: {
+            fontFamily: "body",
+            fontSize: "3xl",
+            fontWeight: "semibold",
+            lineHeight: "3xl",
+            letterSpacing: "pageHeading",
+          },
+        },
+        sectionTitle: {
+          value: {
+            fontFamily: "body",
+            fontSize: "xl",
+            fontWeight: "semibold",
+            lineHeight: "xl",
+            letterSpacing: "heading",
+          },
+        },
+        display: {
+          value: {
+            fontFamily: "body",
+            fontSize: "4xl",
+            fontWeight: "semibold",
+            lineHeight: "4xl",
+            letterSpacing: "display",
+          },
+        },
+        button: {
+          value: {
+            fontFamily: "body",
+            fontSize: "md",
+            fontWeight: "medium",
+            lineHeight: "md",
+            letterSpacing: "normal",
+          },
+        },
+        status: {
+          value: {
+            fontFamily: "body",
+            fontSize: "sm",
+            fontWeight: "medium",
+            lineHeight: "sm",
+            letterSpacing: "normal",
+          },
+        },
+        numeric: {
+          value: {
+            fontFamily: "body",
+            fontSize: "md",
+            fontWeight: "medium",
+            lineHeight: "md",
+            letterSpacing: "normal",
+            fontVariantNumeric: "tabular-nums",
+          },
+        },
+        code: {
+          value: {
+            fontFamily: "mono",
+            fontSize: "sm",
+            fontWeight: "regular",
+            lineHeight: "sm",
+            letterSpacing: "normal",
+          },
+        },
+      },
       recipes: {
         control: {
           className: "control",
           base: {
+            textStyle: "body",
             borderRadius: "sm",
             borderWidth: "1px",
             borderColor: "boundary",
@@ -56,9 +226,9 @@ export default defineConfig({
           variants: {
             kind: {
               action: {
+                textStyle: "button",
                 bg: "action",
                 color: "onAction",
-                fontWeight: "bold",
                 cursor: "pointer",
               },
               input: { width: "full", maxWidth: "xl" },
@@ -83,13 +253,11 @@ export default defineConfig({
     "html": {
       bg: "canvas",
       color: "text",
-      fontFamily: "body",
-      fontSize: "16px",
-      lineHeight: "1.5",
+      textStyle: "body",
     },
     "body": { margin: "0" },
-    "h1": { fontSize: "3xl", fontWeight: "bold", lineHeight: "1.2" },
-    "h2": { fontSize: "xl", fontWeight: "bold" },
+    "h1": { textStyle: "pageTitle" },
+    "h2": { textStyle: "sectionTitle" },
     "a": {
       color: "action",
       textDecoration: "underline",
@@ -114,6 +282,8 @@ export default defineConfig({
       verticalAlign: "top",
       overflowWrap: "anywhere",
     },
+    "th": { textStyle: "tableHeader" },
+    "td": { textStyle: "tableCell" },
     "caption": { textAlign: "left", color: "muted", pb: "3" },
     "[role=alert]": { color: "danger" },
     "@media (forced-colors: active)": {

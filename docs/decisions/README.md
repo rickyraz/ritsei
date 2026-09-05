@@ -99,5 +99,6 @@ current system; ADRs preserve decision history.
 | [`0073`](./0073-simplify-repository-enforcement-tooling.md) | Simplify repository enforcement tooling | Accepted |
 | [`0074`](./0074-switch-to-kobalte-for-solid2-accessible-primitives.md) | Use Kobalte for Solid 2 accessible primitives | Accepted |
 | [`0075`](./0075-partition-dependency-ownership-by-application-boundary.md) | Partition dependency ownership by application boundary | Accepted |
+| [`0076`](./0076-adopt-ritsei-typography-system.md) | Adopt the RITSEI typography system | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

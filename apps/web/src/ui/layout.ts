@@ -14,8 +14,8 @@ export const layout = {
     borderColor: "boundary",
   }),
   wordmark: css({
-    fontWeight: "bold",
-    letterSpacing: "widest",
+    textStyle: "label",
+    letterSpacing: "label",
     textDecoration: "none",
     color: "text",
   }),
@@ -29,7 +29,7 @@ export const layout = {
   notice: css({
     bg: "content",
     color: "muted",
-    fontSize: "sm",
+    textStyle: "metadata",
     px: "6",
     py: "2",
     borderBottomWidth: "1px",
@@ -51,7 +51,7 @@ export const layout = {
     px: "6",
     py: "4",
     color: "muted",
-    fontSize: "sm",
+    textStyle: "metadata",
     borderTopWidth: "1px",
     borderColor: "boundary",
   }),

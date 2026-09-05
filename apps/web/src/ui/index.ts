@@ -1,4 +1,9 @@
 // The public styling surface is semantic recipes, not Panda's complete API.
+import "@fontsource/ibm-plex-mono/400.css"
+import "@fontsource/pretendard/400.css"
+import "@fontsource/pretendard/500.css"
+import "@fontsource/pretendard/600.css"
 import "./generated/styles.css"
 export { control, surface } from "./generated/recipes/index.js"
 export { layout } from "./layout.ts"
+export { typography } from "./typography.ts"
