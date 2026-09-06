@@ -25,6 +25,51 @@ export const probeKobalteCompatibility = () =>
 export const probeDndCompatibility = () =>
   probeSolidPackage("apps/web/src/ui/compatibility/dnd.tsx")
 
+const extractBundleCode = (result: unknown): string => {
+  const outputs = (Array.isArray(result) ? result : [result]).filter(
+    (value): value is { output: readonly { type: string; code?: string }[] } =>
+      typeof value === "object" && value !== null && "output" in value,
+  )
+
+  return outputs
+    .flatMap(({ output }) => output)
+    .flatMap((asset) => asset.type === "chunk" && asset.code !== undefined ? [asset.code] : [])
+    .join("\n")
+}
+
+export const probeBoneyardCoreCompatibility = async () => {
+  try {
+    const result = await build({
+      configFile: false,
+      logLevel: "silent",
+      build: {
+        write: false,
+        lib: {
+          entry: "apps/web/src/ui/compatibility/boneyard.ts",
+          formats: ["es"],
+        },
+      },
+    })
+    const code = extractBundleCode(result)
+    const forbidden = code.match(/\b(?:react|react-dom|playwright)\b/i)
+
+    if (forbidden) {
+      return {
+        build: "blocked" as const,
+        diagnostic: `Production bundle contains ${forbidden[0]}`,
+      }
+    }
+
+    return {
+      build: "passed" as const,
+      productionBundle: "safe" as const,
+      behavior: "unreviewed" as const,
+    }
+  } catch (cause) {
+    return { build: "blocked" as const, diagnostic: String(cause) }
+  }
+}
+
 if (import.meta.main) {
   const result = await probeKobalteCompatibility()
   console.log(JSON.stringify(result, null, 2))

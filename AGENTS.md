@@ -12,6 +12,7 @@ This file defines how coding agents must work in the RITSEI repository.
 > - Documentation workflow: [`./docs/development/documentation-workflow.md`](./docs/development/documentation-workflow.md)
 > - Documentation ownership: [`./docs/documentation-boundaries.md`](./docs/documentation-boundaries.md)
 > - Frontend architecture: [`./docs/architecture/frontend.md`](./docs/architecture/frontend.md)
+- Skeleton architecture: [`./docs/architecture/skeleton.md`](./docs/architecture/skeleton.md)
 > - Process Studio architecture: [`./docs/architecture/process-studio.md`](./docs/architecture/process-studio.md)
 > - External integration surface: [`./docs/architecture/integration-architecture.md`](./docs/architecture/integration-architecture.md)
 > - Stateful runtime: [`./docs/architecture/runtime-architecture.md`](./docs/architecture/runtime-architecture.md)

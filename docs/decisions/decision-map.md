@@ -21,6 +21,7 @@ ADR-0076 is the current typography direction and semantic text-style boundary.
 ADR-0077 is the current semantic iconography and provider-adapter boundary.
 ADR-0078 is the current motion ownership and runtime-wrapper boundary.
 ADR-0079 is the current dnd-kit/Solid 2 activation gate and blocked-state boundary.
+ADR-0080 is the current Solid-native Boneyard skeleton boundary.
 
 ## Current decision lineage
 
@@ -58,6 +59,8 @@ ADR-0010  Vite-based SolidJS SPA
               +--> ADR-0078 adopts PandaCSS-first motion with Motion for runtime spatial behavior
               |
               +--> ADR-0079 gates dnd-kit activation on a real Solid 2 build and browser proof
+              |
+              +--> ADR-0080 adopts a Solid-native Boneyard skeleton boundary
               |
               +--> ADR-0057 layered TanStack frontend engine boundaries
                         +--> Query is selective server-state cache policy
@@ -139,7 +142,9 @@ share a version invariant. ADR-0076 amends the typography direction in ADR-0056 
 its Panda styling boundary. ADR-0077 amends the iconography direction in ADR-0056 while preserving
 its provider-neutral design-system boundary. ADR-0078 amends the motion direction in ADR-0056 while
 preserving Solid state ownership and Kobalte accessibility ownership. ADR-0079 records the dnd-kit
-provider target but blocks activation until its Solid 2 compatibility evidence passes. Fallow and ast-grep remain the generic enforcement owners while only
+provider target but blocks activation until its Solid 2 compatibility evidence passes. ADR-0080
+records Boneyard as a static geometry provider behind a Solid-native RITSEI Skeleton boundary while
+ADR-0072 remains the reactive ownership authority. Fallow and ast-grep remain the generic enforcement owners while only
 path-sensitive RITSEI checks remain custom. Both providers remain optional adapters; the RITSEI
 contracts and authority remain active. The rest of those decisions remains active. None of these
 amendments rewrite historical decisions, and ADR-0047 does not change the financial authority recorded
@@ -175,6 +180,7 @@ by ADR-0040.
 | [ADR-0077](./0077-adopt-ritsei-iconography-system.md) | Current iconography direction | Semantic icon API and registry; Phosphor is current, Nucleo UI is future, and cartographic identity remains the brand layer |
 | [ADR-0078](./0078-adopt-ritsei-motion-system.md) | Current motion direction | PandaCSS owns CSS motion; Motion owns runtime geometry through a RITSEI wrapper; Solid owns state and Kobalte owns accessibility |
 | [ADR-0079](./0079-gate-dnd-kit-solid2-activation.md) | Current drag/drop direction | dnd-kit Solid is the target provider, but activation is blocked by the Solid 2 `solid-js/web` export incompatibility; no shim or legacy React package |
+| [ADR-0080](./0080-adopt-solid-native-boneyard-skeleton-boundary.md) | Current skeleton direction | Solid owns skeleton state and lifecycle; Boneyard supplies immutable geometry artifacts behind a RITSEI-owned adapter |
 
 ## Current canonical rules
 
@@ -204,6 +210,7 @@ The current architecture is summarized here for navigation; the canonical rule r
 - Iconography uses semantic names, Regular/Fill/Duotone variants, controlled 14–32px sizes, and a replaceable provider adapter.
 - Motion is PandaCSS-first, runtime-only for geometry or physics, reduced-motion aware, and never a source of business truth.
 - dnd-kit is the target direct-manipulation provider, but remains not activated until a Solid 2-compatible build and browser gate pass.
+- Skeleton visibility and lifecycle remain Solid-owned; Boneyard is a static geometry/artifact provider and never a reactive or service owner.
 
 ## Historical integrity
 

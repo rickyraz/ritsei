@@ -19,6 +19,7 @@
 > - HTTP API boundary: [`./api.md`](./api.md)
 > - Authorization: [`./authorization.md`](./authorization.md)
 > - Design system architecture: [`./design-system.md`](./design-system.md)
+- Skeleton architecture: [`./skeleton.md`](./skeleton.md)
 > - Process Studio architecture: [`./process-studio.md`](./process-studio.md)
 > - External integration surface: [`./integration-architecture.md`](./integration-architecture.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
@@ -89,6 +90,7 @@ Vite
 + TanStack Solid Form
 + Effect Schema
 + RITSEI Design System
++ RITSEI Skeleton boundary with static geometry artifacts
 + Kobalte behind RITSEI-owned components
 + constrained Panda CSS
 ```

@@ -103,5 +103,6 @@ current system; ADRs preserve decision history.
 | [`0077`](./0077-adopt-ritsei-iconography-system.md) | Adopt the RITSEI iconography system | Accepted |
 | [`0078`](./0078-adopt-ritsei-motion-system.md) | Adopt the RITSEI motion system | Accepted |
 | [`0079`](./0079-gate-dnd-kit-solid2-activation.md) | Gate dnd-kit activation on Solid 2 compatibility | Accepted |
+| [`0080`](./0080-adopt-solid-native-boneyard-skeleton-boundary.md) | Adopt a Solid-native Boneyard skeleton boundary | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

@@ -21,6 +21,7 @@
 - [`./architecture/state-and-consistency.md`](./architecture/state-and-consistency.md)
 - [`./architecture/financial-ledger.md`](./architecture/financial-ledger.md)
 - [`./architecture/frontend.md`](./architecture/frontend.md)
+- [`./architecture/skeleton.md`](./architecture/skeleton.md)
 - [`./architecture/design-system.md`](./architecture/design-system.md)
 - [`./architecture/architecture-enforcement.md`](./architecture/architecture-enforcement.md)
 - [`./architecture/postgresql-19-architecture.md`](./architecture/postgresql-19-architecture.md)
@@ -57,6 +58,10 @@
 - [`./architecture/reference/cartographic-renderer-selection.md`](./architecture/reference/cartographic-renderer-selection.md)
 - [`./architecture/reference/cartographic-archetypes-and-semantic-depth.md`](./architecture/reference/cartographic-archetypes-and-semantic-depth.md)
 - [`./architecture/reference/roadmap-track-considerations.md`](./architecture/reference/roadmap-track-considerations.md)
+
+## Proposals
+
+- [`./proposals/boneyard-js-solid/README.md`](./proposals/boneyard-js-solid/README.md)
 
 ## Roadmaps
 

@@ -15,6 +15,7 @@
 > - Effect application architecture: [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
 > - Native Solid 2 and Effect integration: [`../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md`](../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md)
 > - Design system and Visual Grammar: [`./design-system.md`](./design-system.md)
+> - Skeleton architecture: [`./skeleton.md`](./skeleton.md)
 > - Solid 2 accessible primitive selection: [`../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md`](../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md)
 > - Dependency ownership: [`../decisions/0075-partition-dependency-ownership-by-application-boundary.md`](../decisions/0075-partition-dependency-ownership-by-application-boundary.md)
 > - Cartographic visual grammar: [`../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md`](../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md)
@@ -205,6 +206,18 @@ belongs in a global Model. Local presentation state is intentionally allowed
 and must not be forced through a Model-to-Message transition merely for
 architectural uniformity.
 
+### Skeleton integration boundary
+
+The RITSEI Skeleton architecture is a direct application of ADR-0072. Solid owns skeleton
+visibility, responsive measurement, derived geometry selection, lifecycle, and cleanup. TanStack
+Solid Query owns remote loading semantics. Effect `ManagedRuntime` remains at the application
+boundary and is never injected into `Skeleton`. Boneyard contributes immutable geometry artifacts
+only; it is not a reactive store, service runtime, or lifecycle owner.
+
+The canonical boundary and build/runtime rules live in [`skeleton.md`](./skeleton.md). This frontend
+document only defines the ownership relationship so the Skeleton layer cannot introduce a second
+reactive graph.
+
 ### Renderer state and frame ownership
 
 Solid signals and Effects may carry semantic changes such as theme, warehouse data, selection,
@@ -324,6 +337,7 @@ PostgreSQL
 | Accessible UI primitives | Kobalte behind RITSEI-owned components |
 | Styling foundation | Constrained Panda CSS profile |
 | Runtime motion | RITSEI Motion wrapper; CSS first, runtime geometry only when required |
+| Skeleton loading UI | Solid-native RITSEI Skeleton boundary; Boneyard supplies static geometry artifacts only |
 | Direct manipulation | `@dnd-kit/solid` target; activation blocked by the Solid 2 compatibility gate |
 | Backend | Separate Effect-on-Deno API |
 | Transactional database | PostgreSQL |

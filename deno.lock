@@ -22,6 +22,7 @@
     "npm:@solidjs/web@2.0.0-rc.6": "2.0.0-rc.6_solid-js@2.0.0-rc.6",
     "npm:@tanstack/solid-query@6.0.0-rc.2": "6.0.0-rc.2_@solidjs+web@2.0.0-rc.6_solid-js@2.0.0-rc.6",
     "npm:@vitest/coverage-v8@4.1.10": "4.1.10_vitest@4.1.10_vite@8.2.2",
+    "npm:boneyard-js@1.10.0": "1.10.0_vite@8.2.2",
     "npm:drizzle-kit@1.0.0-rc.4": "1.0.0-rc.4",
     "npm:drizzle-orm@1.0.0-rc.5-169397b": "1.0.0-rc.5-169397b_@effect+sql-pg@4.0.0-rc.111_effect@4.0.0-rc.111_pg@8.23.0_postgres@3.4.7",
     "npm:effect@4.0.0-rc.111": "4.0.0-rc.111",
@@ -199,6 +200,9 @@
     },
     "@bcoe/v8-coverage@1.0.2": {
       "integrity": "sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA=="
+    },
+    "@chenglou/pretext@0.0.5": {
+      "integrity": "sha512-A8GZN10REdFGsyuiUgLV8jjPDDFMg5GmgxGWV0I3igxBOnzj+jgz2VMmVD7g+SFyoctfeqHFxbNatKSzVRWtRg=="
     },
     "@clack/core@1.4.2": {
       "integrity": "sha512-0Ty/1Gfm+Kb07sXcuESjyKfwEhSy4Ns1AgeEisHb/bDY5fWme0tTeTkU14T1Gmcs17YIjB/teiDe4uaCghbYqQ==",
@@ -2060,6 +2064,20 @@
       "integrity": "sha512-uh8vpY/1/YyFkunIDFH/12p7/7VdPKA1hejMVEbdkEaWnUz0Hesvx5EbiU6XxjyHZIOju+ZMbQJkRh+es3/spQ==",
       "bin": true
     },
+    "boneyard-js@1.10.0_vite@8.2.2": {
+      "integrity": "sha512-bHyZFdBHswa6Rt2aP0F1pNpPn4/lRcTMRWAt1d7tbFZLoPnwjztr6cmAVa/vaQwTOH9ETD3Lz4vW1iuvQDJNqg==",
+      "dependencies": [
+        "playwright",
+        "vite"
+      ],
+      "optionalDependencies": [
+        "@chenglou/pretext"
+      ],
+      "optionalPeers": [
+        "vite"
+      ],
+      "bin": true
+    },
     "brace-expansion@5.0.9": {
       "integrity": "sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==",
       "dependencies": [
@@ -3661,6 +3679,7 @@
             "npm:@solidjs/router@2.0.0-next.21",
             "npm:@solidjs/web@2.0.0-rc.6",
             "npm:@tanstack/solid-query@6.0.0-rc.2",
+            "npm:boneyard-js@1.10.0",
             "npm:motion@13.2.0",
             "npm:solid-js@2.0.0-rc.6",
             "npm:storybook-solidjs-vite@11.0.0-next-20260903183420",
