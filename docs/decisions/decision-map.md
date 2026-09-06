@@ -19,6 +19,7 @@ accessible-primitive selection; ADR-0056 remains the historical design-system de
 active boundaries. ADR-0075 is the current dependency-ownership boundary for workspace members.
 ADR-0076 is the current typography direction and semantic text-style boundary.
 ADR-0077 is the current semantic iconography and provider-adapter boundary.
+ADR-0078 is the current motion ownership and runtime-wrapper boundary.
 
 ## Current decision lineage
 
@@ -52,6 +53,8 @@ ADR-0010  Vite-based SolidJS SPA
               |           and semantic typography tokens with a future Söhne brand layer
               |
               +--> ADR-0077 adopts semantic icon names, Phosphor now, and a replaceable Nucleo adapter
+              |
+              +--> ADR-0078 adopts PandaCSS-first motion with Motion for runtime spatial behavior
               |
               +--> ADR-0057 layered TanStack frontend engine boundaries
                         +--> Query is selective server-state cache policy
@@ -131,7 +134,8 @@ ADR-0075 supersedes the dependency-manifest ownership portion of ADR-0050 while 
 and deno.lock-based resolution; it deliberately defers a root catalog until multiple workspace members
 share a version invariant. ADR-0076 amends the typography direction in ADR-0056 without changing
 its Panda styling boundary. ADR-0077 amends the iconography direction in ADR-0056 while preserving
-its provider-neutral design-system boundary. Fallow and ast-grep remain the generic enforcement owners while only
+its provider-neutral design-system boundary. ADR-0078 amends the motion direction in ADR-0056 while
+preserving Solid state ownership and Kobalte accessibility ownership. Fallow and ast-grep remain the generic enforcement owners while only
 path-sensitive RITSEI checks remain custom. Both providers remain optional adapters; the RITSEI
 contracts and authority remain active. The rest of those decisions remains active. None of these
 amendments rewrite historical decisions, and ADR-0047 does not change the financial authority recorded
@@ -165,6 +169,7 @@ by ADR-0040.
 | [ADR-0075](./0075-partition-dependency-ownership-by-application-boundary.md) | Current dependency ownership | Repository-wide dependencies stay at root; web-only dependencies and exact pins belong to `apps/web/package.json` |
 | [ADR-0076](./0076-adopt-ritsei-typography-system.md) | Current typography direction | Pretendard is the product UI workhorse; IBM Plex Mono is semantic technical typography; Söhne is future brand/display only |
 | [ADR-0077](./0077-adopt-ritsei-iconography-system.md) | Current iconography direction | Semantic icon API and registry; Phosphor is current, Nucleo UI is future, and cartographic identity remains the brand layer |
+| [ADR-0078](./0078-adopt-ritsei-motion-system.md) | Current motion direction | PandaCSS owns CSS motion; Motion owns runtime geometry through a RITSEI wrapper; Solid owns state and Kobalte owns accessibility |
 
 ## Current canonical rules
 
@@ -192,6 +197,7 @@ The current architecture is summarized here for navigation; the canonical rule r
 - Material variation is deterministic and context-aware; semantic depth complements, but never replaces, semantic HTML, labels, contrast, or accessible alternatives.
 - Typography uses a small 12–32px scale, 400/500/600 weights, tabular numerals, and semantic text styles rather than arbitrary component values.
 - Iconography uses semantic names, Regular/Fill/Duotone variants, controlled 14–32px sizes, and a replaceable provider adapter.
+- Motion is PandaCSS-first, runtime-only for geometry or physics, reduced-motion aware, and never a source of business truth.
 
 ## Historical integrity
 

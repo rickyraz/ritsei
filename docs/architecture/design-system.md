@@ -21,6 +21,7 @@
 > - Design-system decision: [`../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md`](../decisions/0056-adopt-ritsei-semantic-frontend-design-system.md)
 > - Typography decision: [`../decisions/0076-adopt-ritsei-typography-system.md`](../decisions/0076-adopt-ritsei-typography-system.md)
 > - Iconography decision: [`../decisions/0077-adopt-ritsei-iconography-system.md`](../decisions/0077-adopt-ritsei-iconography-system.md)
+> - Motion decision: [`../decisions/0078-adopt-ritsei-motion-system.md`](../decisions/0078-adopt-ritsei-motion-system.md)
 > - Solid 2 primitive selection: [`../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md`](../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md)
 > - Cartographic UI decision: [`../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md`](../decisions/0069-adopt-cartographic-enterprise-visual-grammar.md)
 > - Cartographic renderer selection: [`../decisions/0070-select-vgpu-and-defer-typegpu.md`](../decisions/0070-select-vgpu-and-defer-typegpu.md)
@@ -453,6 +454,26 @@ and color; icon-only controls MUST have an accessible name. Cartographic Identit
 and illustration layer, not a reason to stylize every utility icon.
 
 See [ADR-0077](../decisions/0077-adopt-ritsei-iconography-system.md) for the decision record.
+
+### Motion
+
+Motion preserves the user's mental map. PandaCSS owns CSS transitions, keyframes, animation styles,
+durations, easings, component states, and reduced-motion conditions. Motion owns only runtime geometry,
+springs, gestures, reordering, orchestration, and complex SVG behavior. Solid owns state and lifecycle;
+Kobalte owns accessible interaction semantics; business state remains outside the animation layer.
+
+Canonical motion tokens are 0, 80, 120, 180, 240, and 320ms, with 2, 4, 8, and 16px spatial
+distances. Motion MUST be causal, quiet, purposeful, interruptible, and state-driven. CSS is the
+first choice; runtime animation requires a real geometry, gesture, physics, interruption, or
+orchestration need. Reduced-motion users retain state feedback while unnecessary spatial traversal is
+removed. Animation MUST NOT decide whether a command, transaction, authorization decision, or workflow
+step succeeds.
+
+The current runtime wrapper uses `motion@13.2.0` through `apps/web/src/ui/motion/`. Feature code MUST
+not import Motion directly or use `motion/react`; it consumes the RITSEI wrapper. High-frequency
+surfaces and Process Studio require interruption, unmount, reduced-motion, and performance testing.
+
+See [ADR-0078](../decisions/0078-adopt-ritsei-motion-system.md) for the decision record.
 
 ## 11. Grid, geometry, and density
 

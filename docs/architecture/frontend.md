@@ -47,14 +47,15 @@ Vite
     ├── TanStack Solid Form
     ├── Effect application model
     ├── Effect Schema
-    └── RITSEI Design System (Kobalte + constrained Panda CSS)
+    └── RITSEI Design System (Kobalte + constrained Panda CSS + Motion wrapper)
 ```
 
 SolidStart is not the default application foundation.
 
 The RITSEI Design System owns Product Patterns, Interaction Grammar, Visual Grammar, semantic tokens,
 component contracts, density, and frontend styling boundaries. Kobalte is the single headless behavior
-primitive source behind RITSEI-owned components. Panda CSS is the constrained styling substrate. See
+primitive source behind RITSEI-owned components. Panda CSS is the constrained styling substrate, and
+Motion is available only through the RITSEI-owned runtime wrapper for geometry and physics. See
 [`design-system.md`](./design-system.md).
 
 Frontend rendering is HTML-first: DOM owns semantics, interaction, accessibility, tables, forms, and
@@ -322,6 +323,7 @@ PostgreSQL
 | Design system | RITSEI Product Patterns, Interaction Grammar, and Visual Grammar |
 | Accessible UI primitives | Kobalte behind RITSEI-owned components |
 | Styling foundation | Constrained Panda CSS profile |
+| Runtime motion | RITSEI Motion wrapper; CSS first, runtime geometry only when required |
 | Backend | Separate Effect-on-Deno API |
 | Transactional database | PostgreSQL |
 

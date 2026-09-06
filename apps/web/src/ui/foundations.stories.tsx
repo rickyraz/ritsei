@@ -1,5 +1,46 @@
+import { createSignal, onCleanup } from "solid-js"
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
-import { control, Icon, layout, surface, typography } from "./index.ts"
+import {
+  animateSpatial,
+  control,
+  Icon,
+  layout,
+  motionStyles,
+  surface,
+  typography,
+} from "./index.ts"
+
+function MotionDemo() {
+  let node: HTMLDivElement | undefined
+  let animation: ReturnType<typeof animateSpatial> | undefined
+  const [offset, setOffset] = createSignal(0)
+
+  const move = () => {
+    if (!node) return
+    const next = offset() === 0 ? 24 : 0
+    animation?.stop()
+    animation = animateSpatial(node, { x: next })
+    setOffset(next)
+  }
+
+  onCleanup(() => animation?.stop())
+
+  return (
+    <div class={layout.stack}>
+      <div class={layout.row}>
+        <button class={control({ kind: "action" })} type="button" onClick={move}>
+          Move spatially
+        </button>
+        <span aria-live="polite">Offset: {offset()}px</span>
+      </div>
+      <div
+        class={motionStyles.enterSubtle}
+        ref={(element) => node = element}
+        style="width:48px;height:48px;border-radius:8px;background-color:var(--colors-action)"
+      />
+    </div>
+  )
+}
 
 function FoundationsStory() {
   return (
@@ -44,6 +85,16 @@ function FoundationsStory() {
                 <Icon name="object.invoice" variant="duotone" size="display" />
               </span>
             </div>
+          </div>
+        </section>
+
+        <section class={surface()} aria-labelledby="motion-heading">
+          <div class={layout.stack}>
+            <h2 id="motion-heading">Motion</h2>
+            <MotionDemo />
+            <p class={typography.metadata}>
+              Runtime geometry uses the design-system Motion wrapper; state remains in Solid.
+            </p>
           </div>
         </section>
 

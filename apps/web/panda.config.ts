@@ -1,6 +1,36 @@
-import { defineConfig } from "@pandacss/dev"
+import { defineAnimationStyles, defineConfig } from "@pandacss/dev"
+
+const motionAnimationStyles = defineAnimationStyles({
+  "enter-subtle": {
+    value: {
+      animationName: "enter-subtle",
+      animationDuration: "normal",
+      animationTimingFunction: "enter",
+      animationFillMode: "both",
+      _motionReduce: {
+        animationName: "fade-in",
+        animationDuration: "instant",
+        animationTimingFunction: "linear",
+      },
+    },
+  },
+  "exit-subtle": {
+    value: {
+      animationName: "exit-subtle",
+      animationDuration: "fast",
+      animationTimingFunction: "exit",
+      animationFillMode: "both",
+      _motionReduce: {
+        animationName: "fade-out",
+        animationDuration: "instant",
+        animationTimingFunction: "linear",
+      },
+    },
+  },
+})
 
 export default defineConfig({
+  jsxFramework: "solid",
   preflight: true,
   strictTokens: true,
   include: ["./src/ui/**/*.{ts,tsx}"],
@@ -73,6 +103,20 @@ export default defineConfig({
           iconXl: { value: "24px" },
           iconDisplay: { value: "32px" },
         },
+        durations: {
+          none: { value: "0ms" },
+          instant: { value: "80ms" },
+          fast: { value: "120ms" },
+          normal: { value: "180ms" },
+          deliberate: { value: "240ms" },
+          slow: { value: "320ms" },
+        },
+        easings: {
+          standard: { value: "cubic-bezier(0.2, 0, 0, 1)" },
+          enter: { value: "cubic-bezier(0.16, 1, 0.3, 1)" },
+          exit: { value: "cubic-bezier(0.4, 0, 1, 1)" },
+          emphasized: { value: "cubic-bezier(0.16, 1, 0.3, 1)" },
+        },
       },
       semanticTokens: {
         colors: {
@@ -98,7 +142,40 @@ export default defineConfig({
             inverse: { value: { base: "{colors.surface}", _dark: "{colors.ink}" } },
           },
         },
+        durations: {
+          feedback: { value: "{durations.instant}" },
+          enter: { value: "{durations.normal}" },
+          exit: { value: "{durations.instant}" },
+          disclosure: { value: "{durations.normal}" },
+          spatial: { value: "{durations.deliberate}" },
+          emphasis: { value: "{durations.normal}" },
+        },
+        easings: {
+          motionStandard: { value: "{easings.standard}" },
+          motionEnter: { value: "{easings.enter}" },
+          motionExit: { value: "{easings.exit}" },
+          motionEmphasized: { value: "{easings.emphasized}" },
+        },
       },
+      keyframes: {
+        "enter-subtle": {
+          from: { opacity: 0, transform: "translateY(4px)" },
+          to: { opacity: 1, transform: "translateY(0)" },
+        },
+        "exit-subtle": {
+          from: { opacity: 1, transform: "translateY(0)" },
+          to: { opacity: 0, transform: "translateY(2px)" },
+        },
+        "fade-in": {
+          from: { opacity: 0 },
+          to: { opacity: 1 },
+        },
+        "fade-out": {
+          from: { opacity: 1 },
+          to: { opacity: 0 },
+        },
+      },
+      animationStyles: motionAnimationStyles,
       textStyles: {
         body: {
           value: {

@@ -101,5 +101,6 @@ current system; ADRs preserve decision history.
 | [`0075`](./0075-partition-dependency-ownership-by-application-boundary.md) | Partition dependency ownership by application boundary | Accepted |
 | [`0076`](./0076-adopt-ritsei-typography-system.md) | Adopt the RITSEI typography system | Accepted |
 | [`0077`](./0077-adopt-ritsei-iconography-system.md) | Adopt the RITSEI iconography system | Accepted |
+| [`0078`](./0078-adopt-ritsei-motion-system.md) | Adopt the RITSEI motion system | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

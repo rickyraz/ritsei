@@ -27,6 +27,7 @@
     "npm:effect@rc": "4.0.0-rc.111",
     "npm:fallow@3.20.0": "3.20.0",
     "npm:lefthook@2.1.12": "2.1.12",
+    "npm:motion@13.2.0": "13.2.0",
     "npm:playwright@1.62.1": "1.62.1",
     "npm:postgres@3.4.7": "3.4.7",
     "npm:solid-js@2.0.0-rc.6": "2.0.0-rc.6",
@@ -2320,6 +2321,14 @@
         "to-regex-range"
       ]
     },
+    "framer-motion@13.2.0": {
+      "integrity": "sha512-9E33ebgMaO33w1nN/jEdW8z3/GO483fMi4rqbMG9rt83XgW9QLKRe4NcmJ8s+fQ3O34++UHrIQwlIWGIWTITjA==",
+      "dependencies": [
+        "motion-dom",
+        "motion-utils",
+        "tslib"
+      ]
+    },
     "fs-extra@11.3.2": {
       "integrity": "sha512-Xr9F6z6up6Ws+NjzMCZc6WXg2YFRlrLP9NQDO3VQrWrfiojdhS56TzueT88ze0uBdCTwEIhQ3ptnmKeWGFAe0A==",
       "dependencies": [
@@ -2752,6 +2761,22 @@
       "integrity": "sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==",
       "dependencies": [
         "brace-expansion"
+      ]
+    },
+    "motion-dom@13.2.0": {
+      "integrity": "sha512-N6gdSoWRDk0Rh/fVtlqUtLs+fEN3ELFZI3cn3IQE9Mnf3E+Mh8wjO6MstzCOPFh4Yf0L1as5m2eUyYWj8ylVSQ==",
+      "dependencies": [
+        "motion-utils"
+      ]
+    },
+    "motion-utils@13.0.0": {
+      "integrity": "sha512-7DnN7TmbLcYXcG4RVadXIihWlyuM9afoUww8Y5Agg431kGKiuL2/OMyP4mJ5wLz+pvN3t5ySClLOaVXJ+wekRQ=="
+    },
+    "motion@13.2.0": {
+      "integrity": "sha512-4Hrb5vD6HhjFstLUiCmWvtpsw+WTpP4R+QXfSDYZBz7+uxE/LrRg3aV0ReJxHrTRffHhbIE6svEqnotngXvesQ==",
+      "dependencies": [
+        "framer-motion",
+        "tslib"
       ]
     },
     "ms@2.1.3": {
@@ -3581,6 +3606,7 @@
             "npm:@solidjs/router@2.0.0-next.21",
             "npm:@solidjs/web@2.0.0-rc.6",
             "npm:@tanstack/solid-query@6.0.0-rc.2",
+            "npm:motion@13.2.0",
             "npm:solid-js@2.0.0-rc.6",
             "npm:storybook-solidjs-vite@11.0.0-next-20260903183420",
             "npm:storybook@11.0.0-alpha.0"
