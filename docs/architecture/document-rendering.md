@@ -25,6 +25,8 @@
 > - Owner-local business surface:
 >   [`../decisions/0046-adopt-owner-local-business-surface-and-generated-ergonomics.md`](../decisions/0046-adopt-owner-local-business-surface-and-generated-ergonomics.md)
 > - UUIDv7 persistent identities: [`../decisions/0051-adopt-uuidv7-for-persistent-identities.md`](../decisions/0051-adopt-uuidv7-for-persistent-identities.md)
+> - Document platform versus Odoo-style rendering reference:
+>   [`./reference/document-platform-vs-odoo.md`](./reference/document-platform-vs-odoo.md)
 > - Document rendering decision:
 >   [`../decisions/0081-adopt-document-ast-rendering-platform.md`](../decisions/0081-adopt-document-ast-rendering-platform.md)
 
@@ -386,6 +388,60 @@ follow [`durable-execution.md`](./durable-execution.md); a lease token alone is 
 
 A batch must use bounded workers, never unbounded `Promise.all` fan-out.
 
+### 8.1 Render cost and capacity economics
+
+The architecture does not eliminate rendering cost. It avoids paying the most expensive rendering cost
+for documents that do not require browser semantics.
+
+The undesirable capacity model is:
+
+```text
+request count × full-browser rendering cost
+```
+
+The target model is:
+
+```text
+unique versioned render input × selected renderer cost
+```
+
+For an issued document, the normal lifecycle is:
+
+```text
+issue once
+    ↓
+render once
+    ↓
+store immutable artifact once
+    ↓
+serve the artifact many times
+```
+
+A repeated request with the same tenant-scoped render fingerprint should reuse the existing artifact
+or idempotent render job rather than start another render. Render cost is therefore driven primarily
+by unique combinations of snapshot, template/schema, renderer, asset, policy, locale, and output
+format—not by the number of downloads or email deliveries of the same artifact.
+
+This changes the capacity question from “PDF is inherently expensive” to “which bounded renderer
+profile and resources limit this workload?” Native transactional rendering, publishing, and browser
+compatibility can each receive separate worker budgets and admission limits. A slow browser fallback
+must not determine the capacity of the native transactional queue.
+
+Likely limiting resources include:
+
+- native layout and pagination CPU;
+- image decoding, scaling, and compression;
+- font shaping and embedding, especially for CJK and RTL text;
+- very large tables or ASTs;
+- renderer memory and process startup;
+- queue wait and worker concurrency; and
+- artifact storage, network, and egress throughput.
+
+Illustrative distributions such as “most documents use the native path and a small minority use
+browser compatibility” are benchmark hypotheses, not architecture guarantees. Throughput claims
+must be established per renderer family using the corpus and measurements in Section 11. The goal is
+not to hide the remaining cost, but to make it linear, bounded, observable, and replaceable.
+
 ## 9. Security and resource limits
 
 Tenant templates and HTML are hostile inputs. The renderer boundary must deny by default:
@@ -525,3 +581,16 @@ This architecture does not:
 - authorize arbitrary tenant JavaScript or network access;
 - install or activate `pdfnative`, Typst, WeasyPrint, Puppeteer, Chromium, Lightpanda, or Krilla;
 - claim that a renderer is production-ready without the activation gates above.
+
+## 15. Current implementation boundary
+
+The current implementation slice is intentionally renderer-neutral. It may add typed snapshot, AST,
+capability, fingerprint, job-payload, benchmark, and test-artifact contracts, plus one owner-local
+Purchase Order pilot. It must not add a renderer dependency, PDF route, browser worker, template
+persistence model, production artifact-retention promise, or a new Process job type/migration.
+
+Browser compatibility is documentation-only in this phase. Puppeteer, Chromium, Lightpanda, and
+other browser backends remain uninstalled and unactivated until the capability, sandbox, fidelity,
+determinism, dependency, and workload gates are separately proven. The same rule applies to the
+proposed native and publishing backends: the contract is prepared now; backend activation waits for
+evidence.

@@ -58,6 +58,7 @@
 - [`./architecture/reference/analytical-isolation-and-semantic-projection-patterns.md`](./architecture/reference/analytical-isolation-and-semantic-projection-patterns.md)
 - [`./architecture/reference/cartographic-renderer-selection.md`](./architecture/reference/cartographic-renderer-selection.md)
 - [`./architecture/reference/cartographic-archetypes-and-semantic-depth.md`](./architecture/reference/cartographic-archetypes-and-semantic-depth.md)
+- [`./architecture/reference/document-platform-vs-odoo.md`](./architecture/reference/document-platform-vs-odoo.md)
 - [`./architecture/reference/roadmap-track-considerations.md`](./architecture/reference/roadmap-track-considerations.md)
 
 ## Proposals

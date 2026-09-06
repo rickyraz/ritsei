@@ -16,6 +16,7 @@
     "db:generate": "deno run -A npm:drizzle-kit@1.0.0-rc.4 generate --config=drizzle.config.ts",
     "db:migrate": "deno run -A npm:drizzle-kit@1.0.0-rc.4 migrate --config=drizzle.config.ts",
     "db:check": "deno run -A npm:drizzle-kit@1.0.0-rc.4 check --config=drizzle.config.ts",
+    "document:benchmark": "deno run tooling/document-rendering/benchmark.ts",
     "test": "deno task --cwd apps/web contracts && vitest run",
     "test:related": "vitest related --run",
     "check:affected": "deno run --allow-read --allow-run tooling/affected-check.ts",

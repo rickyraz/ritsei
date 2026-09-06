@@ -37,6 +37,21 @@ export type {
   SupplierAccount as SupplierAccountType,
 } from "./src/contract.ts"
 export {
+  makePurchaseOrderDocumentAst,
+  makePurchaseOrderDocumentContext,
+  makePurchaseOrderDocumentSnapshot,
+  PurchaseOrderDocumentPayload,
+  PurchaseOrderDocumentSnapshot,
+  PurchaseOrderDocumentSnapshotInput,
+} from "./src/document.ts"
+export type {
+  PurchaseOrderDocumentAst,
+  PurchaseOrderDocumentContext,
+  PurchaseOrderDocumentPayload as PurchaseOrderDocumentPayloadType,
+  PurchaseOrderDocumentSnapshot as PurchaseOrderDocumentSnapshotType,
+  PurchaseOrderDocumentSnapshotInput as PurchaseOrderDocumentSnapshotInputType,
+} from "./src/document.ts"
+export {
   PurchaseOrderConfirmationIdempotencyConflict,
   PurchaseOrderHasReceipts,
   PurchaseOrderInvalidState,

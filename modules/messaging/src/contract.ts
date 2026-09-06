@@ -2,6 +2,8 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 
+import { InstantString } from "../../../foundation/mod.ts"
+
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
 const Uuid = Schema.String.check(Schema.isUUID())
 const PositiveInt = Schema.Int.check(
@@ -12,14 +14,6 @@ const NonNegativeInt = Schema.Int.check(
   Schema.isGreaterThanOrEqualTo(0),
   Schema.isLessThanOrEqualTo(2_147_483_647),
 )
-const IsoTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/
-const InstantString = Schema.String.check(
-  Schema.isPattern(IsoTimestamp),
-  Schema.makeFilter((value) => !Number.isNaN(new Date(value).getTime()), {
-    expected: "an ISO 8601 timestamp with a timezone",
-  }),
-)
-
 export const AppendEventInput = Schema.Struct({
   eventId: Uuid,
   eventType: NonEmptyString,
