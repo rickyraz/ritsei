@@ -1,13 +1,12 @@
 import { build } from "vite"
-import solid from "@solidjs/vite-plugin"
 
 // A real bundler probe: package metadata alone does not prove Solid 2 compatibility.
 const probeSolidPackage = async (entry: string) => {
   try {
     await build({
-      configFile: false,
+      configFile: "apps/web/vite.config.ts",
+      root: ".",
       logLevel: "silent",
-      plugins: [solid()],
       build: {
         write: false,
         lib: { entry, formats: ["es"] },

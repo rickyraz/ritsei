@@ -20,7 +20,6 @@
     "tigerbeetle-node": "0.17.9"
   },
   "devDependencies": {
-    "@solidjs/vite-plugin": "3.0.0-next.38",
     "@axe-core/playwright": "4.13.0",
     "playwright": "1.62.1",
     "typescript": "6.0.3",

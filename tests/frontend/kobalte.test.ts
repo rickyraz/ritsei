@@ -3,7 +3,6 @@ import * as Effect from "effect/Effect"
 import { AxeBuilder } from "@axe-core/playwright"
 import { chromium } from "playwright"
 import { build, preview } from "vite"
-import solid from "@solidjs/vite-plugin"
 
 const fixture = Effect.acquireRelease(
   Effect.promise(async () => {
@@ -22,9 +21,8 @@ render(() => <KobalteDialogProbe />, document.getElementById("root")!)
 `,
     )
     await build({
-      configFile: false,
+      configFile: "apps/web/vite.config.ts",
       root,
-      plugins: [solid()],
       build: { outDir, emptyOutDir: true },
     })
     return { root, outDir }
