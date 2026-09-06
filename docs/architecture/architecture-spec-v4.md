@@ -25,6 +25,7 @@
 >   [`../decisions/0059-define-replaceable-relationship-authorization-engine.md`](../decisions/0059-define-replaceable-relationship-authorization-engine.md)
 > - Messaging: [`./pgque-messaging.md`](./pgque-messaging.md)
 > - Durable execution: [`./durable-execution.md`](./durable-execution.md)
+> - Document rendering: [`./document-rendering.md`](./document-rendering.md)
 > - Process Studio: [`./process-studio.md`](./process-studio.md)
 > - External integration surface: [`./integration-architecture.md`](./integration-architecture.md)
 > - Integration profile ADR:

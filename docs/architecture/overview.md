@@ -19,7 +19,8 @@
 > - HTTP API boundary: [`./api.md`](./api.md)
 > - Authorization: [`./authorization.md`](./authorization.md)
 > - Design system architecture: [`./design-system.md`](./design-system.md)
-- Skeleton architecture: [`./skeleton.md`](./skeleton.md)
+> - Skeleton architecture: [`./skeleton.md`](./skeleton.md)
+> - Document rendering architecture: [`./document-rendering.md`](./document-rendering.md)
 > - Process Studio architecture: [`./process-studio.md`](./process-studio.md)
 > - External integration surface: [`./integration-architecture.md`](./integration-architecture.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
@@ -140,6 +141,12 @@ Provider outage, stale revocation, missing tenant context, or unknown relationsh
 - Job table: single-consumer work with lease and lifecycle.
 - `pg_durable`: checkpointed multi-step workflow after compatibility approval.
 - Analytic stores, search indexes, and caches: rebuildable projections.
+
+Document rendering is a proposed output platform rather than a business authority. Owner-local
+snapshots feed a versioned Document AST; renderer families remain replaceable and browser rendering
+is an explicit compatibility path. See [`./document-rendering.md`](./document-rendering.md) and
+[ADR-0081](../decisions/0081-adopt-document-ast-rendering-platform.md). The proposal is not active
+until its contract, security, determinism, workload, and dependency gates pass.
 
 ## Non-Interference
 

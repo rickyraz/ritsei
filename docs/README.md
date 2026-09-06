@@ -20,6 +20,7 @@
 - [`./architecture/runtime-architecture.md`](./architecture/runtime-architecture.md)
 - [`./architecture/state-and-consistency.md`](./architecture/state-and-consistency.md)
 - [`./architecture/financial-ledger.md`](./architecture/financial-ledger.md)
+- [`./architecture/document-rendering.md`](./architecture/document-rendering.md)
 - [`./architecture/frontend.md`](./architecture/frontend.md)
 - [`./architecture/skeleton.md`](./architecture/skeleton.md)
 - [`./architecture/design-system.md`](./architecture/design-system.md)

@@ -22,6 +22,7 @@ ADR-0077 is the current semantic iconography and provider-adapter boundary.
 ADR-0078 is the current motion ownership and runtime-wrapper boundary.
 ADR-0079 is the current dnd-kit/Solid 2 activation gate and blocked-state boundary.
 ADR-0080 is the current Solid-native Boneyard skeleton boundary.
+ADR-0081 is the proposed renderer-independent Document AST and document-rendering platform boundary.
 
 ## Current decision lineage
 
@@ -29,6 +30,11 @@ ADR-0080 is the current Solid-native Boneyard skeleton boundary.
 ADR-0015  One semantic owner per invariant
     |
     +--> ADR-0036  Owner-local documents and bounded financial baseline
+              |
+              +--> ADR-0081  Proposed Document AST rendering platform
+              |           +--> owner-local snapshots remain business authority
+              |           +--> renderer families stay behind capability adapters
+              |           +--> browser rendering remains an explicit compatibility path
               |
               +--> ADR-0044  Procurement Purchase Order baseline
               |
@@ -181,6 +187,13 @@ by ADR-0040.
 | [ADR-0078](./0078-adopt-ritsei-motion-system.md) | Current motion direction | PandaCSS owns CSS motion; Motion owns runtime geometry through a RITSEI wrapper; Solid owns state and Kobalte owns accessibility |
 | [ADR-0079](./0079-gate-dnd-kit-solid2-activation.md) | Current drag/drop direction | dnd-kit Solid is the target provider, but activation is blocked by the Solid 2 `solid-js/web` export incompatibility; no shim or legacy React package |
 | [ADR-0080](./0080-adopt-solid-native-boneyard-skeleton-boundary.md) | Current skeleton direction | Solid owns skeleton state and lifecycle; Boneyard supplies immutable geometry artifacts behind a RITSEI-owned adapter |
+| [ADR-0081](./0081-adopt-document-ast-rendering-platform.md) | Proposed document-rendering direction | Owner-local snapshots feed a renderer-independent Document AST; native transactional rendering is the default candidate, while HTML/browser paths remain capability-gated |
+
+## Proposed direction
+
+ADR-0081 is intentionally not included in the active canonical rules below. Until its validation gates
+pass, it is a proposed platform boundary: no renderer dependency, generic document authority, or
+production rendering route is activated.
 
 ## Current canonical rules
 
