@@ -244,5 +244,5 @@ is activated, the implementation must demonstrate:
 9. Separate workload budgets from HTTP, document rendering, Process Runtime, and campaign work.
 10. Security, licensing, provider failover, operational ownership, and cost review before production.
 
-Until those gates pass, the repository keeps the contract-only implementation and does not promise
-production email delivery.
+Until those gates pass, the repository keeps the contract plus memory-only vertical slice and does
+not promise production email delivery.

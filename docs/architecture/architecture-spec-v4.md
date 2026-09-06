@@ -78,6 +78,8 @@
 >   [`../decisions/0038-move-internal-event-delivery-to-messaging.md`](../decisions/0038-move-internal-event-delivery-to-messaging.md)
 > - Non-interference overload isolation:
 >   [`../decisions/0034-adopt-non-interference-overload-isolation.md`](../decisions/0034-adopt-non-interference-overload-isolation.md)
+> - Source-of-truth and derived-capability non-interference:
+>   [`../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md`](../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md)
 > - Rebuildable Analytic Plane:
 >   [`../decisions/0043-adopt-rebuildable-analytic-plane.md`](../decisions/0043-adopt-rebuildable-analytic-plane.md)
 > - Governed AI recommendation and agent boundary:
@@ -106,6 +108,7 @@ principles.
 | Migrations         | Pinned Drizzle Kit graph with reviewed SQL                            |
 | Stateful ownership | Optional vendor-neutral Stateful Entity Runtime                       |
 | Overload isolation | Workload planes, bounded admission, and reserved command capacity      |
+| Source/derived isolation | Class A source-of-truth paths do not depend on Class B/C derived capabilities |
 | Analytic plane     | Domain-owned facts, versioned metrics, and rebuildable projections     |
 | Native compute     | Optional Zig through `Deno.dlopen`                                    |
 | Frontend           | Vite-based SolidJS 2.0 SPA with a separate backend                    |
@@ -246,6 +249,13 @@ Every business invariant has one owning domain capability. The owner defines its
 command path, validation, mutation rules, public contract, domain errors, and persistence
 constraints. Other domains may consume the contract and maintain derived projections, but must not
 become competing mutation authorities or independently redefine the invariant.
+
+Class A source-of-truth reads and writes must not synchronously depend on unrelated Class B operational
+or Class C projection capabilities. Owner commits publish facts through the transactional outbox;
+derived consumers own their retry, failure, resource, persistence, and rebuild lifecycle. A synchronous
+cross-capability dependency is allowed only when an explicit business invariant documents it and names
+its semantic owner. Detailed workload and resource proof remains in
+[`workload-isolation.md`](./workload-isolation.md) and ADR-0083.
 
 Extension mechanisms, plugins, workflow runtimes, and nondeterministic agents are fallible. ERP
 invariants remain enforced by the owning domain, authorization boundary, transactional command path,

@@ -115,6 +115,12 @@ ADR-0006  Scoped capability authorization
 
 ADR-0034  Non-interference overload isolation
     |
+    +--> ADR-0083 source-of-truth and derived-capability non-interference
+              +--> Class A source-of-truth paths do not depend on unrelated Class B/C capabilities
+              +--> committed facts and outbox records precede derived work
+              +--> derived failures, retries, resources, and rebuilds remain local
+              +--> ADR-0034 remains the detailed workload/resource proof owner
+    |
     +--> ADR-0067 logical database and physical data placement
               +--> semantic ownership remains independent of placement
               +--> logical database endpoints hide private topology
@@ -198,6 +204,7 @@ by ADR-0040.
 | [ADR-0080](./0080-adopt-solid-native-boneyard-skeleton-boundary.md) | Current skeleton direction | Solid owns skeleton state and lifecycle; Boneyard supplies immutable geometry artifacts behind a RITSEI-owned adapter |
 | [ADR-0081](./0081-adopt-document-ast-rendering-platform.md) | Proposed document-rendering direction | Owner-local snapshots feed a renderer-independent Document AST; native transactional rendering is the default candidate, while HTML/browser paths remain capability-gated |
 | [ADR-0082](./0082-adopt-communication-platform-boundaries.md) | Current communication boundary | Domains publish facts or communication intents; recipient/context/template resolution, immutable artifacts, delivery attempts, and provider adapters remain separate, while Activity Timeline is a rebuildable projection |
+| [ADR-0083](./0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md) | Current cross-cutting non-interference boundary | Source-of-truth critical paths remain independent of derived capabilities; ADR-0034 owns detailed workload/resource proof |
 
 ## Proposed direction
 
@@ -227,6 +234,7 @@ The current architecture is summarized here for navigation; the canonical rule r
 - The logical database contract hides PostgreSQL placement; physical data topology remains infrastructure, not domain semantics.
 - Foundation contains generic contracts, modules contain business capabilities, platform contains concrete adapters, and runtime contains composition roots.
 - Communication is intent-driven and provider-independent; email is a channel, delivery attempts are not business facts, and Activity Timeline is a rebuildable projection over separate owners.
+- Class A source-of-truth reads and writes do not synchronously depend on unrelated Class B operational or Class C UX/analytical capabilities; committed facts and outbox records precede derived work.
 - Solid owns the default frontend reactive graph and ownership tree; Effect `R` is carried by scoped Solid Context runtimes, while Atom is an explicit shared/portable opt-in.
 - Cartographic is a grammar for structure, relationship, pressure, movement, boundary, and state—not a requirement for topographic maps on every page.
 - The seven visual archetypes are Stock, Flow, Capacity, Value, Relationship, Progress, and Asset / Space; industries compose them rather than receiving separate visual themes.

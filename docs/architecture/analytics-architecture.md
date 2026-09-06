@@ -10,6 +10,8 @@
 >
 > - Canonical architecture: [`./architecture-spec-v4.md`](./architecture-spec-v4.md)
 > - Workload isolation: [`./workload-isolation.md`](./workload-isolation.md)
+> - Source-of-truth and derived-capability non-interference:
+>   [`../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md`](../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md)
 > - State and consistency: [`./state-and-consistency.md`](./state-and-consistency.md)
 > - Authorization: [`./authorization.md`](./authorization.md)
 > - Process Studio: [`./process-studio.md`](./process-studio.md)

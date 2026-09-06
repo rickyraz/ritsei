@@ -21,7 +21,7 @@
 > - Design system architecture: [`./design-system.md`](./design-system.md)
 > - Skeleton architecture: [`./skeleton.md`](./skeleton.md)
 > - Document rendering architecture: [`./document-rendering.md`](./document-rendering.md)
-- Communication platform architecture: [`./communication.md`](./communication.md)
+> - Communication platform architecture: [`./communication.md`](./communication.md)
 > - Process Studio architecture: [`./process-studio.md`](./process-studio.md)
 > - External integration surface: [`./integration-architecture.md`](./integration-architecture.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
@@ -160,6 +160,12 @@ document, and communication records, not a universal `chatter_messages` authorit
 
 ## Non-Interference
 
+Class A source-of-truth reads and writes use only their owner-local critical dependencies. Class B
+operational capabilities and Class C projections consume committed facts asynchronously and may lag,
+retry, degrade, or be unavailable without making the source fact unreadable or uncommitted. Core
+screens and APIs compose timeline, documents, communications, workflow, search, and analytics through
+independent failure boundaries.
+
 Commands, projection queries, and asynchronous work have separate workload metadata and bounded
 admission. A deployment claiming hard query-to-command isolation reserves command ingress,
 executors, and connection capacity that projection-query and async lifecycle work cannot acquire.
@@ -170,7 +176,9 @@ reserved command resources.
 
 WorkloadCells and optional tenant-aware shuffle sharding narrow deployment blast radius without
 changing domain ownership, public identity, authorization, or PostgreSQL truth. See
-[`./workload-isolation.md`](./workload-isolation.md).
+[`./workload-isolation.md`](./workload-isolation.md),
+[ADR-0034](../decisions/0034-adopt-non-interference-overload-isolation.md), and
+[ADR-0083](../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md).
 
 ## Analytics
 

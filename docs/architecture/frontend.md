@@ -29,6 +29,8 @@
 > - Authorization architecture: [`./authorization.md`](./authorization.md)
 > - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)
 > - HTTP API boundary: [`./api.md`](./api.md)
+> - Source-of-truth and derived-capability non-interference:
+>   [`../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md`](../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md)
 > - Process Studio architecture: [`./process-studio.md`](./process-studio.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)

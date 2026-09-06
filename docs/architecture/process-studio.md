@@ -16,6 +16,8 @@
 > - Durable execution: [`./durable-execution.md`](./durable-execution.md)
 > - Financial ledger: [`./financial-ledger.md`](./financial-ledger.md)
 > - Messaging and event delivery: [`./pgque-messaging.md`](./pgque-messaging.md)
+> - Source-of-truth and derived-capability non-interference:
+>   [`../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md`](../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md)
 > - External integration surface: [`./integration-architecture.md`](./integration-architecture.md)
 > - Authorization: [`./authorization.md`](./authorization.md)
 > - Identity and principals: [`./identity-and-principals.md`](./identity-and-principals.md)

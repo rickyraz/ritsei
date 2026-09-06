@@ -2,9 +2,10 @@
 
 > **Status:** Canonical
 >
-> **Owns:** Workload-plane classification, overload non-interference, WorkloadCell routing,
-> shuffle-shard containment, resource admission, hard and adaptive ceilings, projection-query
-> isolation, and proof requirements for isolation claims.
+> **Owns:** Source-of-truth and derived-capability non-interference implementation rules,
+> workload-plane classification, overload non-interference, WorkloadCell routing, shuffle-shard
+> containment, resource admission, hard and adaptive ceilings, projection-query isolation, and proof
+> requirements for isolation claims.
 >
 > **Related documents**
 >
@@ -25,8 +26,10 @@
 > - Database roles: [`../operations/database-roles.md`](../operations/database-roles.md)
 > - Testing strategy: [`../development/testing.md`](../development/testing.md)
 > - Deployment notes: [`../deployment/README.md`](../deployment/README.md)
-> - Non-interference ADR:
+> - Non-interference overload ADR:
 >   [`../decisions/0034-adopt-non-interference-overload-isolation.md`](../decisions/0034-adopt-non-interference-overload-isolation.md)
+> - Source-of-truth and derived-capability non-interference ADR:
+>   [`../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md`](../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md)
 > - Comparative reference:
 >   [`./reference/hard-isolation-patterns.md`](./reference/hard-isolation-patterns.md)
 
@@ -49,6 +52,23 @@ R(S) intersection R_reserved(P) = empty
 This guarantee is scoped. It applies only to named workloads, named resources, and a deployment that
 proves the separation. It is not a universal claim that RITSEI cannot experience an outage.
 
+The same non-interference rule applies above the resource layer. A source-of-truth capability must
+not synchronously depend on an unrelated derived capability for its critical read or write path:
+
+```text
+Class A source of truth
+        ↓ committed fact / outbox
+Class B operational capability
+        ↓ rebuildable projection
+Class C UX or analytical projection
+```
+
+Communication, document rendering, workflow projections, integrations, search, analytics, reporting,
+and Activity Timeline may lag, retry, degrade, or be unavailable without making an owner-local
+business fact unreadable or uncommitted. Their workers, stores, queues, credentials, and failure
+lifecycles remain separate. A synchronous cross-capability dependency is valid only when an explicit
+business invariant documents it and names its semantic owner.
+
 The architecture preserves the existing authority model:
 
 ```text
@@ -68,6 +88,66 @@ Projection store
 PgQue / jobs / workflow
 -> committed delivery and durable asynchronous progress
 ```
+
+## Source-of-Truth and Derived-Capability Boundary
+
+### Critical read and write paths
+
+A canonical entity read depends only on authentication/authorization, the owner application service,
+and the owner store unless an explicit business invariant says otherwise:
+
+```text
+GET /purchase-orders/:id
+  → auth
+  → Procurement service
+  → Procurement store
+  → Purchase Order
+```
+
+It must not synchronously hydrate email status, timeline entries, document readiness, workflow
+projections, search metadata, analytics, or external-provider state. A canonical write commits the
+owner-local invariant and its outbox fact before derived consumers run:
+
+```text
+BEGIN
+  owner command
+  update source-of-truth state
+  append event/outbox record
+COMMIT
+
+outbox → Messaging → derived consumers
+```
+
+The source transaction does not wait for rendering, delivery, indexing, projection refresh, or
+external integration completion.
+
+### Capability classes
+
+| Class | Meaning | Examples | May lag or fail independently? |
+| --- | --- | --- | --- |
+| A | Source-of-truth critical | Sales, Procurement, Accounting, Inventory, Authorization | No; its own reviewed SLO applies |
+| B | Derived operational | Communication, Documents, Integrations, Workflow status | Yes |
+| C | UX/analytical projection | Timeline, Search, Analytics, Reporting | Yes; rebuildable where declared |
+
+Class B and C capabilities may be composed into a page or BFF response only through independent
+failure boundaries. A core entity section is required; secondary sections are optional/degradable.
+Frontend query keys, cache invalidation, endpoint composition, and freshness metadata must preserve
+that distinction.
+
+### Storage and semantic ownership
+
+Shared PostgreSQL placement does not make schemas semantically shared. Owner-local tables, projection
+tables, document metadata, communication records, workflow records, and timeline records retain their
+own contracts and authorization. Core entity reads must not add arbitrary cross-domain joins merely to
+hydrate secondary information.
+
+### Failure and resource isolation
+
+A failed secondary capability produces a local state such as `RETRYING`, `FAILED`, `STALE`, or
+`UNAVAILABLE`. It does not rewrite the Class A state to an operationally uncertain value. Derived
+work must also have bounded CPU, memory, connection, worker, queue, network, and storage budgets;
+queueing alone is not proof of non-interference. Resource-level claims remain subject to the named
+source/protected workload, reserved resources, shared dependencies, and excluded failure modes below.
 
 ## Vocabulary
 

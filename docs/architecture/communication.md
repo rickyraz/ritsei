@@ -1,6 +1,6 @@
 # RITSEI Communication Platform Architecture
 
-> **Status:** Canonical target architecture; contract-only implementation
+> **Status:** Canonical target architecture; memory-only vertical slice
 >
 > **Owns:** Communication intent, recipient/context/template boundaries, channel message contracts,
 > immutable communication artifacts, delivery-attempt semantics, and timeline projection rules.
@@ -15,6 +15,7 @@
 > - Durable execution: [`./durable-execution.md`](./durable-execution.md)
 > - Document artifacts: [`./document-rendering.md`](./document-rendering.md)
 > - External integrations: [`./integration-architecture.md`](./integration-architecture.md)
+> - Workload isolation and non-interference: [`./workload-isolation.md`](./workload-isolation.md)
 > - Process Runtime: [`./process-studio.md`](./process-studio.md)
 > - P3 audit and delivery boundary:
 >   [`../decisions/0037-define-p3-audit-event-and-delivery-boundary.md`](../decisions/0037-define-p3-audit-event-and-delivery-boundary.md)
@@ -474,7 +475,10 @@ email.
 
 Communication rendering and delivery are bounded asynchronous work. They use queue backpressure,
 per-provider rate limits, bounded concurrency, priority lanes, retry budgets, and worker isolation
-from HTTP, document rendering, and Process Runtime resources.
+from HTTP, document rendering, and Process Runtime resources. Communication is never a mandatory
+synchronous dependency of source-of-truth reads or writes; provider, queue, renderer, and artifact
+failures remain local to the communication capability. See [`./workload-isolation.md`](./workload-isolation.md)
+and [ADR-0083](../decisions/0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md).
 
 Useful metrics include:
 
