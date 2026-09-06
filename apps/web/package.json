@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@dnd-kit/solid": "0.5.0",
     "@fontsource/ibm-plex-mono": "5.3.0",
     "@fontsource/pretendard": "5.3.0",
     "@phosphor-icons/web": "2.1.2",

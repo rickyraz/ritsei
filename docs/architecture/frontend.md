@@ -324,6 +324,7 @@ PostgreSQL
 | Accessible UI primitives | Kobalte behind RITSEI-owned components |
 | Styling foundation | Constrained Panda CSS profile |
 | Runtime motion | RITSEI Motion wrapper; CSS first, runtime geometry only when required |
+| Direct manipulation | `@dnd-kit/solid` target; activation blocked by the Solid 2 compatibility gate |
 | Backend | Separate Effect-on-Deno API |
 | Transactional database | PostgreSQL |
 

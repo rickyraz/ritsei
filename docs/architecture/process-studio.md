@@ -217,6 +217,21 @@ RITSEI process and visual grammar.
 The detailed ownership and lifecycle rules remain in this document; the shared visual vocabulary and
 representation rules are owned by [`design-system.md`](./design-system.md).
 
+## Direct-manipulation boundary
+
+Process Studio's intended direct-manipulation engine is the modern `@dnd-kit/solid` adapter. The
+provider is scoped to the designer surface rather than the whole ERP. dnd-kit may produce ephemeral
+source, target, collision, ordering, and transform state; it must not persist coordinates or decide
+whether a process mutation is authorized.
+
+The current repository targets Solid 2 release candidates, while `@dnd-kit/solid@0.5.0` currently
+fails the real Vite compatibility probe because its published bundle imports the removed `solid-js/web`
+package path. Activation is therefore blocked by ADR-0079. Do not add a legacy React package, a
+Solid 1 compatibility shim, or a Vite alias to manufacture compatibility. Once the gate passes, the
+browser interaction must translate `DragEnd` into a typed Process Studio intent, validate it against
+the current definition/version and authorization boundary, and only then persist canonical layout or
+ordering state. A drop is never itself a business fact.
+
 ## Separation of Concerns
 
 ### Design Time

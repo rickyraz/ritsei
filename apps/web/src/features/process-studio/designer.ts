@@ -81,6 +81,7 @@ type Handlers = {
   readonly template: (id: string) => void
 }
 
+// Exploratory prototype only. Production drag/drop is gated by ADR-0079.
 const enableDrag = (item: HTMLLIElement, node: DesignerNode, handlers: Handlers): void => {
   if (node.kind === "Start" || node.kind === "End") return
   item.draggable = true

@@ -475,6 +475,28 @@ surfaces and Process Studio require interruption, unmount, reduced-motion, and p
 
 See [ADR-0078](../decisions/0078-adopt-ritsei-motion-system.md) for the decision record.
 
+### Drag and drop
+
+The target direct-manipulation engine is the modern `@dnd-kit/solid@0.5.0` adapter. It owns sensors,
+collision, sortable preview, constraints, overlays, auto-scroll, and drag accessibility; PandaCSS owns
+drag-state appearance, Solid owns ephemeral interaction state, Motion owns only optional post-drop
+continuity, and the domain owns the meaning and persistence of a drop.
+
+Activation is currently **not_activated**. The published Solid adapter imports `solid-js/web`, which is
+not exported by the repository's Solid 2 package layout. The compatibility probe records this as a
+blocked build. RITSEI MUST NOT hide the failure with a Vite alias, Solid 1 compatibility shim, the
+legacy React package family, or an application-wide drag context. No production feature may import the
+adapter until a real Solid 2 build, pointer/keyboard interaction, accessibility, and reduced-motion
+gate passes.
+
+When activated, the provider boundary MUST be local to a meaningful interaction surface, drag handles
+SHOULD be explicit for dense Process Studio nodes, and one transform owner applies at a time: dnd-kit
+during active manipulation, Motion during custom post-drop settle, and the Process Studio viewport for
+camera movement. A visual drop is intent, not business truth; final movement must become a validated
+process command before persistence.
+
+See [ADR-0079](../decisions/0079-gate-dnd-kit-solid2-activation.md) for the decision record.
+
 ## 11. Grid, geometry, and density
 
 Precision Geometry is the stabilizer for expressive material:

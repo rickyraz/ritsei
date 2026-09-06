@@ -20,6 +20,7 @@ active boundaries. ADR-0075 is the current dependency-ownership boundary for wor
 ADR-0076 is the current typography direction and semantic text-style boundary.
 ADR-0077 is the current semantic iconography and provider-adapter boundary.
 ADR-0078 is the current motion ownership and runtime-wrapper boundary.
+ADR-0079 is the current dnd-kit/Solid 2 activation gate and blocked-state boundary.
 
 ## Current decision lineage
 
@@ -55,6 +56,8 @@ ADR-0010  Vite-based SolidJS SPA
               +--> ADR-0077 adopts semantic icon names, Phosphor now, and a replaceable Nucleo adapter
               |
               +--> ADR-0078 adopts PandaCSS-first motion with Motion for runtime spatial behavior
+              |
+              +--> ADR-0079 gates dnd-kit activation on a real Solid 2 build and browser proof
               |
               +--> ADR-0057 layered TanStack frontend engine boundaries
                         +--> Query is selective server-state cache policy
@@ -135,7 +138,8 @@ and deno.lock-based resolution; it deliberately defers a root catalog until mult
 share a version invariant. ADR-0076 amends the typography direction in ADR-0056 without changing
 its Panda styling boundary. ADR-0077 amends the iconography direction in ADR-0056 while preserving
 its provider-neutral design-system boundary. ADR-0078 amends the motion direction in ADR-0056 while
-preserving Solid state ownership and Kobalte accessibility ownership. Fallow and ast-grep remain the generic enforcement owners while only
+preserving Solid state ownership and Kobalte accessibility ownership. ADR-0079 records the dnd-kit
+provider target but blocks activation until its Solid 2 compatibility evidence passes. Fallow and ast-grep remain the generic enforcement owners while only
 path-sensitive RITSEI checks remain custom. Both providers remain optional adapters; the RITSEI
 contracts and authority remain active. The rest of those decisions remains active. None of these
 amendments rewrite historical decisions, and ADR-0047 does not change the financial authority recorded
@@ -170,6 +174,7 @@ by ADR-0040.
 | [ADR-0076](./0076-adopt-ritsei-typography-system.md) | Current typography direction | Pretendard is the product UI workhorse; IBM Plex Mono is semantic technical typography; Söhne is future brand/display only |
 | [ADR-0077](./0077-adopt-ritsei-iconography-system.md) | Current iconography direction | Semantic icon API and registry; Phosphor is current, Nucleo UI is future, and cartographic identity remains the brand layer |
 | [ADR-0078](./0078-adopt-ritsei-motion-system.md) | Current motion direction | PandaCSS owns CSS motion; Motion owns runtime geometry through a RITSEI wrapper; Solid owns state and Kobalte owns accessibility |
+| [ADR-0079](./0079-gate-dnd-kit-solid2-activation.md) | Current drag/drop direction | dnd-kit Solid is the target provider, but activation is blocked by the Solid 2 `solid-js/web` export incompatibility; no shim or legacy React package |
 
 ## Current canonical rules
 
@@ -198,6 +203,7 @@ The current architecture is summarized here for navigation; the canonical rule r
 - Typography uses a small 12–32px scale, 400/500/600 weights, tabular numerals, and semantic text styles rather than arbitrary component values.
 - Iconography uses semantic names, Regular/Fill/Duotone variants, controlled 14–32px sizes, and a replaceable provider adapter.
 - Motion is PandaCSS-first, runtime-only for geometry or physics, reduced-motion aware, and never a source of business truth.
+- dnd-kit is the target direct-manipulation provider, but remains not activated until a Solid 2-compatible build and browser gate pass.
 
 ## Historical integrity
 

@@ -2,7 +2,7 @@ import { build } from "vite"
 import solid from "@solidjs/vite-plugin"
 
 // A real bundler probe: package metadata alone does not prove Solid 2 compatibility.
-export const probeKobalteCompatibility = async () => {
+const probeSolidPackage = async (entry: string) => {
   try {
     await build({
       configFile: false,
@@ -10,7 +10,7 @@ export const probeKobalteCompatibility = async () => {
       plugins: [solid()],
       build: {
         write: false,
-        lib: { entry: "apps/web/src/ui/compatibility/kobalte.tsx", formats: ["es"] },
+        lib: { entry, formats: ["es"] },
       },
     })
     return { build: "passed" as const, behavior: "unreviewed" as const }
@@ -18,6 +18,12 @@ export const probeKobalteCompatibility = async () => {
     return { build: "blocked" as const, diagnostic: String(cause) }
   }
 }
+
+export const probeKobalteCompatibility = () =>
+  probeSolidPackage("apps/web/src/ui/compatibility/kobalte.tsx")
+
+export const probeDndCompatibility = () =>
+  probeSolidPackage("apps/web/src/ui/compatibility/dnd.tsx")
 
 if (import.meta.main) {
   const result = await probeKobalteCompatibility()
