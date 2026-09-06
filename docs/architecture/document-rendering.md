@@ -584,13 +584,15 @@ This architecture does not:
 
 ## 15. Current implementation boundary
 
-The current implementation slice is intentionally renderer-neutral. It may add typed snapshot, AST,
-capability, fingerprint, job-payload, benchmark, and test-artifact contracts, plus one owner-local
-Purchase Order pilot. It must not add a renderer dependency, PDF route, browser worker, template
-persistence model, production artifact-retention promise, or a new Process job type/migration.
+The current implementation slice is intentionally production-gated. It may add typed snapshot, AST,
+capability, fingerprint, job-payload, benchmark, conformance, and test-artifact contracts, plus one
+owner-local Purchase Order pilot and an evaluation-only adapter for the selected native candidate. It
+must not add a production PDF route, browser worker, template persistence model, production
+artifact-retention promise, or a new Process job type/migration.
 
-Browser compatibility is documentation-only in this phase. Puppeteer, Chromium, Lightpanda, and
-other browser backends remain uninstalled and unactivated until the capability, sandbox, fidelity,
-determinism, dependency, and workload gates are separately proven. The same rule applies to the
-proposed native and publishing backends: the contract is prepared now; backend activation waits for
-evidence.
+`pdfnative` and its RITSEI adapter are evaluation dependencies only until the activation gates pass.
+The adapter is used for conformance and benchmark evidence; it does not activate a production
+renderer profile. Browser compatibility remains documentation-only in this phase. Puppeteer,
+Chromium, Lightpanda, and other browser backends remain uninstalled and unactivated until the
+capability, sandbox, fidelity, determinism, dependency, and workload gates are separately proven.
+Publishing backends remain unactivated as well.

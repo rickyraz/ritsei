@@ -73,6 +73,7 @@ export const DocumentContext = Schema.Struct({
   snapshotId: Uuid,
   tenantId: Uuid,
   source: DocumentSourceRef,
+  capturedAt: InstantString,
   schemaVersion: PositiveInteger,
   data: Schema.Json,
   snapshotChecksum: Sha256,
@@ -261,9 +262,11 @@ export interface DocumentRenderer {
     input: DocumentRenderInput,
   ) => Effect.Effect<
     DocumentRenderedOutput,
+    | DocumentAssetUnavailable
     | DocumentHashFailure
     | DocumentRenderLimitExceeded
     | DocumentRenderPolicyViolation
+    | DocumentRendererFailure
     | Schema.SchemaError
     | UnsupportedDocumentCapability
   >
@@ -272,6 +275,24 @@ export interface DocumentRenderer {
 export class DocumentHashFailure extends Schema.TaggedError<DocumentHashFailure>()(
   "DocumentHashFailure",
   { cause: Schema.Unknown },
+) {}
+
+export class DocumentAssetUnavailable extends Schema.TaggedError<DocumentAssetUnavailable>()(
+  "DocumentAssetUnavailable",
+  {
+    assetId: NonEmptyString,
+    reason: NonEmptyString,
+  },
+) {}
+
+export class DocumentRendererFailure extends Schema.TaggedError<DocumentRendererFailure>()(
+  "DocumentRendererFailure",
+  {
+    rendererFamily: DocumentRendererFamily,
+    operation: NonEmptyString,
+    reason: NonEmptyString,
+    cause: Schema.Unknown,
+  },
 ) {}
 
 export class UnsupportedDocumentCapability
@@ -392,6 +413,7 @@ export const documentContextFromSnapshot = (snapshot: DocumentSnapshot): Documen
   snapshotId: snapshot.snapshotId,
   tenantId: snapshot.tenantId,
   source: snapshot.source,
+  capturedAt: snapshot.capturedAt,
   schemaVersion: snapshot.schemaVersion,
   data: snapshot.payload,
   snapshotChecksum: snapshot.checksum,

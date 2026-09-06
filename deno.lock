@@ -30,6 +30,8 @@
     "npm:fallow@3.20.0": "3.20.0",
     "npm:lefthook@2.1.12": "2.1.12",
     "npm:motion@13.2.0": "13.2.0",
+    "npm:pdfnative@*": "1.7.0",
+    "npm:pdfnative@1.7.0": "1.7.0",
     "npm:playwright@1.62.1": "1.62.1",
     "npm:postgres@3.4.7": "3.4.7",
     "npm:solid-js@2.0.0-rc.6": "2.0.0-rc.6",
@@ -2987,6 +2989,10 @@
     "pathval@2.0.1": {
       "integrity": "sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ=="
     },
+    "pdfnative@1.7.0": {
+      "integrity": "sha512-GTU2XFmhhbJrbX67ctYU5ctleBdUx9ClbEMKnB4QJSgB2VN5Xylylxm+Tj39BfFnNt/yGldzJLhSwhC1WNnJgg==",
+      "bin": true
+    },
     "perfect-debounce@1.0.0": {
       "integrity": "sha512-xCy9V055GLEqoFaHoC1SoLIaLmWctgCUaBaWxDZ7/Zx4CTyX7cJQLJOok/orfjZAh9kEYpjJa4d0KcJmCbctZA=="
     },
@@ -3658,6 +3664,7 @@
         "npm:effect@4.0.0-rc.111",
         "npm:fallow@3.20.0",
         "npm:lefthook@2.1.12",
+        "npm:pdfnative@1.7.0",
         "npm:playwright@1.62.1",
         "npm:postgres@3.4.7",
         "npm:tigerbeetle-node@0.17.9",

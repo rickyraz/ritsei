@@ -220,10 +220,12 @@ ADR-0081 may move to Accepted only after the following evidence exists:
 Until these gates pass, this ADR remains a proposal and no renderer package is a production
 requirement.
 
-The current implementation phase hardens Step 7 in documentation only: browser compatibility is a
-capability and isolation policy, not an activated Puppeteer, Chromium, Lightpanda, or browser-worker
-dependency. Native and publishing backends are also not activated by the preparation slice. The
-preparation slice does not extend the Process job-type registry or add a database migration.
+The current implementation phase hardens browser compatibility in documentation only: browser
+compatibility is a capability and isolation policy, not an activated Puppeteer, Chromium, Lightpanda,
+or browser-worker dependency. The `pdfnative` native adapter is present only for evaluation,
+benchmark, and conformance evidence; it does not activate a production renderer profile. Publishing
+backends remain unactivated. The evaluation slice does not extend the Process job-type registry or
+add a database migration.
 
 ## Related Documents
 
