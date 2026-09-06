@@ -26,6 +26,7 @@
 > - Messaging: [`./pgque-messaging.md`](./pgque-messaging.md)
 > - Durable execution: [`./durable-execution.md`](./durable-execution.md)
 > - Document rendering: [`./document-rendering.md`](./document-rendering.md)
+> - Communication platform: [`./communication.md`](./communication.md)
 > - Process Studio: [`./process-studio.md`](./process-studio.md)
 > - External integration surface: [`./integration-architecture.md`](./integration-architecture.md)
 > - Integration profile ADR:
@@ -162,6 +163,7 @@ boundaries, not workspace package boundaries by default.
 ```text
 ritsei/
 ├── foundation/              # generic primitives and contracts
+│   ├── communication/
 │   ├── concurrency/
 │   ├── database/
 │   ├── ids/
@@ -169,7 +171,7 @@ ritsei/
 │   └── money/
 ├── modules/                 # business capabilities with public mod.ts entries
 │   ├── identity/  ├── party/       ├── auth/
-│   ├── authorization/  ├── catalog/  ├── messaging/
+│   ├── authorization/  ├── catalog/  ├── messaging/  ├── communication/
 │   ├── sales/  ├── procurement/  ├── inventory/
 │   ├── accounting/  ├── process/  ├── billing/
 │   └── integrations/

@@ -105,5 +105,6 @@ current system; ADRs preserve decision history.
 | [`0079`](./0079-gate-dnd-kit-solid2-activation.md) | Gate dnd-kit activation on Solid 2 compatibility | Accepted |
 | [`0080`](./0080-adopt-solid-native-boneyard-skeleton-boundary.md) | Adopt a Solid-native Boneyard skeleton boundary | Accepted |
 | [`0081`](./0081-adopt-document-ast-rendering-platform.md) | Adopt a Document AST rendering platform | Proposed |
+| [`0082`](./0082-adopt-communication-platform-boundaries.md) | Adopt SAP-separated communication platform boundaries | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

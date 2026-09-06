@@ -1,3 +1,4 @@
+export * from "./communication/mod.ts"
 export * from "./concurrency/mod.ts"
 export * from "./database/mod.ts"
 export * from "./document-rendering/mod.ts"

@@ -21,6 +21,7 @@
 > - Design system architecture: [`./design-system.md`](./design-system.md)
 > - Skeleton architecture: [`./skeleton.md`](./skeleton.md)
 > - Document rendering architecture: [`./document-rendering.md`](./document-rendering.md)
+- Communication platform architecture: [`./communication.md`](./communication.md)
 > - Process Studio architecture: [`./process-studio.md`](./process-studio.md)
 > - External integration surface: [`./integration-architecture.md`](./integration-architecture.md)
 > - Architecture enforcement: [`./architecture-enforcement.md`](./architecture-enforcement.md)
@@ -147,6 +148,15 @@ snapshots feed a versioned Document AST; renderer families remain replaceable an
 is an explicit compatibility path. See [`./document-rendering.md`](./document-rendering.md) and
 [ADR-0081](../decisions/0081-adopt-document-ast-rendering-platform.md). The proposal is not active
 until its contract, security, determinism, workload, and dependency gates pass.
+
+Communication is an intent-driven platform boundary. Domains publish business facts through
+Messaging; application-level communication policies derive intents, while explicit user or process
+requests may create them directly. The platform resolves recipients, versioned contexts, channel
+message models, immutable artifacts, and delivery attempts behind provider adapters. The Activity
+Timeline is a federated, rebuildable projection over separate audit, note, attachment, workflow,
+document, and communication records, not a universal `chatter_messages` authority. See
+[`./communication.md`](./communication.md) and
+[ADR-0082](../decisions/0082-adopt-communication-platform-boundaries.md).
 
 ## Non-Interference
 

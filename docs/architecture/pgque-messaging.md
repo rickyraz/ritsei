@@ -5,6 +5,7 @@
 > **Related documents**
 >
 > - Durable execution: [`./durable-execution.md`](./durable-execution.md)
+> - Communication platform: [`./communication.md`](./communication.md)
 > - Stateful runtime: [`./runtime-architecture.md`](./runtime-architecture.md)
 > - Search architecture: [`./search-architecture.md`](./search-architecture.md)
 > - Analytics architecture: [`./analytics-architecture.md`](./analytics-architecture.md)

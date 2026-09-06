@@ -23,6 +23,7 @@ ADR-0078 is the current motion ownership and runtime-wrapper boundary.
 ADR-0079 is the current dnd-kit/Solid 2 activation gate and blocked-state boundary.
 ADR-0080 is the current Solid-native Boneyard skeleton boundary.
 ADR-0081 is the proposed renderer-independent Document AST and document-rendering platform boundary.
+ADR-0082 is the current SAP-separated Communication Platform and Activity Timeline projection boundary.
 
 ## Current decision lineage
 
@@ -39,6 +40,14 @@ ADR-0015  One semantic owner per invariant
               +--> ADR-0044  Procurement Purchase Order baseline
               |
               +--> ADR-0045  Procurement Purchase Order confirmation
+
+ADR-0037 / ADR-0038  Audit, external delivery, and internal messaging boundaries
+    |
+    +--> ADR-0082  SAP-separated Communication Platform boundaries
+              +--> domain facts enter the transactional outbox; application communication policy derives intents
+              +--> explicit user/process requests may create intents directly
+              +--> recipients, contexts, templates, artifacts, and attempts stay separate
+              +--> Activity Timeline is a rebuildable projection, not a `chatter_messages` authority
 
 ADR-0050  Package.json-based Deno dependency resolution
     |
@@ -188,12 +197,14 @@ by ADR-0040.
 | [ADR-0079](./0079-gate-dnd-kit-solid2-activation.md) | Current drag/drop direction | dnd-kit Solid is the target provider, but activation is blocked by the Solid 2 `solid-js/web` export incompatibility; no shim or legacy React package |
 | [ADR-0080](./0080-adopt-solid-native-boneyard-skeleton-boundary.md) | Current skeleton direction | Solid owns skeleton state and lifecycle; Boneyard supplies immutable geometry artifacts behind a RITSEI-owned adapter |
 | [ADR-0081](./0081-adopt-document-ast-rendering-platform.md) | Proposed document-rendering direction | Owner-local snapshots feed a renderer-independent Document AST; native transactional rendering is the default candidate, while HTML/browser paths remain capability-gated |
+| [ADR-0082](./0082-adopt-communication-platform-boundaries.md) | Current communication boundary | Domains publish facts or communication intents; recipient/context/template resolution, immutable artifacts, delivery attempts, and provider adapters remain separate, while Activity Timeline is a rebuildable projection |
 
 ## Proposed direction
 
 ADR-0081 is intentionally not included in the active canonical rules below. Until its validation gates
 pass, it is a proposed platform boundary: no renderer dependency, generic document authority, or
-production rendering route is activated.
+production rendering route is activated. ADR-0082 is active as a boundary decision, but its production
+provider, persistence, worker, and campaign activation gates remain open.
 
 ## Current canonical rules
 
@@ -215,6 +226,7 @@ The current architecture is summarized here for navigation; the canonical rule r
 - Goods Receipt evidence belongs to Procurement; physical receipt movement belongs to Inventory.
 - The logical database contract hides PostgreSQL placement; physical data topology remains infrastructure, not domain semantics.
 - Foundation contains generic contracts, modules contain business capabilities, platform contains concrete adapters, and runtime contains composition roots.
+- Communication is intent-driven and provider-independent; email is a channel, delivery attempts are not business facts, and Activity Timeline is a rebuildable projection over separate owners.
 - Solid owns the default frontend reactive graph and ownership tree; Effect `R` is carried by scoped Solid Context runtimes, while Atom is an explicit shared/portable opt-in.
 - Cartographic is a grammar for structure, relationship, pressure, movement, boundary, and state—not a requirement for topographic maps on every page.
 - The seven visual archetypes are Stock, Flow, Capacity, Value, Relationship, Progress, and Asset / Space; industries compose them rather than receiving separate visual themes.
