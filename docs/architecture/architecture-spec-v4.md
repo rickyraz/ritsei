@@ -84,6 +84,8 @@
 >   [`../decisions/0043-adopt-rebuildable-analytic-plane.md`](../decisions/0043-adopt-rebuildable-analytic-plane.md)
 > - Governed AI recommendation and agent boundary:
 >   [`../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md`](../decisions/0063-define-governed-ai-recommendation-and-agent-boundary.md)
+> - Proposed explicit progressive trust boundaries:
+>   [`../decisions/0084-establish-explicit-progressive-trust-boundaries.md`](../decisions/0084-establish-explicit-progressive-trust-boundaries.md)
 
 ## Decision
 

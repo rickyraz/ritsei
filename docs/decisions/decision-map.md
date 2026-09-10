@@ -24,6 +24,7 @@ ADR-0079 is the current dnd-kit/Solid 2 activation gate and blocked-state bounda
 ADR-0080 is the current Solid-native Boneyard skeleton boundary.
 ADR-0081 is the proposed renderer-independent Document AST and document-rendering platform boundary.
 ADR-0082 is the current SAP-separated Communication Platform and Activity Timeline projection boundary.
+ADR-0084 is a proposed cross-cutting progressive trust model; it is not an active canonical rule until accepted.
 
 ## Current decision lineage
 
@@ -112,6 +113,13 @@ ADR-0006  Scoped capability authorization
               +--> RITSEI/PostgreSQL remains canonical AuthZ authority
               +--> permission matrix remains the coarse gate
               +--> domain policy and SoD remain outside the engine
+
+ADR-0024 / ADR-0058 / ADR-0059 / ADR-0063
+    |
+    +--> ADR-0084  Proposed explicit progressive trust boundaries
+              +--> external representations gain no RITSEI identity, authority, or business fact by default
+              +--> runtime decoding, identity, authorization, domain, and resource boundaries remain explicit
+              +--> intent and commands cannot bypass owner-controlled deterministic execution
 
 ADR-0034  Non-interference overload isolation
     |
@@ -205,13 +213,15 @@ by ADR-0040.
 | [ADR-0081](./0081-adopt-document-ast-rendering-platform.md) | Proposed document-rendering direction | Owner-local snapshots feed a renderer-independent Document AST; native transactional rendering is the default candidate, while HTML/browser paths remain capability-gated |
 | [ADR-0082](./0082-adopt-communication-platform-boundaries.md) | Current communication boundary | Domains publish facts or communication intents; recipient/context/template resolution, immutable artifacts, delivery attempts, and provider adapters remain separate, while Activity Timeline is a rebuildable projection |
 | [ADR-0083](./0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md) | Current cross-cutting non-interference boundary | Source-of-truth critical paths remain independent of derived capabilities; ADR-0034 owns detailed workload/resource proof |
+| [ADR-0084](./0084-establish-explicit-progressive-trust-boundaries.md) | Proposed cross-cutting trust boundary | External representations gain no RITSEI identity, authority, or business fact until explicit runtime, identity, authorization, and owner-domain checks complete |
 
 ## Proposed direction
 
 ADR-0081 is intentionally not included in the active canonical rules below. Until its validation gates
 pass, it is a proposed platform boundary: no renderer dependency, generic document authority, or
 production rendering route is activated. ADR-0082 is active as a boundary decision, but its production
-provider, persistence, worker, and campaign activation gates remain open.
+provider, persistence, worker, and campaign activation gates remain open. ADR-0084 remains proposed;
+its progressive trust model does not replace the existing active subsystem rules until accepted.
 
 ## Current canonical rules
 
