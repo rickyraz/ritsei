@@ -12,6 +12,7 @@ import type { PostgresClient } from "../../foundation/mod.ts"
 import { validatePostgresVersion } from "../../platform/mod.ts"
 import { RitseiApi } from "./api.ts"
 import { ApiHandlers, BearerAuthLive } from "./handlers.ts"
+import { requestBodyLimitLayer } from "./request-limits.ts"
 import { serviceLayers } from "../layers.ts"
 import { readRuntimeConfiguration, type RitseiRuntimeConfiguration } from "../config.ts"
 
@@ -33,9 +34,12 @@ export const makeApiLayer = (
     Layer.provide(services),
   )
 
-  return HttpApiBuilder.layer(RitseiApi).pipe(
+  const apiLayer = HttpApiBuilder.layer(RitseiApi).pipe(
     Layer.provide(handlers),
     Layer.provide(HttpApiScalar.layer(RitseiApi)),
+  )
+
+  return Layer.mergeAll(apiLayer, requestBodyLimitLayer).pipe(
     HttpRouter.serve,
     Layer.provide(DenoHttpServer.layer({ port })),
     Layer.provide(services),

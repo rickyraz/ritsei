@@ -14,6 +14,37 @@ const NonNegativeInt = Schema.Int.check(
   Schema.isGreaterThanOrEqualTo(0),
   Schema.isLessThanOrEqualTo(2_147_483_647),
 )
+
+const MaxPayloadStringLength = 64 * 1024
+const MaxPayloadArrayLength = 1_000
+const MaxPayloadDepth = 16
+const MaxPayloadBytes = 256 * 1024
+
+const isBoundedJson = (value: Schema.Schema.Type<typeof Schema.Json>): boolean => {
+  const visit = (current: Schema.Schema.Type<typeof Schema.Json>, depth: number): boolean => {
+    if (depth > MaxPayloadDepth) return false
+    if (typeof current === "string") return current.length <= MaxPayloadStringLength
+    if (Array.isArray(current)) {
+      return current.length <= MaxPayloadArrayLength &&
+        current.every((item) => visit(item, depth + 1))
+    }
+    if (typeof current === "object" && current !== null) {
+      return Object.entries(current).every(([key, item]) =>
+        key.length <= MaxPayloadStringLength && visit(item, depth + 1)
+      )
+    }
+    return true
+  }
+
+  return visit(value, 0) &&
+    new TextEncoder().encode(JSON.stringify(value)).byteLength <= MaxPayloadBytes
+}
+
+const BoundedJson = Schema.Json.check(Schema.makeFilter(
+  isBoundedJson,
+  { expected: "a bounded JSON payload" },
+))
+
 export const AppendEventInput = Schema.Struct({
   eventId: Uuid,
   eventType: NonEmptyString,
@@ -27,7 +58,7 @@ export const AppendEventInput = Schema.Struct({
   idempotencyKey: NonEmptyString,
   actorPrincipalId: NonEmptyString,
   occurredAt: InstantString,
-  payload: Schema.Json,
+  payload: BoundedJson,
 })
 
 export const EventEnvelope = Schema.Struct({

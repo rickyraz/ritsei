@@ -21,6 +21,13 @@ import {
   toReceipt,
 } from "./store.ts"
 
+const decodePersistedEvent = (row: Parameters<typeof toEvent>[0], operation: string) =>
+  Schema.decodeUnknownEffect(EventEnvelope)(toEvent(row)).pipe(
+    Effect.mapError(() =>
+      new DatabaseFailure({ operation, cause: "persisted event envelope failed validation" })
+    ),
+  )
+
 export const makePostgresMessagingService = Effect.fn("Messaging.makePostgresService")(
   function* () {
     const database = yield* Database
@@ -80,7 +87,9 @@ export const makePostgresMessagingService = Effect.fn("Messaging.makePostgresSer
               }).onConflictDoNothing().returning(selectEvent),
             "messaging.event.append",
           )
-          if (inserted[0] !== undefined) return toEvent(inserted[0])
+          if (inserted[0] !== undefined) {
+            return yield* decodePersistedEvent(inserted[0], "messaging.event.append.decode")
+          }
           const existing = yield* database.query(
             (db) =>
               db.select(selectEvent).from(eventOutbox).where(or(
@@ -98,7 +107,10 @@ export const makePostgresMessagingService = Effect.fn("Messaging.makePostgresSer
             "messaging.event.get-existing",
           )
           if (existing.length !== 1) return yield* Effect.fail(conflict(decoded))
-          const event = toEvent(existing[0]!)
+          const event = yield* decodePersistedEvent(
+            existing[0]!,
+            "messaging.event.append.decode-existing",
+          )
           return envelopeMatches(decoded, event) ? event : yield* Effect.fail(conflict(decoded))
         }),
         "messaging.event.append-transaction",
@@ -117,7 +129,7 @@ export const makePostgresMessagingService = Effect.fn("Messaging.makePostgresSer
       )
       return rows[0] === undefined
         ? undefined
-        : yield* Schema.decodeUnknownEffect(EventEnvelope)(toEvent(rows[0]))
+        : yield* decodePersistedEvent(rows[0], "messaging.event.get.decode")
     })
 
     const consumeOnce = <A, E, R>(input: unknown, effect: Effect.Effect<A, E, R>) =>

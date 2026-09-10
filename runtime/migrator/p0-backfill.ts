@@ -28,10 +28,13 @@ const IdentifierScope = Schema.Struct({
   legalEntityId: Schema.optionalKey(Schema.NullOr(Uuid)),
 })
 
+const MAX_MAPPING_ROWS = 100_000
+export const MAX_P0_BACKFILL_BYTES = 64 * 1024 * 1024
+
 export const P0BackfillInput = Schema.Struct({
-  warehouseScopes: Schema.Array(WarehouseScope),
-  stockTransferScopes: Schema.Array(StockTransferScope),
-  identifierScopes: Schema.Array(IdentifierScope),
+  warehouseScopes: Schema.Array(WarehouseScope).check(Schema.isMaxLength(MAX_MAPPING_ROWS)),
+  stockTransferScopes: Schema.Array(StockTransferScope).check(Schema.isMaxLength(MAX_MAPPING_ROWS)),
+  identifierScopes: Schema.Array(IdentifierScope).check(Schema.isMaxLength(MAX_MAPPING_ROWS)),
 })
 
 type P0Backfill = Schema.Schema.Type<typeof P0BackfillInput>
@@ -90,9 +93,31 @@ const normalize = (input: P0Backfill): P0Backfill => ({
   })),
 })
 
+const failureMessage = (cause: unknown) => cause instanceof Error ? cause.message : String(cause)
+
+export const decodeP0BackfillInput = (input: unknown, context = "input") =>
+  Schema.decodeUnknownEffect(P0BackfillInput)(input).pipe(
+    Effect.map(normalize),
+    Effect.mapError((cause) =>
+      new P0BackfillFailure(`${context}: invalid P0 backfill mapping: ${failureMessage(cause)}`)
+    ),
+  )
+
+export const decodeP0BackfillJson = (text: string, path: string) => {
+  if (new TextEncoder().encode(text).byteLength > MAX_P0_BACKFILL_BYTES) {
+    return Effect.fail(
+      new P0BackfillFailure(`${path}: mapping file exceeds ${MAX_P0_BACKFILL_BYTES} bytes`),
+    )
+  }
+  return Effect.try({
+    try: () => JSON.parse(text),
+    catch: (cause) => new P0BackfillFailure(`${path}: malformed JSON: ${failureMessage(cause)}`),
+  }).pipe(Effect.flatMap((input) => decodeP0BackfillInput(input, path)))
+}
+
 export const applyP0Backfill = (client: Sql, input: unknown) =>
   Effect.gen(function* () {
-    const decoded = normalize(yield* Schema.decodeUnknownEffect(P0BackfillInput)(input))
+    const decoded = yield* decodeP0BackfillInput(input)
     yield* Effect.tryPromise({
       try: () =>
         client.begin(async (tx) => {
@@ -159,13 +184,45 @@ export const applyP0Backfill = (client: Sql, input: unknown) =>
           }
         }),
       catch: (cause) =>
-        cause instanceof P0BackfillFailure
-          ? cause
-          : new P0BackfillFailure(cause instanceof Error ? cause.message : String(cause)),
+        cause instanceof P0BackfillFailure ? cause : new P0BackfillFailure(failureMessage(cause)),
     })
   })
 
-const readInput = async (path: string) => JSON.parse(await Deno.readTextFile(path)) as unknown
+const readBoundedTextFile = async (path: string): Promise<string> => {
+  const file = await Deno.open(path, { read: true })
+  try {
+    const chunks: Array<Uint8Array> = []
+    let total = 0
+    while (true) {
+      const chunk = new Uint8Array(Math.min(64 * 1024, MAX_P0_BACKFILL_BYTES - total + 1))
+      const count = await file.read(chunk)
+      if (count === null) break
+      total += count
+      if (total > MAX_P0_BACKFILL_BYTES) {
+        throw new P0BackfillFailure(`${path}: mapping file exceeds ${MAX_P0_BACKFILL_BYTES} bytes`)
+      }
+      chunks.push(chunk.subarray(0, count))
+    }
+    const bytes = new Uint8Array(total)
+    let offset = 0
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+  } finally {
+    file.close()
+  }
+}
+
+export const readP0BackfillFile = (path: string) =>
+  Effect.tryPromise({
+    try: () => readBoundedTextFile(path),
+    catch: (cause) =>
+      cause instanceof P0BackfillFailure
+        ? cause
+        : new P0BackfillFailure(`${path}: unable to read mapping file: ${failureMessage(cause)}`),
+  }).pipe(Effect.flatMap((text) => decodeP0BackfillJson(text, path)))
 
 if (import.meta.main) {
   const databaseUrl = Deno.env.get("DATABASE_URL")
@@ -181,7 +238,7 @@ if (import.meta.main) {
 
   const client = postgres(databaseUrl)
   const result = await Effect.runPromiseExit(
-    Effect.tryPromise({ try: () => readInput(inputPath), catch: (cause) => cause }).pipe(
+    readP0BackfillFile(inputPath).pipe(
       Effect.flatMap((input) => applyP0Backfill(client, input)),
       Effect.ensuring(Effect.promise(() => client.end())),
     ),

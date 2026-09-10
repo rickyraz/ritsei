@@ -9,7 +9,7 @@ import * as HttpApiSecurity from "effect/unstable/httpapi/HttpApiSecurity"
 import * as OpenApi from "effect/unstable/httpapi/OpenApi"
 
 import { Principal } from "../../modules/auth/mod.ts"
-import { ConsistencyToken } from "../../foundation/mod.ts"
+import { ConsistencyToken, FinancialMajorAmount } from "../../foundation/mod.ts"
 import {
   FINANCIAL_STAGING_EVIDENCE_CANONICALIZATION_VERSION,
   FinancialStagingEvidence,
@@ -94,7 +94,30 @@ export class BearerAuth extends HttpApiMiddleware.Service<BearerAuth, {
 }) {}
 
 const errors = [ApiUnauthorized, ApiForbidden, ApiNotFound, ApiConflict, ApiServiceUnavailable]
-const tenantHeaders = { "x-tenant-id": Schema.String }
+const MaxApiTextLength = 4_096
+const MaxApiIdentifierLength = 256
+const MaxApiCollectionItems = 1_000
+const Uuid = Schema.String.check(Schema.isUUID())
+const NonEmptyString = Schema.String.check(
+  Schema.isPattern(/\S/),
+  Schema.isMaxLength(MaxApiTextLength),
+)
+const ShortString = Schema.String.check(
+  Schema.isPattern(/\S/),
+  Schema.isMaxLength(MaxApiIdentifierLength),
+)
+const Email = Schema.String.check(
+  Schema.isPattern(/^[^\s@]+@[^\s@]+$/),
+  Schema.isMaxLength(320),
+)
+const CurrencyCode = Schema.String.check(Schema.isPattern(/^[A-Za-z]{3}$/))
+const PositiveInt = Schema.Int.check(
+  Schema.isBetween({ minimum: 1, maximum: 2_147_483_647 }),
+)
+const FiscalYearStartMonth = Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 12 }))
+const BoundedArray = <S extends Schema.Constraint>(schema: S) =>
+  Schema.Array(schema).check(Schema.isMaxLength(MaxApiCollectionItems))
+const tenantHeaders = { "x-tenant-id": Uuid }
 const consistencyHeaders = {
   ...tenantHeaders,
   "x-ritsei-consistency-token": Schema.optionalKey(ConsistencyToken),
@@ -123,20 +146,23 @@ const CreatedFinancialOperation = FinancialOperation.pipe(HttpApiSchema.status(2
 const CreatedFinancialVerificationArtifact = FinancialVerificationArtifact.pipe(
   HttpApiSchema.status(201),
 )
-const FinancialStagingEvidenceList = Schema.Array(FinancialStagingEvidenceRecord)
+const FinancialStagingEvidenceList = BoundedArray(FinancialStagingEvidenceRecord)
 const FinancialStagingEvidenceAppendPayload = Schema.Struct({
   evidence: FinancialStagingEvidence,
   canonicalizationVersion: Schema.Literal(
     FINANCIAL_STAGING_EVIDENCE_CANONICALIZATION_VERSION,
   ),
-  evidenceHash: Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/)),
+  evidenceHash: Schema.String.check(
+    Schema.isPattern(/^[0-9a-f]{64}$/),
+    Schema.isMaxLength(64),
+  ),
 })
 const FinancialStagingEvidenceLookupQuery = Schema.Struct({
-  legalEntityId: Schema.optionalKey(Schema.String),
-  gateId: Schema.optionalKey(Schema.String),
-  cohortId: Schema.optionalKey(Schema.String),
-  deploymentRevision: Schema.optionalKey(Schema.String),
-  limit: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 1_000 })),
+  legalEntityId: Schema.optionalKey(Uuid),
+  gateId: Schema.optionalKey(ShortString),
+  cohortId: Schema.optionalKey(ShortString),
+  deploymentRevision: Schema.optionalKey(ShortString),
+  limit: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: MaxApiCollectionItems })),
 }).check(Schema.makeFilter(
   (query) =>
     query.gateId !== undefined || query.cohortId !== undefined ||
@@ -157,7 +183,7 @@ const Health = HttpApiGroup.make("Health").add(
 const UserAccounts = HttpApiGroup.make("UserAccounts").add(
   HttpApiEndpoint.post("create", "/user-accounts", {
     headers: tenantHeaders,
-    payload: Schema.Struct({ email: Schema.String }),
+    payload: Schema.Struct({ email: Email }),
     success: CreatedUserAccount,
     error: errors,
   }).middleware(BearerAuth),
@@ -167,15 +193,15 @@ const UserAccounts = HttpApiGroup.make("UserAccounts").add(
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.get("get", "/user-accounts/:id", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
     success: UserAccount,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.patch("update", "/user-accounts/:id", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
-    payload: Schema.Struct({ email: Schema.String }),
+    payload: Schema.Struct({ email: Email }),
     success: UserAccount,
     error: errors,
   }).middleware(BearerAuth),
@@ -184,41 +210,41 @@ const UserAccounts = HttpApiGroup.make("UserAccounts").add(
 const Parties = HttpApiGroup.make("Parties").add(
   HttpApiEndpoint.post("create", "/parties", {
     headers: tenantHeaders,
-    payload: Schema.Struct({ kind: PartyKind, name: Schema.String }),
+    payload: Schema.Struct({ kind: PartyKind, name: ShortString }),
     success: CreatedParty,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("assignRole", "/parties/:id/roles", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
     payload: Schema.Struct({ role: PartyRole }),
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("attachIdentifier", "/parties/:id/identifiers", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
     payload: Schema.Struct({
-      provider: Schema.String,
-      scheme: Schema.String,
-      scope: Schema.String,
-      legalEntityId: Schema.optionalKey(Schema.String),
-      value: Schema.String,
+      provider: ShortString,
+      scheme: ShortString,
+      scope: ShortString,
+      legalEntityId: Schema.optionalKey(Uuid),
+      value: NonEmptyString,
     }),
     success: CreatedExternalIdentifier,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("createRelationship", "/parties/:id/relationships", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
     payload: Schema.Struct({
-      legalEntityId: Schema.String,
+      legalEntityId: Uuid,
       kind: PartyRelationshipKind,
     }),
     success: CreatedPartyRelationship,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.get("findRelatedPartyPaths", "/parties/:id/related-paths", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
     query: {
       limit: Schema.optionalKey(Schema.NumberFromString.pipe(
@@ -234,7 +260,7 @@ const Parties = HttpApiGroup.make("Parties").add(
 const Authorization = HttpApiGroup.make("Authorization").add(
   HttpApiEndpoint.post("addMember", "/tenant-memberships", {
     headers: tenantHeaders,
-    payload: Schema.Struct({ userAccountId: Schema.String }),
+    payload: Schema.Struct({ userAccountId: Uuid }),
     success: CreatedTenantMembership,
     error: errors,
   }).middleware(BearerAuth),
@@ -244,25 +270,25 @@ const Authorization = HttpApiGroup.make("Authorization").add(
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("suspendMember", "/tenant-memberships/:userAccountId/suspend", {
-    params: { userAccountId: Schema.String },
+    params: { userAccountId: Uuid },
     headers: tenantHeaders,
     success: TenantMembership,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("activateMember", "/tenant-memberships/:userAccountId/activate", {
-    params: { userAccountId: Schema.String },
+    params: { userAccountId: Uuid },
     headers: tenantHeaders,
     success: TenantMembership,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.delete("removeMember", "/tenant-memberships/:userAccountId", {
-    params: { userAccountId: Schema.String },
+    params: { userAccountId: Uuid },
     headers: tenantHeaders,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("grant", "/capabilities", {
     headers: tenantHeaders,
-    payload: Schema.Struct({ userAccountId: Schema.String, capability: Capability }),
+    payload: Schema.Struct({ userAccountId: Uuid, capability: Capability }),
     error: errors,
   }).middleware(BearerAuth),
 )
@@ -270,22 +296,22 @@ const Authorization = HttpApiGroup.make("Authorization").add(
 const Sales = HttpApiGroup.make("Sales").add(
   HttpApiEndpoint.post("createCustomer", "/sales/customers", {
     headers: tenantHeaders,
-    payload: Schema.Struct({ name: Schema.String, email: Schema.String }),
+    payload: Schema.Struct({ name: ShortString, email: Email }),
     success: CreatedCustomer,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("createQuotation", "/sales/quotations", {
     headers: tenantHeaders,
-    payload: Schema.Struct({ customerId: Schema.String, total: Schema.String }),
+    payload: Schema.Struct({ customerId: Uuid, total: FinancialMajorAmount }),
     success: CreatedQuotation,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("createOrder", "/sales/orders", {
     headers: tenantHeaders,
     payload: Schema.Struct({
-      customerId: Schema.String,
-      quotationId: Schema.optionalKey(Schema.String),
-      lines: Schema.Array(SalesOrderLine).check(Schema.isMinLength(1)),
+      customerId: Uuid,
+      quotationId: Schema.optionalKey(Uuid),
+      lines: BoundedArray(SalesOrderLine).check(Schema.isMinLength(1)),
     }),
     success: CreatedOrder,
     error: errors,
@@ -296,9 +322,9 @@ const Inventory = HttpApiGroup.make("Inventory").add(
   HttpApiEndpoint.post("createWarehouse", "/inventory/warehouses", {
     headers: tenantHeaders,
     payload: Schema.Struct({
-      legalEntityId: Schema.String,
-      primaryBranchId: Schema.optionalKey(Schema.String),
-      name: Schema.String,
+      legalEntityId: Uuid,
+      primaryBranchId: Schema.optionalKey(Uuid),
+      name: ShortString,
     }),
     success: CreatedWarehouse,
     error: errors,
@@ -306,9 +332,9 @@ const Inventory = HttpApiGroup.make("Inventory").add(
   HttpApiEndpoint.post("createItem", "/inventory/items", {
     headers: tenantHeaders,
     payload: Schema.Struct({
-      sku: Schema.String,
-      name: Schema.String,
-      unitOfMeasure: Schema.optionalKey(Schema.String),
+      sku: ShortString,
+      name: ShortString,
+      unitOfMeasure: Schema.optionalKey(ShortString),
     }),
     success: CreatedItem,
     error: errors,
@@ -316,9 +342,9 @@ const Inventory = HttpApiGroup.make("Inventory").add(
   HttpApiEndpoint.post("receiveStock", "/inventory/receipts", {
     headers: tenantHeaders,
     payload: Schema.Struct({
-      warehouseId: Schema.String,
-      itemId: Schema.String,
-      quantity: Schema.String,
+      warehouseId: Uuid,
+      itemId: Uuid,
+      quantity: NonEmptyString,
     }),
     success: StockBalance,
     error: errors,
@@ -326,9 +352,9 @@ const Inventory = HttpApiGroup.make("Inventory").add(
   HttpApiEndpoint.post("reserveStock", "/inventory/reservations", {
     headers: tenantHeaders,
     payload: Schema.Struct({
-      warehouseId: Schema.String,
-      itemId: Schema.String,
-      quantity: Schema.String,
+      warehouseId: Uuid,
+      itemId: Uuid,
+      quantity: NonEmptyString,
     }),
     success: CreatedReservation,
     error: errors,
@@ -336,21 +362,21 @@ const Inventory = HttpApiGroup.make("Inventory").add(
   HttpApiEndpoint.post("createTransfer", "/inventory/transfers", {
     headers: tenantHeaders,
     payload: Schema.Struct({
-      sourceWarehouseId: Schema.String,
-      destinationWarehouseId: Schema.String,
-      lines: Schema.Array(StockTransferLine).check(Schema.isMinLength(1)),
+      sourceWarehouseId: Uuid,
+      destinationWarehouseId: Uuid,
+      lines: BoundedArray(StockTransferLine).check(Schema.isMinLength(1)),
     }),
     success: CreatedTransfer,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("confirmTransfer", "/inventory/transfers/:id/confirm", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
     success: StockTransfer,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("completeTransfer", "/inventory/transfers/:id/complete", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
     success: StockTransfer,
     error: errors,
@@ -360,45 +386,45 @@ const Inventory = HttpApiGroup.make("Inventory").add(
 const Procurement = HttpApiGroup.make("Procurement").add(
   HttpApiEndpoint.post("createSupplierAccount", "/procurement/supplier-accounts", {
     headers: tenantHeaders,
-    payload: Schema.Struct({ supplierRelationshipId: Schema.String }),
+    payload: Schema.Struct({ supplierRelationshipId: Uuid }),
     success: CreatedSupplierAccount,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("createPurchaseOrder", "/procurement/purchase-orders", {
     headers: tenantHeaders,
     payload: Schema.Struct({
-      supplierAccountId: Schema.String,
-      lines: Schema.Array(PurchaseOrderLine).check(Schema.isMinLength(1)),
+      supplierAccountId: Uuid,
+      lines: BoundedArray(PurchaseOrderLine).check(Schema.isMinLength(1)),
     }),
     success: CreatedPurchaseOrder,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.get("getPurchaseOrder", "/procurement/purchase-orders/:id", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: consistencyHeaders,
     success: PurchaseOrder,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("confirmPurchaseOrder", "/procurement/purchase-orders/:id/confirm", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
-    payload: Schema.Struct({ idempotencyKey: Schema.String }),
+    payload: Schema.Struct({ idempotencyKey: ShortString }),
     success: PurchaseOrder,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("cancelPurchaseOrder", "/procurement/purchase-orders/:id/cancel", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
     success: PurchaseOrder,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("receivePurchaseOrder", "/procurement/purchase-orders/:id/receipts", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
     payload: Schema.Struct({
-      warehouseId: Schema.String,
-      idempotencyKey: Schema.String,
-      lines: Schema.Array(PurchaseReceiptLineInput).check(Schema.isMinLength(1)),
+      warehouseId: Uuid,
+      idempotencyKey: ShortString,
+      lines: BoundedArray(PurchaseReceiptLineInput).check(Schema.isMinLength(1)),
     }),
     success: CreatedGoodsReceipt,
     error: errors,
@@ -432,7 +458,7 @@ const Process = HttpApiGroup.make("Process").add(
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("manualRecovery", "/process/order-confirmations/manual-recovery", {
     headers: tenantHeaders,
-    payload: Schema.Struct({ idempotencyKey: Schema.String, reason: Schema.String }),
+    payload: Schema.Struct({ idempotencyKey: ShortString, reason: NonEmptyString }),
     success: WorkflowRun,
     error: errors,
   }).middleware(BearerAuth),
@@ -443,7 +469,7 @@ const Accounting = HttpApiGroup.make("Accounting").add(
     "prepareTigerBeetleCutover",
     "/accounting/legal-entities/:id/tigerbeetle/prepare",
     {
-      params: { id: Schema.String },
+      params: { id: Uuid },
       headers: tenantHeaders,
       success: FinancialCutoverControl,
       error: errors,
@@ -483,9 +509,9 @@ const Accounting = HttpApiGroup.make("Accounting").add(
     "approveTigerBeetleCutover",
     "/accounting/legal-entities/:id/tigerbeetle/approve",
     {
-      params: { id: Schema.String },
+      params: { id: Uuid },
       headers: tenantHeaders,
-      payload: Schema.Struct({ evidenceArtifactId: Schema.String }),
+      payload: Schema.Struct({ evidenceArtifactId: Uuid }),
       success: FinancialCutoverControl,
       error: errors,
     },
@@ -494,19 +520,19 @@ const Accounting = HttpApiGroup.make("Accounting").add(
     "activateTigerBeetleCutover",
     "/accounting/legal-entities/:id/tigerbeetle/activate",
     {
-      params: { id: Schema.String },
+      params: { id: Uuid },
       headers: tenantHeaders,
       success: FinancialCutoverControl,
       error: errors,
     },
   ).middleware(BearerAuth),
   HttpApiEndpoint.post("configureLegalEntity", "/accounting/legal-entities/:id/configuration", {
-    params: { id: Schema.String },
+    params: { id: Uuid },
     headers: tenantHeaders,
     payload: Schema.Struct({
-      baseCurrency: Schema.String,
+      baseCurrency: CurrencyCode,
       precision: Schema.Literal(2),
-      fiscalYearStartMonth: Schema.Int,
+      fiscalYearStartMonth: FiscalYearStartMonth,
       postingEnabled: Schema.Boolean,
       financialEngine: Schema.optionalKey(Schema.Literals(["postgresql", "tigerbeetle"])),
     }),
@@ -516,8 +542,8 @@ const Accounting = HttpApiGroup.make("Accounting").add(
   HttpApiEndpoint.post("createAccount", "/accounting/accounts", {
     headers: tenantHeaders,
     payload: Schema.Struct({
-      code: Schema.String,
-      name: Schema.String,
+      code: ShortString,
+      name: ShortString,
       type: Account.fields.type,
     }),
     success: CreatedAccount,
@@ -525,13 +551,16 @@ const Accounting = HttpApiGroup.make("Accounting").add(
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("postJournal", "/accounting/journals", {
     headers: tenantHeaders,
-    payload: Schema.Struct({ reference: Schema.String, lines: Schema.Array(JournalLine) }),
+    payload: Schema.Struct({
+      reference: ShortString,
+      lines: BoundedArray(JournalLine),
+    }),
     success: CreatedJournal,
     error: errors,
   }).middleware(BearerAuth),
   HttpApiEndpoint.post("rebuildFinancialProjections", "/accounting/financial-projections/rebuild", {
     headers: tenantHeaders,
-    payload: Schema.Struct({ legalEntityId: Schema.String }),
+    payload: Schema.Struct({ legalEntityId: Uuid }),
     success: FinancialProjectionRebuildResult,
     error: errors,
   }).middleware(BearerAuth),
@@ -541,8 +570,8 @@ const Accounting = HttpApiGroup.make("Accounting").add(
     {
       headers: tenantHeaders,
       payload: Schema.Struct({
-        legalEntityId: Schema.String,
-        evidenceArtifactId: Schema.NullOr(Schema.String),
+        legalEntityId: Uuid,
+        evidenceArtifactId: Schema.NullOr(Uuid),
       }),
       success: FinancialReconciliationCheckpoint,
       error: errors,
@@ -551,13 +580,13 @@ const Accounting = HttpApiGroup.make("Accounting").add(
   HttpApiEndpoint.post("createFinancialJournalIntent", "/accounting/financial-operations", {
     headers: tenantHeaders,
     payload: Schema.Struct({
-      legalEntityId: Schema.String,
-      operationId: Schema.String,
-      reference: Schema.String,
-      currency: Schema.String,
-      mappingVersion: Schema.Int,
-      lines: Schema.Array(JournalLine),
-      correlationId: Schema.String,
+      legalEntityId: Uuid,
+      operationId: ShortString,
+      reference: ShortString,
+      currency: CurrencyCode,
+      mappingVersion: PositiveInt,
+      lines: BoundedArray(JournalLine),
+      correlationId: ShortString,
     }),
     success: CreatedFinancialOperation,
     error: errors,
@@ -565,13 +594,13 @@ const Accounting = HttpApiGroup.make("Accounting").add(
   HttpApiEndpoint.post("createFinancialRevenueIntent", "/accounting/financial-operations/revenue", {
     headers: tenantHeaders,
     payload: Schema.Struct({
-      legalEntityId: Schema.String,
-      orderId: Schema.String,
-      commandId: Schema.String,
-      correlationId: Schema.String,
-      currency: Schema.String,
-      mappingVersion: Schema.Int,
-      amount: Schema.optionalKey(Schema.String),
+      legalEntityId: Uuid,
+      orderId: Uuid,
+      commandId: ShortString,
+      correlationId: ShortString,
+      currency: CurrencyCode,
+      mappingVersion: PositiveInt,
+      amount: Schema.optionalKey(FinancialMajorAmount),
     }),
     success: CreatedFinancialOperation,
     error: errors,
@@ -582,13 +611,13 @@ const Accounting = HttpApiGroup.make("Accounting").add(
     {
       headers: tenantHeaders,
       payload: Schema.Struct({
-        legalEntityId: Schema.String,
-        sourceJournalId: Schema.String,
-        operationId: Schema.String,
-        reference: Schema.String,
-        currency: Schema.String,
-        mappingVersion: Schema.Int,
-        correlationId: Schema.String,
+        legalEntityId: Uuid,
+        sourceJournalId: Uuid,
+        operationId: ShortString,
+        reference: ShortString,
+        currency: CurrencyCode,
+        mappingVersion: PositiveInt,
+        correlationId: ShortString,
       }),
       success: CreatedFinancialOperation,
       error: errors,

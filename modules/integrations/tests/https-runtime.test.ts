@@ -7,6 +7,7 @@ import {
   defineExternalEvent,
   ExternalProviderFailure,
   ExternalUnknownOutcome,
+  HttpsWebhookLimits,
   makeHttpsConnectorRuntime,
   makeMemoryExternalConnectorStore,
   makeMemoryExternalDeliveryStore,
@@ -79,21 +80,22 @@ it.effect("proves duplicate delivery, timeout, and unknown outcome handling over
       idempotencyKey: "payment-1",
       input: { amount: 10 },
     })
+    const envelope = {
+      specversion: "1.0" as const,
+      type: event.id,
+      source: event.source,
+      id: "provider-event-1",
+      time: "2026-08-30T00:00:00.000Z",
+      datacontenttype: "application/json" as const,
+      data: { paymentId: "pay-1" },
+    }
     const webhook = {
       tenantId,
       event,
-      body: "signed-cloud-event-body",
+      body: JSON.stringify(envelope),
       signature: "signature-1",
       correlationId: "payment-correlation-1",
-      envelope: {
-        specversion: "1.0" as const,
-        type: event.id,
-        source: event.source,
-        id: "provider-event-1",
-        time: "2026-08-30T00:00:00.000Z",
-        datacontenttype: "application/json" as const,
-        data: { paymentId: "pay-1" },
-      },
+      envelope,
     }
     const firstDelivery = yield* runtime.ingestWebhook(webhook)
     const duplicateDelivery = yield* runtime.ingestWebhook(webhook)
@@ -104,6 +106,51 @@ it.effect("proves duplicate delivery, timeout, and unknown outcome handling over
     assert.strictEqual(firstDelivery.duplicate, false)
     assert.strictEqual(duplicateDelivery.duplicate, true)
     assert.strictEqual(deliveryLog?.status, "duplicate")
+
+    const mismatchedEnvelope = yield* Effect.flip(runtime.ingestWebhook({
+      ...webhook,
+      envelope: { ...envelope, id: "provider-event-2" },
+    }))
+    assert.strictEqual(mismatchedEnvelope._tag, "ExternalPayloadInvalid")
+  }))
+
+it.effect("rejects oversized webhook resources before signature verification", () =>
+  Effect.gen(function* () {
+    let verified = false
+    const runtime = makeHttpsConnectorRuntime({
+      authorizeScope: () => Effect.succeed(undefined),
+      verifySignature: () => {
+        verified = true
+        return Effect.succeed(true)
+      },
+      invoke: () => Effect.succeed(undefined),
+    })
+    const base = {
+      tenantId,
+      event,
+      body: "x".repeat(HttpsWebhookLimits.maxBodyBytes + 1),
+      signature: "signature-1",
+      correlationId: "payment-correlation-1",
+      envelope: {
+        specversion: "1.0" as const,
+        type: event.id,
+        source: event.source,
+        id: "provider-event-oversized",
+        time: "2026-08-30T00:00:00.000Z",
+        datacontenttype: "application/json" as const,
+        data: { paymentId: "pay-1" },
+      },
+    }
+    const failure = yield* Effect.flip(runtime.ingestWebhook(base))
+    assert.strictEqual(failure._tag, "ExternalPayloadInvalid")
+    assert.isFalse(verified)
+
+    const signatureFailure = yield* Effect.flip(runtime.ingestWebhook({
+      ...base,
+      body: "signed-cloud-event-body",
+      signature: "x".repeat(HttpsWebhookLimits.maxSignatureLength + 1),
+    }))
+    assert.strictEqual(signatureFailure._tag, "ExternalPayloadInvalid")
   }))
 
 it.effect("persists an unknown outcome and refuses an automatic replay", () =>

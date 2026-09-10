@@ -6,6 +6,7 @@ import {
   externalConnectorGovernance,
   externalGovernanceAudit,
 } from "../../../db/schema/integration.ts"
+import { CompatibilityRangeSchema } from "../../catalog/mod.ts"
 import {
   Database,
   DatabaseFailure,
@@ -29,14 +30,6 @@ const PositiveInt = Schema.Int.check(Schema.isGreaterThan(0))
 const InstantString = Schema.String.check(
   Schema.isPattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
 )
-const CompatibilityRange = Schema.Struct({
-  minimumVersion: PositiveInt,
-  maximumVersion: PositiveInt,
-}).check(Schema.makeFilter(
-  (range) => range.minimumVersion <= range.maximumVersion,
-  { expected: "minimum connector version must not exceed maximum connector version" },
-))
-
 export const ExternalGovernanceAuditAction = Schema.Literals([
   "registered",
   "reviewed",
@@ -50,7 +43,7 @@ export const RegisterExternalConnectorInput = Schema.Struct({
   connectorId: NonEmptyString,
   version: PositiveInt,
   owner: NonEmptyString,
-  compatibilityRange: CompatibilityRange,
+  compatibilityRange: CompatibilityRangeSchema,
   actor: NonEmptyString,
   idempotencyKey: NonEmptyString,
   reason: NonEmptyString,

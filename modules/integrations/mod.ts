@@ -1,9 +1,16 @@
 export {
+  decodeExternalActionDefinition,
+  decodeExternalEventDefinition,
   defineExternalAction,
   defineExternalEvent,
+  ExternalActionDefinitionSchema,
+  ExternalCatalogLimits,
+  ExternalEventDefinitionSchema,
   ExternalIntegrationProfile,
   ExternalProblemDetails,
   isAllowlistedExternalAction,
+  validateExternalActionDefinition,
+  validateExternalEventDefinition,
 } from "./src/contract.ts"
 export { CloudEventsEnvelope, normalizeCloudEvent } from "./src/cloudevents.ts"
 export { makeMemoryExternalDeliveryStore } from "./src/delivery-store.ts"
@@ -12,7 +19,7 @@ export type {
   ExternalDeliveryStatus,
   ExternalDeliveryStore,
 } from "./src/delivery-store.ts"
-export { makeHttpsConnectorRuntime } from "./src/https-runtime.ts"
+export { HttpsWebhookLimits, makeHttpsConnectorRuntime } from "./src/https-runtime.ts"
 export type {
   HttpsConnectorRuntime,
   HttpsSignatureVerifier,
@@ -27,16 +34,16 @@ export {
   OpenApiDocument,
   OpenApiImportRequest,
   OpenApiOperation,
+  OpenApiOperationSelection,
+  SupportedOpenApiMethod,
   validateOpenApiImport,
 } from "./src/openapi.ts"
-export type {
-  OpenApiImportRequest as OpenApiImportRequestType,
-  OpenApiOperationSelection,
-} from "./src/openapi.ts"
+export type { OpenApiImportRequest as OpenApiImportRequestType } from "./src/openapi.ts"
 export type {
   ExternalActionCatalogEntry,
   ExternalActionIdempotency,
   ExternalEventCatalogEntry,
+  ExternalSchema,
 } from "./src/contract.ts"
 export { simulateWithoutSideEffect } from "./src/catalog.ts"
 export {

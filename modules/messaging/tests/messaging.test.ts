@@ -29,6 +29,25 @@ const event = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
+it.effect("bounds public JSON payload resources", () =>
+  Effect.gen(function* () {
+    const oversizedString = yield* Effect.flip(
+      Schema.decodeUnknownEffect(EventEnvelope)({ ...event(), payload: "x".repeat(64 * 1024 + 1) }),
+    )
+    const oversizedArray = yield* Effect.flip(
+      Schema.decodeUnknownEffect(EventEnvelope)({ ...event(), payload: Array(1_001).fill(null) }),
+    )
+    let deeplyNested: unknown = null
+    for (let index = 0; index < 17; index++) deeplyNested = [deeplyNested]
+    const oversizedDepth = yield* Effect.flip(
+      Schema.decodeUnknownEffect(EventEnvelope)({ ...event(), payload: deeplyNested }),
+    )
+
+    assert.strictEqual(oversizedString._tag, "SchemaError")
+    assert.strictEqual(oversizedArray._tag, "SchemaError")
+    assert.strictEqual(oversizedDepth._tag, "SchemaError")
+  }))
+
 it.effect("rejects malformed envelope and receipt timestamps", () =>
   Effect.gen(function* () {
     const invalidEnvelope = yield* Effect.flip(

@@ -3,9 +3,44 @@ import * as Effect from "effect/Effect"
 
 import { withTemporaryDatabase } from "../../tests/support/postgres-database.ts"
 import { runMigrations } from "../../platform/mod.ts"
-import { applyP0Backfill, P0BackfillFailure } from "./p0-backfill.ts"
+import {
+  applyP0Backfill,
+  decodeP0BackfillInput,
+  decodeP0BackfillJson,
+  P0BackfillFailure,
+} from "./p0-backfill.ts"
 
 const databaseUrl = Deno.env.get("DATABASE_URL")
+
+it.effect("rejects malformed JSON with file context", () =>
+  Effect.gen(function* () {
+    const failure = yield* Effect.flip(decodeP0BackfillJson("{", "/tmp/p0-mapping.json"))
+    assert.instanceOf(failure, P0BackfillFailure)
+    assert.strictEqual(failure._tag, "P0BackfillFailure")
+    assert.match(failure.detail, /\/tmp\/p0-mapping\.json: malformed JSON/)
+  }))
+
+it.effect("rejects invalid schema with file context before database access", () =>
+  Effect.gen(function* () {
+    const failure = yield* Effect.flip(
+      decodeP0BackfillInput({ warehouseScopes: "not-an-array" }, "/tmp/p0-mapping.json"),
+    )
+    assert.instanceOf(failure, P0BackfillFailure)
+    assert.match(failure.detail, /\/tmp\/p0-mapping\.json: invalid P0 backfill mapping/)
+  }))
+
+it.effect("bounds each mapping collection before database access", () =>
+  Effect.gen(function* () {
+    const failure = yield* Effect.flip(
+      decodeP0BackfillInput({
+        warehouseScopes: Array.from({ length: 100_001 }, () => ({})),
+        stockTransferScopes: [],
+        identifierScopes: [],
+      }),
+    )
+    assert.instanceOf(failure, P0BackfillFailure)
+    assert.match(failure.detail, /invalid P0 backfill mapping/)
+  }))
 
 it.effect.skipIf(databaseUrl === undefined)(
   "applies explicit P0 scope and identifier mappings transactionally",

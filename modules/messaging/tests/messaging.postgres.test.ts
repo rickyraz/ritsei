@@ -325,6 +325,40 @@ it.effect.skipIf(databaseUrl === undefined)(
 )
 
 it.effect.skipIf(databaseUrl === undefined)(
+  "maps invalid persisted event payloads to the stable database failure",
+  () =>
+    withTemporaryDatabase(databaseUrl!, (client) =>
+      Effect.gen(function* () {
+        yield* runMigrations(client)
+        const [tenant] = yield* Effect.promise(() =>
+          client<{ id: string }[]>`
+            insert into auth.tenants (slug) values (${uuidv7()}) returning id
+          `
+        )
+        const messaging = yield* makeMessagingService.pipe(
+          Effect.provideService(Database, makePostgresDatabase(client)),
+        )
+        const source = yield* messaging.append(event(tenant!.id))
+        yield* Effect.promise(() =>
+          client`
+            update messaging.event_outbox
+            set payload = jsonb_build_object(
+              'items', (select jsonb_agg(value) from generate_series(1, 1001) as value)
+            )
+            where tenant_id = ${tenant!.id} and id = ${source.eventId}
+          `
+        )
+
+        const failure = yield* Effect.flip(messaging.getEvent({
+          tenantId: tenant!.id,
+          eventId: source.eventId,
+        }))
+        assert.instanceOf(failure, DatabaseFailure)
+        assert.strictEqual(failure.operation, "messaging.event.get.decode")
+      })),
+)
+
+it.effect.skipIf(databaseUrl === undefined)(
   "rejects invalid event envelopes before opening a PostgreSQL transaction",
   () =>
     withTemporaryDatabase(databaseUrl!, (client) =>

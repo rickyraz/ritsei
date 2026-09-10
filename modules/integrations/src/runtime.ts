@@ -2,10 +2,14 @@ import * as Effect from "effect/Effect"
 import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
 
+import { CloudEventsEnvelope } from "./cloudevents.ts"
 import {
   type ExternalActionCatalogEntry,
+  ExternalCatalogLimits,
   type ExternalEventCatalogEntry,
   isAllowlistedExternalAction,
+  validateExternalActionDefinition,
+  validateExternalEventDefinition,
 } from "./contract.ts"
 import {
   ExternalActionNotAllowlisted,
@@ -15,6 +19,7 @@ import {
   ExternalProviderFailure,
   ExternalUnknownOutcome,
 } from "./errors.ts"
+import { decodeExternalSchema } from "./schema.ts"
 import {
   type ExternalConnectorStore,
   type ExternalEventReceipt,
@@ -23,17 +28,12 @@ import {
 } from "./store.ts"
 
 const Uuid = Schema.String.check(Schema.isUUID())
-const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const BoundedNonEmptyString = Schema.String.check(
+  Schema.isPattern(/\S/),
+  Schema.isMaxLength(ExternalCatalogLimits.maxIdentifierLength),
+)
 
-export const WebhookIngestion = Schema.Struct({
-  specversion: Schema.Literals(["1.0"]),
-  type: NonEmptyString,
-  source: NonEmptyString,
-  id: NonEmptyString,
-  time: NonEmptyString,
-  datacontenttype: Schema.Literals(["application/json"]),
-  data: Schema.Unknown,
-})
+export const WebhookIngestion = CloudEventsEnvelope
 
 export type ExternalActionInvoker = (input: {
   readonly tenantId: string
@@ -87,10 +87,29 @@ export type ExternalConnectorRuntime = {
 
 export const ExternalWebhookEnvelope = WebhookIngestion
 
+const catalogIdentifier = (
+  value: { readonly id?: unknown } | null | undefined,
+  fallback: string,
+): string => {
+  const id = typeof value?.id === "string" && value.id.trim() !== "" ? value.id : undefined
+  return id === undefined ? fallback : id.slice(0, ExternalCatalogLimits.maxIdentifierLength)
+}
+
 const validateTenant = (tenantId: string): boolean => Schema.is(Uuid)(tenantId)
-const validateNonEmpty = (value: string): boolean => Schema.is(NonEmptyString)(value)
-const decodeExternalSchema = (schema: Schema.Top, input: unknown) =>
-  Schema.decodeUnknownEffect(schema as Schema.Codec<unknown, unknown, never, never>)(input)
+const validateNonEmpty = (value: string): boolean => Schema.is(BoundedNonEmptyString)(value)
+
+const isValidActionInvocation = (input: InvokeExternalActionInput): boolean =>
+  [
+    validateExternalActionDefinition(input.action),
+    validateTenant(input.tenantId),
+    validateNonEmpty(input.idempotencyKey),
+  ].every(Boolean)
+
+const isValidEventRegistration = (input: IngestExternalEventInput): boolean =>
+  [
+    validateExternalEventDefinition(input.event),
+    validateTenant(input.tenantId),
+  ].every(Boolean)
 
 export const makeExternalConnectorRuntime = (options: {
   readonly store?: ExternalConnectorStore
@@ -104,7 +123,19 @@ export const makeExternalConnectorRuntime = (options: {
     input: InvokeExternalActionInput,
     attempt: number,
   ): Effect.Effect<unknown, ExternalProviderFailure | ExternalUnknownOutcome> =>
-    options.invoke(input).pipe(
+    Effect.timeoutOrElse(options.invoke(input), {
+      duration: input.action.timeoutPolicy.timeoutMs,
+      orElse: () =>
+        Effect.fail(
+          new ExternalProviderFailure({
+            tenantId: input.tenantId,
+            actionId: input.action.id,
+            operationId: input.action.operationId,
+            reason: "timeout",
+            retryable: true,
+          }),
+        ),
+    }).pipe(
       Effect.result,
       Effect.flatMap((result) => {
         if (Result.isSuccess(result)) return Effect.succeed(result.success)
@@ -121,11 +152,12 @@ export const makeExternalConnectorRuntime = (options: {
 
   const invokeAction: ExternalConnectorRuntime["invokeAction"] = (input) =>
     Effect.gen(function* () {
-      if (!validateTenant(input.tenantId) || !validateNonEmpty(input.idempotencyKey)) {
+      const identifier = catalogIdentifier(input.action, "external-action")
+      if (!isValidActionInvocation(input)) {
         return yield* Effect.fail(
           new ExternalPayloadInvalid({
             boundary: "external.action.invocation",
-            identifier: input.action.id,
+            identifier,
           }),
         )
       }
@@ -217,11 +249,12 @@ export const makeExternalConnectorRuntime = (options: {
 
   const ingestEvent: ExternalConnectorRuntime["ingestEvent"] = (input) =>
     Effect.gen(function* () {
-      if (!validateTenant(input.tenantId) || input.event.stability !== "PUBLIC") {
+      const identifier = catalogIdentifier(input.event, "external-event")
+      if (!isValidEventRegistration(input) || input.event.stability !== "PUBLIC") {
         return yield* Effect.fail(
           new ExternalPayloadInvalid({
             boundary: "external.event.registration",
-            identifier: input.event.id,
+            identifier,
           }),
         )
       }
@@ -237,6 +270,14 @@ export const makeExternalConnectorRuntime = (options: {
         return yield* Effect.fail(
           new ExternalPayloadInvalid({
             boundary: "external.event.type",
+            identifier: input.event.id,
+          }),
+        )
+      }
+      if (envelope.source !== input.event.source) {
+        return yield* Effect.fail(
+          new ExternalPayloadInvalid({
+            boundary: "external.event.source",
             identifier: input.event.id,
           }),
         )

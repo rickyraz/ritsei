@@ -1,10 +1,19 @@
 import { assert, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as HttpRouter from "effect/unstable/http/HttpRouter"
+import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest"
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
 import * as OpenApi from "effect/unstable/httpapi/OpenApi"
 import * as Schema from "effect/Schema"
 
 import { JournalLine } from "../../modules/accounting/mod.ts"
 import { RitseiApi } from "./api.ts"
+import {
+  MAX_REQUEST_BODY_BYTES,
+  parseContentLength,
+  requestBodyLimitLayer,
+} from "./request-limits.ts"
 
 it.effect("accepts the exact large amount at the API journal boundary", () =>
   Effect.sync(() => {
@@ -23,6 +32,133 @@ it.effect("accepts the exact large amount at the API journal boundary", () =>
       }),
     )
   }))
+
+it("parses request body size declarations fail-closed", () => {
+  assert.strictEqual(parseContentLength("12"), 12)
+  assert.strictEqual(parseContentLength(" 12 "), 12)
+  assert.strictEqual(parseContentLength("12x"), "invalid")
+  assert.strictEqual(parseContentLength(String(Number.MAX_SAFE_INTEGER)), Number.MAX_SAFE_INTEGER)
+  assert.strictEqual(parseContentLength("9".repeat(400)), MAX_REQUEST_BODY_BYTES + 1)
+})
+
+it.effect("rejects streamed request bodies over the transport limit", () =>
+  Effect.acquireUseRelease(
+    Effect.sync(() =>
+      HttpRouter.toWebHandler(
+        Layer.mergeAll(
+          HttpRouter.add(
+            "POST",
+            "/echo",
+            Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
+              Effect.map(request.text, HttpServerResponse.text)),
+          ),
+          requestBodyLimitLayer,
+        ),
+        { disableLogger: true },
+      )
+    ),
+    ({ handler }) =>
+      Effect.gen(function* () {
+        const response = yield* Effect.promise(() =>
+          handler(
+            new Request("http://localhost/echo", {
+              method: "POST",
+              body: "x".repeat(MAX_REQUEST_BODY_BYTES + 1),
+            }),
+          )
+        )
+        assert.strictEqual(response.status, 413)
+        assert.deepStrictEqual(yield* Effect.promise(() => response.json()), {
+          code: "request_body_too_large",
+        })
+      }),
+    ({ dispose }) => Effect.promise(dispose),
+  ))
+
+it.effect("rejects invalid body length declarations before route decoding", () =>
+  Effect.acquireUseRelease(
+    Effect.sync(() =>
+      HttpRouter.toWebHandler(
+        Layer.mergeAll(
+          HttpRouter.add(
+            "POST",
+            "/echo",
+            Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
+              Effect.map(request.text, HttpServerResponse.text)),
+          ),
+          requestBodyLimitLayer,
+        ),
+        { disableLogger: true },
+      )
+    ),
+    ({ handler }) =>
+      Effect.gen(function* () {
+        const invalid = yield* Effect.promise(() =>
+          handler(
+            new Request("http://localhost/echo", {
+              method: "POST",
+              headers: { "content-length": "12x" },
+              body: "x",
+            }),
+          )
+        )
+        assert.strictEqual(invalid.status, 400)
+        assert.deepStrictEqual(yield* Effect.promise(() => invalid.json()), {
+          code: "invalid_content_length",
+        })
+
+        const oversized = yield* Effect.promise(() =>
+          handler(
+            new Request("http://localhost/echo", {
+              method: "POST",
+              headers: { "content-length": String(MAX_REQUEST_BODY_BYTES + 1) },
+              body: "x",
+            }),
+          )
+        )
+        assert.strictEqual(oversized.status, 413)
+        assert.deepStrictEqual(yield* Effect.promise(() => oversized.json()), {
+          code: "request_body_too_large",
+        })
+      }),
+    ({ dispose }) => Effect.promise(dispose),
+  ))
+
+it.effect("rejects malformed UTF-8 before route decoding", () =>
+  Effect.acquireUseRelease(
+    Effect.sync(() =>
+      HttpRouter.toWebHandler(
+        Layer.mergeAll(
+          HttpRouter.add(
+            "POST",
+            "/echo",
+            Effect.flatMap(
+              HttpServerRequest.HttpServerRequest,
+              (request) => Effect.map(request.text, HttpServerResponse.text),
+            ),
+          ),
+          requestBodyLimitLayer,
+        ),
+        { disableLogger: true },
+      )
+    ),
+    ({ handler }) =>
+      Effect.gen(function* () {
+        const response = yield* Effect.promise(() =>
+          handler(
+            new Request("http://localhost/echo", {
+              method: "POST",
+              body: new Uint8Array([0xff]),
+            }),
+          )
+        )
+        assert.strictEqual(response.status, 400)
+        assert.deepStrictEqual(yield* Effect.promise(() => response.json()), {
+          code: "invalid_utf8",
+        })
+      }),
+    ({ dispose }) => Effect.promise(dispose),
+  ))
 
 it.effect("derives routing and OpenAPI from the Effect HttpApi contract", () =>
   Effect.sync(() => {

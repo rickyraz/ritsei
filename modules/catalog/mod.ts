@@ -1,21 +1,55 @@
-import type * as Schema from "effect/Schema"
+import * as Schema from "effect/Schema"
 
-export type CatalogStability =
-  | "PRIVATE"
-  | "EXPERIMENTAL"
-  | "PUBLIC"
-  | "DEPRECATED"
-  | "RETIRED"
+export type CatalogSchema = Schema.Codec<unknown, unknown, never, never>
 
-export type ActionIdempotency = "required" | "inherent" | "unsupported"
+const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const PositiveInteger = Schema.Int.check(Schema.isGreaterThan(0))
+
+export const CatalogStabilitySchema = Schema.Literals([
+  "PRIVATE",
+  "EXPERIMENTAL",
+  "PUBLIC",
+  "DEPRECATED",
+  "RETIRED",
+])
+export type CatalogStability = Schema.Schema.Type<typeof CatalogStabilitySchema>
+
+export const ActionIdempotencySchema = Schema.Literals([
+  "required",
+  "inherent",
+  "unsupported",
+])
+export type ActionIdempotency = Schema.Schema.Type<typeof ActionIdempotencySchema>
+
 export type ActionTransactionSemantics =
   | "local_atomic"
   | "coordination_only"
   | "durable_external_effect"
 
-export type ActionCompensation =
-  | { readonly kind: "action"; readonly actionId: string; readonly version: number }
-  | { readonly kind: "none"; readonly recovery: "manual" }
+export const ActionCompensationSchema = Schema.Union([
+  Schema.Struct({
+    kind: Schema.Literal("action"),
+    actionId: NonEmptyString,
+    version: PositiveInteger,
+  }),
+  Schema.Struct({
+    kind: Schema.Literal("none"),
+    recovery: Schema.Literal("manual"),
+  }),
+])
+export type ActionCompensation = Schema.Schema.Type<typeof ActionCompensationSchema>
+
+export const CompatibilityRangeSchema = Schema.Struct({
+  minimumVersion: PositiveInteger,
+  maximumVersion: PositiveInteger,
+}).check(Schema.makeFilter(
+  (range) =>
+    range.minimumVersion <= range.maximumVersion ? undefined : {
+      path: ["maximumVersion"],
+      issue: "maximumVersion must be greater than or equal to minimumVersion",
+    },
+))
+export type CompatibilityRange = Schema.Schema.Type<typeof CompatibilityRangeSchema>
 
 export type ActionPrecondition =
   | "authorized"
@@ -43,11 +77,6 @@ export type ActionEffect =
 export type EventDeliveryExpectation = "at_least_once"
 export type EventSensitivity = "business_internal_minimized"
 
-export interface CompatibilityRange {
-  readonly minimumVersion: number
-  readonly maximumVersion: number
-}
-
 export interface DomainActionCatalogEntry {
   readonly kind: "DomainAction"
   readonly id: string
@@ -57,9 +86,9 @@ export interface DomainActionCatalogEntry {
   readonly description: string
   readonly stability: CatalogStability
   readonly compatibilityRange: CompatibilityRange
-  readonly inputSchema: Schema.Top
-  readonly outputSchema: Schema.Top
-  readonly errorSchemas: ReadonlyArray<Schema.Top>
+  readonly inputSchema: CatalogSchema
+  readonly outputSchema: CatalogSchema
+  readonly errorSchemas: ReadonlyArray<CatalogSchema>
   readonly requiredCapability: string
   readonly scope: ReadonlyArray<string>
   readonly idempotency: ActionIdempotency
@@ -80,7 +109,7 @@ export interface DomainEventCatalogEntry {
   readonly description: string
   readonly stability: CatalogStability
   readonly compatibilityRange: CompatibilityRange
-  readonly payloadSchema: Schema.Top
+  readonly payloadSchema: CatalogSchema
   readonly scope: ReadonlyArray<string>
   readonly aggregateType: string
   readonly correlationFields: ReadonlyArray<string>

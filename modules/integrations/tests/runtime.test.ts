@@ -1,6 +1,7 @@
 import { assert, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
+import * as TestClock from "effect/testing/TestClock"
 
 import {
   defineExternalAction,
@@ -103,6 +104,29 @@ it.effect("uses bounded retry and idempotent action receipts", () =>
     assert.strictEqual(calls, 2)
   }))
 
+it.effect("enforces the catalog timeout across bounded retries", () =>
+  TestClock.withLive(Effect.gen(function* () {
+    let calls = 0
+    const timedAction = { ...createPayment, timeoutPolicy: { timeoutMs: 1 } }
+    const runtime = makeExternalConnectorRuntime({
+      authorizeScope: () => Effect.succeed(undefined),
+      invoke: () => {
+        calls += 1
+        return Effect.never
+      },
+    })
+    const failure = yield* Effect.flip(runtime.invokeAction({
+      tenantId,
+      action: timedAction,
+      idempotencyKey: "payment-timeout",
+      input: { amount: "10.00" },
+    }))
+
+    assert.instanceOf(failure, ExternalProviderFailure)
+    assert.strictEqual(failure.reason, "timeout")
+    assert.strictEqual(calls, 2)
+  })))
+
 it.effect("keeps an unknown outcome in manual recovery", () =>
   Effect.gen(function* () {
     let calls = 0
@@ -152,9 +176,17 @@ it.effect("deduplicates WebhookIngestion by provider event identity", () =>
       ...input,
       envelope: envelope("evt-2", { providerPaymentId: 3 }),
     }))
+    const wrongSource = yield* Effect.flip(runtime.ingestEvent({
+      ...input,
+      envelope: {
+        ...envelope("evt-3", { providerPaymentId: "pay-3" }),
+        source: "https://other.example",
+      },
+    }))
 
     assert.isFalse(first.duplicate)
     assert.isTrue(duplicate.duplicate)
     assert.strictEqual(duplicate.eventId, first.eventId)
     assert.strictEqual(invalid._tag, "ExternalPayloadInvalid")
+    assert.strictEqual(wrongSource._tag, "ExternalPayloadInvalid")
   }))

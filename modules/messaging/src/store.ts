@@ -1,5 +1,4 @@
 import * as Equal from "effect/Equal"
-import * as Schema from "effect/Schema"
 import { consumerReceipts, eventOutbox } from "../../../db/schema/messaging.ts"
 import { AppendEventInput, ConsumeOnceInput, ConsumerReceipt, EventEnvelope } from "./contract.ts"
 import { EventIdempotencyConflict } from "./errors.ts"
@@ -39,9 +38,8 @@ export type EventRow = Omit<EventEnvelope, "occurredAt" | "publishedAt" | "paylo
 }
 export type ReceiptRow = Omit<ConsumerReceipt, "completedAt"> & { readonly completedAt: Date }
 
-export const toEvent = (row: EventRow): EventEnvelope => ({
+export const toEvent = (row: EventRow) => ({
   ...row,
-  payload: row.payload as Schema.Json,
   occurredAt: row.occurredAt.toISOString(),
   publishedAt: row.publishedAt?.toISOString() ?? null,
 })

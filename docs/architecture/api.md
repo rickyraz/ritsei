@@ -52,6 +52,13 @@ record safe authorization and business audit evidence
 Authentication, coarse capability authorization, object authorization, and domain validity are
 separate decisions. A later decision cannot be inferred from an earlier one.
 
+### Transport resource limits
+
+The global API boundary rejects malformed `Content-Length` values and request bodies larger than
+1 MiB before route decoding. Oversized requests return `413 request_body_too_large`; malformed
+lengths return `400 invalid_content_length`. Route schemas add bounds for identifiers, strings,
+collections, and other domain-specific input values.
+
 ## Authentication boundary
 
 The API accepts only an approved authentication assertion from the configured IdentityProvider,

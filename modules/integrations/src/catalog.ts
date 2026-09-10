@@ -1,8 +1,13 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 
-import type { ExternalActionCatalogEntry, ExternalEventCatalogEntry } from "./contract.ts"
+import {
+  type ExternalActionCatalogEntry,
+  type ExternalEventCatalogEntry,
+  validateExternalActionDefinition,
+} from "./contract.ts"
 import { ExternalActionNotAllowlisted, ExternalPayloadInvalid } from "./errors.ts"
+import { decodeExternalSchema } from "./schema.ts"
 
 export type ExternalCatalogEntry = ExternalActionCatalogEntry | ExternalEventCatalogEntry
 
@@ -22,18 +27,27 @@ export type ExternalSimulationResult = {
 }
 
 const Uuid = Schema.String.check(Schema.isUUID())
-const decodeExternalInput = (schema: Schema.Top, input: unknown) =>
-  Schema.decodeUnknownEffect(schema as Schema.Codec<unknown, unknown, never, never>)(input)
 
 export const simulateWithoutSideEffect = (
   input: SimulateExternalActionInput,
 ): Effect.Effect<ExternalSimulationResult, ExternalActionNotAllowlisted | ExternalPayloadInvalid> =>
   Effect.gen(function* () {
+    const identifier = typeof input.action?.id === "string" && input.action.id.trim() !== ""
+      ? input.action.id.slice(0, 256)
+      : "external-action"
     if (!Schema.is(Uuid)(input.tenantId)) {
       return yield* Effect.fail(
         new ExternalPayloadInvalid({
           boundary: "external.simulation.tenant",
-          identifier: input.action.id,
+          identifier,
+        }),
+      )
+    }
+    if (!validateExternalActionDefinition(input.action)) {
+      return yield* Effect.fail(
+        new ExternalPayloadInvalid({
+          boundary: "external.catalog.action.definition",
+          identifier,
         }),
       )
     }
@@ -45,11 +59,11 @@ export const simulateWithoutSideEffect = (
         }),
       )
     }
-    const validatedInput = yield* decodeExternalInput(input.action.inputSchema, input.input).pipe(
+    const validatedInput = yield* decodeExternalSchema(input.action.inputSchema, input.input).pipe(
       Effect.mapError(() =>
         new ExternalPayloadInvalid({
           boundary: "external.simulation.input",
-          identifier: input.action.id,
+          identifier,
         })
       ),
     )

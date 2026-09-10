@@ -1,6 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 
+import { validateExternalEventDefinition } from "./contract.ts"
 import {
   type ExternalActionNotAllowlisted,
   type ExternalAuthorizationDenied,
@@ -24,6 +25,50 @@ import {
 
 const Uuid = Schema.String.check(Schema.isUUID())
 const NonEmptyString = Schema.String.check(Schema.isPattern(/\S/))
+const byteLength = (value: string) => new TextEncoder().encode(value).byteLength
+
+export const HttpsWebhookLimits = {
+  maxBodyBytes: 1_048_576,
+  maxSignatureLength: 4_096,
+  maxCorrelationIdLength: 256,
+  verifierTimeoutMs: 5_000,
+} as const
+
+const eventIdentifier = (event: { readonly id?: unknown } | null | undefined): string => {
+  const id = typeof event?.id === "string" && event.id.trim() !== "" ? event.id : undefined
+  return id === undefined ? "external-event" : id.slice(0, 256)
+}
+
+const isBoundedNonEmptyString = (value: unknown, maxBytes: number): value is string =>
+  typeof value === "string" &&
+  Schema.is(NonEmptyString)(value) &&
+  byteLength(value) <= maxBytes
+
+const decodeWebhookBody = (body: string, identifier: string) =>
+  Effect.try({
+    try: () => JSON.parse(body),
+    catch: () => undefined,
+  }).pipe(
+    Effect.flatMap((value) => Schema.decodeUnknownEffect(WebhookIngestion)(value)),
+    Effect.mapError(() =>
+      new ExternalPayloadInvalid({
+        boundary: "external.https.webhook.body",
+        identifier,
+      })
+    ),
+  )
+
+type WebhookEnvelope = Schema.Schema.Type<typeof WebhookIngestion>
+
+const sameWebhookEnvelope = (left: WebhookEnvelope, right: WebhookEnvelope): boolean =>
+  left.specversion === right.specversion &&
+  left.type === right.type &&
+  left.source === right.source &&
+  left.id === right.id &&
+  left.time === right.time &&
+  left.datacontenttype === right.datacontenttype &&
+  left.subject === right.subject &&
+  JSON.stringify(left.data) === JSON.stringify(right.data)
 
 export type HttpsSignatureVerifier = (input: {
   readonly tenantId: string
@@ -36,6 +81,15 @@ export type HttpsWebhookInput = IngestExternalEventInput & {
   readonly signature: string
   readonly correlationId: string
 }
+
+const isValidWebhookInput = (input: HttpsWebhookInput): boolean =>
+  [
+    validateExternalEventDefinition(input.event),
+    Schema.is(Uuid)(input.tenantId),
+    isBoundedNonEmptyString(input.body, HttpsWebhookLimits.maxBodyBytes),
+    isBoundedNonEmptyString(input.signature, HttpsWebhookLimits.maxSignatureLength),
+    isBoundedNonEmptyString(input.correlationId, HttpsWebhookLimits.maxCorrelationIdLength),
+  ].every(Boolean)
 
 export type HttpsConnectorRuntime = {
   readonly invokeAction: (
@@ -71,38 +125,56 @@ export const makeHttpsConnectorRuntime = (options: {
 
   const ingestWebhook = (input: HttpsWebhookInput) =>
     Effect.gen(function* () {
-      if (
-        !Schema.is(Uuid)(input.tenantId) ||
-        !Schema.is(NonEmptyString)(input.body) ||
-        !Schema.is(NonEmptyString)(input.signature) ||
-        !Schema.is(NonEmptyString)(input.correlationId)
-      ) {
+      const identifier = eventIdentifier(input.event)
+      if (!isValidWebhookInput(input)) {
         return yield* Effect.fail(
           new ExternalPayloadInvalid({
             boundary: "external.https.webhook.input",
-            identifier: input.event.id,
+            identifier,
           }),
         )
       }
-      const envelope = yield* Schema.decodeUnknownEffect(WebhookIngestion)(input.envelope).pipe(
-        Effect.mapError(() =>
-          new ExternalPayloadInvalid({
-            boundary: "external.https.webhook.envelope",
-            identifier: input.event.id,
-          })
-        ),
+      // Verify the raw body before parsing or deduplicating the webhook.
+      const verified = yield* Effect.timeoutOrElse(
+        options.verifySignature({
+          tenantId: input.tenantId,
+          body: input.body,
+          signature: input.signature,
+        }),
+        {
+          duration: HttpsWebhookLimits.verifierTimeoutMs,
+          orElse: () =>
+            Effect.fail(
+              new ExternalPayloadInvalid({
+                boundary: "external.https.webhook.verifier-timeout",
+                identifier,
+              }),
+            ),
+        },
       )
-      // The HTTPS webhook must verify signature before WebhookIngestion can deduplicate delivery.
-      const verified = yield* options.verifySignature({
-        tenantId: input.tenantId,
-        body: input.body,
-        signature: input.signature,
-      })
       if (!verified) {
         return yield* Effect.fail(
           new ExternalPayloadInvalid({
             boundary: "external.https.webhook.signature",
-            identifier: input.event.id,
+            identifier,
+          }),
+        )
+      }
+      const envelope = yield* decodeWebhookBody(input.body, identifier)
+      const suppliedEnvelope = yield* Schema.decodeUnknownEffect(WebhookIngestion)(input.envelope)
+        .pipe(
+          Effect.mapError(() =>
+            new ExternalPayloadInvalid({
+              boundary: "external.https.webhook.envelope",
+              identifier,
+            })
+          ),
+        )
+      if (!sameWebhookEnvelope(envelope, suppliedEnvelope)) {
+        return yield* Effect.fail(
+          new ExternalPayloadInvalid({
+            boundary: "external.https.webhook.body-envelope-mismatch",
+            identifier,
           }),
         )
       }
