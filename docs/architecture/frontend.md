@@ -164,7 +164,7 @@ Solid Context
 - An action adapter must preserve typed failures, interruption, compensation,
   and service scope without moving business authority into the browser.
 - Solid signals, memos, stores, and context own local presentation state.
-- TanStack Solid Query owns shared remote server-state cache policy; its results
+- TanStack Solid Query owns cache policy for shared remote server state; its results
   must not be mirrored into Atom or an unrelated store.
 - Effect Atom is an explicit opt-in for a shared or portable Effect-native
   reactive graph. It is not the default local-state store, DI container, cache,

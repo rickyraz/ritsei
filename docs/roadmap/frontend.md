@@ -110,8 +110,8 @@ shared contracts rather than feature-local vendor usage.
 
 ### F3 — Accessibility and performance (`frontend.accessibility-performance`)
 
-Validate one representative business workflow end to end. Cover keyboard and screen-reader
-behavior, focus and error handling, contrast/high contrast, reduced motion, zoom/localization,
+Validate one representative business workflow end to end. Cover keyboard and screen-reader behavior,
+focus and error handling, contrast/high contrast, reduced motion, zoom/localization,
 route splitting, bundle size, interaction latency, and long-session stability.
 
 **Exit evidence:**
