@@ -4,7 +4,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 // A passed suite with no executed assertions (or with pending assertions) is not evidence.
 export const parsePassedTestFiles = (text: string | undefined): ReadonlySet<string> => {
   try {
-    const report: unknown = JSON.parse(text ?? "")
+    const report: unknown = JSON.parse(text?.slice(text.indexOf("{")) ?? "")
     if (!isRecord(report) || !Array.isArray(report.testResults)) return new Set()
     const passed = new Set<string>()
     const seen = new Set<string>()

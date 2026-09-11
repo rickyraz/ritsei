@@ -47,6 +47,13 @@ describe("frontend gate evidence", () => {
     )
   })
 
+  it("accepts JSON reports after runner log output", () => {
+    assert.deepEqual(
+      [...parsePassedTestFiles(`transforming...\n✓ contracts\n${report(suite())}`)],
+      [suite().name],
+    )
+  })
+
   it("accepts only suites with positive, entirely passed assertion results", () => {
     assert.deepEqual([...parsePassedTestFiles(report(suite()))], [suite().name])
     for (const status of ["skipped", "pending", "todo", "failed", "unknown"]) {
