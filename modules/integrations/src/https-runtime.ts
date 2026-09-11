@@ -134,7 +134,7 @@ export const makeHttpsConnectorRuntime = (options: {
           }),
         )
       }
-      // Verify the raw body before parsing or deduplicating the webhook.
+      // verify signature on the raw body before parsing; deduplicate only after verification.
       const verified = yield* Effect.timeoutOrElse(
         options.verifySignature({
           tenantId: input.tenantId,

@@ -93,10 +93,10 @@ prompt, dynamic action, or nondeterministic AI binding.
 
 Before operational recovery can claim safe leased work, enforce a monotonic generation at the actual
 side-effect mutation boundary. A lease capability token proves possession only; the fencing
-generation proves freshness within an explicit shared fence scope. Fencing and idempotency identity
-remain separate.
+generation proves freshness within an explicit shared fence scope. The idempotency identity remains separate
+from fencing.
 
-**Exit:** concurrent claims receive distinct generations, stale workers are rejected before side
+**Exit:** concurrent claims receive distinct generations, stale-writer rejection occurs before side
 effects, the generation cannot reset or decrease, and the shared-scope tests cover lease expiry,
 reacquisition, and stale completion.
 
