@@ -666,6 +666,8 @@ It must not access:
 - a PostgreSQL-primary credential;
 - a fallback that executes the dashboard query on the primary.
 
+A projection failure or saturation never changes routing to the primary and must not fall back from query to command resources.
+
 Projection routes must declare:
 
 ```text
