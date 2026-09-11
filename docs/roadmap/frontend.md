@@ -143,12 +143,12 @@ roadmap completion:
   visibility, narrow layout, error association, and semantic fallback. These checks do not claim
   screen-reader review, localization review, or long-session operational evidence.
 
-The implementation deliberately leaves the F2 and F3 evidence manifests `blocked`. The Kobalte
+The F2 evidence manifest records the automated design-system checks as passed. The Kobalte
 compatibility risk is accepted only for the exact pinned dependency and does not globally approve
-unused or untested primitives; the current production-approval list is empty. Upstream
-`workload.command-reserve` and `process.designer095` dependencies also remain open, so no frontend
-readiness or production-support claim is implied. The next legitimate work is to complete the
-remaining reviewed accessibility/performance evidence, not to add more generic components.
+unused or untested primitives; the current production-approval list is empty. The F3 readiness
+manifest remains `blocked`: no frontend support claim is implied until the remaining reviewed
+accessibility/performance evidence is complete. The next legitimate work is to complete that review,
+not to add more generic components.
 
 ## Conditional stages (not registered)
 

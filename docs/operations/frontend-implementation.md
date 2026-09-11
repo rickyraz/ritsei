@@ -1,6 +1,6 @@
 # Frontend implementation evidence
 
-> **Status:** In progress; Kobalte dependency approval is bounded and risk-accepted; no Kobalte primitive is active in production.
+> **Status:** F2 design-system evidence passed mechanically; F3 review remains blocked; Kobalte dependency approval is bounded and risk-accepted; no Kobalte primitive is active in production.
 >
 > **Evidence date:** September 5, 2026
 >
@@ -70,13 +70,13 @@ production component catalog.
 
 ## Remaining blockers
 
-The evidence manifests intentionally remain `blocked` for the full roadmap gates. The Kobalte
-compatibility check is `approved_with_risk`, but the design-system manifest still lacks the other
-required checks and no production primitive is approved. Automated browser checks are not a
-substitute for reviewed screen-reader, localization/zoom, long-session, interaction-latency, or
-production performance evidence. Chrome DevTools performance tracing was unavailable in this
-workspace, so no Core Web Vitals claim is recorded.
+The F2 design-system manifest now records the automated token, focus, keyboard, contrast, density,
+theme, reduced-motion, and vendor-boundary checks as passed; the Kobalte compatibility check remains
+`approved_with_risk` and no production primitive is approved. The F3 readiness manifest remains
+`blocked`: automated browser checks are not a substitute for reviewed screen-reader,
+localization/zoom, long-session, interaction-latency, or production performance evidence. Chrome
+DevTools performance tracing was unavailable in this workspace, so no Core Web Vitals claim is
+recorded.
 
-The roadmap also remains gated by upstream `workload.command-reserve` and `process.designer095`.
-The next legitimate promotion step is to complete the remaining design-system and accessibility
+The next legitimate promotion step is to complete the remaining accessibility and performance
 review, not to resolve the already-accepted peer-range risk or add more generic UI abstractions.

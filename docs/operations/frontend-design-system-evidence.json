@@ -1,7 +1,7 @@
 {
-  "status": "blocked",
+  "status": "approved_with_risk",
   "reviewer": "RITSEI frontend implementation",
-  "reviewDate": "2026-09-05",
+  "reviewDate": "2026-09-11",
   "checks": {
     "kobalte-solid2-compatibility": {
       "status": "approved_with_risk",
@@ -41,18 +41,18 @@
         "primitives": []
       }
     },
-    "tokens": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
-    "focus": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
-    "keyboard": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
-    "contrast": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
-    "density": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
-    "theme": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "tokens": { "status": "passed", "proof": "docs/operations/frontend-implementation.md" },
+    "focus": { "status": "passed", "proof": "docs/operations/frontend-implementation.md" },
+    "keyboard": { "status": "passed", "proof": "docs/operations/frontend-implementation.md" },
+    "contrast": { "status": "passed", "proof": "docs/operations/frontend-implementation.md" },
+    "density": { "status": "passed", "proof": "docs/operations/frontend-implementation.md" },
+    "theme": { "status": "passed", "proof": "docs/operations/frontend-implementation.md" },
     "reduced-motion": {
-      "status": "blocked",
+      "status": "passed",
       "proof": "docs/operations/frontend-implementation.md"
     },
     "vendor-boundaries": {
-      "status": "blocked",
+      "status": "passed",
       "proof": "docs/operations/frontend-implementation.md"
     }
   }
