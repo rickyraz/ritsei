@@ -139,16 +139,16 @@ roadmap completion:
   tenant-scoped headers, email editing, refetch, focus restoration, and unknown-outcome recovery.
   The shared UI surface is limited to the controls, semantic recipes, and layouts proven by this
   workflow; domain presentation remains under `features/identity/`.
-- **F3 evidence:** automated browser checks cover axe, keyboard focus, reduced motion, forced-colors
-  visibility, narrow layout, error association, and semantic fallback. These checks do not claim
-  screen-reader review, localization review, or long-session operational evidence.
+- **F3 evidence:** the representative-workflow browser checks cover axe, keyboard focus, reduced
+  motion, forced-colors visibility, narrow layout, validation focus, 200% zoom, route splitting,
+  bundle limits, interaction latency, semantic fallback, and bounded repeated use.
 
-The F2 evidence manifest records the automated design-system checks as passed. The Kobalte
-compatibility risk is accepted only for the exact pinned dependency and does not globally approve
-unused or untested primitives; the current production-approval list is empty. The F3 readiness
-manifest remains `blocked`: no frontend support claim is implied until the remaining reviewed
-accessibility/performance evidence is complete. The next legitimate work is to complete that review,
-not to add more generic components.
+The F2 evidence manifest records the automated design-system checks as passed. The F3 readiness
+manifest records the representative-workflow checks and bounded local thresholds as passed. The
+Kobalte compatibility risk is accepted only for the exact pinned dependency and does not globally
+approve unused or untested primitives; the current production-approval list is empty. This remains
+repository-local mechanical evidence and does not claim production SLOs, full assistive-technology
+certification, or production deployment approval.
 
 ## Conditional stages (not registered)
 

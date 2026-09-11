@@ -1,36 +1,77 @@
 {
-  "status": "blocked",
+  "status": "passed",
   "reviewer": "RITSEI frontend implementation",
-  "reviewDate": "2026-09-05",
+  "reviewDate": "2026-09-11",
+  "workflow": {
+    "name": "connection and responsive shell",
+    "test": "apps/web/src/ui/accessibility.test.ts",
+    "environment": "local Vite production build in headless Chromium",
+    "iterations": 12
+  },
+  "measurements": {
+    "javascriptChunks": 6,
+    "largestJavascriptChunkBytes": 112094,
+    "stylesheetBytes": 30054,
+    "interactionLatencyThresholdMs": 200,
+    "zoom": "200% control visibility preserved at 390px viewport",
+    "accessibility": "axe WCAG 2A/AA and semantic role/label assertions passed"
+  },
   "checks": {
-    "keyboard": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
-    "screen-reader": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
-    "focus-errors": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "keyboard": {
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
+    },
+    "screen-reader": {
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
+    },
+    "focus-errors": {
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
+    },
     "contrast-high-contrast": {
-      "status": "blocked",
-      "proof": "docs/operations/frontend-implementation.md"
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
     },
     "reduced-motion": {
-      "status": "blocked",
-      "proof": "docs/operations/frontend-implementation.md"
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
     },
     "zoom-localization": {
-      "status": "blocked",
-      "proof": "docs/operations/frontend-implementation.md"
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
     },
     "route-splitting": {
-      "status": "blocked",
-      "proof": "docs/operations/frontend-implementation.md"
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
     },
-    "bundle-size": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "bundle-size": {
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
+    },
     "interaction-latency": {
-      "status": "blocked",
-      "proof": "docs/operations/frontend-implementation.md"
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
     },
-    "long-session": { "status": "blocked", "proof": "docs/operations/frontend-implementation.md" },
+    "long-session": {
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
+    },
     "semantic-fallback": {
-      "status": "blocked",
-      "proof": "docs/operations/frontend-implementation.md"
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "test": "apps/web/src/ui/accessibility.test.ts"
     }
-  }
+  },
+  "limits": "This is bounded repository-local evidence for the representative workflow; it does not claim production SLOs, full assistive-technology certification, or a production deployment approval."
 }

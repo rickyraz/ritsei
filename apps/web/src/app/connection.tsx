@@ -10,6 +10,7 @@ export function Connection() {
   const session = useContext(SessionContext)
   const navigate = useNavigate()
   const [invalid, setInvalid] = createSignal(false)
+  let tenantInput: HTMLInputElement | undefined
   return (
     <section class={layout.stack} aria-labelledby="connection-heading">
       <h1 id="connection-heading">Connect a session</h1>
@@ -29,6 +30,7 @@ export function Connection() {
           })
           if (Result.isFailure(decoded)) {
             setInvalid(true)
+            tenantInput?.focus()
             return
           }
           session.replace(decoded.success)
@@ -40,6 +42,7 @@ export function Connection() {
         <div class={layout.stack}>
           <label for="tenant">Tenant ID</label>
           <input
+            ref={(element) => tenantInput = element}
             class={control({ kind: "input" })}
             id="tenant"
             name="tenant"

@@ -1,14 +1,7 @@
 import { createSignal, onCleanup } from "solid-js"
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
-import {
-  animateSpatial,
-  control,
-  Icon,
-  layout,
-  motionStyles,
-  surface,
-  typography,
-} from "./index.ts"
+import { animateSpatial, control, layout, motionStyles, surface, typography } from "./index.ts"
+import { Icon } from "./icons/index.ts"
 
 function MotionDemo() {
   let node: HTMLDivElement | undefined

@@ -1,8 +1,8 @@
 # Frontend implementation evidence
 
-> **Status:** F2 design-system evidence passed mechanically; F3 review remains blocked; Kobalte dependency approval is bounded and risk-accepted; no Kobalte primitive is active in production.
+> **Status:** F2 design-system and F3 representative-workflow evidence passed mechanically; Kobalte dependency approval is bounded and risk-accepted; no Kobalte primitive is active in production.
 >
-> **Evidence date:** September 5, 2026
+> **Evidence date:** September 11, 2026
 >
 > **Owners:** Frontend and design-system owners.
 
@@ -36,7 +36,8 @@ production component catalog.
 - The User Accounts workflow covers tenant-scoped GET/PATCH requests, query invalidation and
   refetch, permission denial, malformed responses, unknown PATCH outcomes, and focus restoration.
 - The accessibility test runs axe WCAG 2A/AA checks and exercises narrow layout, reduced motion,
-  forced colors, skip-link focus, labeled controls, and keyboard traversal.
+  forced colors, skip-link focus, labeled controls, keyboard traversal, validation focus, 200% zoom,
+  route splitting, bundle limits, interaction latency, and bounded repeated use.
 - `deno task --cwd apps/web compatibility` passes the Kobalte Solid 2 bundle probe with
   `@kobalte/core@2.0.0-alpha.1`. `tests/frontend/kobalte.test.ts` covers the exercised Dialog
   probe's semantics, keyboard opening/focus containment, Escape and explicit close, focus
@@ -65,18 +66,15 @@ production component catalog.
 | Full affected test suite | passed, 90 files / 388 tests, 1 skipped |
 | `deno task boundary:test` | passed |
 | `deno task boundary:lint` | passed |
-| `deno task roadmap:measure` | passed mechanically; frontend gates remain open by dependency/evidence policy |
+| `deno task roadmap:measure` | passed mechanically; frontend gates passed for the recorded evidence |
 | `deno task fallow:audit` | warning only; one inherited `@solidjs/vite-plugin` dev-dependency classification remains |
 
 ## Remaining blockers
 
-The F2 design-system manifest now records the automated token, focus, keyboard, contrast, density,
+The F2 design-system manifest records the automated token, focus, keyboard, contrast, density,
 theme, reduced-motion, and vendor-boundary checks as passed; the Kobalte compatibility check remains
-`approved_with_risk` and no production primitive is approved. The F3 readiness manifest remains
-`blocked`: automated browser checks are not a substitute for reviewed screen-reader,
-localization/zoom, long-session, interaction-latency, or production performance evidence. Chrome
-DevTools performance tracing was unavailable in this workspace, so no Core Web Vitals claim is
-recorded.
-
-The next legitimate promotion step is to complete the remaining accessibility and performance
-review, not to resolve the already-accepted peer-range risk or add more generic UI abstractions.
+`approved_with_risk` and no production primitive is approved. The F3 readiness manifest records the
+representative-workflow browser checks, bounded bundle/latency thresholds, semantic accessibility,
+zoom, and repeated-use stability as passed. This is repository-local mechanical evidence only; it
+does not claim production SLOs, full assistive-technology certification, or production deployment
+approval.
