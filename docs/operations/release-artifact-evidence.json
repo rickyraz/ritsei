@@ -1,0 +1,49 @@
+{
+  "status": "passed",
+  "reviewDate": "2026-09-11",
+  "reviewer": "Release and operations composition root",
+  "sourceRevision": "5a837d432b73291e3aeac1df7ee99d67f94bbe1b",
+  "manifest": "deploy/artifacts/manifest.json",
+  "buildCommand": "deno task production:artifacts",
+  "reproducibility": {
+    "status": "passed",
+    "runs": [
+      "deploy/artifacts/output/5a837d432b73291e3aeac1df7ee99d67f94bbe1b",
+      "deploy/artifacts/output/repeat"
+    ],
+    "artifactHashesMatch": true,
+    "lockfilePinned": true,
+    "mutableLocalStateRequired": false
+  },
+  "artifacts": {
+    "api": {
+      "kind": "deno-bundle",
+      "entrypoint": "runtime/api/mod.ts",
+      "sizeBytes": 62387493
+    },
+    "worker": {
+      "kind": "deno-bundle",
+      "entrypoint": "runtime/worker/mod.ts",
+      "sizeBytes": 58381053
+    },
+    "migrator": {
+      "kind": "deno-bundle",
+      "entrypoint": "runtime/migrator/mod.ts",
+      "migrationFiles": 231,
+      "sizeBytes": 58070038
+    },
+    "frontend": {
+      "kind": "vite-dist",
+      "source": "apps/web",
+      "files": 24
+    }
+  },
+  "cleanRoomStartup": {
+    "status": "passed",
+    "workingDirectory": "/tmp",
+    "api": "bundle executed and rejected missing DATABASE_URL",
+    "worker": "bundle executed and rejected missing DATABASE_URL and WORKER_TENANT_ID",
+    "migrator": "bundle executed and rejected missing DATABASE_URL"
+  },
+  "limits": "This closes artifact production only. It does not claim PostgreSQL 19 production approval, install/upgrade support, HA, profile approval, or production deployment approval. Generated artifact output is ignored by Git and must be retained by the release system alongside this manifest."
+}

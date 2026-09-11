@@ -2,8 +2,8 @@
 
 > **Status:** Canonical release workflow
 >
-> **Owns:** product release preparation, SemVer authority, source-only release caveats, and
-> release-record requirements.
+> **Owns:** product release preparation, SemVer authority, source-only release caveats, artifact
+> build evidence, and release-record requirements.
 >
 > **Related documents**
 >
@@ -13,6 +13,7 @@
 >   [`../decisions/0020-adopt-capability-release-and-runtime-governance.md`](../decisions/0020-adopt-capability-release-and-runtime-governance.md)
 > - Commit-message standard: [`./commit-message-guidelines.md`](./commit-message-guidelines.md)
 > - Roadmap index: [`../roadmap/README.md`](../roadmap/README.md)
+> - Artifact evidence: [`../operations/release-artifact-evidence.json`](../operations/release-artifact-evidence.json)
 
 ## Product version authority
 
@@ -34,6 +35,18 @@ Published release records:
 
 Both releases were published on August 31, 2026 as pre-release, source-only snapshots. They do not
 promise a build artifact, package distribution, production deployment, or supported upgrade path.
+
+The current source tree also provides an artifact-backed build path:
+
+```sh
+deno task check
+deno task production:artifacts
+```
+
+The command produces reproducible API, worker, migrator, migration, and frontend artifacts under
+`deploy/artifacts/output/<source-revision>/` and records their hashes in
+`deploy/artifacts/manifest.json`. This path does not itself grant production deployment or profile
+approval; those remain separate reviewed gates.
 
 ## Preparation checklist
 
@@ -94,7 +107,9 @@ data or an existing deployment:
 - verify package, API, capability, and Process Studio compatibility separately;
 - preserve backups and reconciliation evidence for invariant-sensitive data;
 - treat missing build artifacts, deployment manifests, and documented upgrade automation as a reason
-  to stop rather than infer support.
+  to stop rather than infer support;
+- retain `deploy/artifacts/manifest.json` and the generated artifact output together for an
+  artifact-backed release.
 
 No automatic compatibility claim follows from `v0.1.0` or `v0.2.0`. Migration and upgrade support
 must be documented explicitly when it becomes available.

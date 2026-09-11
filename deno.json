@@ -39,6 +39,7 @@
     "roadmap:measure": "deno run --allow-read --allow-run tooling/roadmap-completion/measure.ts",
     "boundary:lint": "ast-grep scan apps foundation modules platform runtime tooling tests && deno task fallow:boundaries && deno task architecture:check && deno run --allow-read --allow-env tooling/schema-ownership.ts",
     "postgres19:rehearse": "deno run --allow-env --allow-net --allow-read --allow-write tooling/postgresql-19/rehearse.ts",
+    "production:artifacts": "deno run -A tooling/production/artifacts.ts",
     "boundary:test": "ast-grep test --skip-snapshot-tests",
     "check": "deno task --cwd apps/web contracts && deno check foundation modules platform runtime tooling tests db apps/web/src/features/process-studio *.config.ts && deno task --cwd apps/web check"
   },

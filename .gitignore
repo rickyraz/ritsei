@@ -9,5 +9,6 @@ node_modules/
 !.env.example
 .DS_Store
 apps/web/dist/
+deploy/artifacts/output/
 apps/web/src/ui/generated/
 apps/web/src/shared/contracts/generated/
