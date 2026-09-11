@@ -97,9 +97,9 @@ from the RITSEI UserAccount and tenant membership.
 
 #### D0.2 — Authorization foundation (`domain.authorization-foundation`)
 
-Prove the ordered authorization boundary beyond direct grants: scoped capability, relationship/object
-checks, domain policy, Separation of Duties, explainable denial, and fail-closed handling for unknown,
-stale, or unavailable results. The current direct-grant baseline does not silently satisfy these
+Prove the ordered authorization boundary beyond direct grants: scoped capability, relationship/object checks,
+domain policy, Separation of Duties, explainable denial, and fail-closed handling for unknown, stale,
+or unavailable results. The current direct-grant baseline does not silently satisfy these
 additional target layers.
 
 #### D0.3 — Capability grammar (`domain.capability-grammar`)

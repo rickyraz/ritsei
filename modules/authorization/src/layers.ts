@@ -4,9 +4,19 @@ import * as Schema from "effect/Schema"
 import { AuthorizationService, GrantCapabilityInput } from "./contract.ts"
 import { makeAuthorizationService } from "./service.ts"
 import { makeMemoryAuthorizationService } from "./memory.ts"
+import {
+  makeMemoryRelationshipEngine,
+  makeRelationshipEngine,
+  RelationshipEngine,
+} from "./relationship.ts"
 
 export const AuthorizationLive = Layer.effect(AuthorizationService, makeAuthorizationService)
+export const RelationshipLive = Layer.effect(RelationshipEngine, makeRelationshipEngine)
 
 export const makeAuthorizationTestLayer = (
   initialGrants: ReadonlyArray<Schema.Schema.Type<typeof GrantCapabilityInput>> = [],
-) => Layer.succeed(AuthorizationService, makeMemoryAuthorizationService(initialGrants))
+) =>
+  Layer.merge(
+    Layer.succeed(AuthorizationService, makeMemoryAuthorizationService(initialGrants)),
+    Layer.succeed(RelationshipEngine, makeMemoryRelationshipEngine()),
+  )

@@ -43,4 +43,27 @@ export {
 } from "./src/errors.ts"
 
 export { makeAuthorizationService } from "./src/service.ts"
-export { AuthorizationLive, makeAuthorizationTestLayer } from "./src/layers.ts"
+export {
+  makeMemoryRelationshipEngine,
+  makePostgresRelationshipEngine,
+  RelationshipDecision,
+  RelationshipEngine,
+  RelationshipInput,
+  RelationshipResult,
+} from "./src/relationship.ts"
+export type {
+  RelationshipDecision as RelationshipDecisionType,
+  RelationshipEngine as RelationshipEngineShape,
+  RelationshipInput as RelationshipInputType,
+  RelationshipResult as RelationshipResultType,
+} from "./src/relationship.ts"
+export {
+  evaluateSeparationOfDuties,
+  SeparationOfDutiesDecision,
+  SeparationOfDutiesInput,
+} from "./src/sod.ts"
+export type {
+  SeparationOfDutiesDecision as SeparationOfDutiesDecisionType,
+  SeparationOfDutiesInput as SeparationOfDutiesInputType,
+} from "./src/sod.ts"
+export { AuthorizationLive, makeAuthorizationTestLayer, RelationshipLive } from "./src/layers.ts"
