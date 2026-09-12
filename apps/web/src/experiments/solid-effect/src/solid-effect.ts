@@ -54,7 +54,10 @@ export function createRuntime<R>(
   layer: Layer.Layer<R>,
 ): ManagedRuntime.ManagedRuntime<R, never> {
   const parent = useContext(RuntimeContext);
-  const runtime = ManagedRuntime.make(layer, { memoMap: parent?.memoMap });
+  const runtime = ManagedRuntime.make(
+    layer,
+    parent ? { memoMap: parent.memoMap } : undefined,
+  );
   onCleanup(() => void runtime.dispose());
   return runtime;
 }
@@ -94,10 +97,11 @@ export function runEffect<A, E, R = never>(
             yielded = true;
             return { done: false, value: exit.value };
           }
+          closed = true;
           if (Exit.isFailure(exit)) {
-            closed = true;
-            if (Cause.hasInterrupts(exit.cause)) return DONE;
-            throw Cause.squash(exit.cause);
+            const cause = exit.cause;
+            if (Exit.hasInterrupts(exit)) return DONE;
+            throw Cause.squash(cause);
           }
           return DONE;
         },
@@ -158,9 +162,10 @@ export function effectAction<Args extends unknown[], R>(
       if (inFlight === fiber) inFlight = null;
       if (Exit.isSuccess(exit)) step = it.next(exit.value as never);
       else if (Exit.isFailure(exit)) {
-        if (Cause.hasInterrupts(exit.cause)) {
+        const cause = exit.cause;
+        if (Exit.hasInterrupts(exit)) {
           step = it.throw(new ActionInterruptedError());
-        } else step = it.throw(Cause.squash(exit.cause));
+        } else step = it.throw(Cause.squash(cause));
       }
     }
     return step.value;

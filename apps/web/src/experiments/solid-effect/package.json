@@ -14,7 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@effect/atom-solid": "4.0.0-rc.112",
-    "effect": "^4.0.0-rc.111"
+    "effect": "4.0.0-rc.112"
   },
   "devDependencies": {
     "@solidjs/vite-plugin": "3.0.0-next.37",
