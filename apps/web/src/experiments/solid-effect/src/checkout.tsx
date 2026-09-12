@@ -126,6 +126,17 @@ export function Checkout() {
     },
   );
 
+  let placeOrderButton: HTMLButtonElement | undefined;
+  const restorePlaceOrderFocus = () => {
+    requestAnimationFrame(() => placeOrderButton?.focus());
+  };
+  const submitOrder = () => {
+    placeOrder(
+      cart.map((item) => ({ ...item })),
+      declineCard(),
+    ).catch(() => {}).finally(restorePlaceOrderFocus);
+  };
+
   const inFlight = () => phase() !== "idle";
   const stepState = (step: Phase) => {
     const order: Phase[] = ["reserving", "charging", "finalizing"];
@@ -154,6 +165,7 @@ export function Checkout() {
               <span class="cart-name">{item.name}</span>
               <span class="qty">
                 <button
+                  aria-label={`Decrease ${item.name} quantity`}
                   disabled={inFlight() || item.quantity <= 1}
                   onClick={() =>
                     setCart((c) => {
@@ -164,6 +176,7 @@ export function Checkout() {
                 </button>
                 {item.quantity}
                 <button
+                  aria-label={`Increase ${item.name} quantity`}
                   disabled={inFlight()}
                   onClick={() =>
                     setCart((c) => {
@@ -200,12 +213,9 @@ export function Checkout() {
           when={inFlight()}
           fallback={
             <button
+              ref={placeOrderButton}
               class="primary"
-              onClick={() =>
-                placeOrder(
-                  cart.map((item) => ({ ...item })),
-                  declineCard(),
-                ).catch(() => {})}
+              onClick={submitOrder}
             >
               Place order — ${total().toFixed(2)}
             </button>
@@ -221,6 +231,9 @@ export function Checkout() {
         <For each={STEPS}>
           {(step) => (
             <li
+              aria-current={stepState(step.phase) === "active"
+                ? "step"
+                : undefined}
               class={{
                 done: stepState(step.phase) === "done",
                 active: stepState(step.phase) === "active",
@@ -233,7 +246,15 @@ export function Checkout() {
       </ol>
 
       <Show when={notice()}>
-        {(n) => <p class={`notice ${n().kind}`}>{n().text}</p>}
+        {(n) => (
+          <p
+            aria-live={n().kind === "error" ? "assertive" : "polite"}
+            class={`notice ${n().kind}`}
+            role={n().kind === "error" ? "alert" : "status"}
+          >
+            {n().text}
+          </p>
+        )}
       </Show>
 
       <h3>Your orders</h3>
