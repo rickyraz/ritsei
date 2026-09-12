@@ -7,8 +7,8 @@
 //
 // Case 1: memo reads runEffect(searchPackages(q)) under a RuntimeContext
 //         provider built from SearchConfigLive → results arrive.
-// Case 2: same memo with NO provider → default-runtime fallback fails with
-//         a missing-service error (proves the provider was load-bearing).
+// Case 2: same memo with NO provider → the production bridge fails fast with
+//         a missing-runtime error (proves the provider was load-bearing).
 import {
   createComponent,
   createEffect,
@@ -71,6 +71,6 @@ console.log("without provider:", JSON.stringify(withoutProvider))
 const pass = withProvider.ok === true &&
   withProvider.count > 0 &&
   withoutProvider.ok === false &&
-  /Service not found|SearchConfig/.test(withoutProvider.error)
+  /MissingRuntimeContext|RuntimeContext/.test(withoutProvider.error)
 console.log(pass ? "PASS" : "FAIL")
 process.exit(pass ? 0 : 1)

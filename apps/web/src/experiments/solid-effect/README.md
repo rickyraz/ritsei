@@ -1,9 +1,10 @@
 # Solid 2.0 × Effect
 
 Two demos showing that Solid 2.0 and [Effect](https://effect.website) compose without a binding
-library, plus an optional Atom registry comparison. The native integration is
-[`src/solid-effect.ts`](src/solid-effect.ts) (~90 lines: `runEffect`, `effectAction`, and a runtime
-context) — no `Result` wrappers or hooks; the Atom tab is kept as a separate comparison.
+library, plus an optional Atom registry comparison. The production integration lives in
+[`../../shared/solid-effect.ts`](../../shared/solid-effect.ts); this folder is its runnable
+evidence harness. The local [`src/solid-effect.ts`](src/solid-effect.ts) is only a re-export — no
+`Result` wrappers or hooks; the Atom tab is kept as a separate comparison.
 
 ```bash
 pnpm install
@@ -68,8 +69,9 @@ const results = createMemo<Package[]>(() => {
 (`it.return()`), and `runEffect`'s `return()` interrupts the fiber. Effect's structured interruption
 then tears down the whole in-flight tree — pending retries, timeouts, finalizers — with neither side
 knowing about the other. Type fast and watch the event log: every superseded keystroke is
-_interrupted_, not merely ignored. No debounce, no `AbortController`, no request bookkeeping in the
-component.
+cancelled through the fiber bridge rather than merely ignored. No debounce, no `AbortController`,
+no request bookkeeping in the component. Solid's `isPending` observation can still delay the
+iterator close; see the honest notes below.
 
 Note the granularity: a plain `Effect.runPromise` result would _not_ be interruptible (Solid drops
 stale promises by identity; it has no way to abort them). Routing through the iterator protocol is
@@ -117,14 +119,13 @@ double-submit cancels (with compensation) rather than silently racing.
   difference from running one big `Effect.gen` program.
 - Effect's typed error channel degrades to a thrown value at `<Errored>` on the read path. Inside
   `effectAction` generators it survives (`instanceof` narrows `Data.TaggedError` classes).
-- Services/`Layer` ride Solid context: the app provides
-  `<RuntimeContext value={createRuntime(SearchConfigLive)}>`, and `searchPackages` requires
-  `SearchConfig` through the typed `R` channel. `runEffect` resolves the runtime at the reading
-  computation, `effectAction` at component setup; both fall back to the default runtime, which is
-  only sound for `R = never` steps (the checkout saga runs that way). One composition note:
-  `ManagedRuntime.make` wants a self-contained layer (`RIn = never`), so a child provider whose
-  layer depends on parent services composes with `Layer.provideMerge` — the shared `MemoMap` makes
-  the overlapping construction free.
+- Services/`Layer` ride Solid context: the app provides a scoped `ManagedRuntime` through
+  `RuntimeContext`, and `searchPackages` requires `SearchConfig` through the typed `R` channel.
+  `runEffect` resolves the runtime at the reading computation, `effectAction` at component setup;
+  both fail fast when no provider exists. One composition note: `ManagedRuntime.make` wants a
+  self-contained layer (`RIn = never`), so a child provider whose layer depends on parent services
+  composes with `Layer.provideMerge` — the shared `MemoMap` makes the overlapping construction
+  free.
 - `repro-close-timing.mjs` documents a core finding from building this example
   ([#3122](https://github.com/solidjs/solid/issues/3122)): an `isPending` read over the source
   defers the superseded flight's iterator close until the superseding flight settles, so the first

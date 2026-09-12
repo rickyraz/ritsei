@@ -2,11 +2,11 @@ import { useLocation } from "@solidjs/router"
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query"
 import { createMemo, onCleanup, Show, untrack, useContext } from "solid-js"
 import * as Layer from "effect/Layer"
-import * as ManagedRuntime from "effect/ManagedRuntime"
 import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
 import { Accounts } from "../features/identity/accounts.tsx"
 import { BrowserConnection } from "../shared/api.ts"
+import { createRuntime, RuntimeContext } from "../shared/solid-effect.ts"
 import { ApiRuntime } from "../shared/runtime.ts"
 import type { Session } from "../shared/session.ts"
 import { SessionContext } from "./session.ts"
@@ -14,9 +14,7 @@ import { SessionContext } from "./session.ts"
 function ConnectedAccounts(props: { session: Session }) {
   // The keyed connection boundary remounts this owner; credentials are immutable within it.
   const session = untrack(() => props.session)
-  const runtime = ManagedRuntime.make(
-    Layer.succeed(BrowserConnection, session),
-  )
+  const runtime = createRuntime(Layer.succeed(BrowserConnection, session))
   const lifetime = new AbortController()
   const client = new QueryClient({
     defaultOptions: {
@@ -34,15 +32,16 @@ function ConnectedAccounts(props: { session: Session }) {
     lifetime.abort()
     void client.cancelQueries()
     client.clear()
-    void runtime.dispose()
   })
   return (
     <ApiRuntime
       value={{ runtime, lifetime: lifetime.signal, tenantId: session.tenantId }}
     >
-      <QueryClientProvider client={client}>
-        <Accounts />
-      </QueryClientProvider>
+      <RuntimeContext value={runtime}>
+        <QueryClientProvider client={client}>
+          <Accounts />
+        </QueryClientProvider>
+      </RuntimeContext>
     </ApiRuntime>
   )
 }

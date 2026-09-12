@@ -14,6 +14,7 @@
 > - Contract schema decision: [`../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md`](../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md)
 > - Effect application architecture: [`../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md`](../decisions/0048-define-effect-application-architecture-and-frontend-state-ownership.md)
 > - Native Solid 2 and Effect integration: [`../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md`](../decisions/0072-prefer-native-solid-reactivity-for-effect-integration.md)
+> - Production Solid 2 × Effect bridge: [`../decisions/0086-promote-solid-effect-bridge-to-production-boundary.md`](../decisions/0086-promote-solid-effect-bridge-to-production-boundary.md)
 > - Design system and Visual Grammar: [`./design-system.md`](./design-system.md)
 > - Skeleton architecture: [`./skeleton.md`](./skeleton.md)
 > - Solid 2 accessible primitive selection: [`../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md`](../decisions/0074-switch-to-kobalte-for-solid2-accessible-primitives.md)
@@ -175,11 +176,16 @@ opts into Atom, Atom owns that fact and the Solid adapter is only its projection
 Keep the decision at the frontend boundary; public domain contracts must remain
 independent of Solid and Atom.
 
-The runnable reference is the non-production experiment at
+The production bridge is
+[`apps/web/src/shared/solid-effect.ts`](../../apps/web/src/shared/solid-effect.ts). The connected
+session route provides its single session-scoped `ManagedRuntime` through both `ApiRuntime` and
+`RuntimeContext`; it does not create a second runtime for the same session.
+
+The runnable evidence harness remains at
 [`apps/web/src/experiments/solid-effect/`](../../apps/web/src/experiments/solid-effect/):
 
-- [`src/solid-effect.ts`](../../apps/web/src/experiments/solid-effect/src/solid-effect.ts)
-  demonstrates `RuntimeContext`, `ManagedRuntime`, `runEffect`, and `effectAction`;
+- [`src/solid-effect.ts`](../../apps/web/src/experiments/solid-effect/src/solid-effect.ts) re-exports
+  the production bridge rather than maintaining a copy;
 - [`src/app.tsx`](../../apps/web/src/experiments/solid-effect/src/app.tsx) composes the
   scoped runtime;
 - [`src/typeahead.tsx`](../../apps/web/src/experiments/solid-effect/src/typeahead.tsx)
@@ -189,9 +195,10 @@ The runnable reference is the non-production experiment at
 - [`src/atom.tsx`](../../apps/web/src/experiments/solid-effect/src/atom.tsx) is the
   comparison-only Atom registry/`AsyncResult` path, not the production default.
 
-The current Atom binding is a Solid 1.x compatibility reference only; it is
-not a Solid 2 integration template. See ADR-0072 for the compatibility evidence
-and the repository-local source path.
+The production adapter tests live beside the implementation at
+[`apps/web/src/shared/solid-effect.test.ts`](../../apps/web/src/shared/solid-effect.test.ts).
+The current Atom binding is a Solid 1.x compatibility reference only; it is not a Solid 2
+integration template. See ADR-0072 and ADR-0086 for the ownership decision and production boundary.
 
 ### State ownership
 

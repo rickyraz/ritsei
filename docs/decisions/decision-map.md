@@ -25,7 +25,7 @@ ADR-0080 is the current Solid-native Boneyard skeleton boundary.
 ADR-0081 is the proposed renderer-independent Document AST and document-rendering platform boundary.
 ADR-0082 is the current SAP-separated Communication Platform and Activity Timeline projection boundary.
 ADR-0084 is a proposed cross-cutting progressive trust model; it is not an active canonical rule until accepted.
-ADR-0085 is the current frontend public-contract refinement: TanStack adapters stay internal and semantic UI stays public.
+ADR-0085 is the current frontend public-contract refinement: TanStack adapters stay internal and semantic UI stays public. ADR-0086 is the current production implementation boundary for the native Solid 2 × Effect bridge.
 
 ## Current decision lineage
 
@@ -92,6 +92,8 @@ ADR-0010  Vite-based SolidJS SPA
                         +--> Solid owns the default reactive graph and ownership tree
                         +--> Solid Context carries the scoped Effect ManagedRuntime and `R`
                         +--> Effect Atom is opt-in for shared or portable reactive graphs
+                                  +--> ADR-0086 promotes the bridge to `apps/web/src/shared/solid-effect.ts`
+                                      and keeps the experiment as a re-exporting evidence harness
               |
               +--> ADR-0069 cartographic enterprise visual grammar
                         +--> HTML owns semantics and interaction
@@ -164,7 +166,8 @@ amends the receipt and cancellation boundary of ADR-0044 and ADR-0045. ADR-0056 
 frontend primitive and styling selection recorded by ADR-0010; ADR-0074 now supersedes its
 accessible-primitive selection while retaining its Panda and Product Pattern boundaries. ADR-0057 clarifies the role and
 adoption scope of the TanStack frontend engines; ADR-0072 defines the native Solid 2 and Effect
-integration boundary without rejecting optional Atom use; ADR-0058 amends only the authentication/session
+integration boundary without rejecting optional Atom use; ADR-0086 promotes that bridge's
+implementation to the production frontend boundary; ADR-0058 amends only the authentication/session
 provider boundary in ADR-0030; ADR-0059 defines the replaceable RelationshipEngine boundary in
 ADR-0006; ADR-0070 concretizes the optional cartographic renderer selected by ADR-0069 without
 changing its HTML-first, fallback-first semantics; and ADR-0071 replaces coarse industry categories
@@ -220,6 +223,7 @@ by ADR-0040.
 | [ADR-0083](./0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md) | Current cross-cutting non-interference boundary | Source-of-truth critical paths remain independent of derived capabilities; ADR-0034 owns detailed workload/resource proof |
 | [ADR-0084](./0084-establish-explicit-progressive-trust-boundaries.md) | Proposed cross-cutting trust boundary | External representations gain no RITSEI identity, authority, or business fact until explicit runtime, identity, authorization, and owner-domain checks complete |
 | [ADR-0085](./0085-separate-tanstack-adapters-from-semantic-ui-contracts.md) | Current frontend public-contract refinement | TanStack adapters are internal policy modules; semantic UI such as `DataTable`, `Form`, and business fields are the public feature boundary |
+| [ADR-0086](./0086-promote-solid-effect-bridge-to-production-boundary.md) | Current Solid 2 × Effect implementation boundary | The shared production bridge is canonical; the experiment re-exports it as runnable evidence |
 
 ## Proposed direction
 

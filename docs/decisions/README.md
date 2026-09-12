@@ -109,5 +109,6 @@ current system; ADRs preserve decision history.
 | [`0083`](./0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md) | Enforce non-interference between source-of-truth and derived capabilities | Accepted |
 | [`0084`](./0084-establish-explicit-progressive-trust-boundaries.md) | Establish explicit progressive trust boundaries | Proposed |
 | [`0085`](./0085-separate-tanstack-adapters-from-semantic-ui-contracts.md) | Separate TanStack adapters from semantic UI contracts | Accepted |
+| [`0086`](./0086-promote-solid-effect-bridge-to-production-boundary.md) | Promote the Solid 2 × Effect bridge to the production boundary | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

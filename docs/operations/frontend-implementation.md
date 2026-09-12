@@ -2,7 +2,7 @@
 
 > **Status:** F2 design-system and F3 representative-workflow evidence passed mechanically; Kobalte dependency approval is bounded and risk-accepted; the Dialog primitive is active only through the tested RITSEI `ConfirmDialog` wrapper.
 >
-> **Evidence date:** September 11, 2026
+> **Evidence date:** September 12, 2026
 >
 > **Owners:** Frontend and design-system owners.
 
@@ -10,6 +10,7 @@
 >
 > - Delivery gates: [`../roadmap/frontend.md`](../roadmap/frontend.md)
 > - Frontend architecture: [`../architecture/frontend.md`](../architecture/frontend.md)
+> - Production Solid 2 × Effect bridge: [`../decisions/0086-promote-solid-effect-bridge-to-production-boundary.md`](../decisions/0086-promote-solid-effect-bridge-to-production-boundary.md)
 > - Component ownership: [`../architecture/design-system.md`](../architecture/design-system.md)
 > - Test workflow: [`../development/testing.md`](../development/testing.md)
 
@@ -20,6 +21,12 @@ without backend changes. The browser keeps session credentials in memory, sends 
 headers per request, decodes responses through generated Effect Schema contracts, and leaves
 authorization and business authority on the backend.
 
+The native Solid 2 × Effect bridge is now a production frontend boundary at
+[`apps/web/src/shared/solid-effect.ts`](../../apps/web/src/shared/solid-effect.ts). The connected
+User Accounts route provides its existing session-scoped `ManagedRuntime` through both the API
+scope and `RuntimeContext`; the runnable `solid-effect` directory re-exports that implementation
+as evidence rather than maintaining a separate adapter.
+
 The shared UI surface remains application-local under `apps/web/src/ui/`. It contains only the
 semantic tokens, controls, layouts, and accessibility behavior demonstrated by the current slice.
 A development-only Storybook lives under `apps/web/.storybook/`; it exercises the real UI recipes
@@ -28,9 +35,12 @@ production component catalog.
 
 ## Verified behavior
 
-- `deno task --cwd apps/web build` passes and produces the Vite SPA. The current production output is about
-  20 kB CSS plus route-split JavaScript chunks of 6.7 kB, 12.7 kB, 20.4 kB, 53.4 kB, 79.1 kB,
-  and 111.3 kB before gzip; Vite reports gzip sizes from 3.1 kB to 38.7 kB.
+- The Solid 2 × Effect bridge tests cover missing-provider fail-fast behavior, `R`-channel
+  propagation, Layer cleanup, and awaited fiber interruption. TanStack Solid Query remains the owner of shared
+  remote server state; the bridge is not used as a replacement cache.
+- `deno task --cwd apps/web build` passes and produces the Vite SPA. The current production output is
+  32.25 kB CSS plus route-split JavaScript chunks of 6.69 kB, 12.72 kB, 20.36 kB, 53.93 kB,
+  87.17 kB, and 136.40 kB before gzip; Vite reports gzip sizes from 3.08 kB to 46.92 kB.
 - The browser shell test covers boot, typed connection validation, routing, dark-theme switching,
   responsive layout, and in-memory credential handling.
 - The User Accounts workflow covers tenant-scoped GET/PATCH requests, query invalidation and
@@ -57,13 +67,14 @@ production component catalog.
 
 | Check | Result |
 | --- | --- |
-| `deno fmt --check` | passed, 446 files |
-| `deno lint` | passed, 314 files |
+| `deno fmt --check` | passed, 529 files |
+| `deno lint` | passed, 382 files |
 | `deno task check` | passed |
 | `deno task --cwd apps/web build` | passed |
+| `vitest run apps/web/src/shared/solid-effect.test.ts` | passed, 4 tests |
 | `deno task --cwd apps/web storybook:build` | passed |
 | `deno task --cwd apps/web storybook --ci --smoke-test --host 127.0.0.1 --port 6007` | passed |
-| Affected frontend tests | passed, 12 files / 26 tests |
+| Affected frontend tests | passed, 13 files / 30 tests |
 | Full repository test suite | not rerun; prior evidence was 90 files / 388 tests, 1 skipped |
 | `deno task boundary:test` | passed |
 | `deno task boundary:lint` | blocked by inherited `modules/authorization/tests/relationship.postgres.test.ts` boundary violation |
