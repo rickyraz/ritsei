@@ -2,7 +2,14 @@ import { assert, describe, it } from "@effect/vitest"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { createComponent, createMemo, createRenderEffect, createRoot, flush } from "solid-js"
+import {
+  createComponent,
+  createMemo,
+  createRenderEffect,
+  createRoot,
+  type Element,
+  flush,
+} from "solid-js"
 import {
   createRuntime,
   MissingRuntimeContextError,
@@ -16,7 +23,7 @@ class TestService extends Context.Service<TestService, { readonly value: number 
 
 const TestServiceLive = Layer.succeed(TestService, { value: 42 })
 
-function mountRuntime<R>(layer: Layer.Layer<R>, children: () => unknown) {
+function mountRuntime<R>(layer: Layer.Layer<R>, children: () => Element) {
   let dispose = () => {}
 
   createRoot((rootDispose) => {
@@ -30,8 +37,10 @@ function mountRuntime<R>(layer: Layer.Layer<R>, children: () => unknown) {
     })
     createRenderEffect(
       () => {
-        let output = provider
-        while (typeof output === "function") output = output()
+        let output: unknown = provider
+        while (typeof output === "function") {
+          output = (output as () => unknown)()
+        }
         return output
       },
       () => {},
