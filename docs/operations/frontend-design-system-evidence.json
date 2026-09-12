@@ -37,8 +37,15 @@
         "lockfile": "deno.lock"
       },
       "productionApproval": {
-        "status": "not_activated",
-        "primitives": []
+        "status": "approved_with_risk",
+        "primitives": [
+          {
+            "name": "Dialog",
+            "contract": "apps/web/src/ui/confirm-dialog.tsx",
+            "usage": "apps/web/src/app/app.tsx",
+            "browserTest": "tests/frontend/kobalte.test.ts"
+          }
+        ]
       }
     },
     "tokens": { "status": "passed", "proof": "docs/operations/frontend-implementation.md" },

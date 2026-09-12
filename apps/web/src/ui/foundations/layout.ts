@@ -1,4 +1,4 @@
-import { css } from "./generated/css/index.js"
+import { css } from "../generated/css/index.js"
 
 // Approved shell/workspace layouts. Features consume names, not arbitrary style properties.
 export const layout = {

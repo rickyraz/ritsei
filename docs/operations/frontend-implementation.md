@@ -1,6 +1,6 @@
 # Frontend implementation evidence
 
-> **Status:** F2 design-system and F3 representative-workflow evidence passed mechanically; Kobalte dependency approval is bounded and risk-accepted; no Kobalte primitive is active in production.
+> **Status:** F2 design-system and F3 representative-workflow evidence passed mechanically; Kobalte dependency approval is bounded and risk-accepted; the Dialog primitive is active only through the tested RITSEI `ConfirmDialog` wrapper.
 >
 > **Evidence date:** September 11, 2026
 >
@@ -40,10 +40,11 @@ production component catalog.
   route splitting, bundle limits, interaction latency, and bounded repeated use.
 - `deno task --cwd apps/web compatibility` passes the Kobalte Solid 2 bundle probe with
   `@kobalte/core@2.0.0-alpha.1`. `tests/frontend/kobalte.test.ts` covers the exercised Dialog
-  probe's semantics, keyboard opening/focus containment, Escape and explicit close, focus
-  restoration, reduced motion, forced colors, and axe WCAG 2A/AA checks. The exact Solid 2 RC
-  peer-range mismatch is an explicitly accepted prerelease risk; no Kobalte primitive is active
-  in production UI.
+  probe semantics plus the production `ConfirmDialog` wrapper's keyboard opening, focus
+  containment/restoration, Escape and explicit close, reduced motion, forced colors, and axe WCAG
+  2A/AA checks. The exact Solid 2 RC
+  peer-range mismatch is an explicitly accepted prerelease risk; production use is limited to the
+  tested RITSEI `ConfirmDialog` wrapper in the shell.
 - `deno task --cwd apps/web storybook:build` and the CI smoke test pass with the pinned
   `storybook-solidjs-vite@11.0.0-next-20260903183420` adapter and `storybook@11.0.0-alpha.0`,
   using upstream compatibility reference commit `c6b884cc26f35852655c0d61a6f577af89977d2f`.
@@ -62,18 +63,18 @@ production component catalog.
 | `deno task --cwd apps/web build` | passed |
 | `deno task --cwd apps/web storybook:build` | passed |
 | `deno task --cwd apps/web storybook --ci --smoke-test --host 127.0.0.1 --port 6007` | passed |
-| Frontend/architecture targeted tests | passed, 6 files / 13 tests |
-| Full affected test suite | passed, 90 files / 388 tests, 1 skipped |
+| Affected frontend tests | passed, 12 files / 26 tests |
+| Full repository test suite | not rerun; prior evidence was 90 files / 388 tests, 1 skipped |
 | `deno task boundary:test` | passed |
-| `deno task boundary:lint` | passed |
+| `deno task boundary:lint` | blocked by inherited `modules/authorization/tests/relationship.postgres.test.ts` boundary violation |
 | `deno task roadmap:measure` | passed mechanically; frontend gates passed for the recorded evidence |
-| `deno task fallow:audit` | warning only; one inherited `@solidjs/vite-plugin` dev-dependency classification remains |
+| `deno task fallow:audit` | blocked by inherited unlisted `effect` dependency findings; no introduced dead code |
 
 ## Remaining blockers
 
 The F2 design-system manifest records the automated token, focus, keyboard, contrast, density,
 theme, reduced-motion, and vendor-boundary checks as passed; the Kobalte compatibility check remains
-`approved_with_risk` and no production primitive is approved. The F3 readiness manifest records the
+`approved_with_risk` and only the tested Dialog wrapper is approved. The F3 readiness manifest records the
 representative-workflow browser checks, bounded bundle/latency thresholds, semantic accessibility,
 zoom, and repeated-use stability as passed. This is repository-local mechanical evidence only; it
 does not claim production SLOs, full assistive-technology certification, or production deployment

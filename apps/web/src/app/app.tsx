@@ -1,7 +1,7 @@
 import { createRouter } from "@solidjs/router"
 import { createSignal, Errored, lazy, Loading, Show } from "solid-js"
 import type { Session } from "../shared/session.ts"
-import { control, layout } from "../ui/index.ts"
+import { Button, ConfirmDialog, layout } from "../ui/index.ts"
 import { Connection } from "./connection.tsx"
 import { SessionContext } from "./session.ts"
 
@@ -40,22 +40,21 @@ export function App() {
             <a href="/user-accounts">User accounts</a>
           </nav>
           <div class={layout.row}>
-            <button
-              class={control()}
+            <Button
               type="button"
               aria-pressed={dark() ? "true" : "false"}
               onClick={() => setDark(!dark())}
             >
               Dark theme
-            </button>
+            </Button>
             <Show when={session()}>
-              <button
-                class={control()}
-                type="button"
-                onClick={() => replace(null)}
-              >
-                Disconnect
-              </button>
+              <ConfirmDialog
+                triggerLabel="Disconnect"
+                title="Disconnect this session?"
+                description="Your in-memory session credentials will be cleared."
+                confirmLabel="Disconnect"
+                onConfirm={() => replace(null)}
+              />
             </Show>
           </div>
         </header>

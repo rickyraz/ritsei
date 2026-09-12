@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 import { AxeBuilder } from "@axe-core/playwright"
 import { chromium } from "playwright"
 import { build, preview } from "vite"
+import { builtApp } from "./browser.ts"
 
 const fixture = Effect.acquireRelease(
   Effect.promise(async () => {
@@ -113,6 +114,53 @@ it.effect(
         assert.deepEqual(axe.violations, [])
         await dialog.press("Escape")
         await dialog.waitFor({ state: "hidden" })
+      })
+    }),
+  { timeout: 120_000 },
+)
+
+it.effect(
+  "validates the RITSEI Kobalte dialog wrapper in the application",
+  () =>
+    Effect.gen(function* () {
+      const { page, url, errors } = yield* builtApp
+      yield* Effect.promise(async () => {
+        await page.goto(url)
+        await page.getByLabel("Tenant ID", { exact: true }).fill(
+          "018f0f2a-7b1d-7b1d-8b1d-7b1d7b1d7b1d",
+        )
+        await page.getByLabel("Session token", { exact: true }).fill("token")
+        await page.getByRole("button", { name: "Connect", exact: true }).click()
+
+        const trigger = page.getByRole("button", { name: "Disconnect", exact: true })
+        await trigger.click()
+        const dialog = page.getByRole("dialog", { name: "Disconnect this session?" })
+        await dialog.waitFor()
+        assert.isTrue(await dialog.isVisible())
+        assert.isNotNull(await dialog.getAttribute("aria-labelledby"))
+        assert.isNotNull(await dialog.getAttribute("aria-describedby"))
+        assert.deepEqual(
+          (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
+          [],
+        )
+
+        await page.keyboard.press("Escape")
+        await dialog.waitFor({ state: "hidden" })
+        await page.waitForFunction(
+          () => document.activeElement?.textContent === "Disconnect",
+        )
+        assert.equal(
+          await page.evaluate(() => document.activeElement?.textContent),
+          "Disconnect",
+        )
+
+        await trigger.click()
+        await dialog.getByRole("button", { name: "Disconnect", exact: true }).click()
+        assert.isFalse(
+          await page.getByRole("button", { name: "Disconnect", exact: true }).isVisible(),
+        )
+        assert.isTrue(await page.getByRole("heading", { name: "User accounts" }).isVisible())
+        assert.deepEqual(errors, [])
       })
     }),
   { timeout: 120_000 },

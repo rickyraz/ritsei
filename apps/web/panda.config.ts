@@ -47,6 +47,7 @@ export default defineConfig({
           paper: { value: "#F4F0E6" },
           surface: { value: "#FAF8F2" },
           terrain: { value: "#365A72" },
+          backdrop: { value: "rgba(21, 26, 30, 0.55)" },
         },
         fonts: {
           body: {
@@ -102,6 +103,12 @@ export default defineConfig({
           iconLg: { value: "20px" },
           iconXl: { value: "24px" },
           iconDisplay: { value: "32px" },
+          dialog: { value: "calc(100% - 2rem)" },
+        },
+        zIndex: {
+          base: { value: "0" },
+          modal: { value: "1100" },
+          skipLink: { value: "1200" },
         },
         durations: {
           none: { value: "0ms" },

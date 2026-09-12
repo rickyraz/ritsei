@@ -1,4 +1,4 @@
-import { css } from "./generated/css/index.js"
+import { css } from "../generated/css/index.js"
 
 // Approved semantic text styles. Components should not choose raw type tokens.
 export const typography = {

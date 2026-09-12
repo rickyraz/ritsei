@@ -4,10 +4,12 @@
 >
 > **Implementation status:** The design-system contract is approved. `apps/web` contains the
 > current Panda token/text-style implementation, bundled Pretendard and IBM Plex Mono assets, and
-> controlled Storybook evidence. Kobalte, the cartographic renderer, visual regression, and full
-> production accessibility evidence remain activation-gated. `vgpu` is the selected optional
-> cartographic renderer behind a RITSEI-owned adapter, but it is not activated as a runtime dependency
-> yet. This document therefore defines the target contract and its activation gates; it does not claim
+> controlled Storybook evidence, and a Kobalte-backed `ConfirmDialog` used by the application shell.
+> Kobalte activation is limited to that tested Dialog wrapper; the cartographic renderer, visual
+> regression, and full production accessibility evidence remain activation-gated. `vgpu` is the
+> selected optional cartographic renderer behind a RITSEI-owned adapter, but it is not activated as a
+> runtime dependency yet. This document therefore defines the target contract and its activation gates;
+> it does not claim
 > that those gated capabilities already exist.
 >
 > **Owns:** Product Patterns, Interaction Grammar, Visual Grammar, semantic design tokens, material
@@ -1366,7 +1368,8 @@ variants and recipes rather than ad hoc feature overrides.
 The initial implementation remains inside the single frontend application. `apps/web/src/ui/` is a
 dedicated, RITSEI-owned internal library, not part of an individual feature. A library boundary does
 not require a separately published package. Do not create a separate `packages/design-system`
-package until measured cross-application reuse justifies it.
+package until measured cross-application reuse or an independent build, release, enforcement, or
+compatible-consumer need justifies it.
 
 This applies the ownership decisions in ADR-0056 and ADR-0057 without changing their engines or
 activation gates. The backend taxonomy in

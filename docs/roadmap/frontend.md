@@ -123,15 +123,15 @@ route splitting, bundle size, interaction latency, and long-session stability.
 
 ## Current implementation progress
 
-As of September 5, 2026, the currently feasible frontend slice is implemented without claiming
+As of September 11, 2026, the currently feasible frontend slice is implemented without claiming
 roadmap completion:
 
 - **Compatibility spike:** Vite, SolidJS 2, Panda CSS, the generated semantic recipe surface,
   TanStack Solid Query, Playwright, and axe run through the web-owned manifest plus shared repository
   tooling. The Kobalte Solid 2 probe bundles successfully with `@kobalte/core@2.0.0-alpha.1`, and the
   browser probe covers the exercised Dialog contract. The package's RC peer-range mismatch is
-  explicitly accepted as `approved_with_risk` with exact pins and rollback; no Kobalte primitive is
-  currently active in production UI.
+  explicitly accepted as `approved_with_risk` with exact pins and rollback; Dialog is active only
+  through the tested RITSEI `ConfirmDialog` wrapper in the production UI.
 - **F0:** `deno task --cwd apps/web build` produces the separate SPA, and the browser shell test verifies boot,
   routing, invalid connection input, theme switching, responsive layout, and in-memory credentials.
 - **F1/F2 vertical slice:** generated browser contracts preserve the canonical Identity schemas and
@@ -146,8 +146,9 @@ roadmap completion:
 The F2 evidence manifest records the automated design-system checks as passed. The F3 readiness
 manifest records the representative-workflow checks and bounded local thresholds as passed. The
 Kobalte compatibility risk is accepted only for the exact pinned dependency and does not globally
-approve unused or untested primitives; the current production-approval list is empty. This remains
-repository-local mechanical evidence and does not claim production SLOs, full assistive-technology
+approve unused or untested primitives; the current production-approval list contains only the tested
+Dialog wrapper. This remains repository-local mechanical evidence and does not claim production
+SLOs, full assistive-technology
 certification, or production deployment approval.
 
 ## Conditional stages (not registered)

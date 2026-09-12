@@ -1,7 +1,15 @@
 import { createSignal, onCleanup } from "solid-js"
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
-import { animateSpatial, control, layout, motionStyles, surface, typography } from "./index.ts"
-import { Icon } from "./icons/index.ts"
+import {
+  animateSpatial,
+  Button,
+  control,
+  layout,
+  motionStyles,
+  surface,
+  typography,
+} from "../index.ts"
+import { Icon } from "../icons/index.ts"
 
 function MotionDemo() {
   let node: HTMLDivElement | undefined
@@ -21,9 +29,9 @@ function MotionDemo() {
   return (
     <div class={layout.stack}>
       <div class={layout.row}>
-        <button class={control({ kind: "action" })} type="button" onClick={move}>
+        <Button variant="primary" type="button" onClick={move}>
           Move spatially
-        </button>
+        </Button>
         <span aria-live="polite">Offset: {offset()}px</span>
       </div>
       <div
@@ -31,6 +39,22 @@ function MotionDemo() {
         ref={(element) => node = element}
         style="width:48px;height:48px;border-radius:8px;background-color:var(--colors-action)"
       />
+    </div>
+  )
+}
+
+function ButtonStateDemo() {
+  const [active, setActive] = createSignal(false)
+  return (
+    <div class={layout.stack}>
+      <Button
+        type="button"
+        aria-pressed={active() ? "true" : "false"}
+        onClick={() => setActive(!active())}
+      >
+        {active() ? "Enabled" : "Enable"} notifications
+      </Button>
+      <span aria-live="polite">Notifications: {active() ? "on" : "off"}</span>
     </div>
   )
 }
@@ -95,13 +119,17 @@ function FoundationsStory() {
           <div class={layout.stack}>
             <h2 id="actions-heading">Actions</h2>
             <div class={layout.row}>
-              <button class={control({ kind: "action" })} type="button">
+              <Button variant="secondary" type="button">
                 Save changes
-              </button>
-              <button class={control({ kind: "action" })} type="button" disabled>
+              </Button>
+              <Button variant="primary" type="button">
+                Primary action
+              </Button>
+              <Button variant="primary" type="button" disabled>
                 Disabled action
-              </button>
+              </Button>
             </div>
+            <ButtonStateDemo />
           </div>
         </section>
 

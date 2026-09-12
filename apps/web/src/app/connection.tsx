@@ -4,7 +4,7 @@ import * as Schema from "effect/Schema"
 import * as Result from "effect/Result"
 import { Session } from "../shared/session.ts"
 import { SessionContext } from "./session.ts"
-import { control, layout, surface } from "../ui/index.ts"
+import { Button, control, layout, surface } from "../ui/index.ts"
 
 export function Connection() {
   const session = useContext(SessionContext)
@@ -71,9 +71,9 @@ export function Connection() {
             {invalid() ? "Enter a valid tenant UUID and a token without spaces." : ""}
           </p>
           <div>
-            <button class={control({ kind: "action" })} type="submit">
+            <Button variant="primary" type="submit">
               Connect
-            </button>
+            </Button>
           </div>
         </div>
       </form>
