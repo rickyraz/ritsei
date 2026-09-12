@@ -5,6 +5,8 @@ import { failureMessage } from "../../shared/api.ts"
 import { layout } from "../../ui/foundations/layout.ts"
 import { control } from "../../ui/recipes/control.ts"
 import { surface } from "../../ui/recipes/surface.ts"
+import { CartographyField } from "../../ui/renderers/cartography/cartography-field.tsx"
+import { projectAccountNetwork } from "./projections/account-network.ts"
 import { createAccountEmailMutation, createAccountsQuery } from "./queries.ts"
 
 function EmailEditor(
@@ -116,6 +118,7 @@ export function Accounts() {
   const scope = useContext(ApiRuntime)
   const query = createAccountsQuery(scope)
   const [editing, setEditing] = createSignal<string | null>(null)
+  const [selectedVisualSegment, setSelectedVisualSegment] = createSignal<string | null>(null)
   let trigger: HTMLButtonElement | undefined
   const close = () => {
     setEditing(null)
@@ -162,6 +165,17 @@ export function Accounts() {
             when={query.data.length > 0}
             fallback={<p role="status">No user accounts are linked to this tenant.</p>}
           >
+            <CartographyField
+              intent={projectAccountNetwork(query.data)}
+              selectedMarkerId={selectedVisualSegment() ?? undefined}
+              onInteraction={(interaction) => {
+                if (interaction.type === "select") setSelectedVisualSegment(interaction.targetId)
+              }}
+            >
+              <Show when={selectedVisualSegment()}>
+                {(segment) => <p role="status">Selected visual segment: {segment()}</p>}
+              </Show>
+            </CartographyField>
             <div class={layout.scroll}>
               <table>
                 <caption>

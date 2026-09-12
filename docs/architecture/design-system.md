@@ -3,14 +3,14 @@
 > **Status:** Canonical and active design-system specification
 >
 > **Implementation status:** The design-system contract is approved. `apps/web` contains the
-> current Panda token/text-style implementation, bundled Pretendard and IBM Plex Mono assets, and
-> controlled Storybook evidence, and a Kobalte-backed `ConfirmDialog` used by the application shell.
-> Kobalte activation is limited to that tested Dialog wrapper; the cartographic renderer, visual
-> regression, and full production accessibility evidence remain activation-gated. `vgpu` is the
-> selected optional cartographic renderer behind a RITSEI-owned adapter, but it is not activated as a
-> runtime dependency yet. This document therefore defines the target contract and its activation gates;
-> it does not claim
-> that those gated capabilities already exist.
+> current Panda token/text-style implementation, bundled Pretendard and IBM Plex Mono assets,
+> controlled Storybook evidence, a Kobalte-backed `ConfirmDialog` used by the application shell, and
+> an HTML/SVG `CartographyField` fallback exercised by the User Accounts workflow. Kobalte activation
+> is limited to that tested Dialog wrapper; visual regression and optional WebGPU evidence remain
+> activation-gated. `vgpu` is the selected optional cartographic renderer behind a RITSEI-owned
+> adapter, but it is not activated as a runtime dependency yet. This document therefore defines the
+> target contract and its remaining activation gates; it does not claim that optional GPU capabilities
+> already exist.
 >
 > **Owns:** Product Patterns, Interaction Grammar, Visual Grammar, semantic design tokens, material
 > rules, component contracts, accessibility, density, renderer boundaries, and frontend design-system
@@ -1443,8 +1443,9 @@ Use these promotion rules:
   under `shared/`, not in UI or a catch-all `frontend-utils` library.
 
 Feature UI imports RITSEI UI contracts through stable public leaf modules such as
-`ui/foundations/*`, `ui/primitives/*`, `ui/recipes/*`, `ui/patterns/*`, `ui/icons/*`, and
-`ui/motion/*`; it must not import private adapters or generated Panda artifacts. Named subsystem
+`ui/foundations/*`, `ui/primitives/*`, `ui/recipes/*`, `ui/patterns/*`, `ui/grammar/*`,
+`ui/interaction/*`, `ui/renderers/cartography/*`, `ui/icons/*`, and `ui/motion/*`; it must not
+import private adapters or generated Panda artifacts. Named subsystem
 entrypoints such as `ui/icons/index.ts` and `ui/motion/index.ts` are allowed only when they expose
 that subsystem's semantic API; they are not substitutes for the root facade. The UI boundary has no
 catch-all root barrel. `apps/web/src/ui/styles.ts` is the sole stylesheet bootstrap and is

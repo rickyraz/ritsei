@@ -30,8 +30,9 @@ as evidence rather than maintaining a separate adapter.
 The shared UI surface remains application-local under `apps/web/src/ui/`. It contains only the
 semantic tokens, controls, layouts, and accessibility behavior demonstrated by the current slice.
 A development-only Storybook lives under `apps/web/.storybook/`; it exercises the real UI recipes
-with controlled fixtures and does not create a separate design-system package, GPU renderer, or
-production component catalog.
+with controlled fixtures and does not create a separate design-system package or production component
+catalog. The shared cartographic boundary now has renderer-neutral Visual Grammar contracts, a
+feature-owned User Accounts projection, and an HTML/SVG fallback; optional WebGPU remains gated.
 
 ## Verified behavior
 
@@ -39,8 +40,8 @@ production component catalog.
   propagation, Layer cleanup, and awaited fiber interruption. TanStack Solid Query remains the owner of shared
   remote server state; the bridge is not used as a replacement cache.
 - `deno task --cwd apps/web build` passes and produces the Vite SPA. The current production output is
-  32.25 kB CSS plus route-split JavaScript chunks of 6.69 kB, 12.72 kB, 20.36 kB, 53.93 kB,
-  87.17 kB, and 136.40 kB before gzip; Vite reports gzip sizes from 3.08 kB to 46.92 kB.
+  33.39 kB CSS plus route-split JavaScript chunks of 6.69 kB, 12.72 kB, 20.36 kB, 65.14 kB,
+  87.18 kB, and 136.41 kB before gzip; Vite reports gzip sizes from 3.08 kB to 46.95 kB.
 - The browser shell test covers boot, typed connection validation, routing, dark-theme switching,
   responsive layout, and in-memory credential handling.
 - The User Accounts workflow covers tenant-scoped GET/PATCH requests, query invalidation and
@@ -48,6 +49,9 @@ production component catalog.
 - The accessibility test runs axe WCAG 2A/AA checks and exercises narrow layout, reduced motion,
   forced colors, skip-link focus, labeled controls, keyboard traversal, validation focus, 200% zoom,
   route splitting, bundle limits, interaction latency, and bounded repeated use.
+- The cartographic fallback test exercises typed archetype/material projection, deterministic SVG
+  geometry, native marker-button keyboard activation, reduced motion, forced colors, 200% zoom, and
+  axe WCAG 2A/AA checks. The textual summary and User Accounts table remain authoritative.
 - `deno task --cwd apps/web compatibility` passes the Kobalte Solid 2 bundle probe with
   `@kobalte/core@2.0.0-alpha.1`. `tests/frontend/kobalte.test.ts` covers the exercised Dialog
   probe semantics plus the production `ConfirmDialog` wrapper's keyboard opening, focus
@@ -72,9 +76,11 @@ production component catalog.
 | `deno task check` | passed |
 | `deno task --cwd apps/web build` | passed |
 | `vitest run apps/web/src/shared/solid-effect.test.ts` | passed, 4 tests |
+| `deno task check:affected` | passed, 17 files / 37 tests |
+| `tests/frontend/cartography.test.ts` | passed, 1 browser test |
 | `deno task --cwd apps/web storybook:build` | passed |
 | `deno task --cwd apps/web storybook --ci --smoke-test --host 127.0.0.1 --port 6007` | passed |
-| Affected frontend tests | passed, 13 files / 30 tests |
+| Affected frontend tests | passed, 17 files / 37 tests |
 | Full repository test suite | not rerun; prior evidence was 90 files / 388 tests, 1 skipped |
 | `deno task boundary:test` | passed |
 | `deno task boundary:lint` | blocked by inherited `modules/authorization/tests/relationship.postgres.test.ts` boundary violation |

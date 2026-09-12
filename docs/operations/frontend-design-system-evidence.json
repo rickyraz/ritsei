@@ -1,7 +1,7 @@
 {
   "status": "approved_with_risk",
   "reviewer": "RITSEI frontend implementation",
-  "reviewDate": "2026-09-11",
+  "reviewDate": "2026-09-12",
   "checks": {
     "kobalte-solid2-compatibility": {
       "status": "approved_with_risk",
@@ -61,6 +61,24 @@
     "vendor-boundaries": {
       "status": "passed",
       "proof": "docs/operations/frontend-implementation.md"
+    },
+    "cartography-fallback": {
+      "status": "passed",
+      "proof": "docs/operations/frontend-implementation.md",
+      "contract": "apps/web/src/ui/renderers/cartography/cartography-field.tsx",
+      "projection": "apps/web/src/features/identity/projections/account-network.ts",
+      "browserTest": "tests/frontend/cartography.test.ts",
+      "scope": [
+        "renderer-neutral archetypes and material mapping",
+        "deterministic SVG geometry",
+        "semantic text fallback",
+        "native marker keyboard selection",
+        "reduced motion",
+        "forced colors",
+        "200% zoom",
+        "axe WCAG 2A/AA"
+      ],
+      "webgpu": "not_activated"
     }
   }
 }

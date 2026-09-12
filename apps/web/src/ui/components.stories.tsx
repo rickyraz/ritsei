@@ -1,5 +1,7 @@
 import { createSignal } from "solid-js"
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
+import { CartographyField } from "./renderers/cartography/cartography-field.tsx"
+import { projectVisualIntent } from "./grammar/projection.ts"
 import { ApprovalComposition } from "./patterns/approval-composition.tsx"
 import { Approval } from "./patterns/approval.tsx"
 import { BulkOperation } from "./patterns/bulk-operation.tsx"
@@ -32,8 +34,32 @@ const rows = [
   { id: "PO-002", supplier: "Northwind Parts", status: "Approved" },
 ]
 
+const visualIntent = projectVisualIntent({
+  variationKey: "storybook.purchase-order-flow",
+  archetypes: ["flow", "capacity"],
+  primitives: ["field", "contour", "route", "marker", "boundary"],
+  dimension: "movement",
+  value: 0.72,
+  semantics: {
+    label: "Purchase order movement",
+    description: "A renderer-neutral visual summary; the table remains authoritative.",
+  },
+  fallback: {
+    summary: "Two purchase orders are moving through the receiving workflow.",
+    metrics: [
+      { label: "In transit", value: "2" },
+      { label: "Route activity", value: "72%" },
+    ],
+  },
+  motion: "active",
+  markers: [
+    { id: "receiving", label: "Receiving: 2 orders", x: 68, y: 58, tone: "info" },
+  ],
+})
+
 function ComponentsStory() {
   const [lines, setLines] = createSignal(["First field"])
+  const [selectedMarker, setSelectedMarker] = createSignal<string>()
   return (
     <main class={layout.main}>
       <div class={layout.stack}>
@@ -101,6 +127,17 @@ function ComponentsStory() {
             />
             <Button type="submit" variant="primary">Save</Button>
           </Form>
+        </section>
+
+        <section class={[surface(), layout.stack]} aria-labelledby="grammar-heading">
+          <h2 id="grammar-heading">Visual grammar</h2>
+          <CartographyField
+            intent={visualIntent}
+            selectedMarkerId={selectedMarker()}
+            onInteraction={(interaction) => {
+              if (interaction.type === "select") setSelectedMarker(interaction.targetId)
+            }}
+          />
         </section>
 
         <DataTable
