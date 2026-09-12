@@ -1,6 +1,6 @@
 import { omit } from "solid-js"
 import type { JSX } from "@solidjs/web"
-import { control } from "../generated/recipes/index.js"
+import { control } from "../recipes/control.ts"
 
 type ButtonProps = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, "class"> & {
   variant?: "primary" | "secondary"

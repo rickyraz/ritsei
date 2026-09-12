@@ -1,6 +1,7 @@
+import "../src/ui/styles.ts"
 import { createJSXDecorator } from "storybook-solidjs-vite"
 import type { Preview } from "storybook-solidjs-vite"
-import { layout } from "../src/ui/index.ts"
+import { layout } from "../src/ui/foundations/layout.ts"
 
 const preview: Preview = {
   globalTypes: {

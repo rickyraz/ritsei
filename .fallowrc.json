@@ -85,6 +85,28 @@
         "patterns": ["*.config.ts"]
       },
       {
+        "name": "apps-web-ui-public",
+        "patterns": [
+          "apps/web/src/ui/foundations/layout.ts",
+          "apps/web/src/ui/foundations/typography.ts",
+          "apps/web/src/ui/primitives/button.tsx",
+          "apps/web/src/ui/recipes/control.ts",
+          "apps/web/src/ui/recipes/surface.ts",
+          "apps/web/src/ui/patterns/confirm-dialog.tsx",
+          "apps/web/src/ui/icons/index.ts",
+          "apps/web/src/ui/icons/icon.tsx",
+          "apps/web/src/ui/motion/index.ts"
+        ]
+      },
+      {
+        "name": "apps-web-ui-bootstrap",
+        "patterns": ["apps/web/src/ui/styles.ts"]
+      },
+      {
+        "name": "apps-web-ui-internal",
+        "patterns": ["apps/web/src/ui/**"]
+      },
+      {
         "name": "apps-web",
         "patterns": ["apps/web/**"]
       },
@@ -129,7 +151,10 @@
           "runtime-adapters",
           "database",
           "tooling",
-          "configs"
+          "configs",
+          "apps-web-ui-public",
+          "apps-web-ui-internal",
+          "apps-web-ui-bootstrap"
         ]
       },
       {
@@ -137,8 +162,25 @@
         "allow": ["tooling"]
       },
       {
+        "from": "apps-web-ui-public",
+        "allow": ["apps-web-ui-internal"]
+      },
+      {
+        "from": "apps-web-ui-bootstrap",
+        "allow": ["apps-web-ui-internal"]
+      },
+      {
+        "from": "apps-web-ui-internal",
+        "allow": ["apps-web-ui-public"]
+      },
+      {
         "from": "apps-web",
-        "allow": ["modules", "foundation"]
+        "allow": [
+          "modules",
+          "foundation",
+          "apps-web-ui-public",
+          "apps-web-ui-bootstrap"
+        ]
       },
       {
         "from": "runtime-adapters",

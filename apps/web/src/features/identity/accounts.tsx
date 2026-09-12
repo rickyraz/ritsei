@@ -3,7 +3,9 @@ import { createSignal, Errored, For, Loading, onSettled, Show, untrack, useConte
 import type { UserAccount } from "../../shared/contracts/generated/identity.ts"
 import { ApiRuntime, runRequest } from "../../shared/runtime.ts"
 import { failureMessage, RequestFailure } from "../../shared/api.ts"
-import { control, layout, surface } from "../../ui/index.ts"
+import { layout } from "../../ui/foundations/layout.ts"
+import { control } from "../../ui/recipes/control.ts"
+import { surface } from "../../ui/recipes/surface.ts"
 import { listAccounts, updateAccount } from "./service.ts"
 
 function EmailEditor(

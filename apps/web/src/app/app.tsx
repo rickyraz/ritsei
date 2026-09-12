@@ -1,7 +1,9 @@
 import { createRouter } from "@solidjs/router"
 import { createSignal, Errored, lazy, Loading, Show } from "solid-js"
 import type { Session } from "../shared/session.ts"
-import { Button, ConfirmDialog, layout } from "../ui/index.ts"
+import { layout } from "../ui/foundations/layout.ts"
+import { ConfirmDialog } from "../ui/patterns/confirm-dialog.tsx"
+import { Button } from "../ui/primitives/button.tsx"
 import { Connection } from "./connection.tsx"
 import { SessionContext } from "./session.ts"
 

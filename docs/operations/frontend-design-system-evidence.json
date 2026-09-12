@@ -41,7 +41,7 @@
         "primitives": [
           {
             "name": "Dialog",
-            "contract": "apps/web/src/ui/confirm-dialog.tsx",
+            "contract": "apps/web/src/ui/patterns/confirm-dialog.tsx",
             "usage": "apps/web/src/app/app.tsx",
             "browserTest": "tests/frontend/kobalte.test.ts"
           }

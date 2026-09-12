@@ -1,0 +1,5 @@
+import "@fontsource/ibm-plex-mono/400.css"
+import "@fontsource/pretendard/400.css"
+import "@fontsource/pretendard/500.css"
+import "@fontsource/pretendard/600.css"
+import "./generated/styles.css"

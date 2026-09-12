@@ -50,8 +50,8 @@ The system uses a deliberately small scale:
 ```
 
 Supported UI weights are 400 regular, 500 medium, and 600 semibold. Components use
-semantic text styles from `apps/web/panda.config.ts` through the public styling surface in
-`apps/web/src/ui/typography.ts`; feature code must not invent arbitrary typography values.
+semantic text styles from `apps/web/panda.config.ts` through
+`apps/web/src/ui/foundations/typography.ts`; feature code must not invent arbitrary typography values.
 Tables and financial values use tabular numerals. Primary information must not fall below
 12px, and typography must remain usable under zoom, OS scaling, long labels, and localization.
 

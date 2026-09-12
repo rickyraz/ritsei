@@ -4,7 +4,10 @@ import * as Schema from "effect/Schema"
 import * as Result from "effect/Result"
 import { Session } from "../shared/session.ts"
 import { SessionContext } from "./session.ts"
-import { Button, control, layout, surface } from "../ui/index.ts"
+import { layout } from "../ui/foundations/layout.ts"
+import { Button } from "../ui/primitives/button.tsx"
+import { control } from "../ui/recipes/control.ts"
+import { surface } from "../ui/recipes/surface.ts"
 
 export function Connection() {
   const session = useContext(SessionContext)

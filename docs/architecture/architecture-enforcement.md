@@ -116,7 +116,12 @@ contract checks must enforce the boundary rather than relying on review alone:
 - cartographic projections pass typed visual intent to the renderer adapter rather than importing
   `vgpu` or raw WebGPU directly; and
 - accessibility, reduced-motion, contrast, and renderer performance remain runtime/evidence checks,
-  not claims inferred from static import boundaries.
+  not claims inferred from static import boundaries;
+- Fallow classifies `apps/web/src/ui/` into public leaf, stylesheet bootstrap, and internal zones:
+  application and feature code may import only the allowlisted public leaf modules plus the bootstrap,
+  while UI internals and tests may inspect the internal zone; and
+- the small architecture checker retains the exact catch-all root-barrel prohibition, because Fallow
+  zones enforce file-to-zone reachability rather than the semantic meaning of an individual export.
 
 No current check claims that the exploratory frontend prototype has completed these activation gates.
 

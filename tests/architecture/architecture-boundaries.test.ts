@@ -35,6 +35,16 @@ describe("architecture boundaries", () => {
     assert.deepStrictEqual(frontend('import { Button } from "../../ui/mod.ts"'), [])
   })
 
+  it("requires leaf RITSEI UI imports instead of catch-all barrels", () => {
+    for (const specifier of ["../../ui/index.ts", "../../ui/recipes/index.ts"]) {
+      assert.isNotEmpty(frontend(`import { value } from "${specifier}"`), specifier)
+    }
+    assert.deepStrictEqual(
+      frontend('import { layout } from "../../ui/foundations/layout.ts"'),
+      [],
+    )
+  })
+
   it("keeps shared UI independent of application and domain knowledge", () => {
     for (
       const specifier of [

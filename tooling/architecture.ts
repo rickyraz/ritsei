@@ -135,6 +135,7 @@ const rendererSpecifier =
   /^(?:@kobalte\/|@pandacss\/|@dnd-kit\/|@vgpu\/|vgpu(?:\/|$)|typegpu(?:\/|$)|three(?:\/|$)|pixi\.js(?:\/|$)|echarts(?:\/|$)|chart\.js(?:\/|$)|styled-system(?:\/|$))/
 const uiApplicationPath = /^apps\/web\/src\/(?:features|app|routes|domains)\//
 const uiSharedApplicationPath = /^apps\/web\/src\/shared\/(?:api|contracts\/generated)\//
+const forbiddenUiBarrelPath = /^apps\/web\/src\/ui\/(?:index|recipes\/index)\.tsx?$/
 
 const isFrontendSource = (path: string) => {
   const normalized = normalizePath(path)
@@ -150,6 +151,9 @@ const analyzeFrontendSource = (file: SourceFile): readonly string[] => {
   const inUi = path.startsWith("apps/web/src/ui/")
   return extractModuleImports(file).flatMap(({ specifier, typeOnly }) => {
     const target = resolveLocal(path, specifier)
+    if (target && forbiddenUiBarrelPath.test(target)) {
+      return [`${path}: import a specific RITSEI UI module instead of a UI barrel: ${target}`]
+    }
     if (
       !inUi &&
       (rendererSpecifier.test(specifier) || target?.startsWith("apps/web/src/ui/generated/") ||

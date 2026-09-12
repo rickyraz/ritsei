@@ -1,3 +1,4 @@
+import "./ui/styles.ts"
 import { render } from "@solidjs/web"
 import { App } from "./app/app.tsx"
 

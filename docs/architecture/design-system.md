@@ -406,7 +406,7 @@ limited to identifiers, code-like values, and technical information where charac
 comparison has semantic value.
 
 The application implementation is owned by `apps/web/panda.config.ts` and
-`apps/web/src/ui/typography.ts`. The shared UI surface loads the approved static WOFF2 weights from `@fontsource/pretendard`
+`apps/web/src/ui/foundations/typography.ts`. The shared UI surface loads the approved static WOFF2 weights from `@fontsource/pretendard`
 and `@fontsource/ibm-plex-mono`; a future approved variable Pretendard asset may replace them
 without changing the semantic contract. Components MUST use the semantic text styles rather than
 arbitrary font sizes or weights.
@@ -1441,8 +1441,14 @@ Use these promotion rules:
 - Keep non-visual transport, routing, and application helpers in their existing frontend owners
   under `shared/`, not in UI or a catch-all `frontend-utils` library.
 
-Feature UI imports RITSEI UI contracts through intentional public entry points, not private adapter
-or recipe files. Only the internal UI layer imports Kobalte, Panda-generated artifacts, dnd-kit,
+Feature UI imports RITSEI UI contracts through stable public leaf modules such as
+`ui/foundations/*`, `ui/primitives/*`, `ui/recipes/*`, `ui/patterns/*`, `ui/icons/*`, and
+`ui/motion/*`; it must not import private adapters or generated Panda artifacts. Named subsystem
+entrypoints such as `ui/icons/index.ts` and `ui/motion/index.ts` are allowed only when they expose
+that subsystem's semantic API; they are not substitutes for the root facade. The UI boundary has no
+catch-all root barrel. `apps/web/src/ui/styles.ts` is the sole stylesheet bootstrap and is
+imported once by `src/main.tsx` and the Storybook preview, never as a side effect of importing a
+component or recipe. Only the internal UI layer imports Kobalte, Panda-generated artifacts, dnd-kit,
 chart adapters, Canvas, or WebGPU renderers. Shared UI MUST NOT import features, routes, application
 composition, domain API clients, or domain-specific DTOs. It may consume frontend-safe shared value
 contracts, but MUST NOT own fetching, query-cache policy, or business command execution. Those
