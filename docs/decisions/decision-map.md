@@ -25,6 +25,7 @@ ADR-0080 is the current Solid-native Boneyard skeleton boundary.
 ADR-0081 is the proposed renderer-independent Document AST and document-rendering platform boundary.
 ADR-0082 is the current SAP-separated Communication Platform and Activity Timeline projection boundary.
 ADR-0084 is a proposed cross-cutting progressive trust model; it is not an active canonical rule until accepted.
+ADR-0085 is the current frontend public-contract refinement: TanStack adapters stay internal and semantic UI stays public.
 
 ## Current decision lineage
 
@@ -82,6 +83,10 @@ ADR-0010  Vite-based SolidJS SPA
                         +--> Query is selective server-state cache policy
                         +--> Table, Virtual, and Form are headless ERP engines
                         +--> Pacer is optional; DB remains research-only
+              |
+              +--> ADR-0085 separates internal TanStack adapters from public semantic UI
+                        +--> DataTable/Form and semantic fields are public contracts
+                        +--> query and virtualizer adapters are policy-owned and internal
               |
               +--> ADR-0072 native Solid 2 and Effect integration
                         +--> Solid owns the default reactive graph and ownership tree
@@ -214,6 +219,7 @@ by ADR-0040.
 | [ADR-0082](./0082-adopt-communication-platform-boundaries.md) | Current communication boundary | Domains publish facts or communication intents; recipient/context/template resolution, immutable artifacts, delivery attempts, and provider adapters remain separate, while Activity Timeline is a rebuildable projection |
 | [ADR-0083](./0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md) | Current cross-cutting non-interference boundary | Source-of-truth critical paths remain independent of derived capabilities; ADR-0034 owns detailed workload/resource proof |
 | [ADR-0084](./0084-establish-explicit-progressive-trust-boundaries.md) | Proposed cross-cutting trust boundary | External representations gain no RITSEI identity, authority, or business fact until explicit runtime, identity, authorization, and owner-domain checks complete |
+| [ADR-0085](./0085-separate-tanstack-adapters-from-semantic-ui-contracts.md) | Current frontend public-contract refinement | TanStack adapters are internal policy modules; semantic UI such as `DataTable`, `Form`, and business fields are the public feature boundary |
 
 ## Proposed direction
 

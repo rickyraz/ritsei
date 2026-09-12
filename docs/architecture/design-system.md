@@ -1382,6 +1382,7 @@ apps/web/src/
 ├── ui/
 │   ├── foundations/
 │   ├── primitives/
+│   ├── internal/               # implementation helpers, not feature contracts
 │   ├── recipes/
 │   ├── patterns/
 │   ├── grammar/
@@ -1413,7 +1414,7 @@ knowledge and behavior it owns:
 |---|---|---|
 | Design foundations | `ui/foundations/`, with styling in `ui/recipes/` | Token definitions, typography, spacing, density, and approved icon assets; not business lifecycle enums |
 | Generic controls | `ui/primitives/` | `Button`, `Input`, `Dialog`, `Select`, `Tabs`, `Badge`, `FormField`; no domain lookup or command |
-| Reusable compositions and Product Patterns | `ui/patterns/` | `RitseiTable`, `FilterBar`, `EntityWorkspace`, generic approval composition; caller-supplied data, labels, slots, and intents |
+| Reusable compositions and Product Patterns | `ui/patterns/` | `DataTable`, bounded `RitseiVirtualList`, `FilterBar`, `EntityWorkspace`, generic approval composition; caller-supplied data, labels, slots, and intents |
 | Domain presentation | `features/<domain>/{ui,forms,tables,projections}/` | `JournalEntryTable`, `InvoicePaymentStatus`, `SupplierPicker`, `PurchaseOrderApprovalDialog`; compose shared UI rather than copy its behavior or styling |
 | Application composition | `app/shell/`, routes, and providers | Concrete navigation, tenant/workspace composition, and runtime wiring; generic navigation controls can remain in shared UI |
 

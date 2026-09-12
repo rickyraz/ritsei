@@ -108,5 +108,6 @@ current system; ADRs preserve decision history.
 | [`0082`](./0082-adopt-communication-platform-boundaries.md) | Adopt SAP-separated communication platform boundaries | Accepted |
 | [`0083`](./0083-enforce-non-interference-between-source-of-truth-and-derived-capabilities.md) | Enforce non-interference between source-of-truth and derived capabilities | Accepted |
 | [`0084`](./0084-establish-explicit-progressive-trust-boundaries.md) | Establish explicit progressive trust boundaries | Proposed |
+| [`0085`](./0085-separate-tanstack-adapters-from-semantic-ui-contracts.md) | Separate TanStack adapters from semantic UI contracts | Accepted |
 
 Accepted ADRs must not be rewritten to alter history. Create a new ADR and use `Supersedes`.

@@ -507,22 +507,21 @@ Do not copy query results into unrelated signals, global stores, or a client
 collection merely to make them reactive. Authoritative business state and
 business decisions remain in the backend domain or approved financial ledger.
 
-A feature should expose reusable query options rather than constructing ad hoc
-request behavior inside route components. Query keys must be deterministic,
-tenant-aware where required, scope-aware where required, and based on validated
-input.
+A feature should expose reusable query modules rather than constructing ad hoc
+request behavior inside route components. The shared `createServerQuery` policy
+adds tenant-scoped identity and bounded cache profiles; the feature still owns
+validated input, endpoint loading, and invalidation.
 
 ```ts
-export const invoiceQueries = {
-  list: (input: InvoiceListInput) => ({
-    queryKey: ["invoices", input] as const,
-    queryFn: () => invoiceApi.list(input),
-  }),
+const invoiceKey = ["invoices", "list"] as const
 
-  detail: (invoiceId: string) => ({
-    queryKey: ["invoices", invoiceId] as const,
-    queryFn: () => invoiceApi.getById(invoiceId),
-  }),
+export function createInvoiceListQuery(scope: ApiScope, input: InvoiceListInput) {
+  return createServerQuery({
+    tenantId: scope.tenantId,
+    key: [...invoiceKey, input] as const,
+    cache: "collection",
+    load: ({ signal }) => invoiceApi.list(scope, input, signal),
+  })
 }
 ```
 
@@ -550,10 +549,11 @@ Context must not become a global mutable service locator.
 
 ## Table Architecture
 
-TanStack Solid Table is the headless table model for RITSEI. It owns table
-behavior, not domain policy. RITSEI should expose an owned table boundary such
-as `RitseiTable` so feature code declares columns, capabilities, and semantic
-formatting without importing vendor APIs into domain or projection contracts.
+TanStack Solid Table is an internal headless table engine for RITSEI. It owns
+table behavior, not domain policy. RITSEI exposes semantic UI such as `DataTable`;
+feature code declares columns, capabilities, and semantic formatting without
+importing vendor APIs into domain or public UI contracts. A `createTableModel`
+adapter is justified only when it adds RITSEI policy and must remain internal.
 
 Table definitions may contain:
 
@@ -601,15 +601,20 @@ Virtualization must preserve:
 - stable row identity;
 - scroll restoration where required.
 
-Do not virtualize small tables without measurement.
+Keep vendor virtualizer adapters internal. RITSEI exposes a narrow
+`RitseiVirtualList` contract with fixed-row, bounded windowing; semantic
+components such as `DataTable` or a future `CommandList` may delegate to it
+when measured need exists. Do not virtualize small tables without measurement.
 
 ## Forms
 
-TanStack Solid Form is the current default form engine for ERP interaction,
-behind RITSEI-owned form and field contracts such as `RitseiForm`, `MoneyField`,
-`QuantityField`, `PartyField`, and `LineArray`. It manages client form state,
-validation timing, async feedback, nested values, arrays, composition, and
-submission interaction; it does not own business invariants.
+TanStack Solid Form is an optional internal engine for ERP interaction, behind
+RITSEI-owned semantic UI such as `Form`, `MoneyField`, `QuantityField`, and
+`PartyField`. An internal repeatable-field primitive is `FieldArray`; a business-specific
+`LineItemsField` is added only when a domain consumer and contract justify it.
+The engine manages client form state, validation timing, async feedback, nested
+values, arrays, composition, and submission interaction; it does not own
+business invariants.
 
 Effect Schema remains the contract and decoding boundary. The cross-layer schema
 policy is owned by [`ADR-0024`](../decisions/0024-adopt-effect-schema-as-canonical-contract-schema.md):
