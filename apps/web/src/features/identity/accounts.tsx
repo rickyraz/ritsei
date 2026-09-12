@@ -1,12 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query"
 import { createSignal, Errored, For, Loading, onSettled, Show, untrack, useContext } from "solid-js"
 import type { UserAccount } from "../../shared/contracts/generated/identity.ts"
-import { ApiRuntime, runRequest } from "../../shared/runtime.ts"
-import { failureMessage, RequestFailure } from "../../shared/api.ts"
+import { ApiRuntime } from "../../shared/runtime.ts"
+import { failureMessage } from "../../shared/api.ts"
 import { layout } from "../../ui/foundations/layout.ts"
 import { control } from "../../ui/recipes/control.ts"
 import { surface } from "../../ui/recipes/surface.ts"
-import { listAccounts, updateAccount } from "./service.ts"
+import { createAccountEmailMutation, createAccountsQuery } from "./queries.ts"
 
 function EmailEditor(
   props: {
@@ -16,21 +15,10 @@ function EmailEditor(
   },
 ) {
   const scope = useContext(ApiRuntime)
-  const client = useQueryClient()
   const initialEmail = untrack(() => props.account.email)
   let emailInput: HTMLInputElement | undefined
   const [invalid, setInvalid] = createSignal(false)
-  const mutation = useMutation<
-    UserAccount,
-    RequestFailure,
-    { id: string; email: string }
-  >(() => ({
-    mutationFn: (input) => runRequest(scope, updateAccount(input)),
-    onSuccess: () =>
-      client.invalidateQueries({
-        queryKey: ["identity", scope.tenantId, "accounts"],
-      }),
-  }))
+  const mutation = createAccountEmailMutation(scope)
   onSettled(() => emailInput?.focus())
   return (
     <section class={surface()} aria-labelledby="edit-heading">
@@ -126,11 +114,7 @@ function EmailEditor(
 
 export function Accounts() {
   const scope = useContext(ApiRuntime)
-  const query = useQuery<readonly UserAccount[], RequestFailure>(() => ({
-    queryKey: ["identity", scope.tenantId, "accounts"],
-    queryFn: ({ signal }) => runRequest(scope, listAccounts(), signal),
-    throwOnError: true,
-  }))
+  const query = createAccountsQuery(scope)
   const [editing, setEditing] = createSignal<string | null>(null)
   let trigger: HTMLButtonElement | undefined
   const close = () => {

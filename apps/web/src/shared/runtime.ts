@@ -4,7 +4,7 @@ import * as ManagedRuntime from "effect/ManagedRuntime"
 import * as Result from "effect/Result"
 import type { BrowserConnection, RequestFailure } from "./api.ts"
 
-type ApiScope = {
+export type ApiScope = {
   readonly runtime: ManagedRuntime.ManagedRuntime<BrowserConnection, never>
   readonly lifetime: AbortSignal
   readonly tenantId: string
